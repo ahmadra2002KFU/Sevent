@@ -1,0 +1,21 @@
+# Production-ready Supabase stack for Sevent, to run on the user's Ubuntu box.
+#
+# Status: **skeleton only** — not used in Sprint 1. Sprint 1 + local dev uses
+# the Supabase CLI (`pnpm db:start`), which spins up the same images
+# automatically. This file is kept here so Sprint 6 deploy can adapt the
+# official Supabase self-hosting compose from:
+#   https://github.com/supabase/supabase/tree/master/docker
+#
+# Fill in before Sprint 6:
+#   - service-specific env files (.env.studio, .env.auth, etc.)
+#   - volume mounts for Postgres data + storage
+#   - kong.yml routing config
+#   - proper JWT_SECRET / ANON_KEY / SERVICE_ROLE_KEY generation
+#
+# When copying the official compose, keep these deltas for Sevent:
+#   - enable pg_cron, postgis, pgcrypto extensions
+#   - map storage to an S3-compatible backend (Cloudflare R2) for backups
+#   - reverse-proxy with nginx + Let's Encrypt (already present on the Ubuntu box)
+#   - pg_dump nightly cron → R2 (see backups/ runbook in Claude Docs)
+
+services: {}

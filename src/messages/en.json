@@ -1,0 +1,39 @@
+{
+  "brand": {
+    "name": "Sevent",
+    "tagline": "The Saudi event marketplace"
+  },
+  "nav": {
+    "browse": "Browse",
+    "forSuppliers": "For suppliers",
+    "signIn": "Sign in",
+    "signUp": "Sign up"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Saudi event marketplace",
+      "title": "Plan any event end-to-end in one platform.",
+      "subtitle": "Discover verified suppliers, send one request to many, compare quotes, and book with a digital contract — all in Sevent.",
+      "ctaOrganizer": "I'm planning an event",
+      "ctaSupplier": "I'm a supplier"
+    },
+    "valueProp": {
+      "heading": "Built for Saudi events",
+      "items": [
+        {
+          "title": "One request, many quotes",
+          "body": "Send a structured RFQ once. We match you with the right approved suppliers for your category, city, and date."
+        },
+        {
+          "title": "Compare on more than price",
+          "body": "See line items, inclusions, travel fees, and verified reviews side-by-side so the right choice is obvious."
+        },
+        {
+          "title": "A platform you can rely on",
+          "body": "Verified suppliers, click-to-agree digital contracts, and every booking tracked end-to-end."
+        }
+      ]
+    },
+    "comingSoon": "The pilot is opening to Riyadh + Jeddah suppliers now."
+  }
+}
