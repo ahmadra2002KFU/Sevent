@@ -1,16 +1,110 @@
-export default function SupplierCalendarPage() {
+import { getTranslations } from "next-intl/server";
+import { endOfMonth, startOfMonth } from "date-fns";
+import { loadCalendarData } from "./actions";
+import { MonthGrid } from "./month-grid";
+import { BlockList } from "./block-list";
+
+type SearchParams = Promise<{ y?: string; m?: string }>;
+
+function clampMonth(raw: string | undefined, fallback: number): number {
+  const n = Number.parseInt(raw ?? "", 10);
+  if (!Number.isFinite(n) || n < 1 || n > 12) return fallback;
+  return n;
+}
+
+function clampYear(raw: string | undefined, fallback: number): number {
+  const n = Number.parseInt(raw ?? "", 10);
+  // Allow a generous window so navigation never "sticks" on a busted value.
+  if (!Number.isFinite(n) || n < 2000 || n > 2100) return fallback;
+  return n;
+}
+
+export default async function SupplierCalendarPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const now = new Date();
+  const year = clampYear(params.y, now.getFullYear());
+  const month = clampMonth(params.m, now.getMonth() + 1);
+
+  const monthStart = startOfMonth(new Date(year, month - 1, 1));
+  const monthEnd = endOfMonth(monthStart);
+
+  const t = await getTranslations("supplier.calendar");
+
+  const result = await loadCalendarData(monthStart, monthEnd);
+
+  if (!result.ok) {
+    return (
+      <section className="flex flex-col gap-4">
+        <header>
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        </header>
+        <p
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          {result.error}
+        </p>
+      </section>
+    );
+  }
+
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold">Calendar</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-[var(--color-muted-foreground)]">
-          Lane 4 (frontend-developer) owns this route. Read-only month view +
-          form-based manual block add/edit/delete.
+          {t("subtitle")}
         </p>
       </header>
-      <p className="text-sm text-[var(--color-muted-foreground)]">
-        Stub — implementation lands in Sprint 2 · Lane 4.
-      </p>
+
+      <MonthGrid
+        year={year}
+        month={month}
+        blocks={result.blocks}
+        labels={{
+          title: t("title"),
+          prev: t("prevMonth"),
+          next: t("nextMonth"),
+          legendManual: t("legendManual"),
+          legendSoftHold: t("legendSoftHold"),
+          legendBooked: t("legendBooked"),
+          today: t("today"),
+          weekdays: [
+            t("weekday.sun"),
+            t("weekday.mon"),
+            t("weekday.tue"),
+            t("weekday.wed"),
+            t("weekday.thu"),
+            t("weekday.fri"),
+            t("weekday.sat"),
+          ],
+        }}
+      />
+
+      <BlockList
+        blocks={result.manualBlocks}
+        labels={{
+          heading: t("manualListHeading"),
+          noBlocks: t("noBlocks"),
+          newBlock: t("newBlock"),
+          edit: t("edit"),
+          delete: t("delete"),
+          cancel: t("cancel"),
+          save: t("save"),
+          saving: t("saving"),
+          confirmDelete: t("confirmDelete"),
+          starts: t("starts"),
+          ends: t("ends"),
+          notes: t("notes"),
+          conflict: t("conflict"),
+          formTitleNew: t("formTitleNew"),
+          formTitleEdit: t("formTitleEdit"),
+        }}
+      />
     </section>
   );
 }
