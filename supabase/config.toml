@@ -8,6 +8,8 @@ project_id = "sevent"
 enabled = true
 # Port to use for the API URL.
 port = 54321
+# External URL used by Supabase Auth in email links etc.
+external_url = "https://sevent-api.ahmadgh.ovh"
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -151,9 +153,9 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://localhost:3000"
+site_url = "https://sevent.ahmadgh.ovh"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]
+additional_redirect_urls = ["https://sevent.ahmadgh.ovh", "http://localhost:3000", "http://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -227,14 +229,14 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+[auth.email.smtp]
+enabled = true
+host = "smtp.gmail.com"
+port = 587
+user = "ahmadrabaya2002g@gmail.com"
+pass = "env(GMAIL_APP_PASSWORD)"
+admin_email = "ahmadrabaya2002g@gmail.com"
+sender_name = "Sevent"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
