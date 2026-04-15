@@ -119,12 +119,35 @@
   "admin": {
     "verifications": {
       "title": "قائمة التحقق",
+      "subtitle": "راجع مستندات المورد، اعتمد أو ارفض كل طلب، وأرسل إشعارًا بالبريد للمورد.",
       "pendingTab": "قيد المراجعة",
       "approvedTab": "معتمد",
       "rejectedTab": "مرفوض",
-      "approve": "اعتماد",
+      "approve": "اعتماد المورد",
       "reject": "رفض",
-      "notesLabel": "ملاحظات للمورد"
+      "approveDoc": "اعتماد",
+      "rejectDoc": "رفض",
+      "notesLabel": "ملاحظات للمورد",
+      "notesPlaceholder": "وضّح للمورد ما يجب إصلاحه قبل إعادة الإرسال.",
+      "docNotesPlaceholder": "ما الخطأ أو الناقص في هذا المستند؟",
+      "back": "العودة للقائمة",
+      "decisionHeading": "القرار",
+      "openPreview": "فتح المعاينة",
+      "previewUnavailable": "المعاينة غير متاحة",
+      "noDocs": "لم يتم رفع أي مستندات بعد.",
+      "empty": "لا يوجد موردون في هذا التبويب.",
+      "profileSnapshot": "ملخص الملف",
+      "documentsHeading": "المستندات",
+      "uploaded": "تم الرفع",
+      "reviewed": "تمت المراجعة",
+      "lastReviewerNotes": "آخر ملاحظات المراجع",
+      "submitted": "تم الإرسال",
+      "openReview": "فتح المراجعة",
+      "approveSummary": "الاعتماد يضبط verification_status=approved و is_published=true ويحدّث جميع المستندات غير المرفوضة كمعتمدة، ويرسل بريد الترحيب ويسجّل إشعار supplier.approved.",
+      "rejectSummary": "الرفض يضبط verification_status=rejected ويخفي البطاقة، ويحدّث كل مستند غير معتمد كمرفوض بالملاحظات التي تكتبها، ويرسل بريدًا للمورد بالخطوات التالية.",
+      "rejectedToast": "تم الرفض. تم إخطار المورد.",
+      "approvedToast": "تم الاعتماد والإخطار.",
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة."
     }
   },
   "public": {
