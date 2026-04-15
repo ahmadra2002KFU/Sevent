@@ -78,17 +78,62 @@ Code/
 
 ---
 
-## Next up — Sprint 2 (2026-05-04 → 2026-05-17)
+## Sprint 2 — Supplier onboarding & publication (2026-05-04 → 2026-05-17)
 
-Theme: Supplier onboarding & publication.
+Status: **code complete on `main` · live verification pending Docker**.
 
-Dependencies all resolved on paper. Live dependency: Sprint 1 Docker verification must pass first. Expected first deliverables:
+Executed as a Codex-approved 4-lane parallel plan + one focused fix agent, all running concurrently in the shared working tree after a synchronous Lane 0 prep pass. Five branches merged back to `main` in the Codex-prescribed integration order.
 
-- Supplier onboarding wizard (business info → docs upload → base location + service area + capacity + `concurrent_event_limit`).
-- Admin verifications queue (approve/reject docs, flip `verification_status` via the guarded trigger path).
-- Public supplier profile page `/s/[slug]`.
-- Packages CRUD + pricing-rules CRUD (one form per rule type; Zod-validated; priority ordering).
-- Availability: read-only month view + form for manual blocks.
-- TS service-role seed script creating the 25 demo suppliers referenced in the Sprint 1 seed note.
-- Storage buckets + RLS policies for `supplier-portfolio`, `supplier-docs`, `contracts`.
-- Email: supplier approved/rejected transactional email.
+### Completed work
+
+| # | Lane / Fix | Branch (merged) | Commit | Notes |
+|---|---|---|---|---|
+| S2-0 | Lane 0 — shared primitives | `main` (direct) | `0fc8f81`, `21a0503` | supplier+admin layouts; route stubs; `src/lib/supabase/{types,storage}.ts`; `src/lib/domain/{money,onboarding,packages,availability,pricing/rules}.ts`; storage-buckets migration + RLS; `RESEND_FROM_EMAIL` env; i18n namespaces; pre-installed deps for Lanes 1/3 (resend, react-email, tsx, date-fns, dotenv). |
+| S2-M | Fix — migration ordering | `sprint2/fix-migration-ordering` → `main` | `79abbc9` | One forward reference found: `rfqs: invited supplier read` policy referenced `rfq_invites` before its declaration. Moved the policy to right after `rfq_invites`' RLS enable. All FK deferred constraints already correct. |
+| S2-1 | Lane 1 — supplier onboarding + service-role seed + storage RLS test | `sprint2/lane1` → `main` | `5f92ebf` | 3-step wizard with React Hook Form + Zod; slug disambiguation; `scripts/seed-users.ts` creates 1 admin + 2 organizers + 25 suppliers (12 Riyadh / 13 Jeddah) with packages, rules (rotating all 5 `pricing_rule_type` values), portfolio photos, docs; first 8 approved+published; `pnpm seed` script in package.json; `supabase/tests/storage-rls.test.sql` proving cross-supplier doc read denial. |
+| S2-3 | Lane 3 — admin verifications + approval email | `sprint2/lane3` → `main` | `da80036` | Admin list (tabs: Pending / Approved / Rejected) + detail view with signed-URL doc previews; server actions `approveSupplier / rejectSupplier / approveDoc / rejectDoc` — each re-checks admin role then uses service-role client to flip `verification_status` (passes `guard_supplier_verification` trigger); Resend wrapper with console-log fallback when `RESEND_API_KEY` is unset; branded React Email templates `SupplierApproved.tsx` + `SupplierRejected.tsx`; `notifications` row writer. |
+| S2-4 | Lane 4 — supplier calendar | `sprint2/lane4` → `main` | `6e103d3` | `/supplier/calendar` read-only month grid (dots + stripe per reason) + manual-block list + form; RHF + Zod via `ManualBlockInput`; server actions write only `reason='manual_block'`, scope every op by `supplier_id + reason`; Postgres errors run through `friendlyAvailabilityError`. |
+| S2-2 | Lane 2 — catalog + public profile | `sprint2/lane2` → `main` | `e9822a3` | Packages CRUD (form → `sarToHalalas` → `PackageRow` in server action); rule-type picker + 5 per-type forms (`qty_tier_all_units` / `qty_tier_incremental` / `distance_fee` / `date_surcharge` / `duration_multiplier`) each serializing via `parsePricingRuleConfig`; supplier-wide + per-package rule grouping; public `/s/[slug]` with portfolio grid, packages with "from" prices via `formatHalalas`, verified badge, bio/languages/service-area, reviews placeholder; `notFound()` for unpublished/unapproved. |
+
+Sprint 2 main HEAD: `76913ba` · pushed to `origin/main`.
+
+### Verification state
+
+- `pnpm exec tsc --noEmit` — **clean (0 errors)**.
+- `pnpm exec eslint src` — **clean (0 errors, 1 benign warning)** — single RHF `watch()` compiler warning in `onboarding/wizard.tsx`, not a correctness issue.
+- `pnpm exec next build` — **blocked on host** by Windows + exFAT fs. Two independent failure modes:
+  - Turbopack: `failed to create junction point at ".next\node_modules\prettier-…"` → exFAT doesn't support reparse points.
+  - Webpack fallback (`next build --webpack`): `FlightClientEntryPlugin` crash reading `.server` of undefined after `EISDIR` on `favicon.ico` readlink.
+  - **Not a code regression** — reproduces on a clean Lane 0 checkout with only deps installed. Production build must run on Linux / NTFS (WSL2, Ubuntu host, or CI). Deferred to Sprint 6 hardening.
+- Live DB verification still pending — user needs to start Docker Desktop and run `pnpm db:start && pnpm db:reset && pnpm seed`.
+
+### Sprint 2 acceptance criteria (from `sprints.md`) — status
+
+- [x] Lane 0 primitives merged to main; typecheck + lint green.
+- [x] Lane 1 merged; 25-supplier seed script in place; storage RLS SQL test in place.
+- [x] Lane 3 merged; admin approve/reject flows wired; email renders (console-logged locally when Resend key absent).
+- [x] Lane 4 merged; manual-block UX + mapped overlap error.
+- [x] Lane 2 merged; `/s/[slug]` renders for approved+published suppliers; all 5 rule types round-trip through the form.
+- [ ] `pnpm db:reset && pnpm dev` end-to-end walk — **pending Docker**.
+- [x] Migration forward-reference bug fixed and merged.
+
+### Observed friction worth carrying forward
+
+- **Shared-tree parallel agents** repeatedly stomped on each other's untracked files during their runs. Lane 1 and Lane 3 both reported recovering via `git stash`. Future sprints should either use real `git worktree add`-backed isolation (needs a `WorktreeCreate` hook configured in `settings.json`) OR run lanes sequentially. For this sprint the final commits were clean because each agent committed atomically.
+- `pnpm exec next build` on the D: drive is blocked by filesystem semantics. CI or Linux host is the way.
+
+---
+
+## Next up — Sprint 3 (2026-05-18 → 2026-05-31)
+
+Theme: Organizer RFQ flow & auto-match.
+
+Dependency: live verification of Sprints 1 + 2 (Docker + seed + walk the onboarding/verify/catalog/calendar flow end-to-end in a browser). Preview deliverables per `sprints.md` Sprint 3:
+
+- Organizer dashboard + event creation.
+- RFQ wizard: universal core + category-specific extension block.
+- Public browse: category + city filters only.
+- Auto-match v1: hard filters (approved+published, category, city/service-area, no availability conflict, capacity remaining, package qty range) + ranked top-5 (capability / travel / responsiveness / booking-quality / rotation).
+- Supplier RFQ inbox.
+
+Parallelization strategy to decide at Sprint 3 kickoff: whether to invest in real git worktree isolation (hook) OR drop to 2 sequential lanes given the shared-tree pain this sprint.
