@@ -452,14 +452,8 @@ create policy "rfqs: organizer all" on public.rfqs
   ) with check (
     exists (select 1 from public.events e where e.id = event_id and e.organizer_id = auth.uid())
   );
-create policy "rfqs: invited supplier read" on public.rfqs
-  for select using (
-    exists (
-      select 1 from public.rfq_invites inv
-      join public.suppliers s on s.id = inv.supplier_id
-      where inv.rfq_id = rfqs.id and s.profile_id = auth.uid()
-    )
-  );
+-- Note: "rfqs: invited supplier read" is declared below, after rfq_invites is
+-- created, because its USING clause subquery references that table.
 create policy "rfqs: admin read" on public.rfqs
   for select using (public.is_admin());
 
@@ -482,6 +476,18 @@ create table public.rfq_invites (
 create index rfq_invites_supplier_idx on public.rfq_invites (supplier_id, status);
 
 alter table public.rfq_invites enable row level security;
+
+-- Moved here from the rfqs section because the USING clause subquery references
+-- rfq_invites, which must already exist when the policy is created.
+drop policy if exists "rfqs: invited supplier read" on public.rfqs;
+create policy "rfqs: invited supplier read" on public.rfqs
+  for select using (
+    exists (
+      select 1 from public.rfq_invites inv
+      join public.suppliers s on s.id = inv.supplier_id
+      where inv.rfq_id = rfqs.id and s.profile_id = auth.uid()
+    )
+  );
 
 create policy "rfq_invites: organizer read" on public.rfq_invites
   for select using (
