@@ -1,0 +1,61 @@
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { signOutAction } from "../../(auth)/actions";
+
+const nav = [
+  { href: "/admin/dashboard", label: "Overview" },
+  { href: "/admin/verifications", label: "Verifications" },
+];
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-sevent-dark)] text-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <Link href="/" className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="inline-block h-7 w-7 rounded-full"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-sevent-gold), var(--color-sevent-green))",
+              }}
+            />
+            <span className="text-base font-semibold tracking-tight">
+              Sevent · Admin
+            </span>
+          </Link>
+          <nav className="flex items-center gap-1 text-sm">
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "rounded-md px-3 py-1.5",
+                  "text-white/80 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="ml-2 rounded-md border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10"
+              >
+                Sign out
+              </button>
+            </form>
+          </nav>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+        {children}
+      </main>
+    </div>
+  );
+}

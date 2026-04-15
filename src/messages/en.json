@@ -35,5 +35,53 @@
       ]
     },
     "comingSoon": "The pilot is opening to Riyadh + Jeddah suppliers now."
+  },
+  "supplier": {
+    "onboarding": {
+      "title": "Supplier onboarding",
+      "step1Heading": "Business information",
+      "step2Heading": "Upload verification documents",
+      "step3Heading": "Where you work",
+      "continue": "Continue",
+      "back": "Back",
+      "submit": "Submit for review"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "packagesHeading": "Packages",
+      "rulesHeading": "Pricing rules",
+      "newPackage": "New package",
+      "newRule": "New rule",
+      "activeToggle": "Active",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "priority": "Priority"
+    },
+    "calendar": {
+      "title": "Availability",
+      "newBlock": "Add block",
+      "noBlocks": "No manual blocks yet.",
+      "starts": "Starts",
+      "ends": "Ends",
+      "conflict": "This range conflicts with another block or booking. Pick a different window."
+    }
+  },
+  "admin": {
+    "verifications": {
+      "title": "Verifications queue",
+      "pendingTab": "Pending",
+      "approvedTab": "Approved",
+      "rejectedTab": "Rejected",
+      "approve": "Approve",
+      "reject": "Reject",
+      "notesLabel": "Notes to supplier"
+    }
+  },
+  "public": {
+    "supplier": {
+      "verifiedBadge": "Verified supplier",
+      "noPackages": "This supplier has not published any packages yet.",
+      "fromLabel": "from"
+    }
   }
 }

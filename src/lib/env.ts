@@ -6,6 +6,7 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   GOOGLE_MAPS_API_KEY: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional(),
   APP_URL: z.string().url().default("http://localhost:3000"),
 });
 
@@ -16,6 +17,7 @@ function readEnv() {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     APP_URL: process.env.APP_URL,
   });
 }

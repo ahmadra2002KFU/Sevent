@@ -35,5 +35,53 @@
       ]
     },
     "comingSoon": "التجربة الأولية مفتوحة لموردي الرياض وجدة الآن."
+  },
+  "supplier": {
+    "onboarding": {
+      "title": "تسجيل المورد",
+      "step1Heading": "معلومات المنشأة",
+      "step2Heading": "رفع مستندات التحقق",
+      "step3Heading": "نطاق العمل",
+      "continue": "متابعة",
+      "back": "رجوع",
+      "submit": "إرسال للمراجعة"
+    },
+    "catalog": {
+      "title": "الكتالوج",
+      "packagesHeading": "الباقات",
+      "rulesHeading": "قواعد التسعير",
+      "newPackage": "باقة جديدة",
+      "newRule": "قاعدة جديدة",
+      "activeToggle": "مفعل",
+      "validFrom": "سارية من",
+      "validTo": "سارية إلى",
+      "priority": "الأولوية"
+    },
+    "calendar": {
+      "title": "التوفر",
+      "newBlock": "إضافة حظر",
+      "noBlocks": "لا توجد حظور يدوية بعد.",
+      "starts": "البداية",
+      "ends": "النهاية",
+      "conflict": "النطاق يتعارض مع حظر أو حجز آخر. اختر نطاقًا مختلفًا."
+    }
+  },
+  "admin": {
+    "verifications": {
+      "title": "قائمة التحقق",
+      "pendingTab": "قيد المراجعة",
+      "approvedTab": "معتمد",
+      "rejectedTab": "مرفوض",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "notesLabel": "ملاحظات للمورد"
+    }
+  },
+  "public": {
+    "supplier": {
+      "verifiedBadge": "مورد موثّق",
+      "noPackages": "لم ينشر هذا المورد أي باقات بعد.",
+      "fromLabel": "ابتداءً من"
+    }
   }
 }
