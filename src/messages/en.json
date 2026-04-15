@@ -59,11 +59,37 @@
     },
     "calendar": {
       "title": "Availability",
+      "subtitle": "Read-only month view of every block on your calendar. Use the form below to add, edit, or remove manual blocks.",
       "newBlock": "Add block",
       "noBlocks": "No manual blocks yet.",
       "starts": "Starts",
       "ends": "Ends",
-      "conflict": "This range conflicts with another block or booking. Pick a different window."
+      "notes": "Notes (optional)",
+      "conflict": "This range conflicts with another block or booking. Pick a different window.",
+      "manualListHeading": "Manual blocks",
+      "formTitleNew": "New manual block",
+      "formTitleEdit": "Edit manual block",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "confirmDelete": "Delete this manual block?",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "today",
+      "legendManual": "Manual block",
+      "legendSoftHold": "Soft hold",
+      "legendBooked": "Booked",
+      "weekday": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      }
     }
   },
   "admin": {
