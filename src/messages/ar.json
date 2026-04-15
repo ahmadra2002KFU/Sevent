@@ -98,14 +98,125 @@
     },
     "catalog": {
       "title": "الكتالوج",
+      "subtitle": "أدر الباقات التي تقدمها وقواعد التسعير التي تعدّل السعر الأساسي.",
       "packagesHeading": "الباقات",
       "rulesHeading": "قواعد التسعير",
+      "rulesSubheading": "تُقيَّم القواعد حسب الأولوية. يُطبَّق فقط أعلى قاعدة رسوم تاريخ لكل تاريخ فعالية.",
+      "rulesSupplierWide": "قواعد عامة للمورد",
+      "rulesForPackage": "قواعد باقة {name}",
       "newPackage": "باقة جديدة",
       "newRule": "قاعدة جديدة",
       "activeToggle": "مفعل",
       "validFrom": "سارية من",
       "validTo": "سارية إلى",
-      "priority": "الأولوية"
+      "validWindow": "سارية {from} → {to}",
+      "priority": "الأولوية",
+      "noPackages": "لا توجد باقات بعد. أضف أول باقة للظهور.",
+      "noRules": "لا توجد قواعد تسعير. تُطبَّق الإعدادات الافتراضية حتى تُضيف قاعدة.",
+      "noSubcategories": "أكمل خطوات التسجيل أولًا — تحتاج إلى تصنيف خدمة واحد على الأقل.",
+      "goToOnboarding": "الانتقال للتسجيل",
+      "statusLabel": "الحالة",
+      "viewPublic": "عرض الملف العام",
+      "savedPackage": "تم حفظ الباقة.",
+      "deletedPackage": "تم حذف الباقة.",
+      "savedRule": "تم حفظ قاعدة التسعير.",
+      "deletedRule": "تم حذف قاعدة التسعير.",
+      "confirmDeletePackage": "هل تريد حذف هذه الباقة؟ ستُحذف معها قواعد التسعير المرتبطة بها.",
+      "confirmDeleteRule": "هل تريد حذف قاعدة التسعير هذه؟",
+      "priceFrom": "ابتداءً من {price}",
+      "qtyRange": "الكمية {min} – {max}",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "remove": "إزالة",
+      "addRow": "إضافة صف",
+      "ruleScopePackage": "الباقة: {name}",
+      "ruleScopeSupplier": "عام للمورد",
+      "ruleType": {
+        "qty_tier_all_units": "شرائح الكمية (على الكل)",
+        "qty_tier_incremental": "شرائح الكمية (تدريجي)",
+        "distance_fee": "رسوم المسافة",
+        "date_surcharge": "رسوم التاريخ",
+        "duration_multiplier": "معامل المدة"
+      },
+      "packageForm": {
+        "nameLabel": "اسم الباقة",
+        "subcategoryLabel": "التصنيف الفرعي",
+        "descriptionLabel": "الوصف",
+        "basePriceLabel": "السعر الأساسي (ريال)",
+        "basePriceHint": "يُحفظ بوحدة الهللة كعدد صحيح.",
+        "unitLabel": "وحدة البيع",
+        "unit": {
+          "event": "لكل فعالية",
+          "hour": "بالساعة",
+          "day": "باليوم",
+          "person": "لكل شخص",
+          "unit": "لكل وحدة"
+        },
+        "minQtyLabel": "الحد الأدنى للكمية",
+        "maxQtyLabel": "الحد الأقصى للكمية",
+        "maxQtyHint": "اتركه فارغًا بلا حد أعلى.",
+        "fromVisibleLabel": "إظهار سعر \"من\"",
+        "fromVisibleHint": "يتحكم بإظهار السعر في الصفحة العامة.",
+        "fromVisibleToggle": "إظهار السعر العام",
+        "activeToggle": "الباقة مفعلة ومرئية"
+      },
+      "ruleForm": {
+        "typeLabel": "نوع القاعدة",
+        "packageLabel": "تُطبَّق على الباقة",
+        "packageHint": "اتركه فارغًا لتطبيقها على كل الباقات.",
+        "packageAny": "كل الباقات (عام)",
+        "versionLabel": "الإصدار",
+        "qtyAllUnits": {
+          "gte": "الكمية ≥",
+          "discountPct": "نسبة الخصم %"
+        },
+        "qtyIncr": {
+          "from": "من كمية",
+          "to": "إلى كمية",
+          "toPlaceholder": "∞ (اتركه فارغًا)",
+          "priceHalalas": "سعر الوحدة (هللة)",
+          "hint": "يجب أن تكون الشرائح متصلة: from لكل شريحة يساوي to السابقة + 1."
+        },
+        "distance": {
+          "sarPerKm": "ريال لكل كم",
+          "freeRadiusKm": "نصف القطر المجاني (كم)",
+          "minFeeHalalas": "الحد الأدنى للرسوم (هللة)",
+          "maxFeeHalalas": "الحد الأقصى للرسوم (هللة، اختياري)"
+        },
+        "dateSurcharge": {
+          "scopeLabel": "النطاق",
+          "scope": {
+            "specific_date": "تاريخ محدد",
+            "named_period": "فترة مسمّاة (مثل رمضان)",
+            "weekday": "أيام الأسبوع"
+          },
+          "dateLabel": "التاريخ",
+          "nameLabel": "اسم الفترة",
+          "startLabel": "البداية",
+          "endLabel": "النهاية",
+          "daysLabel": "الأيام",
+          "multiplierLabel": "المعامل (مثلاً 1.15)",
+          "flatAddonHalalas": "إضافة ثابتة (هللة)",
+          "weekday": {
+            "mon": "اثن",
+            "tue": "ثلا",
+            "wed": "أرب",
+            "thu": "خمي",
+            "fri": "جمع",
+            "sat": "سبت",
+            "sun": "أحد"
+          }
+        },
+        "duration": {
+          "appliesFromDays": "يبدأ من N أيام",
+          "multiplier": "المعامل",
+          "label": "التسمية (اختياري)",
+          "dailyCapHalalas": "حد أقصى يومي (هللة، اختياري)"
+        }
+      }
     },
     "calendar": {
       "title": "التوفر",
@@ -178,9 +289,28 @@
   },
   "public": {
     "supplier": {
+      "profileEyebrow": "ملف المورد",
       "verifiedBadge": "مورد موثّق",
+      "portfolioHeading": "أعمال سابقة",
+      "noPortfolio": "لم يرفع هذا المورد أي صور بعد.",
+      "packagesHeading": "الباقات",
       "noPackages": "لم ينشر هذا المورد أي باقات بعد.",
-      "fromLabel": "ابتداءً من"
+      "reviewsHeading": "التقييمات",
+      "noReviews": "لا توجد تقييمات منشورة بعد. التقييمات مغلقة ولا تُنشر إلا بعد أن يُرسلها الطرفان أو ينتهي أسبوعان.",
+      "reviewsCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+      "fromLabel": "ابتداءً من",
+      "baseCity": "مقرها {city}",
+      "serviceArea": "يخدم {cities}",
+      "languages": "اللغات: {list}",
+      "backToHome": "← العودة إلى Sevent",
+      "qtyRange": "الكمية {min} – {max}",
+      "packageUnit": {
+        "event": "لكل فعالية",
+        "hour": "بالساعة",
+        "day": "باليوم",
+        "person": "لكل شخص",
+        "unit": "لكل وحدة"
+      }
     }
   }
 }

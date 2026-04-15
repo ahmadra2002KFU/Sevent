@@ -98,14 +98,125 @@
     },
     "catalog": {
       "title": "Catalog",
+      "subtitle": "Manage the packages you sell and the pricing rules that adjust the base price.",
       "packagesHeading": "Packages",
       "rulesHeading": "Pricing rules",
+      "rulesSubheading": "Rules are evaluated in priority order. Only one date surcharge rule wins per event date.",
+      "rulesSupplierWide": "Supplier-wide rules",
+      "rulesForPackage": "Rules for {name}",
       "newPackage": "New package",
       "newRule": "New rule",
       "activeToggle": "Active",
       "validFrom": "Valid from",
       "validTo": "Valid to",
-      "priority": "Priority"
+      "validWindow": "Valid {from} → {to}",
+      "priority": "Priority",
+      "noPackages": "No packages yet. Add your first package to go live.",
+      "noRules": "No pricing rules yet. Defaults apply until you add one.",
+      "noSubcategories": "Finish the onboarding wizard first — you need at least one service category.",
+      "goToOnboarding": "Go to onboarding",
+      "statusLabel": "Status",
+      "viewPublic": "View public profile",
+      "savedPackage": "Package saved.",
+      "deletedPackage": "Package deleted.",
+      "savedRule": "Pricing rule saved.",
+      "deletedRule": "Pricing rule deleted.",
+      "confirmDeletePackage": "Delete this package? All pricing rules scoped to it will also be removed.",
+      "confirmDeleteRule": "Delete this pricing rule?",
+      "priceFrom": "from {price}",
+      "qtyRange": "Qty {min} – {max}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "remove": "Remove",
+      "addRow": "Add row",
+      "ruleScopePackage": "Package: {name}",
+      "ruleScopeSupplier": "Supplier-wide",
+      "ruleType": {
+        "qty_tier_all_units": "Quantity tiers (all units)",
+        "qty_tier_incremental": "Quantity tiers (incremental)",
+        "distance_fee": "Distance fee",
+        "date_surcharge": "Date surcharge",
+        "duration_multiplier": "Duration multiplier"
+      },
+      "packageForm": {
+        "nameLabel": "Package name",
+        "subcategoryLabel": "Subcategory",
+        "descriptionLabel": "Description",
+        "basePriceLabel": "Base price (SAR)",
+        "basePriceHint": "Stored as integer halalas; rounding happens server-side.",
+        "unitLabel": "Sold per",
+        "unit": {
+          "event": "Per event",
+          "hour": "Per hour",
+          "day": "Per day",
+          "person": "Per person",
+          "unit": "Per unit"
+        },
+        "minQtyLabel": "Minimum quantity",
+        "maxQtyLabel": "Maximum quantity",
+        "maxQtyHint": "Leave blank for no upper limit.",
+        "fromVisibleLabel": "Show \"from\" price",
+        "fromVisibleHint": "Controls whether the price appears on the public profile.",
+        "fromVisibleToggle": "Show \"from\" price publicly",
+        "activeToggle": "Package is active and visible"
+      },
+      "ruleForm": {
+        "typeLabel": "Rule type",
+        "packageLabel": "Applies to package",
+        "packageHint": "Leave empty to apply to every package (supplier-wide).",
+        "packageAny": "All packages (supplier-wide)",
+        "versionLabel": "Version",
+        "qtyAllUnits": {
+          "gte": "Quantity ≥",
+          "discountPct": "Discount %"
+        },
+        "qtyIncr": {
+          "from": "From qty",
+          "to": "To qty",
+          "toPlaceholder": "∞ (leave empty)",
+          "priceHalalas": "Per-unit price (halalas)",
+          "hint": "Tiers must be contiguous: each tier's `from` equals the previous `to + 1`."
+        },
+        "distance": {
+          "sarPerKm": "SAR per km",
+          "freeRadiusKm": "Free radius (km)",
+          "minFeeHalalas": "Min fee (halalas)",
+          "maxFeeHalalas": "Max fee (halalas, optional)"
+        },
+        "dateSurcharge": {
+          "scopeLabel": "Scope",
+          "scope": {
+            "specific_date": "Specific date",
+            "named_period": "Named period (e.g. Ramadan)",
+            "weekday": "Weekday(s)"
+          },
+          "dateLabel": "Date",
+          "nameLabel": "Period name",
+          "startLabel": "Start",
+          "endLabel": "End",
+          "daysLabel": "Days",
+          "multiplierLabel": "Multiplier (e.g. 1.15)",
+          "flatAddonHalalas": "Flat addon (halalas)",
+          "weekday": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+          }
+        },
+        "duration": {
+          "appliesFromDays": "Applies from N days",
+          "multiplier": "Multiplier",
+          "label": "Label (optional)",
+          "dailyCapHalalas": "Daily cap (halalas, optional)"
+        }
+      }
     },
     "calendar": {
       "title": "Availability",
@@ -178,9 +289,28 @@
   },
   "public": {
     "supplier": {
+      "profileEyebrow": "Supplier profile",
       "verifiedBadge": "Verified supplier",
+      "portfolioHeading": "Portfolio",
+      "noPortfolio": "This supplier has not uploaded any photos yet.",
+      "packagesHeading": "Packages",
       "noPackages": "This supplier has not published any packages yet.",
-      "fromLabel": "from"
+      "reviewsHeading": "Reviews",
+      "noReviews": "No published reviews yet. Reviews are double-blind and only publish after both parties submit or the 14-day window closes.",
+      "reviewsCount": "{count, plural, one {# published review} other {# published reviews}}",
+      "fromLabel": "from",
+      "baseCity": "Based in {city}",
+      "serviceArea": "Serves {cities}",
+      "languages": "Languages: {list}",
+      "backToHome": "← Back to Sevent",
+      "qtyRange": "Qty {min} – {max}",
+      "packageUnit": {
+        "event": "Per event",
+        "hour": "Per hour",
+        "day": "Per day",
+        "person": "Per person",
+        "unit": "Per unit"
+      }
     }
   }
 }
