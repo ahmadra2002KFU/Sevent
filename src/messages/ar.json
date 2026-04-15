@@ -39,12 +39,62 @@
   "supplier": {
     "onboarding": {
       "title": "تسجيل المورد",
+      "intro": "أكمل ثلاث خطوات سريعة: معلومات المنشأة، المستندات، ونطاق العمل. يراجع فريقنا كل طلب قبل نشر ملفك للعموم.",
       "step1Heading": "معلومات المنشأة",
       "step2Heading": "رفع مستندات التحقق",
       "step3Heading": "نطاق العمل",
       "continue": "متابعة",
       "back": "رجوع",
-      "submit": "إرسال للمراجعة"
+      "submit": "إرسال للمراجعة",
+      "saving": "جارٍ الحفظ…",
+      "uploading": "جارٍ الرفع…",
+      "genericError": "حدث خطأ. حاول مرة أخرى.",
+      "submittedForReview": "تم إرسال ملفك للمراجعة. ستصلك رسالة بعد اعتماد المستندات.",
+      "statusLabel": "الحالة",
+      "businessNameLabel": "اسم المنشأة",
+      "legalTypeLabel": "الصفة النظامية",
+      "legalType": {
+        "company": "شركة مسجلة",
+        "freelancer": "عمل حر",
+        "foreign": "جهة أجنبية"
+      },
+      "crNumberLabel": "رقم السجل التجاري",
+      "nationalIdLabel": "رقم الهوية الوطنية",
+      "bioLabel": "نبذة قصيرة",
+      "bioHint": "جملتان أو ثلاث تصف عملك. تظهر في الصفحة العامة.",
+      "existingDocs": "المستندات المرفوعة سابقًا",
+      "step2RequireFile": "أرفق ملفًا لكل مستند ثم تابع.",
+      "docLabel": "مستند",
+      "docTypeLabel": "نوع المستند",
+      "docFileLabel": "الملف (PDF أو صورة)",
+      "docNotesLabel": "ملاحظات (اختياري)",
+      "docType": {
+        "cr": "السجل التجاري",
+        "vat": "شهادة ضريبة القيمة المضافة",
+        "id": "الهوية الوطنية",
+        "gea_permit": "تصريح هيئة الترفيه",
+        "certification": "شهادة مهنية",
+        "other": "أخرى"
+      },
+      "addAnother": "إضافة مستند آخر",
+      "remove": "حذف",
+      "baseCityLabel": "المدينة الرئيسية",
+      "baseLatLabel": "خط العرض (اختياري)",
+      "baseLngLabel": "خط الطول (اختياري)",
+      "latLngHint": "اختياري؛ يُستخدم في احتساب رسوم التنقل.",
+      "serviceAreaLabel": "مدن نطاق الخدمة",
+      "serviceAreaHint": "اكتب المدن مفصولة بفواصل، مثل: الرياض، جدة، الدمام.",
+      "languagesLabel": "اللغات التي تعمل بها",
+      "language": {
+        "ar": "العربية",
+        "en": "الإنجليزية"
+      },
+      "capacityLabel": "السعة (عدد الضيوف)",
+      "capacityHint": "أقصى عدد ضيوف يمكنك خدمته في فعالية واحدة.",
+      "concurrentLimitLabel": "فعاليات متزامنة",
+      "concurrentLimitHint": "كم فعالية يمكن أن تتداخل في نفس اليوم.",
+      "subcategoriesLabel": "الخدمات المقدمة",
+      "subcategoriesHint": "اختر كل الخدمات التي تستطيع تقديمها. يستخدمها المنظمون للفلترة."
     },
     "catalog": {
       "title": "الكتالوج",

@@ -13,7 +13,8 @@
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff -f",
     "db:new": "supabase migration new",
-    "supabase": "supabase"
+    "supabase": "supabase",
+    "seed": "tsx scripts/seed-users.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

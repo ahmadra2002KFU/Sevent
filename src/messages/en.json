@@ -39,12 +39,62 @@
   "supplier": {
     "onboarding": {
       "title": "Supplier onboarding",
+      "intro": "Complete three quick steps: business info, verification documents, and where you operate. Our team reviews every submission before your public profile goes live.",
       "step1Heading": "Business information",
       "step2Heading": "Upload verification documents",
       "step3Heading": "Where you work",
       "continue": "Continue",
       "back": "Back",
-      "submit": "Submit for review"
+      "submit": "Submit for review",
+      "saving": "Saving…",
+      "uploading": "Uploading…",
+      "genericError": "Something went wrong. Please try again.",
+      "submittedForReview": "Profile submitted for review. You will receive an email once an admin reviews your documents.",
+      "statusLabel": "Status",
+      "businessNameLabel": "Business name",
+      "legalTypeLabel": "Legal type",
+      "legalType": {
+        "company": "Registered company",
+        "freelancer": "Freelancer",
+        "foreign": "Foreign entity"
+      },
+      "crNumberLabel": "Commercial registration number",
+      "nationalIdLabel": "National ID",
+      "bioLabel": "Short bio",
+      "bioHint": "Two or three sentences describing the work you do. Shown on your public profile.",
+      "existingDocs": "Previously uploaded documents",
+      "step2RequireFile": "Attach a file to each document row, then continue.",
+      "docLabel": "Document",
+      "docTypeLabel": "Document type",
+      "docFileLabel": "File (PDF or image)",
+      "docNotesLabel": "Notes (optional)",
+      "docType": {
+        "cr": "Commercial registration",
+        "vat": "VAT certificate",
+        "id": "National ID",
+        "gea_permit": "GEA permit",
+        "certification": "Professional certification",
+        "other": "Other"
+      },
+      "addAnother": "Add another document",
+      "remove": "Remove",
+      "baseCityLabel": "Base city",
+      "baseLatLabel": "Latitude (optional)",
+      "baseLngLabel": "Longitude (optional)",
+      "latLngHint": "Optional; helps travel-fee calculations.",
+      "serviceAreaLabel": "Service area cities",
+      "serviceAreaHint": "Comma-separated list, e.g. Riyadh, Jeddah, Dammam.",
+      "languagesLabel": "Languages you can work in",
+      "language": {
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "capacityLabel": "Capacity (guests)",
+      "capacityHint": "Optional peak capacity you can service in a single event.",
+      "concurrentLimitLabel": "Concurrent events",
+      "concurrentLimitHint": "How many bookings can overlap on the same date.",
+      "subcategoriesLabel": "Services offered",
+      "subcategoriesHint": "Select every sub-service you can fulfil. Organizers filter on these."
     },
     "catalog": {
       "title": "Catalog",
