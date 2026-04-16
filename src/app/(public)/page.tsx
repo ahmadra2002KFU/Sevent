@@ -61,13 +61,13 @@ export default async function LandingPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/sign-up"
+              href="/sign-up?role=organizer"
               className="rounded-md bg-[var(--color-primary)] px-5 py-2.5 text-[var(--color-primary-foreground)] hover:opacity-90"
             >
               {t("hero.ctaOrganizer")}
             </Link>
             <Link
-              href="/sign-up"
+              href="/sign-up?role=supplier"
               className="rounded-md border border-[var(--color-border)] px-5 py-2.5 text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
             >
               {t("hero.ctaSupplier")}

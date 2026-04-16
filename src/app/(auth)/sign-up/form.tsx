@@ -5,7 +5,13 @@ import { signUpAction, type AuthState } from "../actions";
 
 const initial: AuthState = { ok: false };
 
-export function SignUpForm() {
+export type SignUpRole = "organizer" | "supplier" | "agency";
+
+export function SignUpForm({
+  initialRole = "organizer",
+}: {
+  initialRole?: SignUpRole;
+}) {
   const [state, formAction, pending] = useActionState(signUpAction, initial);
 
   return (
@@ -48,15 +54,30 @@ export function SignUpForm() {
       <fieldset className="flex flex-col gap-2 text-sm">
         <legend className="font-medium">I am …</legend>
         <label className="flex items-center gap-2">
-          <input type="radio" name="role" value="organizer" defaultChecked />
+          <input
+            type="radio"
+            name="role"
+            value="organizer"
+            defaultChecked={initialRole === "organizer"}
+          />
           Organizing an event (corporate, gov, agency, private)
         </label>
         <label className="flex items-center gap-2">
-          <input type="radio" name="role" value="supplier" />
+          <input
+            type="radio"
+            name="role"
+            value="supplier"
+            defaultChecked={initialRole === "supplier"}
+          />
           An event supplier (venue, catering, photography, decor, more)
         </label>
         <label className="flex items-center gap-2">
-          <input type="radio" name="role" value="agency" />
+          <input
+            type="radio"
+            name="role"
+            value="agency"
+            defaultChecked={initialRole === "agency"}
+          />
           An agency booking on behalf of clients
         </label>
       </fieldset>
