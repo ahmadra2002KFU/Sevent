@@ -29,7 +29,10 @@ import {
 } from "@/lib/domain/matching/autoMatch";
 import { fetchAutoMatchCandidates } from "@/lib/domain/matching/query";
 import { parseRfqExtension, type RfqExtensionKind } from "@/lib/domain/rfq";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 
 const ALLOWED_ROLES = ["organizer", "agency", "admin"] as const;
 
@@ -44,7 +47,8 @@ async function requireOrganizerRole(
   } = await supabase.auth.getUser();
   if (userErr || !user) return { error: "You must be signed in." };
 
-  const { data: profile } = await supabase
+  const admin = await createSupabaseServiceRoleClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)

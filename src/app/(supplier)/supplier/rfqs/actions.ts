@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 
 const DeclineInput = z.object({
   invite_id: z.string().uuid(),
@@ -34,7 +37,8 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
   // Confirm the caller is a supplier and resolve their supplier row. RLS on
   // rfq_invites enforces that the UPDATE only touches rows owned by this
   // supplier, but we guard early in application code for clearer errors.
-  const { data: profile } = await supabase
+  const admin = await createSupabaseServiceRoleClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)

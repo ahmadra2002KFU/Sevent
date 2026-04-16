@@ -21,7 +21,10 @@ import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { EventFormInput } from "@/lib/domain/events";
 import { sarToHalalas } from "@/lib/domain/money";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 
 const ALLOWED_ROLES = ["organizer", "agency", "admin"] as const;
 
@@ -65,7 +68,8 @@ export async function createEventAction(formData: FormData): Promise<void> {
     throw new Error("You must be signed in to create an event.");
   }
 
-  const { data: profile } = await supabase
+  const admin = await createSupabaseServiceRoleClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
