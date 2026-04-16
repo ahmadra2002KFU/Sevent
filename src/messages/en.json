@@ -252,6 +252,37 @@
         "sat": "Sat"
       }
     },
+    "dashboard": {
+      "title": "Supplier dashboard",
+      "subtitle": "Track new invites, verification progress, and upcoming work in one place.",
+      "stats": {
+        "invitesReceived": "Invites received",
+        "responseRate": "Response rate",
+        "winRate": "Win rate",
+        "emptyValue": "—"
+      },
+      "verification": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "recentInvites": {
+        "heading": "Latest RFQ invites",
+        "empty": "No RFQ invites yet.",
+        "openInbox": "Open inbox",
+        "expired": "Expired"
+      },
+      "upcomingBookings": {
+        "heading": "Upcoming bookings",
+        "empty": "No bookings yet — available from Sprint 4."
+      },
+      "completeOnboardingCta": "Complete onboarding",
+      "welcome": {
+        "heading": "Welcome",
+        "body": "Start onboarding to create your supplier profile, upload verification documents, and begin receiving RFQ invites.",
+        "cta": "Start onboarding"
+      }
+    },
     "rfqInbox": {
       "title": "RFQ inbox",
       "subtitle": "Respond quickly — organizers pick faster than they expect.",

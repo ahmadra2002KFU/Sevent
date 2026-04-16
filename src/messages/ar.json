@@ -252,6 +252,37 @@
         "sat": "سبت"
       }
     },
+    "dashboard": {
+      "title": "لوحة تحكم المورد",
+      "subtitle": "تابع الدعوات الجديدة وحالة التحقق والعمل القادم من مكان واحد.",
+      "stats": {
+        "invitesReceived": "الدعوات المستلمة",
+        "responseRate": "معدل الرد",
+        "winRate": "معدل الفوز",
+        "emptyValue": "—"
+      },
+      "verification": {
+        "pending": "قيد المراجعة",
+        "approved": "معتمد",
+        "rejected": "مرفوض"
+      },
+      "recentInvites": {
+        "heading": "أحدث دعوات طلبات التسعير",
+        "empty": "لا توجد دعوات طلبات تسعير حتى الآن.",
+        "openInbox": "فتح الوارد",
+        "expired": "منتهي"
+      },
+      "upcomingBookings": {
+        "heading": "الحجوزات القادمة",
+        "empty": "لا توجد حجوزات بعد — ستتوفر ابتداءً من Sprint 4."
+      },
+      "completeOnboardingCta": "أكمل التسجيل",
+      "welcome": {
+        "heading": "مرحبًا",
+        "body": "ابدأ التسجيل لإنشاء ملف المورد ورفع مستندات التحقق والبدء في استلام دعوات طلبات التسعير.",
+        "cta": "ابدأ التسجيل"
+      }
+    },
     "rfqInbox": {
       "title": "RFQ inbox",
       "subtitle": "Respond quickly — organizers pick faster than they expect.",
