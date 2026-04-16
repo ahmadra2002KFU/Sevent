@@ -405,7 +405,70 @@
       "noMatches": "No matching suppliers yet. Try widening the date range or picking a different subcategory.",
       "shortlistEmpty": "Add at least one supplier to your shortlist before sending.",
       "removeSupplier": "Remove",
-      "addSupplier": "Add"
+      "addSupplier": "Add",
+      "extensions": {
+        "venues": {
+          "heading": "Venue requirements",
+          "seatingStyle": {
+            "label": "Seating style",
+            "rounds": "Round tables",
+            "theatre": "Theatre",
+            "classroom": "Classroom",
+            "cocktail": "Cocktail",
+            "majlis": "Majlis"
+          },
+          "indoorOutdoor": {
+            "label": "Indoor or outdoor",
+            "indoor": "Indoor",
+            "outdoor": "Outdoor",
+            "either": "Either"
+          },
+          "needsParking": "Needs parking",
+          "needsKitchen": "Needs kitchen access"
+        },
+        "catering": {
+          "heading": "Catering requirements",
+          "mealType": {
+            "label": "Meal type",
+            "buffet": "Buffet",
+            "plated": "Plated",
+            "coffee_break": "Coffee break",
+            "cocktail": "Cocktail"
+          },
+          "dietary": {
+            "label": "Dietary requirements",
+            "halal_only": "Halal only",
+            "vegetarian": "Vegetarian",
+            "vegan": "Vegan",
+            "gluten_free": "Gluten free",
+            "nut_free": "Nut free"
+          },
+          "serviceStyle": {
+            "label": "Service style",
+            "self_serve": "Self-serve",
+            "served": "Served",
+            "mixed": "Mixed"
+          }
+        },
+        "photography": {
+          "heading": "Photography requirements",
+          "coverageHours": "Coverage hours",
+          "deliverables": {
+            "label": "Deliverables",
+            "photos": "Photos",
+            "video": "Video",
+            "drone": "Drone / aerial",
+            "same_day_edit": "Same-day edit",
+            "printed_album": "Printed album"
+          },
+          "crewSize": "Crew size"
+        },
+        "generic": {
+          "heading": "Requirements",
+          "notesLabel": "Notes",
+          "notesPlaceholder": "Describe what you need from this supplier — scope, must-haves, preferences."
+        }
+      }
     },
     "shortlist": {
       "heading": "Suggested suppliers",
