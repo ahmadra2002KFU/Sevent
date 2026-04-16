@@ -48,7 +48,7 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
     throw new Error("Supplier role required");
   }
 
-  const { data: supplierRow } = await supabase
+  const { data: supplierRow } = await admin
     .from("suppliers")
     .select("id")
     .eq("profile_id", user.id)
@@ -60,10 +60,12 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
 
   const supplierId = (supplierRow as { id: string }).id;
 
-  // RLS policy on rfq_invites already restricts updates to rows where
-  // supplier_id matches the caller's supplier. We repeat the predicate here
-  // as a belt-and-suspenders check.
-  const { error } = await supabase
+  // Route the UPDATE through the service-role client. The RLS policies on
+  // rfq_invites (organizer-write via events, supplier-self-update) trigger the
+  // same rfq_invites ↔ rfqs recursion we hit on the organizer send path.
+  // Service-role bypasses policy evaluation entirely; ownership is enforced
+  // below by filtering on (id = invite_id AND supplier_id = caller_supplier).
+  const { error } = await admin
     .from("rfq_invites")
     .update({
       status: "declined",
