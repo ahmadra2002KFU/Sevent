@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 
 const signUpSchema = z.object({
   email: z.string().email(),
@@ -84,12 +87,16 @@ export async function signInAction(
   const userId = data.user?.id;
   let target = parsed.data.next ?? "/";
   if (!parsed.data.next && userId) {
-    const { data: profile } = await supabase
+    // Service-role lookup: @supabase/ssr + sb_publishable_* keys don't forward
+    // the user JWT to PostgREST here, so the RLS-scoped profile read returns
+    // null and admins were being routed to /organizer/dashboard.
+    const admin = createSupabaseServiceRoleClient();
+    const { data: profile } = await admin
       .from("profiles")
       .select("role")
       .eq("id", userId)
       .maybeSingle();
-    const role = profile?.role ?? "organizer";
+    const role = (profile as { role: string } | null)?.role ?? "organizer";
     const byRole: Record<string, string> = {
       organizer: "/organizer/dashboard",
       supplier: "/supplier/dashboard",
