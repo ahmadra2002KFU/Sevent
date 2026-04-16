@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 import { formatHalalas } from "@/lib/domain/money";
 import { declineInviteAction } from "../actions";
 
@@ -154,14 +154,12 @@ function RequirementsBlock({ requirements }: { requirements: unknown }) {
 export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
   const t = await getTranslations("supplier.rfqInbox");
-  const supabase = await createSupabaseServerClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) notFound();
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect(`/sign-in?next=/supplier/rfqs/${id}`);
+  const { user, admin } = auth;
 
-  const { data: supplierRow } = await supabase
+  const { data: supplierRow } = await admin
     .from("suppliers")
     .select("id")
     .eq("profile_id", user.id)
@@ -169,7 +167,7 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
 
   if (!supplierRow) notFound();
 
-  const { data: inviteData } = await supabase
+  const { data: inviteData } = await admin
     .from("rfq_invites")
     .select(
       `id, supplier_id, status, sent_at, response_due_at, responded_at, decline_reason_code,

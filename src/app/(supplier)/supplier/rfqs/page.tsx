@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -57,22 +58,12 @@ function formatEventDate(iso: string): string {
 
 export default async function SupplierRfqInboxPage() {
   const t = await getTranslations("supplier.rfqInbox");
-  const supabase = await createSupabaseServerClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect("/sign-in?next=/supplier/rfqs");
+  const { user, admin } = auth;
 
-  if (!user) {
-    return (
-      <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
-      </section>
-    );
-  }
-
-  const { data: supplierRow } = await supabase
+  const { data: supplierRow } = await admin
     .from("suppliers")
     .select("id")
     .eq("profile_id", user.id)
@@ -89,7 +80,7 @@ export default async function SupplierRfqInboxPage() {
 
   const supplierId = (supplierRow as { id: string }).id;
 
-  const { data: invitesData } = await supabase
+  const { data: invitesData } = await admin
     .from("rfq_invites")
     .select(
       `id, status, sent_at, response_due_at, responded_at, decline_reason_code,

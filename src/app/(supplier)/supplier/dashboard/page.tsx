@@ -6,7 +6,7 @@ import type {
   SupplierDocStatus,
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -200,13 +200,9 @@ export default async function SupplierDashboardPage() {
   const rfqInboxT = await getTranslations("supplier.rfqInbox");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-SA" : "en-SA";
-  const supabase = await createSupabaseServerClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) {
     return (
       <WelcomeState
         title={t("title")}
@@ -217,8 +213,9 @@ export default async function SupplierDashboardPage() {
       />
     );
   }
+  const { user, admin } = auth;
 
-  const { data: supplier } = await supabase
+  const { data: supplier } = await admin
     .from("suppliers")
     .select("id, verification_status")
     .eq("profile_id", user.id)
@@ -247,26 +244,26 @@ export default async function SupplierDashboardPage() {
     recentInvitesRes,
     bookingsRes,
   ] = await Promise.all([
-    supabase
+    admin
       .from("rfq_invites")
       .select("id", { count: "exact", head: true })
       .eq("supplier_id", supplierSummary.id)
       .gt("sent_at", cutoffIso),
-    supabase
+    admin
       .from("rfq_invites")
       .select("sent_at, responded_at")
       .eq("supplier_id", supplierSummary.id)
       .gt("sent_at", cutoffIso),
-    supabase
+    admin
       .from("quotes")
       .select("status")
       .eq("supplier_id", supplierSummary.id)
       .in("status", TERMINAL_QUOTE_STATUSES),
-    supabase
+    admin
       .from("supplier_docs")
       .select("id, status")
       .eq("supplier_id", supplierSummary.id),
-    supabase
+    admin
       .from("rfq_invites")
       .select(
         `id, status, response_due_at,
@@ -278,7 +275,7 @@ export default async function SupplierDashboardPage() {
       .eq("supplier_id", supplierSummary.id)
       .order("sent_at", { ascending: false })
       .limit(5),
-    supabase
+    admin
       .from("bookings")
       .select("id", { count: "exact", head: true })
       .eq("supplier_id", supplierSummary.id),
