@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -97,23 +97,40 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const t = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const supabase = await createSupabaseServerClient();
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect(`/sign-in?next=/organizer/rfqs/${id}`);
+  const { user, admin } = auth;
 
-  const { data: rfqData } = await supabase
+  // Service-role read because @supabase/ssr + new key format doesn't forward
+  // the user JWT reliably for RLS. Ownership is enforced in code below.
+  const { data: rfqData } = await admin
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at, requirements_jsonb,
-       events ( id, event_type, client_name, city, starts_at, ends_at, guest_count ),
+       events ( id, event_type, client_name, city, starts_at, ends_at, guest_count, organizer_id ),
        parent:categories!rfqs_category_id_fkey ( id, name_en ),
        sub:categories!rfqs_subcategory_id_fkey ( id, name_en )`,
     )
     .eq("id", id)
     .maybeSingle();
 
-  const rfq = rfqData as unknown as RfqDetail | null;
+  const rfq = rfqData as unknown as (RfqDetail & { events: RfqDetail["events"] & { organizer_id?: string } | null }) | null;
   if (!rfq) notFound();
 
-  const { data: invitesData } = await supabase
+  // Enforce ownership: only the organizer who owns the parent event, or an admin,
+  // may view the RFQ. Admins get a free pass via their profile role lookup.
+  const ownsEvent = rfq.events?.organizer_id === user.id;
+  if (!ownsEvent) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const role = (profile as { role: string } | null)?.role;
+    if (role !== "admin") notFound();
+  }
+
+  const { data: invitesData } = await admin
     .from("rfq_invites")
     .select(
       `id, source, status, sent_at, response_due_at, responded_at, decline_reason_code,

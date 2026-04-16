@@ -30,6 +30,34 @@ export async function createSupabaseServerClient() {
 }
 
 /**
+ * Authenticate the current request and return both the user and a service-role
+ * Supabase handle for RLS-free reads scoped by the page logic.
+ *
+ * Motivation: @supabase/ssr@0.10.2 with the new `sb_publishable_*` key format
+ * doesn't reliably forward the user's access_token to PostgREST for RLS-scoped
+ * SELECTs in server components / server actions — `auth.getUser()` works but
+ * `.from(table).select(...)` returns empty even for rows the user owns. Until
+ * that upstream gap is addressed, every server-side read on a user-scoped page
+ * should go through this helper: authenticate once with the user client, then
+ * read via the bypass-RLS admin client while enforcing ownership in code.
+ *
+ * Returns `null` when the request has no authenticated user so callers can
+ * redirect to sign-in.
+ */
+export async function authenticateAndGetAdminClient(): Promise<
+  | { user: { id: string; email: string | null }; admin: ReturnType<typeof createSupabaseServiceRoleClient> }
+  | null
+> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  return {
+    user: { id: user.id, email: user.email ?? null },
+    admin: createSupabaseServiceRoleClient(),
+  };
+}
+
+/**
  * Returns a Supabase client authenticated as the service-role, with NO user
  * session and NO cookies attached. This really bypasses RLS because PostgREST
  * sees only the service-role JWT in the `apikey` slot — no competing
