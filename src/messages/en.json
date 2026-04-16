@@ -287,7 +287,176 @@
       "errorAdminRequired": "Admin role required to view this page."
     }
   },
+  "organizer": {
+    "dashboard": {
+      "title": "Organizer dashboard",
+      "subtitle": "Your events, RFQs, and incoming quotes — all in one place.",
+      "statTotalEvents": "Total events",
+      "statOpenRfqs": "Open RFQs",
+      "statAwaitingQuotes": "Awaiting quotes",
+      "noEvents": "No events yet. Create one to send your first RFQ.",
+      "newEvent": "New event",
+      "viewAll": "View all",
+      "latestRfqs": "Latest RFQs"
+    },
+    "events": {
+      "title": "Events",
+      "subtitle": "Every event you are planning on Sevent.",
+      "newEvent": "New event",
+      "empty": "No events yet. Create your first event to start sending RFQs.",
+      "table": {
+        "event": "Event",
+        "date": "Date",
+        "city": "City",
+        "guests": "Guests",
+        "rfqs": "RFQs"
+      },
+      "detailTitle": "Event detail"
+    },
+    "eventForm": {
+      "title": "New event",
+      "editTitle": "Edit event",
+      "saving": "Saving…",
+      "submit": "Save event",
+      "cancel": "Cancel",
+      "eventTypeLabel": "Event type",
+      "cityLabel": "City",
+      "clientNameLabel": "Client / host name (optional)",
+      "venueAddressLabel": "Venue address",
+      "startsAtLabel": "Starts at",
+      "endsAtLabel": "Ends at",
+      "guestCountLabel": "Guest count",
+      "budgetMinLabel": "Budget minimum (SAR)",
+      "budgetMaxLabel": "Budget maximum (SAR)",
+      "notesLabel": "Notes",
+      "error": {
+        "eventTypeRequired": "Choose an event type.",
+        "cityRequired": "Choose a city.",
+        "venueAddressRequired": "Enter the venue address.",
+        "venueAddressTooLong": "Venue address is too long.",
+        "startsAtRequired": "Pick a start date and time.",
+        "endsAtRequired": "Pick an end date and time.",
+        "endsAfterStart": "End time must be after the start time.",
+        "guestCountRange": "Guest count must be between 1 and 100,000.",
+        "budgetNonNegative": "Budget values cannot be negative.",
+        "budgetMaxLessThanMin": "Maximum budget must be greater than or equal to the minimum.",
+        "notesTooLong": "Notes are too long (2000 character max)."
+      },
+      "eventType": {
+        "wedding": "Wedding",
+        "corporate": "Corporate",
+        "government": "Government",
+        "exhibition": "Exhibition",
+        "birthday": "Birthday",
+        "private": "Private",
+        "other": "Other"
+      },
+      "city": {
+        "Riyadh": "Riyadh",
+        "Jeddah": "Jeddah",
+        "Dammam": "Dammam",
+        "Mecca": "Mecca",
+        "Medina": "Medina",
+        "Khobar": "Khobar",
+        "Taif": "Taif"
+      }
+    },
+    "rfqs": {
+      "title": "RFQs",
+      "subtitle": "Every request for quote you have sent.",
+      "empty": "No RFQs yet. Create an event, then send your first RFQ.",
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "quoted": "Quoted",
+        "expired": "Expired",
+        "booked": "Booked",
+        "cancelled": "Cancelled"
+      },
+      "inviteStatus": {
+        "invited": "Invited",
+        "declined": "Declined",
+        "quoted": "Quoted",
+        "withdrawn": "Withdrawn"
+      }
+    },
+    "rfqWizard": {
+      "stepLabels": {
+        "1": "Event",
+        "2": "Category",
+        "3": "Details",
+        "4": "Shortlist"
+      },
+      "pickEvent": "Pick an event",
+      "pickCategory": "Pick a category",
+      "pickSubcategory": "Pick a subcategory",
+      "extensionHeading": "Requirements",
+      "reviewHeading": "Review",
+      "confirmHeading": "Confirm and send",
+      "responseDeadlineLabel": "Response deadline",
+      "deadline24h": "Within 24 hours",
+      "deadline48h": "Within 48 hours",
+      "deadline72h": "Within 72 hours",
+      "sending": "Sending…",
+      "sendRfq": "Send RFQ",
+      "cancelStep": "Cancel",
+      "back": "Back",
+      "next": "Next",
+      "noMatches": "No matching suppliers yet. Try widening the date range or picking a different subcategory.",
+      "shortlistEmpty": "Add at least one supplier to your shortlist before sending.",
+      "removeSupplier": "Remove",
+      "addSupplier": "Add"
+    },
+    "shortlist": {
+      "heading": "Suggested suppliers",
+      "addHeading": "Shortlist",
+      "reasons": {
+        "verified": "Verified supplier",
+        "sameCity": "Based in {city}",
+        "serviceArea": "Serves {city}",
+        "packagesInRange": "Packages match {guests} guests",
+        "respondsWithin": "Usually responds within {hours}h",
+        "availableDate": "Available on {date}",
+        "rotating": "Rotating in new supplier"
+      }
+    }
+  },
+  "supplier.rfqInbox": {
+    "title": "RFQ inbox",
+    "subtitle": "Respond quickly — organizers pick faster than they expect.",
+    "empty": "No RFQs yet. Keep your calendar and packages up to date so we can match you.",
+    "countdownHours": "{hours}h remaining",
+    "expiresIn": "Expires in {time}",
+    "decline": "Decline",
+    "declineReasonLabel": "Why are you declining?",
+    "declineReason": {
+      "too_busy": "We're booked that day",
+      "out_of_area": "Out of service area",
+      "price_mismatch": "Budget doesn't fit our offering",
+      "other": "Other"
+    },
+    "quoteLater": "Quote",
+    "status": {
+      "invited": "Invited",
+      "declined": "Declined",
+      "quoted": "Quoted",
+      "withdrawn": "Withdrawn"
+    }
+  },
   "public": {
+    "categories": {
+      "title": "Browse categories",
+      "subtitle": "Every supplier category on Sevent. Pick a category to explore subcategories and suppliers.",
+      "empty": "No categories available yet.",
+      "viewSubcategory": "View subcategory"
+    },
+    "search": {
+      "cityFilterLabel": "City",
+      "allCities": "All cities",
+      "subcategoryHeading": "Suppliers in {name}",
+      "noResults": "No suppliers match your filters yet.",
+      "viewProfile": "View profile"
+    },
     "supplier": {
       "profileEyebrow": "Supplier profile",
       "verifiedBadge": "Verified supplier",

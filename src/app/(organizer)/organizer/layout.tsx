@@ -3,14 +3,12 @@ import { cn } from "@/lib/utils";
 import { signOutAction } from "../../(auth)/actions";
 
 const nav = [
-  { href: "/supplier/dashboard", label: "Dashboard" },
-  { href: "/supplier/onboarding", label: "Onboarding" },
-  { href: "/supplier/catalog", label: "Catalog" },
-  { href: "/supplier/calendar", label: "Calendar" },
-  { href: "/supplier/rfqs", label: "RFQs" },
+  { href: "/organizer/dashboard", label: "Dashboard" },
+  { href: "/organizer/events", label: "Events" },
+  { href: "/organizer/rfqs", label: "RFQs" },
 ];
 
-export default function SupplierLayout({
+export default function OrganizerLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -29,7 +27,7 @@ export default function SupplierLayout({
               }}
             />
             <span className="text-base font-semibold tracking-tight">
-              Sevent · Supplier
+              Sevent · Organizer
             </span>
           </Link>
           <nav className="flex items-center gap-1 text-sm">

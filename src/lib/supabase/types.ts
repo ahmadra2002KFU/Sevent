@@ -144,3 +144,107 @@ export type AvailabilityBlockRow = {
   created_by: string | null;
   created_at: string;
 };
+
+// ---------------------------------------------------------------------------
+// Sprint 3 — events, rfqs, rfq_invites, quotes
+// ---------------------------------------------------------------------------
+
+export type EventType =
+  | "wedding"
+  | "corporate"
+  | "government"
+  | "exhibition"
+  | "birthday"
+  | "private"
+  | "other";
+
+export type RfqStatus =
+  | "draft"
+  | "sent"
+  | "quoted"
+  | "expired"
+  | "booked"
+  | "cancelled";
+
+export type RfqInviteSource = "auto_match" | "organizer_picked";
+
+export type RfqInviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
+
+export type QuoteStatus =
+  | "draft"
+  | "sent"
+  | "accepted"
+  | "rejected"
+  | "expired"
+  | "withdrawn";
+
+export type QuoteSource = "rule_engine" | "free_form" | "mixed";
+
+export type BookingConfirmationStatus =
+  | "awaiting_supplier"
+  | "confirmed"
+  | "cancelled";
+
+export type EventRow = {
+  id: string;
+  organizer_id: string;
+  client_name: string | null;
+  event_type: EventType;
+  city: string;
+  venue_address: string | null;
+  venue_location: unknown | null; // PostGIS geography(point, 4326)
+  starts_at: string;
+  ends_at: string;
+  guest_count: number | null;
+  budget_range_min_halalas: number | null;
+  budget_range_max_halalas: number | null;
+  currency: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RfqRow = {
+  id: string;
+  event_id: string;
+  category_id: string;
+  subcategory_id: string;
+  status: RfqStatus;
+  requirements_jsonb: unknown;
+  expires_at: string | null;
+  sent_at: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RfqInviteRow = {
+  id: string;
+  rfq_id: string;
+  supplier_id: string;
+  source: RfqInviteSource;
+  status: RfqInviteStatus;
+  sent_at: string;
+  response_due_at: string;
+  responded_at: string | null;
+  decline_reason_code: string | null;
+};
+
+export type QuoteRow = {
+  id: string;
+  rfq_id: string;
+  supplier_id: string;
+  quoted_package_id: string | null;
+  source: QuoteSource;
+  status: QuoteStatus;
+  currency: string;
+  current_revision_id: string | null;
+  supplier_response_deadline: string | null;
+  sent_at: string | null;
+  accepted_at: string | null;
+  rejected_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
