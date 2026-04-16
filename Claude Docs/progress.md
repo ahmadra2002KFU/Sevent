@@ -124,16 +124,65 @@ Sprint 2 main HEAD: `76913ba` · pushed to `origin/main`.
 
 ---
 
-## Next up — Sprint 3 (2026-05-18 → 2026-05-31)
+## Sprint 3 — Organizer RFQ flow & auto-match (2026-05-18 → 2026-05-31)
 
-Theme: Organizer RFQ flow & auto-match.
+Status: **code complete on `main` · live DB verification pending user starts Docker**.
 
-Dependency: live verification of Sprints 1 + 2 (Docker + seed + walk the onboarding/verify/catalog/calendar flow end-to-end in a browser). Preview deliverables per `sprints.md` Sprint 3:
+Executed Lane 0 synchronously on `main`, then Lanes 2 → 1 → 3 **sequentially** (worktree isolation unavailable in this harness — no `WorktreeCreate` hook configured; fell back to sequential per Sprint 2 retro's backup plan).
 
-- Organizer dashboard + event creation.
-- RFQ wizard: universal core + category-specific extension block.
-- Public browse: category + city filters only.
-- Auto-match v1: hard filters (approved+published, category, city/service-area, no availability conflict, capacity remaining, package qty range) + ranked top-5 (capability / travel / responsiveness / booking-quality / rotation).
-- Supplier RFQ inbox.
+### Completed work
 
-Parallelization strategy to decide at Sprint 3 kickoff: whether to invest in real git worktree isolation (hook) OR drop to 2 sequential lanes given the shared-tree pain this sprint.
+| # | Lane | Commit | Notes |
+|---|---|---|---|
+| S3-0 | Lane 0 — shared primitives | `8c6b185` | Organizer layout + route stubs; `src/lib/domain/events.ts` (`EVENT_TYPES`, `CITY_OPTIONS`, `EventFormInput`, `EventRow`), `rfq.ts` (`RfqExtension` discriminated union + `parseRfqExtension`); skeletons for `matching/{autoMatch,query,reasons}.ts` + `responsiveness.ts` (throw "not implemented — Lane 2"); extended `src/lib/supabase/types.ts` with `EventRow / RfqRow / RfqInviteRow / QuoteRow`; `vitest` + `@vitest/ui` in devDeps + `vitest.config.ts` + `money.test.ts` smoke; i18n namespaces `organizer.*`, `supplier.rfqInbox`, `public.{categories,search}` (en + ar stub). |
+| S3-2 | Lane 2 — auto-match + supplier RFQ inbox | `e213e24` | `computeAutoMatch` real body (weights 0.45 capability · 0.20 travel · 0.15 responsiveness · 0.10 booking_quality · 0.10 rotation), deterministic, stable tiebreak `supplier_id ASC`, top-5 cap. `fetchAutoMatchCandidates` applies plan.md hard filters (approved+published + subcategory link + city/service-area via PostgREST `.or()` in SQL; availability-overlap + capacity + qty-range in TS post-filter because `NOT EXISTS` across joins is awkward in supabase-js). `computeResponseRate30d` returns null when invites<5. **15 Vitest cases** for determinism + tiebreak + travel ranking + capability floor + rotation penalty + guest-null branch + top-5 cap + score bounds + reasons attachment. `/supplier/rfqs` list with countdown + `[id]` detail + `declineInviteAction`. |
+| S3-1 | Lane 1 — public browse + RFQ extension forms | `a1552f0` | `/categories` grid with per-parent supplier count · `/categories/[parent]?city=…` subcategory listing with city dropdown filter (TS-level city match on joined rows). `src/lib/domain/publicBrowse.ts` read-side DTOs. Extension form components (`VenuesExtensionForm` / `CateringExtensionForm` / `PhotographyExtensionForm` / `GenericExtensionForm`) + dispatcher `<RfqExtensionForm kind={...} value={...} onChange={...} errors={...} />` + `defaultExtensionFor(kind)` (parse-clean). i18n keys under `organizer.rfqWizard.extensions.*`. |
+| S3-3 | Lane 3 — organizer UX + RFQ wizard + send action | `ffebf0e` | Real organizer dashboard (event count, RFQ stats, latest RFQs, upcoming events). `/organizer/events` list + `/new` RHF form (custom resolver wrapping `EventFormInput` so datetime-local strings round-trip through ISO before Zod validates) + `[id]` detail. `/organizer/rfqs` list + detail with invites table. **4-step client wizard**: pick event/category → extension (auto-kind by parent slug, overridable) → auto-match shortlist (remove matched + debounced search-and-add, 1–10 bounds) → review + send (24/48/72h deadline). Server actions: `createEventAction`, `listMyEventsAction`, `listCategoriesAction`, `previewAutoMatchAction` (try/catch → `matching_offline`), `searchApprovedSuppliersAction`, `sendRfqAction` with `upsert onConflict(rfq_id, supplier_id)`. `ShortlistEditor` client component. |
+
+Sprint 3 main HEAD: `ffebf0e` · pushed to `origin/main`.
+
+### Verification state
+
+- `pnpm exec tsc --noEmit` — **clean (0 errors)**.
+- `pnpm exec eslint src` — **clean (0 errors, 3 benign warnings)** — two RHF `watch()` compiler warnings (pre-existing pattern in onboarding + new event form); one `_candidate` unused param in Sprint 5 booking-quality placeholder.
+- `pnpm test` — **16 tests across 2 files green** (Lane 0 money smoke + Lane 2 `autoMatch` 15-case suite).
+- `pnpm exec next build --webpack` — **still blocked** by the pre-existing exFAT/webpack EISDIR bug on `readlink src/app/*`. Verified to reproduce on a clean checkout — not a Lane 0/1/2/3 regression. Production build must run on Linux / NTFS (WSL2, Ubuntu host, or CI). Remains deferred to Sprint 6 hardening, possibly via `next.config.ts` `webpack.resolve.symlinks = false`.
+- Live DB verification still pending Docker — user needs to run `pnpm db:start && pnpm db:reset && pnpm seed && pnpm dev` and walk the organizer path.
+
+### Sprint 3 acceptance criteria (from `sprints.md`) — status
+
+- [x] Public landing + category index + subcategory listing (server components).
+- [x] Public search: category + city only.
+- [x] Organizer dashboard: "Events" list, "RFQs" status table.
+- [x] Create-event form (event_type, date range, city, venue via free-form address, guest_count, budget_range). **Places Autocomplete deferred** to Sprint 6 per locked plan.
+- [x] RFQ wizard: universal fields + category-specific extension block (schema-driven).
+- [x] Auto-match (hard filters + ranked top-5 with human-readable reasons).
+- [x] Organizer shortlist editor: remove auto-suggested or add approved suppliers.
+- [x] Send RFQ: creates `rfq_invites` with `sent_at`, `response_due_at` (24h default, 48/72h options).
+- [x] Supplier RFQ inbox: list with countdown + detail view + decline action.
+- [x] Unit tests for auto-match hard filters + ranking determinism (15 Vitest cases).
+- [ ] Live walk: organizer creates event → sends RFQ → invited suppliers see it in their inbox · cross-supplier RLS denial verified — **pending Docker + user walk-through**.
+
+### Observed friction worth carrying forward
+
+- **Worktree isolation not wired in this harness.** The Agent tool needs a `WorktreeCreate` hook in `settings.json` to use `isolation: "worktree"`. Without it, all three lanes ran sequentially on `main`. Sprint 4 should either land that hook (so lanes parallelize cleanly) or accept sequential as the steady state. Sequential was slower but produced 4 clean commits with zero stomping.
+- **`pnpm exec next build` remains broken on exFAT.** Verified on clean `main` without any Sprint 3 changes. Either the `webpack.resolve.symlinks = false` workaround or a WSL2 build host is the fix.
+- **`sendRfqAction` upsert is unconditional** — re-sending an RFQ could overwrite a `quoted`/`declined` invite back to `invited`. Documented TODO in the action file; Sprint 6 should convert to an RPC with conditional transition rules (`invited ↔ withdrawn` only).
+- **Wizard i18n partially inline** — step labels, table headers, a few shortlist-editor strings are still hardcoded English. All other strings use `getTranslations`. Sprint 6 polish pass should complete.
+- **Reasons rendered as English literals** (not i18n keys) from `reasonsFor` — Lane 2 chose this to keep the pure function signature simple; a Sprint 6 refactor should inline a tiny `getTranslations` wrapper when called from server contexts.
+
+---
+
+## Next up — Sprint 4 (2026-06-01 → 2026-06-14)
+
+Theme: Pricing engine, quote revisions, acceptance soft-hold.
+
+Dependency: live verification of Sprint 3 (Docker + seed + walk organizer → event → RFQ → supplier inbox end-to-end in a browser). Preview deliverables per `sprints.md` Sprint 4:
+
+- Lock pricing engine + booking state machine specs in `state-machines.md` / `pricing-examples.md` before any UI.
+- `lib/domain/pricing/engine.ts` pure `composePrice()` returning halalas + separate travel line + zero-VAT fields.
+- `lib/domain/pricing/distance.ts` Google Distance Matrix wrapper with 24h cache per `(supplier_id, venue_hash)`.
+- Supplier quote builder UI + immutable `quote_revisions` with `content_hash`.
+- Organizer single-view quote comparison (table).
+- Booking state machine RPC `accept_quote_tx` in PL/pgSQL (soft-hold + awaiting_supplier + trigger overlap check).
+- ≥10 pricing engine Vitest cases + SQL concurrency test for simultaneous accept.
