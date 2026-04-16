@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 export async function createSupabaseServerClient() {
@@ -28,7 +29,16 @@ export async function createSupabaseServerClient() {
   });
 }
 
-export async function createSupabaseServiceRoleClient() {
+/**
+ * Returns a Supabase client authenticated as the service-role, with NO user
+ * session and NO cookies attached. This really bypasses RLS because PostgREST
+ * sees only the service-role JWT in the `apikey` slot — no competing
+ * `Authorization: Bearer <user-jwt>` header from SSR cookies.
+ *
+ * Use only after you have authenticated the caller (e.g. via `auth.getUser()`
+ * on the user-scoped client). Never use for unauthenticated requests.
+ */
+export function createSupabaseServiceRoleClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
@@ -36,14 +46,10 @@ export async function createSupabaseServiceRoleClient() {
       "Service-role env missing: set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
     );
   }
-  // Service-role client bypasses RLS. Only use in trusted server contexts.
-  const cookieStore = await cookies();
-  return createServerClient(url, serviceKey, {
-    cookies: {
-      getAll: () => cookieStore.getAll(),
-      setAll: () => {
-        // service-role calls do not participate in user sessions
-      },
+  return createClient(url, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
     },
   });
 }
