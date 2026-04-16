@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -39,43 +40,47 @@ export default async function OrganizerDashboardPage() {
   const t = await getTranslations("organizer.dashboard");
   const rfqT = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
-  const supabase = await createSupabaseServerClient();
 
-  // Count events (RLS scoped). `head: true, count: exact` returns zero rows + count.
-  const eventsCountRes = await supabase
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect("/sign-in?next=/organizer/dashboard");
+  const { user, admin } = auth;
+
+  // Service-role reads with ownership enforced by organizer_id / event joins
+  // (SSR JWT-forwarding gap — matches the rest of the organizer surface).
+  const eventsCountRes = await admin
     .from("events")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("organizer_id", user.id);
   const totalEvents = eventsCountRes.count ?? 0;
 
-  // Fetch the RFQ statuses in one query to compute open + awaiting counts.
-  // RLS scopes via events.organizer_id.
-  const { data: rfqStatusData } = await supabase
+  const { data: rfqStatusData } = await admin
     .from("rfqs")
-    .select("id, status");
+    .select("id, status, events!inner(organizer_id)")
+    .eq("events.organizer_id", user.id);
   const allRfqs = (rfqStatusData ?? []) as Array<{ id: string; status: string }>;
   const openRfqs = allRfqs.filter((r) => r.status === "sent").length;
   const awaitingQuotes = allRfqs.filter(
     (r) => r.status === "sent" || r.status === "draft",
   ).length;
 
-  // Latest 5 RFQs — with event city + subcategory name + invite counts.
-  const { data: latestData } = await supabase
+  const { data: latestData } = await admin
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at,
-       events ( id, city ),
+       events!inner ( id, city, organizer_id ),
        sub:categories!rfqs_subcategory_id_fkey ( id, name_en ),
        rfq_invites ( id )`,
     )
+    .eq("events.organizer_id", user.id)
     .order("created_at", { ascending: false })
     .limit(5);
   const latest = (latestData ?? []) as unknown as DashboardRfq[];
 
-  // Next 3 upcoming events (starts_at > now, ASC).
   const nowIso = new Date().toISOString();
-  const { data: upcomingData } = await supabase
+  const { data: upcomingData } = await admin
     .from("events")
     .select("id, event_type, client_name, city, starts_at, ends_at")
+    .eq("organizer_id", user.id)
     .gt("starts_at", nowIso)
     .order("starts_at", { ascending: true })
     .limit(3);

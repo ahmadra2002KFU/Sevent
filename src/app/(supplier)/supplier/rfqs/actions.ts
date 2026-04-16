@@ -65,7 +65,7 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
   // same rfq_invites ↔ rfqs recursion we hit on the organizer send path.
   // Service-role bypasses policy evaluation entirely; ownership is enforced
   // below by filtering on (id = invite_id AND supplier_id = caller_supplier).
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("rfq_invites")
     .update({
       status: "declined",
@@ -73,10 +73,50 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
       decline_reason_code: parsed.data.decline_reason_code,
     })
     .eq("id", parsed.data.invite_id)
-    .eq("supplier_id", supplierId);
+    .eq("supplier_id", supplierId)
+    .select("id, rfq_id")
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to decline invite: ${error.message}`);
+  }
+
+  // Best-effort organizer notification. Failure does not roll back the decline —
+  // Sprint 5 builds the full notifications pipeline; this is a minimal stub so
+  // the organizer dashboard / notifications list surfaces the signal today.
+  if (updated) {
+    try {
+      const { data: rfqRow } = await admin
+        .from("rfqs")
+        .select("id, events(id, organizer_id, event_type, city)")
+        .eq("id", (updated as { rfq_id: string }).rfq_id)
+        .maybeSingle();
+      const organizerId = (rfqRow as { events?: { organizer_id?: string } } | null)
+        ?.events?.organizer_id;
+      if (organizerId) {
+        const { data: supplierProfile } = await admin
+          .from("suppliers")
+          .select("business_name")
+          .eq("id", supplierId)
+          .maybeSingle();
+        const businessName = (supplierProfile as { business_name?: string } | null)
+          ?.business_name ?? "A supplier";
+        await admin.from("notifications").insert({
+          user_id: organizerId,
+          kind: "rfq_invite_declined",
+          payload_jsonb: {
+            rfq_id: (updated as { rfq_id: string }).rfq_id,
+            invite_id: parsed.data.invite_id,
+            supplier_id: supplierId,
+            supplier_business_name: businessName,
+            decline_reason_code: parsed.data.decline_reason_code,
+            title: `${businessName} declined your RFQ`,
+          },
+        });
+      }
+    } catch {
+      // Don't block the decline on notification failure.
+    }
   }
 
   revalidatePath("/supplier/rfqs");
