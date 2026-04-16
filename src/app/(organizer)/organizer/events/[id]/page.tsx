@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { formatHalalas } from "@/lib/domain/money";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -55,9 +55,11 @@ export default async function EventDetailPage({ params }: PageProps) {
   const eventFormT = await getTranslations("organizer.eventForm");
   const rfqT = await getTranslations("organizer.rfqs");
 
-  const supabase = await createSupabaseServerClient();
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect(`/sign-in?next=/organizer/events/${id}`);
+  const { user, admin } = auth;
 
-  const { data: eventData } = await supabase
+  const { data: eventData } = await admin
     .from("events")
     .select(
       "id, organizer_id, event_type, client_name, city, venue_address, starts_at, ends_at, guest_count, budget_range_min_halalas, budget_range_max_halalas, notes, currency",
@@ -68,7 +70,19 @@ export default async function EventDetailPage({ params }: PageProps) {
   const event = eventData as EventDetail | null;
   if (!event) notFound();
 
-  const { data: rfqsData } = await supabase
+  // Ownership guard — admins pass through via profiles.role check when needed;
+  // for the organizer surface we require strict ownership.
+  if (event.organizer_id !== user.id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const role = (profile as { role: string } | null)?.role;
+    if (role !== "admin") notFound();
+  }
+
+  const { data: rfqsData } = await admin
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at,

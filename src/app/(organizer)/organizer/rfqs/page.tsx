@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -37,18 +38,23 @@ function fmtDate(iso: string | null | undefined): string {
 export default async function OrganizerRfqsPage() {
   const t = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
-  const supabase = await createSupabaseServerClient();
 
-  // RLS scopes rfqs via events.organizer_id → no extra WHERE needed.
-  const { data } = await supabase
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect("/sign-in?next=/organizer/rfqs");
+  const { user, admin } = auth;
+
+  // Service-role read because of the @supabase/ssr JWT-forwarding gap;
+  // scope ownership by filtering on events.organizer_id = user.id.
+  const { data } = await admin
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at,
-       events ( id, event_type, client_name, starts_at, city ),
+       events!inner ( id, event_type, client_name, starts_at, city, organizer_id ),
        parent:categories!rfqs_category_id_fkey ( id, slug, name_en ),
        sub:categories!rfqs_subcategory_id_fkey ( id, slug, name_en ),
        rfq_invites ( id, response_due_at )`,
     )
+    .eq("events.organizer_id", user.id)
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as RfqRow[];

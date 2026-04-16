@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -32,14 +33,18 @@ function formatDate(iso: string): string {
 export default async function OrganizerEventsPage() {
   const t = await getTranslations("organizer.events");
   const eventFormT = await getTranslations("organizer.eventForm");
-  const supabase = await createSupabaseServerClient();
 
-  // RLS scopes events to rows where organizer_id = auth.uid() (plus admins).
-  const { data } = await supabase
+  const auth = await authenticateAndGetAdminClient();
+  if (!auth) redirect("/sign-in?next=/organizer/events");
+  const { user, admin } = auth;
+
+  // Service-role + explicit organizer_id filter (SSR JWT-forwarding gap).
+  const { data } = await admin
     .from("events")
     .select(
       "id, event_type, client_name, city, starts_at, ends_at, guest_count, rfqs(id)",
     )
+    .eq("organizer_id", user.id)
     .order("starts_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as EventListRow[];
