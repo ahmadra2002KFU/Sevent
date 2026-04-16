@@ -307,6 +307,40 @@
     }
   },
   "admin": {
+    "dashboard": {
+      "title": "Admin dashboard",
+      "subtitle": "A read-only monitor of suppliers, RFQs, and notifications across the pilot.",
+      "supplierMix": {
+        "pending": "Pending suppliers",
+        "approved": "Approved suppliers",
+        "rejected": "Rejected suppliers"
+      },
+      "verificationQueue": {
+        "heading": "Verification queue",
+        "empty": "No suppliers pending verification.",
+        "openQueue": "Open queue"
+      },
+      "rfqMonitor": {
+        "heading": "Recent RFQs",
+        "empty": "No RFQs sent yet.",
+        "col": {
+          "event": "Event",
+          "category": "Category",
+          "status": "Status",
+          "invites": "Invites",
+          "sent": "Sent"
+        }
+      },
+      "notifications": {
+        "heading": "Recent notifications",
+        "empty": "No notifications yet.",
+        "col": {
+          "kind": "Kind",
+          "payload": "Payload",
+          "time": "Time"
+        }
+      }
+    },
     "verifications": {
       "title": "قائمة التحقق",
       "subtitle": "راجع مستندات المورد، اعتمد أو ارفض كل طلب، وأرسل إشعارًا بالبريد للمورد.",
