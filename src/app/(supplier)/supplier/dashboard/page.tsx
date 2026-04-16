@@ -129,13 +129,13 @@ function inviteBadgeClass(status: RfqInviteStatus): string {
 
 function countdownLabel(
   responseDueAt: string,
-  countdownHoursTemplate: string,
+  formatHours: (hours: number) => string,
   expiredLabel: string,
 ): string {
   const diffMs = Date.parse(responseDueAt) - Date.now();
   if (Number.isNaN(diffMs) || diffMs <= 0) return expiredLabel;
   const hours = Math.max(1, Math.ceil(diffMs / (60 * 60 * 1000)));
-  return countdownHoursTemplate.replace("{hours}", String(hours));
+  return formatHours(hours);
 }
 
 function normalizeRecentInvites(rows: RecentInviteQueryRow[]): RecentInviteRow[] {
@@ -396,7 +396,7 @@ export default async function SupplierDashboardPage() {
                         {" | "}
                         {countdownLabel(
                           invite.response_due_at,
-                          rfqInboxT("countdownHours"),
+                          (hours) => rfqInboxT("countdownHours", { hours }),
                           t("recentInvites.expired"),
                         )}
                       </span>
