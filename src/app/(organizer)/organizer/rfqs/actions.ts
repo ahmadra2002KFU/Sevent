@@ -315,9 +315,24 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     .maybeSingle();
   if (!eventRow) return { ok: false, error: "Event not found or not accessible." };
 
+  // Route the rfqs + rfq_invites writes through the service-role client.
+  //
+  // Why: the existing RLS policies form a recursive cycle on insert:
+  //   rfq_invites.organizer write (WITH CHECK) JOINs rfqs,
+  //   → triggers rfqs policy evaluation,
+  //   → rfqs.invited supplier read USING JOINs rfq_invites,
+  //   → recurses back into the same row being written.
+  // Postgres aborts with "infinite recursion detected in policy".
+  // We've already authenticated the caller via auth.getUser() in
+  // requireOrganizerRole AND verified event ownership via the RLS-scoped
+  // user client above, so a service-role-scoped insert here does not expand
+  // authorization. Sprint 4/6 will replace this with a SECURITY DEFINER
+  // `send_rfq_tx` RPC modelled on `accept_quote_tx`.
+  const admin = createSupabaseServiceRoleClient();
+
   // Insert the RFQ row.
   const nowIso = new Date().toISOString();
-  const { data: rfqInsert, error: rfqErr } = await supabase
+  const { data: rfqInsert, error: rfqErr } = await admin
     .from("rfqs")
     .insert({
       event_id: parsed.data.event_id,
@@ -360,7 +375,7 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     response_due_at: responseDueAtIso,
   }));
 
-  const { error: inviteErr } = await supabase
+  const { error: inviteErr } = await admin
     .from("rfq_invites")
     .upsert(inviteRows, { onConflict: "rfq_id,supplier_id" });
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 export default async function LandingPage() {
   const t = await getTranslations("landing");
   const brand = await getTranslations("brand");
+  const nav = await getTranslations("nav");
   const items = (t.raw("valueProp.items") as Array<{
     title: string;
     body: string;
@@ -27,16 +28,22 @@ export default async function LandingPage() {
         </Link>
         <nav className="flex items-center gap-5 text-sm">
           <Link
+            href="/categories"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          >
+            {nav("browse")}
+          </Link>
+          <Link
             href="/sign-in"
             className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
           >
-            Sign in
+            {nav("signIn")}
           </Link>
           <Link
             href="/sign-up"
             className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-[var(--color-primary-foreground)] hover:opacity-90"
           >
-            Sign up
+            {nav("signUp")}
           </Link>
         </nav>
       </header>
