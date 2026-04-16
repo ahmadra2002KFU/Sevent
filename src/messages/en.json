@@ -251,6 +251,28 @@
         "fri": "Fri",
         "sat": "Sat"
       }
+    },
+    "rfqInbox": {
+      "title": "RFQ inbox",
+      "subtitle": "Respond quickly — organizers pick faster than they expect.",
+      "empty": "No RFQs yet. Keep your calendar and packages up to date so we can match you.",
+      "countdownHours": "{hours}h remaining",
+      "expiresIn": "Expires in {time}",
+      "decline": "Decline",
+      "declineReasonLabel": "Why are you declining?",
+      "declineReason": {
+        "too_busy": "We're booked that day",
+        "out_of_area": "Out of service area",
+        "price_mismatch": "Budget doesn't fit our offering",
+        "other": "Other"
+      },
+      "quoteLater": "Quote",
+      "status": {
+        "invited": "Invited",
+        "declined": "Declined",
+        "quoted": "Quoted",
+        "withdrawn": "Withdrawn"
+      }
     }
   },
   "admin": {
@@ -482,28 +504,6 @@
         "availableDate": "Available on {date}",
         "rotating": "Rotating in new supplier"
       }
-    }
-  },
-  "supplier.rfqInbox": {
-    "title": "RFQ inbox",
-    "subtitle": "Respond quickly — organizers pick faster than they expect.",
-    "empty": "No RFQs yet. Keep your calendar and packages up to date so we can match you.",
-    "countdownHours": "{hours}h remaining",
-    "expiresIn": "Expires in {time}",
-    "decline": "Decline",
-    "declineReasonLabel": "Why are you declining?",
-    "declineReason": {
-      "too_busy": "We're booked that day",
-      "out_of_area": "Out of service area",
-      "price_mismatch": "Budget doesn't fit our offering",
-      "other": "Other"
-    },
-    "quoteLater": "Quote",
-    "status": {
-      "invited": "Invited",
-      "declined": "Declined",
-      "quoted": "Quoted",
-      "withdrawn": "Withdrawn"
     }
   },
   "public": {
