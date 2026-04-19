@@ -16,7 +16,9 @@
     "db:diff": "supabase db diff -f",
     "db:new": "supabase migration new",
     "supabase": "supabase",
-    "seed": "tsx scripts/seed-users.ts"
+    "seed": "tsx scripts/seed-users.ts",
+    "seed:stress": "tsx scripts/seed-stress-riyadh.ts",
+    "seed:stress:clean": "tsx scripts/seed-stress-clean.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
