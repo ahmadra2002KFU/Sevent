@@ -255,6 +255,7 @@ export default function NewRfqWizardPage() {
         business_name: h.business_name,
         base_city: h.base_city,
         slug: h.slug,
+        out_of_subcategory: !h.in_subcategory,
       }));
     },
     [state.subcategory_id],

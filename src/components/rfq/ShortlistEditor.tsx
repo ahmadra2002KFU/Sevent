@@ -21,6 +21,13 @@ export type ShortlistSupplier = {
   business_name: string;
   base_city: string;
   slug: string;
+  /**
+   * True when the supplier is linked to the RFQ's subcategory. False when an
+   * organizer manually picked them despite category mismatch (e.g. off-platform
+   * relationship). Undefined for auto-match rows, which are subcategory-scoped
+   * by construction.
+   */
+  out_of_subcategory?: boolean;
 };
 
 type Props = {
@@ -190,8 +197,13 @@ export function ShortlistEditor({
                         className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-[var(--color-muted)]"
                       >
                         <span className="font-medium">{s.business_name}</span>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
                           {s.base_city}
+                          {s.out_of_subcategory ? (
+                            <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                              Outside this subcategory
+                            </span>
+                          ) : null}
                         </span>
                       </button>
                     </li>
@@ -215,8 +227,13 @@ export function ShortlistEditor({
               >
                 <div className="flex flex-col">
                   <span className="font-medium">{s.business_name}</span>
-                  <span className="text-xs text-[var(--color-muted-foreground)]">
+                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
                     {s.base_city}
+                    {s.out_of_subcategory ? (
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                        Outside this subcategory — supplier may decline
+                      </span>
+                    ) : null}
                   </span>
                 </div>
                 <button

@@ -205,8 +205,13 @@ export type SupplierSearchHit = {
   slug: string;
   business_name: string;
   base_city: string;
+  in_subcategory: boolean;
 };
 
+// Search is intentionally NOT subcategory-scoped — an organizer may want to
+// invite a supplier they have an off-platform relationship with even if the
+// supplier hasn't self-linked to the subcategory yet. We still annotate each
+// hit with `in_subcategory` so the UI can warn on cross-subcategory picks.
 export async function searchApprovedSuppliersAction(
   input: unknown,
 ): Promise<SupplierSearchHit[]> {
@@ -217,35 +222,45 @@ export async function searchApprovedSuppliersAction(
   const gate = await requireOrganizerRole(supabase);
   if ("error" in gate) return [];
 
-  // Step 1 — supplier ids linked to the subcategory.
-  const { data: linkRows } = await supabase
-    .from("supplier_categories")
-    .select("supplier_id")
-    .eq("subcategory_id", parsed.data.subcategory_id);
-
-  const ids = Array.from(
-    new Set(((linkRows ?? []) as Array<{ supplier_id: string }>).map((r) => r.supplier_id)),
-  );
-  if (ids.length === 0) return [];
-
-  // Step 2 — filter approved + published + name/slug match. ILIKE via
-  // PostgREST's `ilike` operator; escape `%` and `_` conservatively.
+  // ILIKE pattern — escape `%` and `_` conservatively.
   const pattern = `%${parsed.data.q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
 
-  const { data } = await supabase
+  const { data: hitRows } = await supabase
     .from("suppliers")
     .select("id, slug, business_name, base_city")
-    .in("id", ids)
     .eq("verification_status", "approved")
     .eq("is_published", true)
     .or(`business_name.ilike.${pattern},slug.ilike.${pattern}`)
     .limit(10);
 
-  return ((data ?? []) as SupplierSearchHit[]).map((r) => ({
+  const hits = (hitRows ?? []) as Array<{
+    id: string;
+    slug: string;
+    business_name: string;
+    base_city: string;
+  }>;
+  if (hits.length === 0) return [];
+
+  // Annotate each hit with whether they serve the target subcategory. A single
+  // lookup on the candidate id set keeps this to one extra round-trip.
+  const { data: linkRows } = await supabase
+    .from("supplier_categories")
+    .select("supplier_id")
+    .eq("subcategory_id", parsed.data.subcategory_id)
+    .in(
+      "supplier_id",
+      hits.map((h) => h.id),
+    );
+  const linked = new Set(
+    ((linkRows ?? []) as Array<{ supplier_id: string }>).map((r) => r.supplier_id),
+  );
+
+  return hits.map((r) => ({
     id: r.id,
     slug: r.slug,
     business_name: r.business_name,
     base_city: r.base_city,
+    in_subcategory: linked.has(r.id),
   }));
 }
 
