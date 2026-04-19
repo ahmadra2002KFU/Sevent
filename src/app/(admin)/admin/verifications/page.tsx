@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/supabase/server";
 import type {
   SupplierDocStatus,
   SupplierVerificationStatus,
@@ -113,17 +113,11 @@ export default async function AdminVerificationsPage({
   const tabRaw = (params.tab ?? "pending").toLowerCase();
   const status = TAB_TO_STATUS[tabRaw] ?? "pending";
 
-  const supabase = await createSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
+  const gate = await requireRole("admin");
+  if (gate.status === "unauthenticated") {
     redirect(`/sign-in?next=${encodeURIComponent("/admin/verifications")}`);
   }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userData!.user!.id)
-    .maybeSingle();
-  if (!profile || profile.role !== "admin") {
+  if (gate.status === "forbidden") {
     return (
       <section className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold">Verifications queue</h1>
@@ -133,8 +127,9 @@ export default async function AdminVerificationsPage({
       </section>
     );
   }
+  const { admin } = gate;
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("suppliers")
     .select(
       "id, business_name, slug, base_city, legal_type, verification_status, created_at, supplier_docs(id, doc_type, status)",

@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {
-  createSupabaseServerClient,
-  createSupabaseServiceRoleClient,
-} from "@/lib/supabase/server";
+import { requireRole } from "@/lib/supabase/server";
 import {
   STORAGE_BUCKETS,
   createSignedPreviewUrl,
@@ -109,19 +106,13 @@ export default async function AdminVerificationDetailPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
+  const gate = await requireRole("admin");
+  if (gate.status === "unauthenticated") {
     redirect(
       `/sign-in?next=${encodeURIComponent(`/admin/verifications/${id}`)}`,
     );
   }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userData!.user!.id)
-    .maybeSingle();
-  if (!profile || profile.role !== "admin") {
+  if (gate.status === "forbidden") {
     return (
       <section className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold">Verification</h1>
@@ -131,8 +122,9 @@ export default async function AdminVerificationDetailPage({
       </section>
     );
   }
+  const { admin } = gate;
 
-  const { data: supplierRow, error: supplierErr } = await supabase
+  const { data: supplierRow, error: supplierErr } = await admin
     .from("suppliers")
     .select(
       "id, business_name, slug, legal_type, cr_number, national_id, base_city, service_area_cities, languages, capacity, concurrent_event_limit, bio, is_published, verification_status, verification_notes, verified_at, created_at, profile_id",
@@ -152,7 +144,7 @@ export default async function AdminVerificationDetailPage({
   if (!supplierRow) notFound();
   const supplier = supplierRow as SupplierDetail;
 
-  const { data: docRows, error: docsErr } = await supabase
+  const { data: docRows, error: docsErr } = await admin
     .from("supplier_docs")
     .select(
       "id, doc_type, file_path, status, reviewed_by, reviewed_at, notes, created_at",
@@ -170,27 +162,21 @@ export default async function AdminVerificationDetailPage({
     signedUrl: null,
     signError: null,
   }));
-  try {
-    const serviceClient = await createSupabaseServiceRoleClient();
-    signedDocs = await Promise.all(
-      docs.map(async (d) => {
-        try {
-          const url = await createSignedPreviewUrl(
-            serviceClient,
-            STORAGE_BUCKETS.docs,
-            d.file_path,
-          );
-          return { ...d, signedUrl: url, signError: null };
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          return { ...d, signedUrl: null, signError: message };
-        }
-      }),
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[verifications/detail] service-role unavailable", { message });
-  }
+  signedDocs = await Promise.all(
+    docs.map(async (d) => {
+      try {
+        const url = await createSignedPreviewUrl(
+          admin,
+          STORAGE_BUCKETS.docs,
+          d.file_path,
+        );
+        return { ...d, signedUrl: url, signError: null };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { ...d, signedUrl: null, signError: message };
+      }
+    }),
+  );
 
   return (
     <section className="flex flex-col gap-6">

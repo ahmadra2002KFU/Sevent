@@ -4,8 +4,8 @@ import { useActionState, useState } from "react";
 import {
   approveSupplierAction,
   rejectSupplierAction,
-  initialActionState,
 } from "../actions";
+import { initialActionState } from "../action-state";
 import { ActionBanner } from "./ActionBanner";
 import { SubmitButton } from "./SubmitButton";
 

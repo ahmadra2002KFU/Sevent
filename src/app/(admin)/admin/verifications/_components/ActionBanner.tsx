@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { ActionState } from "../actions";
+import type { ActionState } from "../action-state";
 
 /**
  * Toast-style banner that surfaces the result of a server action consumed via

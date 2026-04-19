@@ -57,6 +57,72 @@ export async function authenticateAndGetAdminClient(): Promise<
   };
 }
 
+export type AppRole = "admin" | "organizer" | "supplier" | "agency";
+
+export type RoleGateResult =
+  | { status: "unauthenticated" }
+  | { status: "forbidden"; role: string | null; userId: string }
+  | {
+      status: "ok";
+      user: { id: string; email: string | null };
+      admin: ReturnType<typeof createSupabaseServiceRoleClient>;
+      role: AppRole;
+    };
+
+/**
+ * Centralized role gate for server components + server actions.
+ *
+ * Why this exists: `@supabase/ssr@0.10.2` + the new `sb_publishable_*` key
+ * format does not reliably forward the user's access_token to PostgREST on
+ * SSR requests, so the historical pattern
+ *
+ *   const supabase = await createSupabaseServerClient();
+ *   const { data: { user } } = await supabase.auth.getUser();
+ *   const { data: profile } = await supabase
+ *     .from("profiles").select("role").eq("id", user.id).maybeSingle();
+ *
+ * returns `profile = null` even for a valid admin, and the page renders
+ * "Admin role required". Every new surface that tried that pattern hit the
+ * same bug, so we always do the role lookup via service-role now.
+ *
+ * Security notes:
+ * - Service-role bypasses RLS, so the caller's `user.id` is the only identity
+ *   signal downstream. Always stamp writes with `user.id` or filter reads by
+ *   an ownership column; do not hand the admin handle to untrusted code paths.
+ * - Three distinct outcomes (unauth / forbidden / ok) let callers render the
+ *   right UX — redirect to sign-in vs. show access-denied vs. proceed — which
+ *   matters for logging + observability.
+ */
+export async function requireRole(
+  allowed: AppRole | AppRole[],
+): Promise<RoleGateResult> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "unauthenticated" };
+
+  const admin = createSupabaseServiceRoleClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const role = ((profile as { role: string } | null)?.role ?? null) as string | null;
+
+  const allowedList = Array.isArray(allowed) ? allowed : [allowed];
+  if (!role || !allowedList.includes(role as AppRole)) {
+    return { status: "forbidden", role, userId: user.id };
+  }
+
+  return {
+    status: "ok",
+    user: { id: user.id, email: user.email ?? null },
+    admin,
+    role: role as AppRole,
+  };
+}
+
 /**
  * Returns a Supabase client authenticated as the service-role, with NO user
  * session and NO cookies attached. This really bypasses RLS because PostgREST

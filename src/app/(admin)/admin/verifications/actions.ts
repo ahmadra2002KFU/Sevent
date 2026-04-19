@@ -3,21 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
-  createSupabaseServerClient,
   createSupabaseServiceRoleClient,
+  requireRole,
 } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { createNotification } from "@/lib/notifications/inApp";
 import SupplierApproved from "@/lib/notifications/templates/SupplierApproved";
 import SupplierRejected from "@/lib/notifications/templates/SupplierRejected";
 import { env } from "@/lib/env";
-
-export type ActionState =
-  | { status: "idle" }
-  | { status: "success"; message: string }
-  | { status: "error"; message: string };
-
-export const initialActionState: ActionState = { status: "idle" };
+import type { ActionState } from "./action-state";
 
 const supplierIdSchema = z.string().uuid();
 const docIdSchema = z.string().uuid();
@@ -33,30 +27,10 @@ type AdminContext = {
 };
 
 async function requireAdmin(): Promise<AdminContext | { error: string }> {
-  const userClient = await createSupabaseServerClient();
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) {
-    return { error: "Not authenticated." };
-  }
-  const adminId = userData.user.id;
-
-  // Belt + suspenders: re-confirm the role server-side. RLS + the
-  // `guard_supplier_verification` trigger also gate this, but we read the
-  // profile here so the action can short-circuit with a clean message.
-  const { data: profile, error: profileErr } = await userClient
-    .from("profiles")
-    .select("role")
-    .eq("id", adminId)
-    .maybeSingle();
-  if (profileErr) {
-    return { error: `Profile lookup failed: ${profileErr.message}` };
-  }
-  if (!profile || profile.role !== "admin") {
-    return { error: "Admin role required." };
-  }
-
-  const serviceClient = await createSupabaseServiceRoleClient();
-  return { adminId, serviceClient };
+  const gate = await requireRole("admin");
+  if (gate.status === "unauthenticated") return { error: "Not authenticated." };
+  if (gate.status === "forbidden") return { error: "Admin role required." };
+  return { adminId: gate.user.id, serviceClient: gate.admin };
 }
 
 type SupplierContact = {
