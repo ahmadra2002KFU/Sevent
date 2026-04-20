@@ -5,7 +5,6 @@ import { z } from "zod";
 import {
   DOC_TYPES,
   LANGUAGES,
-  LEGAL_TYPES,
   OnboardingStep1,
   OnboardingStep3,
   slugifyBusinessName,
@@ -294,6 +293,3 @@ export async function submitOnboardingStep3(
   }
 }
 
-export const ONBOARDING_LEGAL_TYPES = LEGAL_TYPES;
-export const ONBOARDING_LANGUAGES = LANGUAGES;
-export const ONBOARDING_DOC_TYPES = DOC_TYPES;
