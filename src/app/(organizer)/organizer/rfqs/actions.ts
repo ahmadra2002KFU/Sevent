@@ -354,8 +354,11 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     return { ok: false, error: friendly };
   }
 
+  // Note: RETURNS TABLE columns are `out_rfq_id` / `out_invite_count`
+  // after the 20260420060000 ambiguity fix — do NOT rename them back
+  // without re-aliasing every unqualified reference in the function body.
   const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-  const rfqId = (row as { rfq_id?: string } | null)?.rfq_id;
+  const rfqId = (row as { out_rfq_id?: string } | null)?.out_rfq_id;
   if (!rfqId) {
     return { ok: false, error: "RFQ creation returned no id." };
   }
