@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "../../(auth)/actions";
+import NotificationBell from "../../_components/NotificationBell";
 
 const nav = [
   { href: "/admin/dashboard", label: "Overview" },
@@ -42,6 +43,10 @@ export default function AdminLayout({
                 {item.label}
               </Link>
             ))}
+            <NotificationBell
+              href="/admin/notifications"
+              className="relative ml-1 inline-flex items-center justify-center rounded-md border border-white/30 px-2.5 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:text-white"
+            />
             <form action={signOutAction}>
               <button
                 type="submit"
