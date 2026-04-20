@@ -698,6 +698,49 @@
     "detailEvent": "Event",
     "detailAcceptedRevision": "Accepted revision",
     "contractPending": "Contract will be available after confirmation.",
-    "noBookings": "No bookings yet."
+    "noBookings": "No bookings yet.",
+    "navLabel": "Bookings",
+    "filterLabel": "Status",
+    "filterAll": "All",
+    "table": {
+      "supplier": "Supplier",
+      "organizer": "Organizer",
+      "event": "Event",
+      "status": "Status",
+      "deadline": "Confirm deadline",
+      "total": "Total",
+      "view": "View"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {totalPages}"
+    },
+    "banner": {
+      "awaitingOrganizer": "Waiting on supplier confirmation — the supplier has until the deadline to confirm or decline.",
+      "awaitingSupplier": "Please confirm or decline this booking before the deadline."
+    },
+    "detail": {
+      "rfq": "RFQ",
+      "quote": "Quote",
+      "revision": "Revision",
+      "backToList": "← Back to bookings",
+      "lineItemsHeading": "Line items",
+      "totalsHeading": "Totals",
+      "termsHeading": "Terms",
+      "subtotal": "Subtotal",
+      "travelFee": "Travel fee",
+      "setupFee": "Setup fee",
+      "teardownFee": "Teardown fee",
+      "vat": "VAT ({pct}%)",
+      "total": "Total",
+      "depositPct": "Deposit",
+      "paymentSchedule": "Payment schedule",
+      "cancellationTerms": "Cancellation terms",
+      "inclusions": "Inclusions",
+      "exclusions": "Exclusions",
+      "notes": "Notes",
+      "sprint5Placeholder": "Awaiting confirmation actions — Sprint 5"
+    }
   }
 }

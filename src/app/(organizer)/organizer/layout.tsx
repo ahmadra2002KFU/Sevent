@@ -6,6 +6,7 @@ const nav = [
   { href: "/organizer/dashboard", label: "Dashboard" },
   { href: "/organizer/events", label: "Events" },
   { href: "/organizer/rfqs", label: "RFQs" },
+  { href: "/organizer/bookings", label: "Bookings" },
 ];
 
 export default function OrganizerLayout({

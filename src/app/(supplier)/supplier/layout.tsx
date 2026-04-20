@@ -8,6 +8,7 @@ const nav = [
   { href: "/supplier/catalog", label: "Catalog" },
   { href: "/supplier/calendar", label: "Calendar" },
   { href: "/supplier/rfqs", label: "RFQs" },
+  { href: "/supplier/bookings", label: "Bookings" },
 ];
 
 export default function SupplierLayout({
