@@ -36,6 +36,36 @@
     },
     "comingSoon": "The pilot is opening to Riyadh + Jeddah suppliers now."
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "markRead": "Mark read",
+    "markAllRead": "Mark all read",
+    "unreadBadge": "{count, plural, one {# unread} other {# unread}}",
+    "kinds": {
+      "supplier": {
+        "approved": "Your supplier profile was approved",
+        "rejected": "Your supplier profile was rejected",
+        "doc": {
+          "approved": "A verification document was approved",
+          "rejected": "A verification document was rejected"
+        },
+        "email": {
+          "delivery_failed": "An email could not be delivered"
+        }
+      },
+      "quote": {
+        "sent": "A new quote was sent",
+        "revised": "A quote was revised",
+        "accepted": "Your quote was accepted",
+        "rejected": "Your quote was rejected"
+      },
+      "booking": {
+        "created": "A booking was created",
+        "awaiting_supplier": "Booking awaiting your confirmation"
+      }
+    }
+  },
   "supplier": {
     "onboarding": {
       "title": "Supplier onboarding",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "../../(auth)/actions";
+import NotificationBell from "../../_components/NotificationBell";
 
 const nav = [
   { href: "/organizer/dashboard", label: "Dashboard" },
@@ -44,6 +45,7 @@ export default function OrganizerLayout({
                 {item.label}
               </Link>
             ))}
+            <NotificationBell href="/organizer/notifications" />
             <form action={signOutAction}>
               <button
                 type="submit"
