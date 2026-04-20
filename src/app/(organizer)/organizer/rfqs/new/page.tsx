@@ -47,13 +47,6 @@ import {
   type OrganizerEventSummary,
 } from "../actions";
 
-const EXT_KINDS: RfqExtensionKind[] = [
-  "venues",
-  "catering",
-  "photography",
-  "generic",
-];
-
 function kindFromParentSlug(slug: string | undefined): RfqExtensionKind {
   if (slug === "venues") return "venues";
   if (slug === "catering") return "catering";
@@ -603,37 +596,20 @@ function Step2({
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
 }) {
+  // Extension kind is derived from the selected subcategory in Step 1 — do
+  // NOT let the organizer override it here. Allowing a free override meant a
+  // photography RFQ could be sent with a catering payload (Sprint 3 audit
+  // #10). Subcategories that don't have a dedicated form fall back to the
+  // `generic` renderer automatically via RfqExtensionForm.
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-white p-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold">Requirements</h2>
-          <p className="text-xs text-[var(--color-muted-foreground)]">
-            {selectedSub
-              ? `${selectedSub.name_en} · form auto-selected by category`
-              : "Form auto-selected by category"}
-          </p>
-        </div>
-        <details className="text-xs">
-          <summary className="cursor-pointer rounded-md border border-[var(--color-border)] px-2 py-1 hover:bg-[var(--color-muted)]">
-            Change type
-          </summary>
-          <div className="mt-2 flex flex-col gap-1 rounded-md border border-[var(--color-border)] bg-white p-2">
-            {EXT_KINDS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => dispatch({ type: "overrideKind", kind: k })}
-                className={
-                  "rounded-md px-2 py-1 text-left hover:bg-[var(--color-muted)] " +
-                  (state.kind === k ? "font-semibold" : "")
-                }
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-        </details>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold">Requirements</h2>
+        <p className="text-xs text-[var(--color-muted-foreground)]">
+          {selectedSub
+            ? `${selectedSub.name_en} · form auto-selected by category`
+            : "Form auto-selected by category"}
+        </p>
       </div>
 
       <RfqExtensionForm

@@ -110,6 +110,10 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
             supplier_id: supplierId,
             supplier_business_name: businessName,
             decline_reason_code: parsed.data.decline_reason_code,
+            // Persist the supplier's optional free-form note so the
+            // organizer can see it alongside the reason code. Trimmed +
+            // capped at 500 chars upstream by the Zod schema.
+            supplier_note: parsed.data.note ?? null,
             title: `${businessName} declined your RFQ`,
           },
         });

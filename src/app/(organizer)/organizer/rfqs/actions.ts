@@ -28,7 +28,7 @@ import {
   type MatchResult,
 } from "@/lib/domain/matching/autoMatch";
 import { fetchAutoMatchCandidates } from "@/lib/domain/matching/query";
-import { parseRfqExtension, type RfqExtensionKind } from "@/lib/domain/rfq";
+import { parseRfqExtension, RfqFormInput, type RfqExtensionKind } from "@/lib/domain/rfq";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
@@ -273,12 +273,14 @@ const ShortlistEntry = z.object({
   source: z.enum(["auto_match", "organizer_picked"]),
 });
 
-const SendRfqInput = z.object({
-  event_id: z.string().uuid(),
-  category_id: z.string().uuid(),
-  subcategory_id: z.string().uuid(),
-  requirements: z.object({ kind: z.enum(["venues", "catering", "photography", "generic"]) }).passthrough(),
-  response_deadline_hours: z.union([z.literal(24), z.literal(48), z.literal(72)]),
+// SendRfqInput is RfqFormInput + a shortlist. We accept the requirements
+// blob loosely here (discriminated-union shape is re-validated via
+// parseRfqExtension below) so the Zod parse fails cleanly rather than on a
+// nested shape mismatch the UI can't report.
+const SendRfqInput = RfqFormInput.extend({
+  requirements: z
+    .object({ kind: z.enum(["venues", "catering", "photography", "generic"]) })
+    .passthrough(),
   shortlist: z.array(ShortlistEntry).min(1).max(10),
 });
 

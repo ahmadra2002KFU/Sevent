@@ -341,7 +341,8 @@
         "declined": "Declined",
         "quoted": "Quoted",
         "withdrawn": "Withdrawn"
-      }
+      },
+      "expired": "Expired"
     },
     "quote": {
       "title": "Quote builder",

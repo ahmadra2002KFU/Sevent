@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +36,7 @@ function countdownLabel(
 ): string {
   const diffMs = Date.parse(responseDueAt) - Date.now();
   if (Number.isNaN(diffMs)) return "";
-  // TODO(sprint6): add supplier.rfqInbox.expired key + i18n.
-  if (diffMs <= 0) return "Expired";
+  if (diffMs <= 0) return t("expired");
   const hours = Math.max(1, Math.ceil(diffMs / (60 * 60 * 1000)));
   return t("countdownHours", { hours });
 }
@@ -59,9 +58,10 @@ function formatEventDate(iso: string): string {
 export default async function SupplierRfqInboxPage() {
   const t = await getTranslations("supplier.rfqInbox");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect("/sign-in?next=/supplier/rfqs");
-  const { user, admin } = auth;
+  const gate = await requireRole("supplier");
+  if (gate.status === "unauthenticated") redirect("/sign-in?next=/supplier/rfqs");
+  if (gate.status === "forbidden") redirect("/supplier/onboarding");
+  const { user, admin } = gate;
 
   const { data: supplierRow } = await admin
     .from("suppliers")

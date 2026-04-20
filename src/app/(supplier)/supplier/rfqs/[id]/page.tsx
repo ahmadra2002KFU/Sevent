@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/supabase/server";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { declineInviteAction } from "../actions";
@@ -179,9 +179,10 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
   const t = await getTranslations("supplier.rfqInbox");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect(`/sign-in?next=/supplier/rfqs/${id}`);
-  const { user, admin } = auth;
+  const gate = await requireRole("supplier");
+  if (gate.status === "unauthenticated") redirect(`/sign-in?next=/supplier/rfqs/${id}`);
+  if (gate.status === "forbidden") redirect("/supplier/onboarding");
+  const { user, admin } = gate;
 
   const { data: supplierRow } = await admin
     .from("suppliers")

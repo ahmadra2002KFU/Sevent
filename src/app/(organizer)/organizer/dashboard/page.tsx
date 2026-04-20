@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +41,10 @@ export default async function OrganizerDashboardPage() {
   const rfqT = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect("/sign-in?next=/organizer/dashboard");
-  const { user, admin } = auth;
+  const gate = await requireRole(["organizer", "agency", "admin"]);
+  if (gate.status === "unauthenticated") redirect("/sign-in?next=/organizer/dashboard");
+  if (gate.status === "forbidden") redirect("/");
+  const { user, admin } = gate;
 
   // Service-role reads with ownership enforced by organizer_id / event joins
   // (SSR JWT-forwarding gap — matches the rest of the organizer surface).
