@@ -248,6 +248,7 @@ export default async function SupplierDashboardPage() {
       .from("rfq_invites")
       .select("id", { count: "exact", head: true })
       .eq("supplier_id", supplierSummary.id)
+      .eq("status", "invited")
       .gt("sent_at", cutoffIso),
     admin
       .from("rfq_invites")
@@ -337,7 +338,7 @@ export default async function SupplierDashboardPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-md bg-[var(--color-muted)]/50 p-4">
             <div className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              {t("stats.invitesReceived")}
+              {t("stats.invitesOpen")}
             </div>
             <div className="mt-2 text-3xl font-semibold">{invitesReceived}</div>
           </div>
@@ -393,12 +394,16 @@ export default async function SupplierDashboardPage() {
                         {invite.rfq?.event?.starts_at
                           ? formatDateTime(invite.rfq.event.starts_at, dateLocale)
                           : "-"}
-                        {" | "}
-                        {countdownLabel(
-                          invite.response_due_at,
-                          (hours) => rfqInboxT("countdownHours", { hours }),
-                          t("recentInvites.expired"),
-                        )}
+                        {invite.status === "invited" ? (
+                          <>
+                            {" | "}
+                            {countdownLabel(
+                              invite.response_due_at,
+                              (hours) => rfqInboxT("countdownHours", { hours }),
+                              t("recentInvites.expired"),
+                            )}
+                          </>
+                        ) : null}
                       </span>
                     </div>
                     <span
