@@ -321,84 +321,41 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     return { ok: false, error: err instanceof Error ? err.message : "Invalid requirements." };
   }
 
-  // Verify the caller owns the event. RLS already scopes this but we surface
-  // a clean error when the record is not found.
-  const { data: eventRow } = await supabase
-    .from("events")
-    .select("id")
-    .eq("id", parsed.data.event_id)
-    .maybeSingle();
-  if (!eventRow) return { ok: false, error: "Event not found or not accessible." };
-
-  // Route the rfqs + rfq_invites writes through the service-role client.
-  //
-  // Why: the existing RLS policies form a recursive cycle on insert:
-  //   rfq_invites.organizer write (WITH CHECK) JOINs rfqs,
-  //   → triggers rfqs policy evaluation,
-  //   → rfqs.invited supplier read USING JOINs rfq_invites,
-  //   → recurses back into the same row being written.
-  // Postgres aborts with "infinite recursion detected in policy".
-  // We've already authenticated the caller via auth.getUser() in
-  // requireOrganizerRole AND verified event ownership via the RLS-scoped
-  // user client above, so a service-role-scoped insert here does not expand
-  // authorization. Sprint 4/6 will replace this with a SECURITY DEFINER
-  // `send_rfq_tx` RPC modelled on `accept_quote_tx`.
+  // Route the transactional write through the `send_rfq_tx` RPC so the
+  // rfqs insert and the rfq_invites fan-out commit or roll back together.
+  // Event ownership is re-verified inside the function (service-role
+  // bypasses RLS, so the RPC itself is the enforcement boundary).
   const admin = createSupabaseServiceRoleClient();
 
-  // Insert the RFQ row.
-  const nowIso = new Date().toISOString();
-  const { data: rfqInsert, error: rfqErr } = await admin
-    .from("rfqs")
-    .insert({
-      event_id: parsed.data.event_id,
-      category_id: parsed.data.category_id,
-      subcategory_id: parsed.data.subcategory_id,
-      status: "sent" as const,
-      requirements_jsonb: validatedRequirements,
-      sent_at: nowIso,
-    })
-    .select("id")
-    .single();
+  const { data: rpcData, error: rpcErr } = await admin.rpc("send_rfq_tx", {
+    p_organizer_id: gate.userId,
+    p_event_id: parsed.data.event_id,
+    p_category_id: parsed.data.category_id,
+    p_subcategory_id: parsed.data.subcategory_id,
+    p_requirements: validatedRequirements,
+    p_response_deadline_hours: parsed.data.response_deadline_hours,
+    p_invites: parsed.data.shortlist,
+  });
 
-  if (rfqErr || !rfqInsert) {
-    return {
-      ok: false,
-      error: `Failed to create RFQ: ${rfqErr?.message ?? "unknown error"}`,
-    };
+  if (rpcErr) {
+    // Map the structured raise codes to user-facing messages. Unknown codes
+    // surface the raw message so Postgres errors aren't silently swallowed.
+    const code = rpcErr.code as string | undefined;
+    const message = rpcErr.message ?? "unknown error";
+    let friendly = `Failed to send RFQ: ${message}`;
+    if (code === "P0020") friendly = "Invalid response deadline — choose 24h, 48h, or 72h.";
+    else if (code === "P0021") friendly = "Invite list is malformed.";
+    else if (code === "P0022") friendly = "Shortlist is empty — pick at least one supplier.";
+    else if (code === "P0023") friendly = "Too many suppliers on the shortlist (max 20).";
+    else if (code === "P0024") friendly = "Event not found or not accessible.";
+    else if (code === "P0025") friendly = "Invalid invite source in shortlist.";
+    return { ok: false, error: friendly };
   }
 
-  const rfqId = (rfqInsert as { id: string }).id;
-
-  // Invite upsert.
-  //
-  // We upsert on (rfq_id, supplier_id) so re-sending the wizard for the same
-  // RFQ is idempotent. Trade-off: an existing invite row with status=quoted
-  // or declined WILL be overwritten back to invited. Acceptable in Sprint 3
-  // because the wizard always creates a fresh RFQ (no edit flow yet).
-  // Sprint 6 will replace this with an RPC that allows only invited↔withdrawn
-  // transitions and never regresses terminal statuses.
-  const responseDueAtIso = new Date(
-    Date.now() + parsed.data.response_deadline_hours * 60 * 60 * 1000,
-  ).toISOString();
-
-  const inviteRows = parsed.data.shortlist.map((entry) => ({
-    rfq_id: rfqId,
-    supplier_id: entry.supplier_id,
-    source: entry.source,
-    status: "invited" as const,
-    sent_at: nowIso,
-    response_due_at: responseDueAtIso,
-  }));
-
-  const { error: inviteErr } = await admin
-    .from("rfq_invites")
-    .upsert(inviteRows, { onConflict: "rfq_id,supplier_id" });
-
-  if (inviteErr) {
-    return {
-      ok: false,
-      error: `RFQ created but invites failed: ${inviteErr.message}`,
-    };
+  const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+  const rfqId = (row as { rfq_id?: string } | null)?.rfq_id;
+  if (!rfqId) {
+    return { ok: false, error: "RFQ creation returned no id." };
   }
 
   revalidatePath("/organizer/rfqs");
