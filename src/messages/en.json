@@ -304,6 +304,40 @@
         "quoted": "Quoted",
         "withdrawn": "Withdrawn"
       }
+    },
+    "quote": {
+      "title": "Quote builder",
+      "intro": "Review the engine-drafted quote, edit line items, and send to the organizer.",
+      "modeLabel": "Quote mode",
+      "modeRuleEngine": "Rule-engine draft",
+      "modeFreeForm": "Free-form",
+      "modeMixed": "Mixed",
+      "lineItemsHeading": "Line items",
+      "addLineItem": "Add line item",
+      "label": "Description",
+      "qty": "Quantity",
+      "unit": "Unit",
+      "unitPrice": "Unit price (SAR)",
+      "total": "Total",
+      "addonsHeading": "Add-ons",
+      "setupFee": "Setup fee (SAR)",
+      "teardownFee": "Teardown fee (SAR)",
+      "travelFee": "Travel fee (SAR)",
+      "travelFeeComputed": "Computed from supplier rules",
+      "depositPct": "Deposit %",
+      "paymentSchedule": "Payment schedule",
+      "cancellationTerms": "Cancellation terms",
+      "inclusions": "Inclusions",
+      "exclusions": "Exclusions",
+      "notes": "Notes",
+      "expiresAt": "Quote valid until",
+      "sendDraft": "Send quote",
+      "sending": "Sending…",
+      "saveDraft": "Save draft",
+      "revisionHistory": "Revision history",
+      "revisionNumber": "v{version}",
+      "revisionSentAt": "Sent {sentAt}",
+      "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited."
     }
   },
   "admin": {
@@ -569,6 +603,44 @@
         "availableDate": "Available on {date}",
         "rotating": "Rotating in new supplier"
       }
+    },
+    "quote": {
+      "compareTitle": "Compare quotes",
+      "compareIntro": "Pick a quote to accept. Accepting creates a booking and holds the supplier's calendar for 48 hours while they confirm.",
+      "emptyList": "No quotes have arrived yet.",
+      "supplierCol": "Supplier",
+      "totalCol": "Total",
+      "expiresAtCol": "Expires",
+      "submittedCol": "Submitted",
+      "actionsCol": "Actions",
+      "viewSnapshot": "View snapshot",
+      "acceptCta": "Accept",
+      "accepting": "Accepting…",
+      "acceptedAt": "Accepted {acceptedAt}",
+      "rejectedAutomatically": "Rejected — another quote was accepted",
+      "conflictBadge": "Date conflict",
+      "conflictHelp": "This supplier already has a block overlapping your event window. Accepting will fail.",
+      "acceptErrorNotFound": "Quote not found.",
+      "acceptErrorAlreadyAccepted": "This quote has already been accepted.",
+      "acceptErrorNotSendable": "Quote is no longer in sendable state.",
+      "acceptErrorMissingRevision": "Quote is missing a revision — ask the supplier to re-send.",
+      "acceptErrorOrganizerMismatch": "You are not the organizer of this RFQ.",
+      "acceptErrorSupplierUnavailable": "Supplier no longer available — date conflict.",
+      "acceptErrorRfqTerminal": "This RFQ is no longer bookable ({status}).",
+      "acceptErrorUnknown": "We couldn't accept this quote. Please try again.",
+      "snapshotHeading": "Quote snapshot",
+      "snapshotLineItems": "Line items",
+      "snapshotSubtotal": "Subtotal",
+      "snapshotTravel": "Travel",
+      "snapshotSetup": "Setup",
+      "snapshotTeardown": "Teardown",
+      "snapshotVat": "VAT",
+      "snapshotTotal": "Total",
+      "snapshotCancellation": "Cancellation terms",
+      "snapshotInclusions": "Inclusions",
+      "snapshotExclusions": "Exclusions",
+      "snapshotNotes": "Notes",
+      "snapshotExpiresAt": "Valid until {expiresAt}"
     }
   },
   "public": {
@@ -609,5 +681,23 @@
         "unit": "Per unit"
       }
     }
+  },
+  "booking": {
+    "listTitle": "Bookings",
+    "listIntro": "Every quote you accept creates a booking. The supplier must confirm within the deadline or the slot is released.",
+    "statusAwaitingSupplier": "Awaiting supplier",
+    "statusConfirmed": "Confirmed",
+    "statusCancelled": "Cancelled",
+    "confirmDeadline": "Confirm by",
+    "confirmDeadlineExpired": "Decision overdue",
+    "countdownHours": "{hours}h left",
+    "countdownHoursSingular": "1h left",
+    "detailTitle": "Booking detail",
+    "detailOrganizer": "Organizer",
+    "detailSupplier": "Supplier",
+    "detailEvent": "Event",
+    "detailAcceptedRevision": "Accepted revision",
+    "contractPending": "Contract will be available after confirmation.",
+    "noBookings": "No bookings yet."
   }
 }

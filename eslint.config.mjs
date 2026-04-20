@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local scratch + docs build artifacts — not app source.
+    ".tmp/**",
+    "Claude Docs/**",
   ]),
 ]);
 

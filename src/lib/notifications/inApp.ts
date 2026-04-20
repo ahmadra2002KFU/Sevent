@@ -13,7 +13,14 @@ export type NotificationKind =
   | "supplier.rejected"
   | "supplier.doc.approved"
   | "supplier.doc.rejected"
-  | "supplier.email.delivery_failed";
+  | "supplier.email.delivery_failed"
+  // Sprint 4 — quote + booking lifecycle (in-app rows; Resend wired in Sprint 5)
+  | "quote.sent"
+  | "quote.revised"
+  | "quote.accepted"
+  | "quote.rejected"
+  | "booking.created"
+  | "booking.awaiting_supplier";
 
 export type CreateNotificationParams = {
   /** Supabase client with INSERT rights on `public.notifications` (service role). */
