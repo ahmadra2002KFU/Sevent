@@ -9,7 +9,7 @@ import {
   OnboardingStep3,
   slugifyBusinessName,
 } from "@/lib/domain/onboarding";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, requireRole } from "@/lib/supabase/server";
 import { STORAGE_BUCKETS, supplierScopedPath } from "@/lib/supabase/storage";
 import { uniqueSupplierSlug } from "@/lib/onboarding/slug";
 import type { SupplierDocType } from "@/lib/supabase/types";
@@ -21,25 +21,23 @@ export type OnboardingState = {
 };
 
 async function loadSupplierContext() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) throw new Error("Not authenticated");
-
-  const { data: profile, error: profileErr } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (profileErr) throw new Error(`Profile lookup failed: ${profileErr.message}`);
-  if (!profile) throw new Error("Profile row not found for current user");
-  if (profile.role !== "supplier") {
+  // Reads that would hit the `profiles`/`suppliers` RLS policy cycle go
+  // through the service-role admin client. Writes that need
+  // storage.objects.owner tracking keep the user-scoped client.
+  const gate = await requireRole("supplier");
+  if (gate.status === "unauthenticated") throw new Error("Not authenticated");
+  if (gate.status === "forbidden") {
     throw new Error("Only supplier accounts can complete onboarding");
   }
+  const { user, admin } = gate;
 
-  const { data: supplier, error: supplierErr } = await supabase
+  // `supabase` is the user-scoped client — required for storage uploads so
+  // the `owner = auth.uid()` column gets set and the `docs: owner read`
+  // policy keeps working. DB reads/writes go through `admin` to dodge RLS
+  // recursion on policies that JOIN profiles.
+  const supabase = await createSupabaseServerClient();
+
+  const { data: supplier, error: supplierErr } = await admin
     .from("suppliers")
     .select(
       "id, profile_id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, languages, capacity, concurrent_event_limit, is_published, verification_status",
@@ -48,7 +46,7 @@ async function loadSupplierContext() {
     .maybeSingle();
   if (supplierErr) throw new Error(`Supplier lookup failed: ${supplierErr.message}`);
 
-  return { supabase, user, profile, supplier };
+  return { supabase, admin, user, supplier };
 }
 
 export async function submitOnboardingStep1(
@@ -70,12 +68,12 @@ export async function submitOnboardingStep1(
       };
     }
 
-    const { supabase, user, supplier } = await loadSupplierContext();
+    const { admin, user, supplier } = await loadSupplierContext();
     const payload = parsed.data;
 
     if (!supplier) {
-      const slug = await uniqueSupplierSlug(supabase, payload.business_name);
-      const { data: inserted, error } = await supabase
+      const slug = await uniqueSupplierSlug(admin, payload.business_name);
+      const { data: inserted, error } = await admin
         .from("suppliers")
         .insert({
           profile_id: user.id,
@@ -106,12 +104,12 @@ export async function submitOnboardingStep1(
     if (payload.business_name !== supplier.business_name) {
       const priorBase = slugifyBusinessName(supplier.business_name ?? "");
       if (!supplier.slug || supplier.slug.startsWith(priorBase)) {
-        patch.slug = await uniqueSupplierSlug(supabase, payload.business_name, {
+        patch.slug = await uniqueSupplierSlug(admin, payload.business_name, {
           excludeSupplierId: supplier.id,
         });
       }
     }
-    const { error } = await supabase.from("suppliers").update(patch).eq("id", supplier.id);
+    const { error } = await admin.from("suppliers").update(patch).eq("id", supplier.id);
     if (error) return { ok: false, message: `Could not update business info: ${error.message}` };
     revalidatePath("/supplier/onboarding");
     return { ok: true, supplierId: supplier.id };
@@ -130,7 +128,7 @@ export async function submitOnboardingStep2(
   formData: FormData,
 ): Promise<OnboardingState> {
   try {
-    const { supabase, supplier } = await loadSupplierContext();
+    const { supabase, admin, supplier } = await loadSupplierContext();
     if (!supplier) {
       return { ok: false, message: "Please complete business information first" };
     }
@@ -164,6 +162,8 @@ export async function submitOnboardingStep2(
 
       const path = supplierScopedPath(supplier.id, "docs", file.name || `doc-${i + 1}.bin`);
       const buffer = Buffer.from(await file.arrayBuffer());
+      // Storage upload stays on the user-scoped client so `owner = auth.uid()`
+      // is set and the `docs: owner read` policy continues to work.
       const { error: upErr } = await supabase.storage
         .from(STORAGE_BUCKETS.docs)
         .upload(path, buffer, {
@@ -180,7 +180,7 @@ export async function submitOnboardingStep2(
       });
     }
 
-    const { error: insertErr } = await supabase.from("supplier_docs").insert(rows);
+    const { error: insertErr } = await admin.from("supplier_docs").insert(rows);
     if (insertErr) {
       return { ok: false, message: `Saving document records failed: ${insertErr.message}` };
     }
@@ -208,7 +208,7 @@ export async function submitOnboardingStep3(
   formData: FormData,
 ): Promise<OnboardingState> {
   try {
-    const { supabase, supplier } = await loadSupplierContext();
+    const { admin, supplier } = await loadSupplierContext();
     if (!supplier) {
       return { ok: false, message: "Please complete business information first" };
     }
@@ -262,13 +262,13 @@ export async function submitOnboardingStep3(
       patch.base_location = `SRID=4326;POINT(${payload.base_location.lng} ${payload.base_location.lat})`;
     }
 
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await admin
       .from("suppliers")
       .update(patch)
       .eq("id", supplier.id);
     if (updateErr) return { ok: false, message: `Saving service area failed: ${updateErr.message}` };
 
-    const { error: deleteErr } = await supabase
+    const { error: deleteErr } = await admin
       .from("supplier_categories")
       .delete()
       .eq("supplier_id", supplier.id);
@@ -281,7 +281,7 @@ export async function submitOnboardingStep3(
         supplier_id: supplier.id,
         subcategory_id: id,
       }));
-      const { error: linkErr } = await supabase.from("supplier_categories").insert(links);
+      const { error: linkErr } = await admin.from("supplier_categories").insert(links);
       if (linkErr) return { ok: false, message: `Saving subcategories failed: ${linkErr.message}` };
     }
 
