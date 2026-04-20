@@ -141,6 +141,14 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
 
   const invites = (invitesData ?? []) as unknown as InviteDetail[];
 
+  // Count sent quotes so we can surface a "Compare quotes" CTA when there is
+  // at least one. The comparison page itself is scoped to status='sent'.
+  const { count: sentQuoteCount } = await admin
+    .from("quotes")
+    .select("id", { count: "exact", head: true })
+    .eq("rfq_id", id)
+    .eq("status", "sent");
+
   return (
     <section className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -163,9 +171,19 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
             </p>
           ) : null}
         </div>
-        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium">
-          {t(`status.${rfq.status}` as never)}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {sentQuoteCount && sentQuoteCount > 0 ? (
+            <Link
+              href={`/organizer/rfqs/${id}/quotes`}
+              className="rounded-md bg-[var(--color-sevent-green,#0a7)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Compare quotes ({sentQuoteCount})
+            </Link>
+          ) : null}
+          <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium">
+            {t(`status.${rfq.status}` as never)}
+          </span>
+        </div>
       </header>
 
       {rfq.events ? (

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
@@ -288,17 +289,15 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
           </form>
 
           <div className="flex flex-1 flex-col gap-3 rounded-md border border-dashed border-[var(--color-border)] p-4">
-            <button
-              type="button"
-              disabled
-              title="Coming in Sprint 4"
-              className="self-start rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-4 py-2 text-sm font-medium text-[var(--color-muted-foreground)]"
+            <Link
+              href={`/supplier/rfqs/${id}/quote`}
+              className="self-start rounded-md bg-[var(--color-sevent-green,#0a7)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               {t("quoteLater")}
-            </button>
+            </Link>
             <p className="text-xs text-[var(--color-muted-foreground)]">
-              Quoting unlocks in Sprint 4. For now, decline or let the deadline
-              pass.
+              Draft a quote using your packages + pricing rules, or switch to
+              free-form.
             </p>
           </div>
         </div>
