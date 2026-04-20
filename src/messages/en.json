@@ -287,6 +287,7 @@
       "subtitle": "Track new invites, verification progress, and upcoming work in one place.",
       "stats": {
         "invitesReceived": "Invites received",
+        "invitesOpen": "Open invites",
         "responseRate": "Response rate",
         "winRate": "Win rate",
         "emptyValue": "—"
@@ -328,6 +329,13 @@
         "other": "Other"
       },
       "quoteLater": "Quote",
+      "revise": "Revise quote",
+      "yourQuoteTitle": "Your quote",
+      "yourQuoteSubtitle": "Revision #{version} · sent {sentAt}",
+      "totalLabel": "Total",
+      "validUntil": "Valid until {expiresAt}",
+      "declinedNote": "You declined this invite.",
+      "terminalStatus": "Quote {status}",
       "status": {
         "invited": "Invited",
         "declined": "Declined",

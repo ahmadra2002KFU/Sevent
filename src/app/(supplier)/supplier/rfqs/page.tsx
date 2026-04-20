@@ -95,10 +95,11 @@ export default async function SupplierRfqInboxPage() {
 
   const rawInvites = (invitesData ?? []) as unknown as InviteRow[];
 
+  // Open invites come first — they're the only actionable rows. Everything
+  // else (quoted / declined / withdrawn) surfaces below as past activity so
+  // suppliers can still find responses they already sent.
   const invited = rawInvites.filter((row) => row.status === "invited");
-  const past = rawInvites.filter(
-    (row) => row.status === "declined" || row.status === "withdrawn",
-  );
+  const past = rawInvites.filter((row) => row.status !== "invited");
 
   return (
     <section className="flex flex-col gap-8">
@@ -164,19 +165,33 @@ export default async function SupplierRfqInboxPage() {
             {past.map((invite) => {
               const event = invite.rfqs?.events;
               const subcategory = invite.rfqs?.categories;
+              const isQuoted = invite.status === "quoted";
               return (
                 <li
                   key={invite.id}
                   className="flex flex-col gap-1 px-4 py-3 text-sm"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium">
+                    <Link
+                      href={`/supplier/rfqs/${invite.id}`}
+                      className="font-medium hover:underline"
+                    >
                       {subcategory?.name_en ?? "RFQ"}
                       {event?.city ? ` · ${event.city}` : ""}
-                    </span>
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {t(`status.${invite.status}`)}
-                    </span>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[var(--color-muted-foreground)]">
+                        {t(`status.${invite.status}`)}
+                      </span>
+                      {isQuoted ? (
+                        <Link
+                          href={`/supplier/rfqs/${invite.id}/quote`}
+                          className="text-xs font-medium text-[var(--color-sevent-green,#0a7)] hover:underline"
+                        >
+                          {t("revise")}
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
                   {event?.starts_at ? (
                     <span className="text-xs text-[var(--color-muted-foreground)]">

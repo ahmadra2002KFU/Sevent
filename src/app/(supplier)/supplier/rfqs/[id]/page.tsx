@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 import { formatHalalas } from "@/lib/domain/money";
+import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { declineInviteAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,28 @@ type DetailRow = {
     } | null;
   } | null;
 };
+
+type QuoteRow = {
+  id: string;
+  status: "draft" | "sent" | "accepted" | "rejected" | "expired" | "withdrawn";
+  sent_at: string | null;
+  expires_at: string | null;
+  current_revision_id: string | null;
+};
+
+type RevisionRow = {
+  id: string;
+  version: number;
+  snapshot_jsonb: unknown;
+  created_at: string;
+};
+
+const TERMINAL_QUOTE_STATUSES = new Set<QuoteRow["status"]>([
+  "accepted",
+  "rejected",
+  "expired",
+  "withdrawn",
+]);
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -189,11 +212,42 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
 
   // Belt-and-suspenders — RLS should already scope this, but make the server
   // action flow fail closed when any UI fetches a sibling invite by id.
-  if (invite.supplier_id !== (supplierRow as { id: string }).id) notFound();
+  const supplierId = (supplierRow as { id: string }).id;
+  if (invite.supplier_id !== supplierId) notFound();
 
   const rfq = invite.rfqs;
   const event = rfq?.events ?? null;
   const subcategory = rfq?.categories ?? null;
+
+  // Load the supplier's quote on this RFQ (if any) — mirrors the quote
+  // builder's loader. Any non-null quote means the supplier has responded
+  // and the decline form should disappear.
+  let quote: QuoteRow | null = null;
+  let latestRevision: RevisionRow | null = null;
+  if (rfq?.id) {
+    const { data: quoteRow } = await admin
+      .from("quotes")
+      .select("id, status, sent_at, expires_at, current_revision_id")
+      .eq("rfq_id", rfq.id)
+      .eq("supplier_id", supplierId)
+      .maybeSingle();
+    quote = (quoteRow as QuoteRow | null) ?? null;
+
+    if (quote?.current_revision_id) {
+      const { data: revRow } = await admin
+        .from("quote_revisions")
+        .select("id, version, snapshot_jsonb, created_at")
+        .eq("id", quote.current_revision_id)
+        .maybeSingle();
+      latestRevision = (revRow as RevisionRow | null) ?? null;
+    }
+  }
+
+  const snapshot = latestRevision
+    ? (latestRevision.snapshot_jsonb as QuoteSnapshot | null)
+    : null;
+  const quoteIsTerminal = quote ? TERMINAL_QUOTE_STATUSES.has(quote.status) : false;
+  const hasActiveQuote = quote !== null && !quoteIsTerminal;
 
   return (
     <section className="flex flex-col gap-8">
@@ -242,66 +296,114 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
         </div>
       </article>
 
-      <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-        <h2 className="text-lg font-semibold">Respond</h2>
-        <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-          Due by {formatDate(invite.response_due_at)}
-        </p>
-
-        <div className="mt-4 flex flex-col gap-6 lg:flex-row">
-          <form
-            action={declineInviteAction}
-            className="flex flex-1 flex-col gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4"
-          >
-            <input type="hidden" name="invite_id" value={invite.id} />
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{t("declineReasonLabel")}</span>
-              <select
-                name="decline_reason_code"
-                required
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              >
-                <option value="too_busy">{t("declineReason.too_busy")}</option>
-                <option value="out_of_area">
-                  {t("declineReason.out_of_area")}
-                </option>
-                <option value="price_mismatch">
-                  {t("declineReason.price_mismatch")}
-                </option>
-                <option value="other">{t("declineReason.other")}</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">Note (optional)</span>
-              <textarea
-                name="note"
-                rows={3}
-                maxLength={500}
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              />
-            </label>
-            <button
-              type="submit"
-              className="self-start rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-            >
-              {t("decline")}
-            </button>
-          </form>
-
-          <div className="flex flex-1 flex-col gap-3 rounded-md border border-dashed border-[var(--color-border)] p-4">
+      {hasActiveQuote && quote && snapshot ? (
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
+          <h2 className="text-lg font-semibold">{t("yourQuoteTitle")}</h2>
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+            {t("yourQuoteSubtitle", {
+              version: latestRevision?.version ?? 1,
+              sentAt: formatDate(quote.sent_at ?? latestRevision?.created_at ?? null),
+            })}
+          </p>
+          <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field
+              label={t("totalLabel")}
+              value={formatHalalas(snapshot.total_halalas)}
+            />
+          </dl>
+          <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">
+            {t("validUntil", {
+              expiresAt: formatDate(quote.expires_at ?? snapshot.expires_at),
+            })}
+          </p>
+          <div className="mt-4">
             <Link
-              href={`/supplier/rfqs/${id}/quote`}
-              className="self-start rounded-md bg-[var(--color-sevent-green,#0a7)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              href={`/supplier/rfqs/${invite.id}/quote`}
+              className="inline-flex rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              {t("quoteLater")}
+              {t("revise")}
             </Link>
-            <p className="text-xs text-[var(--color-muted-foreground)]">
-              Draft a quote using your packages + pricing rules, or switch to
-              free-form.
-            </p>
           </div>
-        </div>
-      </article>
+        </article>
+      ) : quote && quoteIsTerminal ? (
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
+          <h2 className="text-lg font-semibold">{t("yourQuoteTitle")}</h2>
+          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
+            {t("terminalStatus", { status: quote.status })}
+          </p>
+        </article>
+      ) : invite.status === "declined" ? (
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
+          <h2 className="text-lg font-semibold">Respond</h2>
+          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
+            {t("declinedNote")}
+          </p>
+        </article>
+      ) : invite.status !== "invited" ? (
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
+          <h2 className="text-lg font-semibold">Respond</h2>
+          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
+            {t(`status.${invite.status}`)}
+          </p>
+        </article>
+      ) : (
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
+          <h2 className="text-lg font-semibold">Respond</h2>
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+            Due by {formatDate(invite.response_due_at)}
+          </p>
+
+          <div className="mt-4 flex flex-col gap-6 lg:flex-row">
+            <form
+              action={declineInviteAction}
+              className="flex flex-1 flex-col gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4"
+            >
+              <input type="hidden" name="invite_id" value={invite.id} />
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-medium">{t("declineReasonLabel")}</span>
+                <select
+                  name="decline_reason_code"
+                  required
+                  className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                >
+                  <option value="too_busy">{t("declineReason.too_busy")}</option>
+                  <option value="out_of_area">
+                    {t("declineReason.out_of_area")}
+                  </option>
+                  <option value="price_mismatch">
+                    {t("declineReason.price_mismatch")}
+                  </option>
+                  <option value="other">{t("declineReason.other")}</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-medium">Note (optional)</span>
+                <textarea
+                  name="note"
+                  rows={3}
+                  maxLength={500}
+                  className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                />
+              </label>
+              <button
+                type="submit"
+                className="self-start rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+              >
+                {t("decline")}
+              </button>
+            </form>
+
+            <div className="flex flex-1 flex-col gap-3 rounded-md border border-dashed border-[var(--color-border)] p-4">
+              <Link
+                href={`/supplier/rfqs/${invite.id}/quote`}
+                className="self-start rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              >
+                {t("quoteLater")}
+              </Link>
+            </div>
+          </div>
+        </article>
+      )}
     </section>
   );
 }
