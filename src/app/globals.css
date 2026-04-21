@@ -36,14 +36,6 @@
   --color-semantic-info-500: #1e7bd8;
   --color-semantic-info-100: #dcebfb;
 
-  /* Legacy sevent-* shims — temporary bridge while pages migrate.
-     Remove after Lane 2 merges and `rg sevent-` returns empty. */
-  --color-sevent-green: #1e7bd8;
-  --color-sevent-green-soft: #1e9a5b;
-  --color-sevent-gold: #c8993a;
-  --color-sevent-dark: #0f2e5c;
-  --color-sevent-light: #fafaf7;
-
   /* Typography — Inter loaded by next/font as --font-inter */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
