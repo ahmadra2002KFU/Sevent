@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/supabase/server";
 import { EventForm } from "./event-form";
 
@@ -7,15 +10,29 @@ export const dynamic = "force-dynamic";
 
 export default async function NewEventPage() {
   const gate = await requireRole(["organizer", "agency", "admin"]);
-  if (gate.status === "unauthenticated") redirect("/sign-in?next=/organizer/events/new");
+  if (gate.status === "unauthenticated")
+    redirect("/sign-in?next=/organizer/events/new");
   if (gate.status === "forbidden") redirect("/");
 
   const t = await getTranslations("organizer.eventForm");
+  const eventsT = await getTranslations("organizer.events");
+
   return (
-    <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      </header>
+    <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
+        <Link href="/organizer/events">
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          {eventsT("backToEvents")}
+        </Link>
+      </Button>
+      <div className="flex flex-col gap-1 border-b pb-5">
+        <p className="text-xs font-medium uppercase tracking-wide text-brand-cobalt-500">
+          {eventsT("title")}
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-navy-900 sm:text-3xl">
+          {t("title")}
+        </h1>
+      </div>
       <EventForm />
     </section>
   );

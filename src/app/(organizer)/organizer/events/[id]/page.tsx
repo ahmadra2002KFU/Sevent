@@ -1,6 +1,27 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import {
+  ArrowLeft,
+  CalendarDays,
+  MapPin,
+  Users,
+  FileText,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import {
+  StatusPill,
+  type StatusPillStatus,
+} from "@/components/ui-ext/StatusPill";
 import { formatHalalas } from "@/lib/domain/money";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
@@ -49,6 +70,43 @@ function fmtDateTime(iso: string): string {
   }
 }
 
+function fmtDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-SA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+function toPillStatus(raw: string): StatusPillStatus {
+  const allowed: StatusPillStatus[] = [
+    "draft",
+    "pending",
+    "sent",
+    "quoted",
+    "invited",
+    "awaiting_supplier",
+    "accepted",
+    "confirmed",
+    "booked",
+    "approved",
+    "paid",
+    "completed",
+    "declined",
+    "rejected",
+    "cancelled",
+    "expired",
+    "withdrawn",
+  ];
+  return (allowed as string[]).includes(raw)
+    ? (raw as StatusPillStatus)
+    : "draft";
+}
+
 export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params;
   const t = await getTranslations("organizer.events");
@@ -70,8 +128,6 @@ export default async function EventDetailPage({ params }: PageProps) {
   const event = eventData as EventDetail | null;
   if (!event) notFound();
 
-  // Ownership guard — admins pass through via profiles.role check when needed;
-  // for the organizer surface we require strict ownership.
   if (event.organizer_id !== user.id) {
     const { data: profile } = await admin
       .from("profiles")
@@ -95,98 +151,172 @@ export default async function EventDetailPage({ params }: PageProps) {
   const rfqs = (rfqsData ?? []) as unknown as EventRfq[];
 
   const budget =
-    event.budget_range_min_halalas !== null || event.budget_range_max_halalas !== null
+    event.budget_range_min_halalas !== null ||
+    event.budget_range_max_halalas !== null
       ? `${event.budget_range_min_halalas !== null ? formatHalalas(event.budget_range_min_halalas) : "—"} – ${event.budget_range_max_halalas !== null ? formatHalalas(event.budget_range_max_halalas) : "—"}`
       : null;
 
+  const title = `${eventFormT(`eventType.${event.event_type}` as never)}${
+    event.client_name ? ` · ${event.client_name}` : ""
+  }`;
+
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            {t("detailTitle")}
-          </p>
-          <h1 className="text-2xl font-semibold">
-            {eventFormT(`eventType.${event.event_type}` as never)}
-            {event.client_name ? ` · ${event.client_name}` : ""}
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {event.city} · {fmtDateTime(event.starts_at)} → {fmtDateTime(event.ends_at)}
-          </p>
-        </div>
-        <Link
-          href={`/organizer/rfqs/new?event_id=${event.id}`}
-          className="rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          New RFQ from this event
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
+        <Link href="/organizer/events">
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          {t("backToEvents")}
         </Link>
-      </header>
+      </Button>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-          <Detail label={eventFormT("venueAddressLabel")}>
-            {event.venue_address ?? "—"}
-          </Detail>
-          <Detail label={eventFormT("guestCountLabel")}>
-            {event.guest_count ?? "—"}
-          </Detail>
-          <Detail label="Budget">{budget ?? "—"}</Detail>
-          <Detail label={eventFormT("notesLabel")}>{event.notes ?? "—"}</Detail>
-        </dl>
-      </section>
+      <PageHeader
+        title={title}
+        description={t("detailEyebrow")}
+        actions={
+          <Button size="lg" asChild>
+            <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
+              <Plus aria-hidden />
+              {t("newRfqForThisEvent")}
+            </Link>
+          </Button>
+        }
+      />
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">RFQs</h2>
-        </div>
-        {rfqs.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            No RFQs yet for this event.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {rfqs.map((rfq) => (
-              <li key={rfq.id}>
-                <Link
-                  href={`/organizer/rfqs/${rfq.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">
-                      {rfq.categories?.name_en ?? "RFQ"}
-                    </span>
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {rfq.sent_at ? `Sent ${fmtDateTime(rfq.sent_at)}` : `Created ${fmtDateTime(rfq.created_at)}`}
-                      {" · "}
-                      {rfq.rfq_invites?.length ?? 0} invites
-                    </span>
-                  </div>
-                  <StatusBadge label={rfqT(`status.${rfq.status}` as never)} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip icon={MapPin}>{event.city}</Chip>
+        <Chip icon={CalendarDays}>
+          {fmtDate(event.starts_at)}
+          {fmtDate(event.starts_at) !== fmtDate(event.ends_at)
+            ? ` → ${fmtDate(event.ends_at)}`
+            : ""}
+        </Chip>
+        {event.guest_count ? (
+          <Chip icon={Users}>
+            {t("guestsCount", { count: event.guest_count })}
+          </Chip>
+        ) : null}
+      </div>
+
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">{t("detailsHeading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            <Detail label={eventFormT("venueAddressLabel")}>
+              {event.venue_address ?? "—"}
+            </Detail>
+            <Detail label={eventFormT("startsAtLabel")}>
+              {fmtDateTime(event.starts_at)}
+            </Detail>
+            <Detail label={eventFormT("endsAtLabel")}>
+              {fmtDateTime(event.ends_at)}
+            </Detail>
+            <Detail label={eventFormT("guestCountLabel")}>
+              {event.guest_count ?? "—"}
+            </Detail>
+            <Detail label={t("budget")}>{budget ?? "—"}</Detail>
+            <Detail label={eventFormT("notesLabel")}>
+              <span className="whitespace-pre-line">{event.notes ?? "—"}</span>
+            </Detail>
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="border-b pb-4 flex-row items-center justify-between">
+          <CardTitle className="text-lg">{t("rfqsHeading")}</CardTitle>
+          {rfqs.length > 0 ? (
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
+                <Plus aria-hidden />
+                {t("sendNewRfq")}
+              </Link>
+            </Button>
+          ) : null}
+        </CardHeader>
+        <CardContent className="p-0">
+          {rfqs.length === 0 ? (
+            <EmptyState
+              className="border-0 rounded-none"
+              icon={FileText}
+              title={t("noRfqsForEvent")}
+              description={t("noRfqsDescription")}
+              action={
+                <Button asChild>
+                  <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
+                    <Plus aria-hidden />
+                    {t("sendNewRfq")}
+                  </Link>
+                </Button>
+              }
+            />
+          ) : (
+            <ul className="divide-y">
+              {rfqs.map((rfq) => (
+                <li key={rfq.id}>
+                  <Link
+                    href={`/organizer/rfqs/${rfq.id}`}
+                    className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-muted/40"
+                  >
+                    <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                      <span className="truncate font-medium text-brand-navy-900">
+                        {rfq.categories?.name_en ?? "RFQ"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {rfq.sent_at
+                          ? `${fmtDateTime(rfq.sent_at)}`
+                          : `${t("createdAt")} ${fmtDateTime(rfq.created_at)}`}
+                        {" · "}
+                        {rfq.rfq_invites?.length ?? 0}{" "}
+                        {rfq.rfq_invites?.length === 1
+                          ? "invite"
+                          : "invites"}
+                      </span>
+                    </div>
+                    <StatusPill
+                      status={toPillStatus(rfq.status)}
+                      label={rfqT(`status.${rfq.status}` as never)}
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }
 
-function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+function Detail({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="text-sm">{children}</dd>
+      <dd className="text-sm text-foreground">{children}</dd>
     </div>
   );
 }
 
-function StatusBadge({ label }: { label: string }) {
+function Chip({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  children: React.ReactNode;
+}) {
   return (
-    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium">
-      {label}
+    <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium text-foreground">
+      <Icon className="size-3.5 text-brand-cobalt-500" aria-hidden />
+      {children}
     </span>
   );
 }
