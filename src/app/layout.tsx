@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Inter, Readex_Pro } from "next/font/google";
+import { Inter, Almarai } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -12,10 +12,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const readex = Readex_Pro({
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-readex",
+const almarai = Almarai({
+  subsets: ["arabic"],
+  weight: ["300", "400", "700", "800"],
+  variable: "--font-arabic",
   display: "swap",
 });
 
@@ -41,7 +41,7 @@ export default async function RootLayout({
         className={cn(
           "min-h-full flex flex-col font-sans",
           inter.variable,
-          readex.variable,
+          almarai.variable,
         )}
       >
         <NextIntlClientProvider messages={messages}>

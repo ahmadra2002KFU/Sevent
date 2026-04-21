@@ -11,7 +11,11 @@ import {
   slugifyBusinessName,
 } from "@/lib/domain/onboarding";
 import { MARKET_SEGMENT_SLUGS } from "@/lib/domain/segments";
-import { createSupabaseServerClient, requireRole } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+  requireRole,
+} from "@/lib/supabase/server";
 import { supplierScopedPath } from "@/lib/supabase/storage";
 import { uniqueSupplierSlug } from "@/lib/onboarding/slug";
 import type { SupplierDocType } from "@/lib/supabase/types";
@@ -321,7 +325,13 @@ export async function submitOnboardingStep3(
       // still gates on the `{supplier_id}/…` prefix (storage_path_owner_profile).
       const path = `${supplier.id}/logo.${ext}`;
       const buffer = Buffer.from(await logoFile.arrayBuffer());
-      const { error: upErr } = await supabase.storage
+      // Upload via service-role admin client: requireRole("supplier") already
+      // authenticated the caller, and the `@supabase/ssr` + new-key JWT does
+      // not propagate auth.uid() to storage RLS (same desync documented for
+      // table writes elsewhere). Admin bypasses RLS safely because the path
+      // is locked to `{supplier.id}/…` where supplier.id came from the
+      // authenticated server-side lookup, not the client.
+      const { error: upErr } = await admin.storage
         .from(LOGOS_BUCKET)
         .upload(path, buffer, {
           contentType: logoFile.type || "application/octet-stream",
@@ -339,14 +349,14 @@ export async function submitOnboardingStep3(
       `iban-certificate-${crypto.randomUUID()}.pdf`,
     );
     const ibanBuffer = Buffer.from(await iban.arrayBuffer());
-    const { error: ibanErr } = await supabase.storage
+    const { error: ibanErr } = await admin.storage
       .from(DOCS_BUCKET)
       .upload(ibanDocPath, ibanBuffer, {
         contentType: "application/pdf",
         upsert: false,
       });
     if (ibanErr) {
-      await rollback(supabase, uploaded);
+      await rollback(admin, uploaded);
       return { ok: false, message: `IBAN upload failed: ${ibanErr.message}` };
     }
     uploaded.push({ bucket: DOCS_BUCKET, path: ibanDocPath });
@@ -360,14 +370,14 @@ export async function submitOnboardingStep3(
         `company-profile-${crypto.randomUUID()}.pdf`,
       );
       const buffer = Buffer.from(await profileFile.arrayBuffer());
-      const { error: cpErr } = await supabase.storage
+      const { error: cpErr } = await admin.storage
         .from(DOCS_BUCKET)
         .upload(companyProfilePath, buffer, {
           contentType: "application/pdf",
           upsert: false,
         });
       if (cpErr) {
-        await rollback(supabase, uploaded);
+        await rollback(admin, uploaded);
         return { ok: false, message: `Company profile upload failed: ${cpErr.message}` };
       }
       uploaded.push({ bucket: DOCS_BUCKET, path: companyProfilePath });
@@ -398,7 +408,7 @@ export async function submitOnboardingStep3(
 
     const { error: insertErr } = await admin.from("supplier_docs").insert(docRows);
     if (insertErr) {
-      await rollback(supabase, uploaded);
+      await rollback(admin, uploaded);
       return {
         ok: false,
         message: `Saving document records failed: ${insertErr.message}`,
@@ -414,7 +424,7 @@ export async function submitOnboardingStep3(
         // DB rows for docs are idempotently inserted per-submission; we don't
         // try to delete them here because the user may want to retry. We only
         // roll back blobs we just uploaded in this call.
-        await rollback(supabase, uploaded);
+        await rollback(admin, uploaded);
         return {
           ok: false,
           message: `Saving logo reference failed: ${updateErr.message}`,
@@ -427,11 +437,12 @@ export async function submitOnboardingStep3(
     return { ok: true, supplierId: supplier.id };
   } catch (err) {
     // Best-effort rollback — we're already on the error path, don't let a
-    // failed cleanup mask the original error.
+    // failed cleanup mask the original error. Uses service-role so it can
+    // delete under the same RLS exemption the uploads relied on.
     try {
       if (uploaded.length > 0) {
-        const supabase = await createSupabaseServerClient();
-        await rollback(supabase, uploaded);
+        const admin = createSupabaseServiceRoleClient();
+        await rollback(admin, uploaded);
       }
     } catch {
       /* swallow */
@@ -441,7 +452,7 @@ export async function submitOnboardingStep3(
 }
 
 async function rollback(
-  client: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  client: ReturnType<typeof createSupabaseServiceRoleClient>,
   uploaded: Array<{ bucket: string; path: string }>,
 ): Promise<void> {
   const grouped = new Map<string, string[]>();

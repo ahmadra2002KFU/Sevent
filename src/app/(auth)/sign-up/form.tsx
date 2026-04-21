@@ -5,6 +5,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle, CalendarHeart, Loader2, Store } from "lucide-react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,17 +113,28 @@ export function SignUpForm({
 
   return (
     <Form {...form}>
-      {state?.error ? (
-        <Alert
-          variant="destructive"
-          className="border-semantic-danger-500/30 bg-semantic-danger-100 text-semantic-danger-500"
-        >
-          <AlertCircle className="size-4" aria-hidden />
-          <AlertDescription className="text-sm text-semantic-danger-500">
-            {state.error}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <AnimatePresence>
+        {state?.error ? (
+          <motion.div
+            key="signup-error"
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="overflow-hidden"
+          >
+            <Alert
+              variant="destructive"
+              className="border-semantic-danger-500/30 bg-semantic-danger-100 text-semantic-danger-500"
+            >
+              <AlertCircle className="size-4" aria-hidden />
+              <AlertDescription className="text-sm text-semantic-danger-500">
+                {state.error}
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <form
         id={formId}
@@ -132,62 +144,80 @@ export function SignUpForm({
       >
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-medium">{labels.roleLabel}</Label>
-          <div
-            role="radiogroup"
-            aria-label={labels.roleLabel}
-            className="grid gap-3 sm:grid-cols-2"
-          >
-            {roleCards.map((card) => {
-              const Icon = card.icon;
-              const isActive = role === card.value;
-              return (
-                <button
-                  key={card.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
-                  onClick={() => setRole(card.value)}
-                  className={cn(
-                    "group flex min-h-[120px] w-full flex-col items-start justify-between gap-3 rounded-xl border-2 p-4 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
-                    isActive
-                      ? "border-brand-cobalt-500 bg-brand-cobalt-100 text-brand-navy-900 shadow-brand-sm"
-                      : "border-border bg-card text-foreground hover:border-brand-cobalt-500/30 hover:bg-brand-cobalt-500/5",
-                  )}
-                >
-                  <span
+          <LayoutGroup id="signup-role">
+            <div
+              role="radiogroup"
+              aria-label={labels.roleLabel}
+              className="grid gap-3 sm:grid-cols-2"
+            >
+              {roleCards.map((card) => {
+                const Icon = card.icon;
+                const isActive = role === card.value;
+                return (
+                  <motion.button
+                    key={card.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    onClick={() => setRole(card.value)}
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 22 }}
                     className={cn(
-                      "flex size-12 items-center justify-center rounded-lg transition-colors",
+                      "group relative flex min-h-[120px] w-full flex-col items-start justify-between gap-3 overflow-hidden rounded-xl border-2 p-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
                       isActive
-                        ? "bg-brand-cobalt-500 text-white"
-                        : "bg-neutral-100 text-brand-navy-900 group-hover:bg-brand-cobalt-500/10 group-hover:text-brand-cobalt-500",
+                        ? "border-brand-cobalt-500 shadow-brand-md"
+                        : "border-border bg-card hover:border-brand-cobalt-500/30 hover:bg-brand-cobalt-500/5",
                     )}
                   >
-                    <Icon className="size-6" aria-hidden />
-                  </span>
-                  <span className="flex flex-col gap-1">
-                    <span
-                      className={cn(
-                        "text-base font-semibold leading-tight",
-                        isActive ? "text-brand-navy-900" : "text-foreground",
-                      )}
+                    {isActive ? (
+                      <motion.span
+                        layoutId="signup-role-bg"
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-cobalt-100 via-brand-cobalt-100/70 to-brand-cobalt-100/30"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        aria-hidden
+                      />
+                    ) : null}
+                    <motion.span
+                      animate={{
+                        backgroundColor: isActive ? "rgb(30 123 216)" : "rgb(244 244 239)",
+                        color: isActive ? "rgb(255 255 255)" : "rgb(15 46 92)",
+                        rotate: isActive ? [0, -8, 8, 0] : 0,
+                      }}
+                      transition={{
+                        backgroundColor: { duration: 0.3 },
+                        color: { duration: 0.3 },
+                        rotate: { duration: 0.5, ease: "easeInOut" },
+                      }}
+                      className="relative flex size-12 items-center justify-center rounded-lg"
                     >
-                      {card.title}
+                      <Icon className="size-6" aria-hidden />
+                    </motion.span>
+                    <span className="relative flex flex-col gap-1">
+                      <span
+                        className={cn(
+                          "text-base font-semibold leading-tight",
+                          isActive ? "text-brand-navy-900" : "text-foreground",
+                        )}
+                      >
+                        {card.title}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs leading-snug",
+                          isActive
+                            ? "text-brand-navy-900/80"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {card.subline}
+                      </span>
                     </span>
-                    <span
-                      className={cn(
-                        "text-xs leading-snug",
-                        isActive
-                          ? "text-brand-navy-900/80"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {card.subline}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </LayoutGroup>
         </div>
 
         <FormField

@@ -42,13 +42,13 @@
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* RTL / Arabic locale swaps the sans stack to Readex Pro (loaded by next/font).
-   Readex Pro is chosen for its large x-height and open apertures, which improve
-   readability for low-vision users. */
+/* RTL / Arabic locale swaps the sans stack to Almarai (loaded by next/font).
+   Almarai is the soft-rounded corporate face used across KSA enterprise sites;
+   neutral voice, comfortable at body sizes. */
 :root:lang(ar),
 :root[dir="rtl"] {
-  --font-sans: var(--font-readex), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-readex), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,8 +170,8 @@ body {
   line-height: 1.6;
 }
 
-/* Arabic body copy needs more leading to breathe; Readex Pro + 1.75 line-height
-   keeps dense RTL paragraphs readable for low-vision users. */
+/* Arabic body copy needs more leading to breathe; Alexandria's higher contrast
+   reads better with 1.75 line-height for dense RTL paragraphs. */
 :lang(ar) body,
 [dir="rtl"] body {
   line-height: 1.75;

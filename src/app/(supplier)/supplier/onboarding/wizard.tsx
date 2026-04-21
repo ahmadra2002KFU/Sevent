@@ -20,6 +20,7 @@ import Image from "next/image";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import {
   Building2,
   Check,
@@ -65,13 +66,21 @@ type Step = 1 | 2 | 3;
 
 export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
+  const locale = useLocale();
+  const rtl = locale === "ar";
   const router = useRouter();
   const [step, setStep] = useState<Step>(() => resolveInitialStep(bootstrap));
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [supplierId, setSupplierId] = useState<string | null>(
     bootstrap.supplier?.id ?? null,
   );
   const [isPending, startTransition] = useTransition();
+
+  const goToStep = (next: Step) => {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  };
 
   // Build the CatalogSubcategory shape SubcategoryCombobox expects. The
   // bootstrap loader returns a flat categories list; we denormalise parent
@@ -114,7 +123,7 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     }
     setServerMessage(null);
     if (result.supplierId) setSupplierId(result.supplierId);
-    if (nextStep) setStep(nextStep);
+    if (nextStep) goToStep(nextStep);
     return true;
   };
 
@@ -129,77 +138,120 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
 
       <Stepper current={step} t={t} />
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-6">
-          {step === 1 ? (
-            <Step1Form
-              initial={bootstrap.supplier}
-              pending={isPending}
-              onSubmit={(values) => {
-                const fd = new FormData();
-                fd.append("business_name", values.business_name);
-                fd.append("legal_type", values.legal_type);
-                if (values.cr_number) fd.append("cr_number", values.cr_number);
-                if (values.national_id) fd.append("national_id", values.national_id);
-                if (values.bio) fd.append("bio", values.bio);
-                fd.append("base_city", values.base_city);
-                for (const city of values.service_area_cities) {
-                  fd.append("service_area_cities", city);
-                }
-                for (const lang of values.languages) fd.append("languages", lang);
-                startTransition(async () => {
-                  const result = await submitOnboardingStep1(undefined, fd);
-                  handleStepResult(result, 2);
-                });
+          <AnimatePresence mode="wait" custom={rtl ? -direction : direction}>
+            <motion.div
+              key={step}
+              custom={rtl ? -direction : direction}
+              variants={{
+                enter: (dir: number) => ({
+                  x: dir * 48,
+                  opacity: 0,
+                  filter: "blur(6px)",
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1,
+                  filter: "blur(0px)",
+                },
+                exit: (dir: number) => ({
+                  x: dir * -48,
+                  opacity: 0,
+                  filter: "blur(6px)",
+                }),
               }}
-            />
-          ) : null}
-
-          {step === 2 ? (
-            <Step2Form
-              subcategoryOptions={subcategoryOptions}
-              initialSubcategoryIds={bootstrap.subcategoryIds}
-              initialSegments={
-                (bootstrap.supplier?.works_with_segments ?? []) as MarketSegmentSlug[]
-              }
-              pending={isPending}
-              disabled={!supplierId}
-              onBack={() => setStep(1)}
-              onSubmit={(fd) => {
-                startTransition(async () => {
-                  const result = await submitOnboardingStep2(undefined, fd);
-                  handleStepResult(result, 3);
-                });
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 260, damping: 28, mass: 0.8 },
+                opacity: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
+                filter: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
               }}
-            />
-          ) : null}
+            >
+              {step === 1 ? (
+                <Step1Form
+                  initial={bootstrap.supplier}
+                  pending={isPending}
+                  onSubmit={(values) => {
+                    const fd = new FormData();
+                    fd.append("business_name", values.business_name);
+                    fd.append("legal_type", values.legal_type);
+                    if (values.cr_number) fd.append("cr_number", values.cr_number);
+                    if (values.national_id) fd.append("national_id", values.national_id);
+                    if (values.bio) fd.append("bio", values.bio);
+                    fd.append("base_city", values.base_city);
+                    for (const city of values.service_area_cities) {
+                      fd.append("service_area_cities", city);
+                    }
+                    for (const lang of values.languages) fd.append("languages", lang);
+                    startTransition(async () => {
+                      const result = await submitOnboardingStep1(undefined, fd);
+                      handleStepResult(result, 2);
+                    });
+                  }}
+                />
+              ) : null}
 
-          {step === 3 ? (
-            <Step3Form
-              initialLogoPath={bootstrap.supplier?.logo_path ?? null}
-              pending={isPending}
-              disabled={!supplierId}
-              onBack={() => setStep(2)}
-              onSubmit={(fd) => {
-                startTransition(async () => {
-                  const result = await submitOnboardingStep3(undefined, fd);
-                  if (result.ok) {
-                    setServerMessage(t("submittedForReview"));
-                    router.push("/supplier/dashboard?submitted=1");
-                    router.refresh();
-                  } else {
-                    setServerMessage(result.message ?? t("genericError"));
+              {step === 2 ? (
+                <Step2Form
+                  subcategoryOptions={subcategoryOptions}
+                  initialSubcategoryIds={bootstrap.subcategoryIds}
+                  initialSegments={
+                    (bootstrap.supplier?.works_with_segments ?? []) as MarketSegmentSlug[]
                   }
-                });
-              }}
-            />
-          ) : null}
+                  pending={isPending}
+                  disabled={!supplierId}
+                  onBack={() => goToStep(1)}
+                  onSubmit={(fd) => {
+                    startTransition(async () => {
+                      const result = await submitOnboardingStep2(undefined, fd);
+                      handleStepResult(result, 3);
+                    });
+                  }}
+                />
+              ) : null}
 
-          {serverMessage ? (
-            <Alert className="mt-4">
-              <AlertDescription>{serverMessage}</AlertDescription>
-            </Alert>
-          ) : null}
+              {step === 3 ? (
+                <Step3Form
+                  initialLogoPath={bootstrap.supplier?.logo_path ?? null}
+                  pending={isPending}
+                  disabled={!supplierId}
+                  onBack={() => goToStep(2)}
+                  onSubmit={(fd) => {
+                    startTransition(async () => {
+                      const result = await submitOnboardingStep3(undefined, fd);
+                      if (result.ok) {
+                        setServerMessage(t("submittedForReview"));
+                        router.push("/supplier/dashboard?submitted=1");
+                        router.refresh();
+                      } else {
+                        setServerMessage(result.message ?? t("genericError"));
+                      }
+                    });
+                  }}
+                />
+              ) : null}
+            </motion.div>
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {serverMessage ? (
+              <motion.div
+                key="server-message"
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+                className="overflow-hidden"
+              >
+                <Alert className="mt-4">
+                  <AlertDescription>{serverMessage}</AlertDescription>
+                </Alert>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </div>
@@ -231,51 +283,94 @@ function Stepper({
     { id: 3, label: t("step3Heading") },
   ];
   return (
-    <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-      {steps.map((s) => {
-        const done = current > s.id;
-        const active = current === s.id;
-        return (
-          <li
-            key={s.id}
-            className={cn(
-              "flex items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors",
-              active
-                ? "border-brand-cobalt-500 bg-brand-cobalt-100/50"
-                : done
-                  ? "border-semantic-success-100 bg-semantic-success-100/40"
-                  : "border-border bg-card",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                active
-                  ? "bg-brand-cobalt-500 text-white"
+    <LayoutGroup id="stepper">
+      <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {steps.map((s) => {
+          const done = current > s.id;
+          const active = current === s.id;
+          return (
+            <motion.li
+              key={s.id}
+              layout
+              animate={{
+                borderColor: active
+                  ? "rgb(30 123 216)"
                   : done
-                    ? "bg-semantic-success-500 text-white"
-                    : "bg-neutral-200 text-neutral-600",
-              )}
+                    ? "rgb(216 241 227)"
+                    : "rgb(231 230 223)",
+                backgroundColor: active
+                  ? "rgba(220 235 251 / 0.5)"
+                  : done
+                    ? "rgba(216 241 227 / 0.4)"
+                    : "rgb(255 255 255)",
+              }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+              className="relative flex items-center gap-3 overflow-hidden rounded-lg border px-4 py-3 text-sm"
             >
-              {done ? <Check className="size-4" aria-hidden /> : s.id}
-            </span>
-            <span
-              className={cn(
-                "flex flex-col",
-                active
-                  ? "text-brand-navy-900 font-medium"
-                  : "text-muted-foreground",
-              )}
-            >
-              <span className="text-xs uppercase tracking-wide">
-                {t("stepOfTotal", { current: s.id, total: 3 })}
+              {active ? (
+                <motion.span
+                  layoutId="stepper-active-glow"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-cobalt-100/60 via-transparent to-transparent"
+                  aria-hidden
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              ) : null}
+              <motion.span
+                animate={{
+                  scale: active ? 1.1 : 1,
+                  backgroundColor: active
+                    ? "rgb(30 123 216)"
+                    : done
+                      ? "rgb(30 154 91)"
+                      : "rgb(231 230 223)",
+                  color: active || done ? "rgb(255 255 255)" : "rgb(107 107 100)",
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                className="relative flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {done ? (
+                    <motion.span
+                      key="check"
+                      initial={{ scale: 0, rotate: -90 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0, rotate: 90 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                      className="inline-flex"
+                    >
+                      <Check className="size-4" aria-hidden />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key={`n-${s.id}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                    >
+                      {s.id}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.span>
+              <span
+                className={cn(
+                  "relative flex flex-col",
+                  active
+                    ? "text-brand-navy-900 font-medium"
+                    : "text-muted-foreground",
+                )}
+              >
+                <span className="text-xs uppercase tracking-wide">
+                  {t("stepOfTotal", { current: s.id, total: 3 })}
+                </span>
+                <span>{s.label}</span>
               </span>
-              <span>{s.label}</span>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+            </motion.li>
+          );
+        })}
+      </ol>
+    </LayoutGroup>
   );
 }
 
@@ -295,9 +390,22 @@ function ProgressBar({ percent, label }: { percent: number; label: string }) {
         <span className="tabular-nums font-medium text-brand-navy-900">{clamped}%</span>
       </div>
       <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
-        <div
-          className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-brand-cobalt-500 to-brand-navy-900 transition-[width] duration-500 ease-out"
-          style={{ width: `${clamped}%` }}
+        <motion.div
+          className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-brand-cobalt-500 to-brand-navy-900"
+          initial={false}
+          animate={{ width: `${clamped}%` }}
+          transition={{ type: "spring", stiffness: 140, damping: 22, mass: 0.8 }}
+        />
+        <motion.div
+          className="pointer-events-none absolute inset-y-0 start-0 w-1/3 rounded-full bg-gradient-to-r from-transparent via-white/40 to-transparent"
+          animate={{ x: ["-100%", "400%"] }}
+          transition={{
+            duration: 2.4,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatDelay: 1.2,
+          }}
+          aria-hidden
         />
       </div>
     </div>
@@ -451,7 +559,13 @@ function Step1Form({
           {LANGUAGES.map((lang) => {
             const active = (languagesSelected as readonly string[]).includes(lang);
             return (
-              <label key={lang} className="group relative cursor-pointer select-none">
+              <motion.label
+                key={lang}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                className="group relative cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   value={lang}
@@ -460,23 +574,27 @@ function Step1Form({
                 />
                 <span
                   className={cn(
-                    "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-all",
+                    "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors",
                     "border-neutral-200 bg-neutral-50 text-neutral-900",
                     "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
                     "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
                     "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
                   )}
                 >
-                  <Check
-                    className={cn(
-                      "size-3.5 transition-all",
-                      active ? "opacity-100 scale-100" : "opacity-0 scale-75 -ms-1",
-                    )}
-                    aria-hidden
-                  />
+                  <motion.span
+                    animate={{
+                      width: active ? 14 : 0,
+                      opacity: active ? 1 : 0,
+                      marginInlineEnd: active ? 0 : -4,
+                    }}
+                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                    className="inline-flex items-center overflow-hidden"
+                  >
+                    <Check className="size-3.5" aria-hidden />
+                  </motion.span>
                   {t(`language.${lang}`)}
                 </span>
-              </label>
+              </motion.label>
             );
           })}
         </div>
@@ -527,56 +645,86 @@ function PersonCompanyPicker({
         </span>
         <HelperText>{t("helper.personCompany")}</HelperText>
       </Label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {tiles.map((tile) => {
-          const active = value === tile.value;
-          return (
-            <button
-              key={tile.value}
-              type="button"
-              onClick={() => onChange(tile.value)}
-              aria-pressed={active}
-              className={cn(
-                "group flex min-h-[120px] items-start gap-4 rounded-2xl border p-5 text-start transition-all",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
-                active
-                  ? "border-brand-cobalt-500 bg-brand-cobalt-100 shadow-brand-sm"
-                  : "border-border bg-card hover:border-brand-cobalt-500/40",
-              )}
-            >
-              <span
+      <LayoutGroup id="person-company">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {tiles.map((tile) => {
+            const active = value === tile.value;
+            return (
+              <motion.button
+                key={tile.value}
+                type="button"
+                onClick={() => onChange(tile.value)}
+                aria-pressed={active}
+                whileHover={{ y: -3, scale: 1.01 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
                 className={cn(
-                  "flex size-12 shrink-0 items-center justify-center rounded-xl",
+                  "group relative flex min-h-[120px] items-start gap-4 overflow-hidden rounded-2xl border p-5 text-start",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
                   active
-                    ? "bg-brand-cobalt-500 text-white"
-                    : "bg-brand-cobalt-100 text-brand-cobalt-500",
+                    ? "border-brand-cobalt-500 shadow-brand-md"
+                    : "border-border bg-card hover:border-brand-cobalt-500/40",
                 )}
               >
-                <tile.Icon className="size-6" aria-hidden />
-              </span>
-              <span className="flex flex-col gap-1">
-                <span className="text-base font-semibold text-brand-navy-900">
-                  {tile.title}
+                {active ? (
+                  <motion.span
+                    layoutId="person-company-bg"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-cobalt-100 via-brand-cobalt-100/80 to-brand-cobalt-100/40"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    aria-hidden
+                  />
+                ) : null}
+                <motion.span
+                  animate={{
+                    backgroundColor: active ? "rgb(30 123 216)" : "rgb(220 235 251)",
+                    color: active ? "rgb(255 255 255)" : "rgb(30 123 216)",
+                    rotate: active ? [0, -6, 6, 0] : 0,
+                  }}
+                  transition={{
+                    backgroundColor: { duration: 0.3 },
+                    color: { duration: 0.3 },
+                    rotate: { duration: 0.5, ease: "easeInOut" },
+                  }}
+                  className="relative flex size-12 shrink-0 items-center justify-center rounded-xl"
+                >
+                  <tile.Icon className="size-6" aria-hidden />
+                </motion.span>
+                <span className="relative flex flex-col gap-1">
+                  <span className="text-base font-semibold text-brand-navy-900">
+                    {tile.title}
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">
+                    {tile.subtitle}
+                  </span>
                 </span>
-                <span className="text-xs leading-relaxed text-muted-foreground">
-                  {tile.subtitle}
-                </span>
-              </span>
-              <span
-                className={cn(
-                  "ms-auto inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
-                  active
-                    ? "border-brand-cobalt-500 bg-brand-cobalt-500 text-white"
-                    : "border-border text-transparent",
-                )}
-                aria-hidden
-              >
-                ✓
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <motion.span
+                  animate={{
+                    backgroundColor: active ? "rgb(30 123 216)" : "transparent",
+                    borderColor: active ? "rgb(30 123 216)" : "rgb(231 230 223)",
+                    scale: active ? 1 : 0.85,
+                  }}
+                  transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                  className="relative ms-auto inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold text-white"
+                  aria-hidden
+                >
+                  <AnimatePresence>
+                    {active ? (
+                      <motion.span
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0, rotate: 45 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                      >
+                        ✓
+                      </motion.span>
+                    ) : null}
+                  </AnimatePresence>
+                </motion.span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </LayoutGroup>
     </div>
   );
 }
@@ -613,29 +761,55 @@ function ServiceAreaPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      {value.length > 0 ? (
-        <ul className="flex flex-wrap gap-1.5">
-          {value.map((slug) => (
-            <li key={slug}>
-              <button
-                type="button"
-                onClick={() => removeCity(slug)}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
-                aria-label={t("serviceAreaRemove", {
-                  city: cityNameFor(slug, locale),
-                })}
-              >
-                <span>{cityNameFor(slug, locale)}</span>
-                <X className="size-3.5 opacity-70" aria-hidden />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs italic text-muted-foreground">
-          {t("serviceAreaEmpty")}
-        </p>
-      )}
+      <AnimatePresence mode="popLayout" initial={false}>
+        {value.length > 0 ? (
+          <motion.ul
+            key="chips"
+            layout
+            className="flex flex-wrap gap-1.5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {value.map((slug) => (
+                <motion.li
+                  key={slug}
+                  layout
+                  initial={{ opacity: 0, scale: 0.6, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.6, y: -4 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                >
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => removeCity(slug)}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                    aria-label={t("serviceAreaRemove", {
+                      city: cityNameFor(slug, locale),
+                    })}
+                  >
+                    <span>{cityNameFor(slug, locale)}</span>
+                    <X className="size-3.5 opacity-70" aria-hidden />
+                  </motion.button>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        ) : (
+          <motion.p
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-xs italic text-muted-foreground"
+          >
+            {t("serviceAreaEmpty")}
+          </motion.p>
+        )}
+      </AnimatePresence>
       {value.length < 15 ? (
         <CityCombobox
           key={nonce}
@@ -719,8 +893,8 @@ function Step2Form({
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
       <Field label={t("categoriesLabel")} helperKey="helper.categories">
-        {selectedEntries.length > 0 ? (
-          <ul className="mb-2 flex flex-col gap-1.5">
+        <motion.ul layout className="mb-2 flex flex-col gap-1.5">
+          <AnimatePresence mode="popLayout" initial={false}>
             {selectedEntries.map((entry) => {
               const parent =
                 locale === "ar" && entry.parent_name_ar
@@ -729,9 +903,14 @@ function Step2Form({
               const child =
                 locale === "ar" && entry.name_ar ? entry.name_ar : entry.name_en;
               return (
-                <li
+                <motion.li
                   key={entry.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-brand-cobalt-500/30 bg-brand-cobalt-100/40 px-3 py-2 text-sm"
+                  layout
+                  initial={{ opacity: 0, height: 0, x: -16, scale: 0.96 }}
+                  animate={{ opacity: 1, height: "auto", x: 0, scale: 1 }}
+                  exit={{ opacity: 0, height: 0, x: 16, scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 28 }}
+                  className="flex items-center justify-between gap-2 overflow-hidden rounded-lg border border-brand-cobalt-500/30 bg-brand-cobalt-100/40 px-3 py-2 text-sm"
                 >
                   <span className="min-w-0 truncate">
                     {parent ? (
@@ -748,35 +927,21 @@ function Step2Form({
                   >
                     <Trash2 className="size-4" aria-hidden />
                   </Button>
-                </li>
+                </motion.li>
               );
             })}
-          </ul>
-        ) : null}
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
-            <SubcategoryCombobox
-              key={pickerNonce}
-              subcategories={subcategoryOptions.filter(
-                (s) => !selectedIds.includes(s.id),
-              )}
-              value={pendingPick}
-              onChange={addSub}
-              placeholder={t("categoryPickerPlaceholder")}
-              ariaLabel={t("categoryPickerPlaceholder")}
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setPickerNonce((n) => n + 1)}
-            aria-hidden
-            className="pointer-events-none opacity-60"
-          >
-            <Plus className="size-4" aria-hidden />
-          </Button>
-        </div>
+          </AnimatePresence>
+        </motion.ul>
+        <SubcategoryCombobox
+          key={pickerNonce}
+          subcategories={subcategoryOptions.filter(
+            (s) => !selectedIds.includes(s.id),
+          )}
+          value={pendingPick}
+          onChange={addSub}
+          placeholder={t("categoryPickerPlaceholder")}
+          ariaLabel={t("categoryPickerPlaceholder")}
+        />
       </Field>
 
       <Field label={t("segmentsLabel")} helperKey="helper.segments">
@@ -787,11 +952,22 @@ function Step2Form({
         />
       </Field>
 
-      {error ? (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
+      <AnimatePresence>
+        {error ? (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="overflow-hidden"
+          >
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
         <Button type="button" variant="outline" onClick={onBack}>
@@ -882,31 +1058,66 @@ function Step3Form({
     <form className="flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
       <Field label={t("logo.label")} helperKey="helper.logo">
         <div className="flex items-start gap-4">
-          <div
-            className={cn(
-              "flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40",
-              logoPreview && "border-solid",
-            )}
+          <motion.div
+            layout
+            animate={{
+              borderRadius: logoPreview ? 16 : 12,
+              borderStyle: logoPreview ? "solid" : "dashed",
+              borderColor: logoPreview ? "rgb(30 123 216)" : "rgb(231 230 223)",
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="flex size-20 shrink-0 items-center justify-center overflow-hidden border bg-muted/40"
             aria-hidden
           >
-            {logoPreview ? (
-              // Using <Image> with unoptimized blob URL; logo stays in local memory only.
-              <Image
-                src={logoPreview}
-                alt=""
-                width={80}
-                height={80}
-                unoptimized
-                className="size-full object-cover"
-              />
-            ) : initialLogoPath ? (
-              <ImageIcon className="size-7 text-muted-foreground" aria-hidden />
-            ) : (
-              <ImageIcon className="size-7 text-muted-foreground" aria-hidden />
-            )}
-          </div>
-          <label className="flex flex-1 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
-            <UploadCloud className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+            <AnimatePresence mode="wait">
+              {logoPreview ? (
+                <motion.div
+                  key="preview"
+                  initial={{ opacity: 0, scale: 0.6, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, scale: 0.8, filter: "blur(4px)" }}
+                  transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                  className="size-full"
+                >
+                  <Image
+                    src={logoPreview}
+                    alt=""
+                    width={80}
+                    height={80}
+                    unoptimized
+                    className="size-full object-cover"
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="placeholder"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ImageIcon className="size-7 text-muted-foreground" aria-hidden />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          <motion.label
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="flex flex-1 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30"
+          >
+            <motion.span
+              animate={{ y: values.logo ? 0 : [0, -3, 0] }}
+              transition={
+                values.logo
+                  ? {}
+                  : { duration: 1.6, ease: "easeInOut", repeat: Infinity, repeatDelay: 2 }
+              }
+              className="inline-flex"
+            >
+              <UploadCloud className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+            </motion.span>
             <span className="flex-1 truncate text-muted-foreground">
               {values.logo
                 ? `${values.logo.name} (${Math.round(values.logo.size / 1024)} KB)`
@@ -920,7 +1131,7 @@ function Step3Form({
                 pickFile("logo", e.target.files?.[0] ?? undefined, validateLogo)
               }
             />
-          </label>
+          </motion.label>
         </div>
       </Field>
 
@@ -954,11 +1165,22 @@ function Step3Form({
         />
       </Field>
 
-      {error ? (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
+      <AnimatePresence>
+        {error ? (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="overflow-hidden"
+          >
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
         <Button type="button" variant="outline" onClick={onBack}>
@@ -999,24 +1221,60 @@ function FileDropzone({
   onSelect: (file: File | undefined) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
-      {file ? (
-        <FileText className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
-      ) : (
-        <Upload className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
-      )}
-      <span className="flex-1 truncate text-muted-foreground">
-        {file
-          ? `${file.name} (${Math.round(file.size / 1024)} KB)`
-          : label}
-      </span>
+    <motion.label
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      animate={{
+        borderColor: file ? "rgb(30 123 216)" : "rgb(231 230 223)",
+        borderStyle: file ? "solid" : "dashed",
+        backgroundColor: file
+          ? "rgba(220 235 251 / 0.45)"
+          : "rgba(244 244 239 / 0.3)",
+      }}
+      transition={{ type: "spring", stiffness: 320, damping: 26 }}
+      className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {file ? (
+          <motion.span
+            key="file"
+            initial={{ scale: 0, rotate: -90, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            exit={{ scale: 0, rotate: 90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 22 }}
+            className="inline-flex"
+          >
+            <FileText className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="upload"
+            initial={{ scale: 0, rotate: 90, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            exit={{ scale: 0, rotate: -90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 22 }}
+            className="inline-flex"
+          >
+            <Upload className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <motion.span
+        key={file ? file.name : "empty"}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="flex-1 truncate text-muted-foreground"
+      >
+        {file ? `${file.name} (${Math.round(file.size / 1024)} KB)` : label}
+      </motion.span>
       <input
         type="file"
         accept={accept}
         className="sr-only"
         onChange={(e) => onSelect(e.target.files?.[0] ?? undefined)}
       />
-    </label>
+    </motion.label>
   );
 }
 
