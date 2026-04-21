@@ -7,7 +7,51 @@
     "browse": "Browse",
     "forSuppliers": "For suppliers",
     "signIn": "Sign in",
-    "signUp": "Sign up"
+    "signUp": "Sign up",
+    "role": {
+      "organizer": "Organizer",
+      "supplier": "Supplier",
+      "admin": "Admin"
+    },
+    "organizer": {
+      "dashboard": "Dashboard",
+      "events": "Events",
+      "rfqs": "RFQs",
+      "bookings": "Bookings"
+    },
+    "supplier": {
+      "dashboard": "Dashboard",
+      "onboarding": "Onboarding",
+      "catalog": "Catalog",
+      "calendar": "Calendar",
+      "rfqs": "RFQs",
+      "bookings": "Bookings"
+    },
+    "admin": {
+      "dashboard": "Overview",
+      "verifications": "Verifications"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading…",
+    "empty": "No data yet.",
+    "error": "Something went wrong."
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "userMenu": {
+    "label": "Account",
+    "signOut": "Sign out"
   },
   "landing": {
     "hero": {

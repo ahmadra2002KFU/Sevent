@@ -217,19 +217,19 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <th className="py-2 pr-3">{t("label")}</th>
-                <th className="py-2 pr-3">{t("qty")}</th>
-                <th className="py-2 pr-3">{t("unit")}</th>
-                <th className="py-2 pr-3">{t("unitPrice")}</th>
-                <th className="py-2 pr-3">{t("total")}</th>
+              <tr className="border-b border-[var(--color-border)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                <th className="py-2 pe-3">{t("label")}</th>
+                <th className="py-2 pe-3">{t("qty")}</th>
+                <th className="py-2 pe-3">{t("unit")}</th>
+                <th className="py-2 pe-3">{t("unitPrice")}</th>
+                <th className="py-2 pe-3">{t("total")}</th>
                 <th className="py-2" aria-hidden />
               </tr>
             </thead>
             <tbody>
               {fields.map((field, idx) => (
                 <tr key={field.id} className="border-b border-[var(--color-border)]">
-                  <td className="py-2 pr-3 align-top">
+                  <td className="py-2 pe-3 align-top">
                     <input
                       {...register(`line_items.${idx}.label`)}
                       className="w-full rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
@@ -237,7 +237,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                     <ErrorText msg={errors.line_items?.[idx]?.label?.message} />
                     <input type="hidden" {...register(`line_items.${idx}.kind`)} />
                   </td>
-                  <td className="py-2 pr-3 align-top">
+                  <td className="py-2 pe-3 align-top">
                     <input
                       type="number"
                       min={1}
@@ -245,7 +245,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                       className="w-20 rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
                     />
                   </td>
-                  <td className="py-2 pr-3 align-top">
+                  <td className="py-2 pe-3 align-top">
                     <Controller
                       control={control}
                       name={`line_items.${idx}.unit`}
@@ -263,7 +263,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                       )}
                     />
                   </td>
-                  <td className="py-2 pr-3 align-top">
+                  <td className="py-2 pe-3 align-top">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -272,7 +272,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                     />
                     <ErrorText msg={errors.line_items?.[idx]?.unit_price_sar?.message} />
                   </td>
-                  <td className="py-2 pr-3 align-top">
+                  <td className="py-2 pe-3 align-top">
                     <input
                       type="text"
                       inputMode="decimal"

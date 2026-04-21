@@ -263,7 +263,7 @@ export default async function AdminDashboardPage() {
             </p>
           ) : (
             <div className="overflow-x-auto rounded-md border border-[var(--color-border)] bg-white">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-start text-sm">
                 <thead className="bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
                   <tr>
                     <th className="px-3 py-2 font-medium">
@@ -308,7 +308,7 @@ export default async function AdminDashboardPage() {
           </p>
         ) : (
           <div className="overflow-x-auto rounded-md border border-[var(--color-border)] bg-white">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-start text-sm">
               <thead className="bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
                 <tr>
                   <th className="px-3 py-2 font-medium">

@@ -265,14 +265,14 @@ function BookingSnapshotBody({
                   key={`${item.label}-${idx}`}
                   className="border-t border-[var(--color-border)] first:border-t-0"
                 >
-                  <td className="py-2 pr-3">
+                  <td className="py-2 pe-3">
                     <div className="font-medium">{item.label}</div>
                     <div className="text-xs text-[var(--color-muted-foreground)]">
                       {item.qty} × {formatHalalas(item.unit_price_halalas)}{" "}
                       ({item.unit})
                     </div>
                   </td>
-                  <td className="py-2 text-right font-medium">
+                  <td className="py-2 text-end font-medium">
                     {formatHalalas(item.total_halalas)}
                   </td>
                 </tr>

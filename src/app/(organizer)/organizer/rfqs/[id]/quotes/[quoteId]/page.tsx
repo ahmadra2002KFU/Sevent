@@ -174,7 +174,7 @@ export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
         ) : (
           <div className="overflow-hidden rounded-md border border-[var(--color-border)]">
             <table className="w-full text-sm">
-              <thead className="bg-[var(--color-muted)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+              <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
                 <tr>
                   <th className="px-3 py-2 font-medium">Item</th>
                   <th className="px-3 py-2 font-medium">Qty</th>
@@ -250,7 +250,7 @@ export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
           {snap.inclusions.length === 0 ? (
             <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
           ) : (
-            <ul className="list-disc space-y-1 pl-5 text-sm">
+            <ul className="list-disc space-y-1 ps-5 text-sm">
               {snap.inclusions.map((inc, idx) => (
                 <li key={`inc-${idx}`}>{inc}</li>
               ))}
@@ -262,7 +262,7 @@ export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
           {snap.exclusions.length === 0 ? (
             <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
           ) : (
-            <ul className="list-disc space-y-1 pl-5 text-sm">
+            <ul className="list-disc space-y-1 ps-5 text-sm">
               {snap.exclusions.map((exc, idx) => (
                 <li key={`exc-${idx}`}>{exc}</li>
               ))}

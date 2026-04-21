@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Inter, Tajawal, Geist } from "next/font/google";
-import "./globals.css";
+import { Inter, Tajawal } from "next/font/google";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,10 +24,7 @@ export const metadata: Metadata = {
   description:
     "Sevent is the managed marketplace for event organizers and suppliers in Saudi Arabia. Discover, request, compare, and book event services end-to-end.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico" },
-    ],
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
   },
 };
 
@@ -44,7 +39,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={cn("h-full", "antialiased", inter.variable, tajawal.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", inter.variable, tajawal.variable)}
     >
       <body className="min-h-full flex flex-col font-sans">
         <NextIntlClientProvider messages={messages}>

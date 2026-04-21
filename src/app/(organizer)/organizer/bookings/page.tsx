@@ -199,7 +199,7 @@ export default async function OrganizerBookingsListPage({
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+            <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
               <tr>
                 <th className="px-4 py-3 font-medium">{t("table.supplier")}</th>
                 <th className="px-4 py-3 font-medium">{t("table.event")}</th>
@@ -247,7 +247,7 @@ export default async function OrganizerBookingsListPage({
                     <td className="px-4 py-3">
                       {total !== null ? formatHalalas(total) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end">
                       <Link
                         href={`/organizer/bookings/${row.id}`}
                         className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"

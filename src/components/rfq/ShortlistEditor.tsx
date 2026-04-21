@@ -178,7 +178,7 @@ export function ShortlistEditor({
             className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
           {showDropdown ? (
-            <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-md border border-[var(--color-border)] bg-white shadow-sm">
+            <div className="absolute start-0 end-0 top-full z-10 mt-1 overflow-hidden rounded-md border border-[var(--color-border)] bg-white shadow-sm">
               {searching ? (
                 <p className="px-3 py-2 text-sm text-[var(--color-muted-foreground)]">
                   Searching…
@@ -194,7 +194,7 @@ export function ShortlistEditor({
                       <button
                         type="button"
                         onClick={() => handlePick(s)}
-                        className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-[var(--color-muted)]"
+                        className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm hover:bg-[var(--color-muted)]"
                       >
                         <span className="font-medium">{s.business_name}</span>
                         <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">

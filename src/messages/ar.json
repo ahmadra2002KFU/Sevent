@@ -4,10 +4,54 @@
     "tagline": "سوق الفعاليات السعودي"
   },
   "nav": {
-    "browse": "تصفح",
+    "browse": "تصفّح",
     "forSuppliers": "للموردين",
     "signIn": "تسجيل الدخول",
-    "signUp": "إنشاء حساب"
+    "signUp": "إنشاء حساب",
+    "role": {
+      "organizer": "منظّم",
+      "supplier": "مورّد",
+      "admin": "مشرف"
+    },
+    "organizer": {
+      "dashboard": "لوحة التحكم",
+      "events": "الفعاليات",
+      "rfqs": "طلبات العروض",
+      "bookings": "الحجوزات"
+    },
+    "supplier": {
+      "dashboard": "لوحة التحكم",
+      "onboarding": "التسجيل",
+      "catalog": "الباقات",
+      "calendar": "التقويم",
+      "rfqs": "طلبات العروض",
+      "bookings": "الحجوزات"
+    },
+    "admin": {
+      "dashboard": "نظرة عامة",
+      "verifications": "التحققات"
+    }
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "back": "رجوع",
+    "next": "التالي",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد بيانات بعد.",
+    "error": "حدث خطأ ما."
+  },
+  "languageSwitcher": {
+    "label": "اللغة",
+    "en": "English",
+    "ar": "العربية"
+  },
+  "userMenu": {
+    "label": "الحساب",
+    "signOut": "تسجيل الخروج"
   },
   "landing": {
     "hero": {

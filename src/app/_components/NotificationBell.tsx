@@ -60,7 +60,7 @@ export default async function NotificationBell({
       title={title}
       className={
         className ??
-        "relative ml-1 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-muted)]"
+        "relative ms-1 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-muted)]"
       }
     >
       <svg

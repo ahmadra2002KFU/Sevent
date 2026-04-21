@@ -4,10 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ------------------------------------------------------------------ */
+/* Brand palette — source of truth for Tailwind utility generation     */
+/* Exposed as utilities like `bg-brand-cobalt-500`, `text-neutral-600` */
+/* ------------------------------------------------------------------ */
 @theme {
-  /* ---------------------------------------------------------------- */
-  /* Brand — navy anchor, cobalt action, gold trust accent             */
-  /* ---------------------------------------------------------------- */
   --color-brand-navy-900: #0f2e5c;
   --color-brand-navy-700: #1c3f73;
   --color-brand-navy-500: #355b95;
@@ -19,9 +20,6 @@
   --color-accent-gold-500: #c8993a;
   --color-accent-gold-100: #f6ebce;
 
-  /* ---------------------------------------------------------------- */
-  /* Neutrals — warm off-white system                                  */
-  /* ---------------------------------------------------------------- */
   --color-neutral-50: #fafaf7;
   --color-neutral-100: #f4f4ef;
   --color-neutral-200: #e7e6df;
@@ -29,9 +27,6 @@
   --color-neutral-600: #6b6b64;
   --color-neutral-900: #1a1a18;
 
-  /* ---------------------------------------------------------------- */
-  /* Semantic                                                          */
-  /* ---------------------------------------------------------------- */
   --color-semantic-success-500: #1e9a5b;
   --color-semantic-success-100: #d8f1e3;
   --color-semantic-warning-500: #d89423;
@@ -41,101 +36,94 @@
   --color-semantic-info-500: #1e7bd8;
   --color-semantic-info-100: #dcebfb;
 
-  /* ---------------------------------------------------------------- */
-  /* shadcn/ui semantic aliases — also used across existing pages      */
-  /* ---------------------------------------------------------------- */
-  --color-background: #fafaf7;
-  --color-foreground: #1a1a18;
-  --color-card: #ffffff;
-  --color-card-foreground: #1a1a18;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #1a1a18;
-  --color-primary: #1e7bd8;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f4f4ef;
-  --color-secondary-foreground: #0f2e5c;
-  --color-muted: #f4f4ef;
-  --color-muted-foreground: #6b6b64;
-  --color-accent: #c8993a;
-  --color-accent-foreground: #0f2e5c;
-  --color-destructive: #c4353c;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #e7e6df;
-  --color-input: #e7e6df;
-  --color-ring: #1e7bd8;
-
-  /* ---------------------------------------------------------------- */
-  /* Legacy sevent-* shims — temporary bridge while pages migrate.     */
-  /* Remove after Lane 2 (organizer) merges and `rg sevent-` is empty. */
-  /* ---------------------------------------------------------------- */
+  /* Legacy sevent-* shims — temporary bridge while pages migrate.
+     Remove after Lane 2 merges and `rg sevent-` returns empty. */
   --color-sevent-green: #1e7bd8;
   --color-sevent-green-soft: #1e9a5b;
   --color-sevent-gold: #c8993a;
   --color-sevent-dark: #0f2e5c;
   --color-sevent-light: #fafaf7;
 
-  /* ---------------------------------------------------------------- */
-  /* Typography — fonts resolved per locale                            */
-  /* ---------------------------------------------------------------- */
+  /* Typography — Inter loaded by next/font as --font-inter */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-
-  /* ---------------------------------------------------------------- */
-  /* Radius                                                            */
-  /* ---------------------------------------------------------------- */
-  --radius: 0.5rem;
 }
 
-/* Arabic locale swaps the sans stack to Tajawal */
+/* RTL locale swaps the sans stack to Tajawal (loaded by next/font) */
 :root[dir="rtl"] {
   --font-sans: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
 }
 
-html,
-body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
+/* ------------------------------------------------------------------ */
+/* Runtime theme vars — consumed by shadcn primitives via @theme       */
+/* inline below. Using our hex palette, not shadcn's default oklch.    */
+/* ------------------------------------------------------------------ */
+:root {
+  --background: #fafaf7;
+  --foreground: #1a1a18;
+  --card: #ffffff;
+  --card-foreground: #1a1a18;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a18;
+  --primary: #1e7bd8;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4ef;
+  --secondary-foreground: #0f2e5c;
+  --muted: #f4f4ef;
+  --muted-foreground: #6b6b64;
+  --accent: #f4f4ef;
+  --accent-foreground: #0f2e5c;
+  --destructive: #c4353c;
+  --destructive-foreground: #ffffff;
+  --border: #e7e6df;
+  --input: #e7e6df;
+  --ring: #1e7bd8;
+  --chart-1: #1e7bd8;
+  --chart-2: #0f2e5c;
+  --chart-3: #c8993a;
+  --chart-4: #1e9a5b;
+  --chart-5: #d89423;
+  --radius: 0.5rem;
+  --sidebar: #fafaf7;
+  --sidebar-foreground: #1a1a18;
+  --sidebar-primary: #1e7bd8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4ef;
+  --sidebar-accent-foreground: #0f2e5c;
+  --sidebar-border: #e7e6df;
+  --sidebar-ring: #1e7bd8;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* Dark-mode values are placeholder (not wired in v1 — dark mode deferred).
+   Kept here so shadcn components compile; no UI ships a .dark class today. */
+.dark {
+  --background: #0f2e5c;
+  --foreground: #fafaf7;
+  --card: #1c3f73;
+  --card-foreground: #fafaf7;
+  --popover: #1c3f73;
+  --popover-foreground: #fafaf7;
+  --primary: #3d91e5;
+  --primary-foreground: #0f2e5c;
+  --secondary: #1c3f73;
+  --secondary-foreground: #fafaf7;
+  --muted: #1c3f73;
+  --muted-foreground: #a9a9a1;
+  --accent: #1c3f73;
+  --accent-foreground: #fafaf7;
+  --destructive: #c4353c;
+  --destructive-foreground: #fafaf7;
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.15);
+  --ring: #3d91e5;
 }
 
-/* Elevation system — navy-tinted shadows for product feel */
-.shadow-brand-sm {
-  box-shadow: 0 1px 2px rgba(15, 46, 92, 0.04);
-}
-.shadow-brand {
-  box-shadow:
-    0 1px 3px rgba(15, 46, 92, 0.08),
-    0 1px 2px rgba(15, 46, 92, 0.04);
-}
-.shadow-brand-md {
-  box-shadow:
-    0 4px 6px rgba(15, 46, 92, 0.08),
-    0 2px 4px rgba(15, 46, 92, 0.04);
-}
-.shadow-brand-lg {
-  box-shadow:
-    0 10px 15px rgba(15, 46, 92, 0.08),
-    0 4px 6px rgba(15, 46, 92, 0.04);
-}
-
-/* Focus ring — cobalt, consistent across shadcn + custom */
-:where(button, a, input, textarea, select, [role="button"], [tabindex]):focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
-  border-radius: var(--radius);
-}
-
+/* Wires Tailwind utility names (bg-background, text-primary, etc.) to
+   the :root CSS vars above. Do not edit. */
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -176,73 +164,37 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Elevation — navy-tinted shadows for product feel */
+.shadow-brand-sm {
+  box-shadow: 0 1px 2px rgb(15 46 92 / 0.04);
+}
+.shadow-brand {
+  box-shadow:
+    0 1px 3px rgb(15 46 92 / 0.08),
+    0 1px 2px rgb(15 46 92 / 0.04);
+}
+.shadow-brand-md {
+  box-shadow:
+    0 4px 6px rgb(15 46 92 / 0.08),
+    0 2px 4px rgb(15 46 92 / 0.04);
+}
+.shadow-brand-lg {
+  box-shadow:
+    0 10px 15px rgb(15 46 92 / 0.08),
+    0 4px 6px rgb(15 46 92 / 0.04);
 }
 
 @layer base {

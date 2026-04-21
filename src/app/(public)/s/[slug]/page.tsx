@@ -142,7 +142,7 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
                     </p>
                   </div>
                   {p.from_price_visible ? (
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="text-[10px] uppercase tracking-wide text-[var(--color-muted-foreground)]">
                         {t("fromLabel")}
                       </p>

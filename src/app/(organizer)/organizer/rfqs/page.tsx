@@ -83,7 +83,7 @@ export default async function OrganizerRfqsPage() {
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+            <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Event</th>
                 <th className="px-4 py-3 font-medium">Category</th>
