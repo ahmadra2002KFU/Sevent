@@ -141,6 +141,7 @@
       "step2Heading": "رفع مستندات التحقق",
       "step3Heading": "نطاق العمل",
       "stepOfTotal": "الخطوة {current} من {total}",
+      "progressLabel": "تقدم التسجيل",
       "chooseFileHint": "انقر لاختيار ملف PDF أو صورة",
       "continue": "متابعة",
       "back": "رجوع",
@@ -182,6 +183,25 @@
       "baseLatLabel": "خط العرض (اختياري)",
       "baseLngLabel": "خط الطول (اختياري)",
       "latLngHint": "اختياري؛ يُستخدم في احتساب رسوم التنقل.",
+      "pinLocationLabel": "حدّد موقعك الأساسي",
+      "pinLocationHint": "اضغط على الخريطة لوضع علامة، أو اسحب العلامة الموجودة. سنملأ المدينة تلقائيًا.",
+      "advancedCoordsToggle": "إدخال الإحداثيات يدويًا",
+      "preview": {
+        "title": "معاينة مباشرة",
+        "hint": "هكذا سيظهر ملفك العام للمنظّمين.",
+        "placeholderName": "اسم منشأتك",
+        "placeholderBio": "سيظهر هنا وصف مختصر عن منشأتك.",
+        "placeholderCity": "مدينتك الأساسية",
+        "placeholderCategories": "اختر الخدمات في الخطوة 3 لتظهر هنا."
+      },
+      "location": {
+        "searchPlaceholder": "ابحث عن مدينة أو عنوان",
+        "searchCta": "بحث",
+        "loading": "جارٍ التحميل…",
+        "noResults": "لا توجد نتائج",
+        "searchError": "تعذّر البحث. حاول مجددًا.",
+        "hint": "نصيحة: اضغط على الخريطة أو اسحب العلامة للضبط الدقيق. بدعم من OpenStreetMap."
+      },
       "serviceAreaLabel": "مدن نطاق الخدمة",
       "serviceAreaHint": "اكتب المدن مفصولة بفواصل، مثل: الرياض، جدة، الدمام.",
       "languagesLabel": "اللغات التي تعمل بها",
@@ -242,6 +262,12 @@
         "distance_fee": "رسوم المسافة",
         "date_surcharge": "رسوم التاريخ",
         "duration_multiplier": "معامل المدة"
+      },
+      "subcategoryPicker": {
+        "placeholder": "اختر تصنيفًا فرعيًا",
+        "searchPlaceholder": "ابحث عن تصنيف…",
+        "empty": "لا توجد نتائج",
+        "uncategorized": "أخرى"
       },
       "packageForm": {
         "nameLabel": "اسم الباقة",
@@ -393,7 +419,38 @@
         "heading": "مرحبًا",
         "body": "ابدأ التسجيل لإنشاء ملف المورد ورفع مستندات التحقق والبدء في استلام دعوات طلبات التسعير.",
         "cta": "ابدأ التسجيل"
-      }
+      },
+      "journey": {
+        "heading": "حالة طلبك",
+        "steps": {
+          "submit": "تم الإرسال",
+          "submitHintDone": "اكتمل الطلب",
+          "submitHintPending": "أكمل خطوات التسجيل الثلاث",
+          "review": "قيد المراجعة",
+          "reviewHintPending": "بانتظار إرسال طلبك",
+          "reviewHintActive": "عادةً خلال 24 إلى 48 ساعة",
+          "reviewHintDone": "اكتملت المراجعة",
+          "live": "منشور",
+          "liveHintPending": "يُنشر ملفك عند الاعتماد",
+          "liveHintActive": "ملفك منشور الآن"
+        }
+      },
+      "resubmit": {
+        "title": "تابع التسجيل",
+        "body": "أكمل الخطوات المتبقية من معالج التسجيل لإرسال طلبك للمراجعة.",
+        "cta": "تابع التسجيل"
+      },
+      "underReview": {
+        "title": "نراجع طلبك الآن",
+        "body": "نراجع كل طلب مورد يدويًا قبل نشره. سنرسل لك بريدًا فور الاعتماد — عادةً خلال 24 إلى 48 ساعة.",
+        "editCta": "تعديل الطلب"
+      },
+      "rejected": {
+        "title": "يحتاج طلبك إلى تعديلات",
+        "body": "راجع ملاحظات المسؤول وأعد الإرسال عند الاستعداد.",
+        "cta": "تعديل الطلب"
+      },
+      "statsLockedHint": "يُفتح بعد الاعتماد"
     },
     "rfqInbox": {
       "title": "بريد طلبات التسعير",
@@ -547,6 +604,27 @@
           "kind": "النوع",
           "payload": "التفاصيل",
           "time": "الوقت"
+        },
+        "kindLine": {
+          "supplier_approved": "تم اعتماد مورد",
+          "supplier_approved_named": "تم اعتماد مورد — {name}",
+          "supplier_rejected": "تم رفض مورد",
+          "supplier_rejected_named": "تم رفض مورد — {name}",
+          "supplier_doc_approved": "تم اعتماد مستند",
+          "supplier_doc_rejected": "تم رفض مستند",
+          "supplier_email_delivery_failed": "فشل إرسال البريد",
+          "supplier_email_delivery_failed_named": "فشل إرسال البريد — {name}",
+          "quote_sent": "تم إرسال عرض سعر",
+          "quote_sent_versioned": "تم إرسال عرض سعر · الإصدار {version}",
+          "quote_revised": "تم تعديل عرض السعر",
+          "quote_revised_versioned": "تم تعديل عرض السعر · الإصدار {version}",
+          "quote_accepted": "تم قبول عرض السعر",
+          "quote_rejected": "تم رفض عرض السعر",
+          "booking_created": "تم إنشاء حجز",
+          "booking_awaiting_supplier": "حجز بانتظار تأكيد المورد"
+        },
+        "kindDetail": {
+          "quote_rejected_another_accepted": "تم قبول عرض سعر مورد آخر على هذا الطلب."
         }
       }
     },

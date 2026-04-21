@@ -3,12 +3,20 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowUpRight,
   CalendarDays,
+  CheckCircle2,
+  CircleDashed,
   ClipboardList,
+  Clock3,
   Inbox,
   Package,
   PercentCircle,
+  Rocket,
   ShieldCheck,
+  Send,
+  XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type {
   QuoteStatus,
   RfqInviteStatus,
@@ -28,7 +36,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const dynamic = "force-dynamic";
 
@@ -264,6 +271,7 @@ export default async function SupplierDashboardPage() {
     recentInvitesRes,
     bookingsRes,
     activePackagesRes,
+    categoriesCountRes,
   ] = await Promise.all([
     admin
       .from("rfq_invites")
@@ -307,6 +315,10 @@ export default async function SupplierDashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("supplier_id", supplierSummary.id)
       .eq("is_active", true),
+    admin
+      .from("supplier_categories")
+      .select("subcategory_id", { count: "exact", head: true })
+      .eq("supplier_id", supplierSummary.id),
   ]);
 
   const invitesReceived = invitesCountRes.count ?? 0;
@@ -328,9 +340,63 @@ export default async function SupplierDashboardPage() {
   );
   const upcomingBookings = bookingsRes.count ?? 0;
   const activePackages = activePackagesRes.count ?? 0;
-  const shouldShowOnboardingCta =
-    supplierSummary.verification_status === "pending" &&
-    (docs.length === 0 || docs.some((doc) => doc.status !== "approved"));
+  const subcategoriesCount = categoriesCountRes.count ?? 0;
+
+  // Onboarding completeness signal.
+  //   - step 2 deliverable = ≥1 supplier_docs row
+  //   - step 3 deliverable = ≥1 supplier_categories row
+  // If both are present the user has walked the full wizard, so a pending
+  // status means "under review" — not "continue registration".
+  const hasDocs = docs.length > 0;
+  const hasCategories = subcategoriesCount > 0;
+  const hasSubmittedApplication = hasDocs && hasCategories;
+
+  const verification = supplierSummary.verification_status;
+  const journeyState: "submitting" | "reviewing" | "live" | "rejected" =
+    verification === "approved"
+      ? "live"
+      : verification === "rejected"
+        ? "rejected"
+        : hasSubmittedApplication
+          ? "reviewing"
+          : "submitting";
+
+  const statusCard: {
+    title: string;
+    body: string;
+    cta: { label: string; href: string } | null;
+    tone: "info" | "warning" | "danger";
+    icon: LucideIcon;
+  } | null =
+    journeyState === "submitting"
+      ? {
+          title: t("resubmit.title"),
+          body: t("resubmit.body"),
+          cta: { label: t("resubmit.cta"), href: "/supplier/onboarding" },
+          tone: "info",
+          icon: ShieldCheck,
+        }
+      : journeyState === "reviewing"
+        ? {
+            title: t("underReview.title"),
+            body: t("underReview.body"),
+            cta: {
+              label: t("underReview.editCta"),
+              href: "/supplier/onboarding",
+            },
+            tone: "warning",
+            icon: Clock3,
+          }
+        : journeyState === "rejected"
+          ? {
+              title: t("rejected.title"),
+              body: t("rejected.body"),
+              cta: { label: t("rejected.cta"), href: "/supplier/onboarding" },
+              tone: "danger",
+              icon: XCircle,
+            }
+          : null;
+  const locked = journeyState !== "live";
 
   return (
     <section className="flex flex-col gap-8">
@@ -340,25 +406,31 @@ export default async function SupplierDashboardPage() {
         actions={verificationStatusPill(supplierSummary.verification_status, t)}
       />
 
-      {shouldShowOnboardingCta ? (
-        <Alert>
-          <ShieldCheck />
-          <AlertTitle>{t("completeOnboardingCta")}</AlertTitle>
-          <AlertDescription>
-            {t("welcome.body")}
-            <div className="mt-3">
-              <Button asChild size="sm">
-                <Link href="/supplier/onboarding">
-                  {t("welcome.cta")}
-                  <ArrowUpRight />
-                </Link>
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <JourneyStrip
+        state={journeyState}
+        heading={t("journey.heading")}
+        labels={{
+          submit: t("journey.steps.submit"),
+          submitHintDone: t("journey.steps.submitHintDone"),
+          submitHintPending: t("journey.steps.submitHintPending"),
+          review: t("journey.steps.review"),
+          reviewHintPending: t("journey.steps.reviewHintPending"),
+          reviewHintActive: t("journey.steps.reviewHintActive"),
+          reviewHintDone: t("journey.steps.reviewHintDone"),
+          live: t("journey.steps.live"),
+          liveHintPending: t("journey.steps.liveHintPending"),
+          liveHintActive: t("journey.steps.liveHintActive"),
+        }}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {statusCard ? <StatusCard card={statusCard} /> : null}
+
+      <div
+        className={cn(
+          "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 transition-opacity",
+          locked && "opacity-60",
+        )}
+      >
         <MetricCard
           label={t("stats.invitesOpen")}
           value={invitesReceived}
@@ -385,7 +457,12 @@ export default async function SupplierDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div
+        className={cn(
+          "grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] transition-opacity",
+          locked && "opacity-70",
+        )}
+      >
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between gap-3">
@@ -490,5 +567,202 @@ export default async function SupplierDashboardPage() {
         </Card>
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Journey strip — three-tile progress header.
+// ---------------------------------------------------------------------------
+
+type JourneyState = "submitting" | "reviewing" | "live" | "rejected";
+type TileState = "active" | "done" | "pending" | "failed";
+
+type JourneyLabels = {
+  submit: string;
+  submitHintDone: string;
+  submitHintPending: string;
+  review: string;
+  reviewHintPending: string;
+  reviewHintActive: string;
+  reviewHintDone: string;
+  live: string;
+  liveHintPending: string;
+  liveHintActive: string;
+};
+
+function tilesForState(
+  state: JourneyState,
+  labels: JourneyLabels,
+): Array<{ title: string; hint: string; state: TileState; icon: LucideIcon }> {
+  switch (state) {
+    case "submitting":
+      return [
+        { title: labels.submit, hint: labels.submitHintPending, state: "active", icon: Send },
+        { title: labels.review, hint: labels.reviewHintPending, state: "pending", icon: Clock3 },
+        { title: labels.live, hint: labels.liveHintPending, state: "pending", icon: Rocket },
+      ];
+    case "reviewing":
+      return [
+        { title: labels.submit, hint: labels.submitHintDone, state: "done", icon: CheckCircle2 },
+        { title: labels.review, hint: labels.reviewHintActive, state: "active", icon: Clock3 },
+        { title: labels.live, hint: labels.liveHintPending, state: "pending", icon: Rocket },
+      ];
+    case "live":
+      return [
+        { title: labels.submit, hint: labels.submitHintDone, state: "done", icon: CheckCircle2 },
+        { title: labels.review, hint: labels.reviewHintDone, state: "done", icon: CheckCircle2 },
+        { title: labels.live, hint: labels.liveHintActive, state: "active", icon: Rocket },
+      ];
+    case "rejected":
+      return [
+        { title: labels.submit, hint: labels.submitHintDone, state: "done", icon: CheckCircle2 },
+        { title: labels.review, hint: labels.reviewHintDone, state: "failed", icon: XCircle },
+        { title: labels.live, hint: labels.liveHintPending, state: "pending", icon: Rocket },
+      ];
+  }
+}
+
+const TILE_CLASSES: Record<TileState, string> = {
+  active:
+    "bg-brand-cobalt-100/70 ring-1 ring-inset ring-brand-cobalt-500/30 text-brand-navy-900",
+  done:
+    "bg-semantic-success-100/50 ring-1 ring-inset ring-semantic-success-500/30 text-brand-navy-900",
+  pending:
+    "bg-neutral-100 ring-1 ring-inset ring-border text-muted-foreground",
+  failed:
+    "bg-semantic-danger-100/50 ring-1 ring-inset ring-semantic-danger-500/40 text-brand-navy-900",
+};
+
+const TILE_ICON_CLASSES: Record<TileState, string> = {
+  active: "bg-brand-cobalt-500 text-white",
+  done: "bg-semantic-success-500 text-white",
+  pending: "bg-neutral-200 text-muted-foreground",
+  failed: "bg-semantic-danger-500 text-white",
+};
+
+function JourneyStrip({
+  state,
+  heading,
+  labels,
+}: {
+  state: JourneyState;
+  heading: string;
+  labels: JourneyLabels;
+}) {
+  const tiles = tilesForState(state, labels);
+  return (
+    <div>
+      <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {heading}
+      </h2>
+      <ol className="grid gap-3 sm:grid-cols-3">
+        {tiles.map((tile, idx) => {
+          const Icon = tile.icon;
+          const isActive = tile.state === "active";
+          return (
+            <li
+              key={idx}
+              className={cn(
+                "relative flex items-start gap-3 rounded-xl p-4 transition-colors",
+                TILE_CLASSES[tile.state],
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-full",
+                  TILE_ICON_CLASSES[tile.state],
+                )}
+                aria-hidden
+              >
+                {tile.state === "pending" ? (
+                  <CircleDashed className="size-5" />
+                ) : (
+                  <Icon className={cn("size-5", isActive && "animate-pulse")} />
+                )}
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className="text-sm font-semibold leading-tight">
+                  {tile.title}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {tile.hint}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status card — single "Continue registration" / "Under review" surface.
+// ---------------------------------------------------------------------------
+
+const STATUS_CARD_TONES = {
+  info: {
+    wrap: "bg-brand-cobalt-100/40 ring-brand-cobalt-500/30",
+    iconWrap: "bg-brand-cobalt-500 text-white",
+  },
+  warning: {
+    wrap: "bg-semantic-warning-100/50 ring-semantic-warning-500/40",
+    iconWrap: "bg-semantic-warning-500 text-white",
+  },
+  danger: {
+    wrap: "bg-semantic-danger-100/50 ring-semantic-danger-500/40",
+    iconWrap: "bg-semantic-danger-500 text-white",
+  },
+} as const;
+
+function StatusCard({
+  card,
+}: {
+  card: {
+    title: string;
+    body: string;
+    cta: { label: string; href: string } | null;
+    tone: "info" | "warning" | "danger";
+    icon: LucideIcon;
+  };
+}) {
+  const Icon = card.icon;
+  const tone = STATUS_CARD_TONES[card.tone];
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-4 rounded-2xl p-5 ring-1 ring-inset sm:flex-row sm:items-center sm:gap-5",
+        tone.wrap,
+      )}
+    >
+      <div
+        className={cn(
+          "flex size-12 shrink-0 items-center justify-center rounded-full",
+          tone.iconWrap,
+        )}
+        aria-hidden
+      >
+        <Icon className="size-6" />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <h3 className="text-base font-semibold text-brand-navy-900">
+          {card.title}
+        </h3>
+        <p className="text-sm text-muted-foreground">{card.body}</p>
+      </div>
+      {card.cta ? (
+        <Button
+          asChild
+          variant={card.tone === "info" ? "default" : "outline"}
+          size="sm"
+          className="self-start sm:self-auto"
+        >
+          <Link href={card.cta.href}>
+            {card.cta.label}
+            <ArrowUpRight className="rtl:-scale-x-100" />
+          </Link>
+        </Button>
+      ) : null}
+    </div>
   );
 }

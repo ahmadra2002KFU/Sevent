@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { PACKAGE_UNITS } from "@/lib/domain/packages";
 import { halalasToSar } from "@/lib/domain/money";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SubcategoryCombobox } from "./SubcategoryCombobox";
 
 type FormValues = {
   id?: string;
@@ -44,6 +45,7 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     // The server action re-parses with PackageFormInput (Zod) before writing;
@@ -114,17 +116,19 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
           label={t("packageForm.subcategoryLabel")}
           error={errors.subcategory_id?.message}
         >
-          <select
-            {...register("subcategory_id", { required: true })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
-          >
-            {subcategories.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.parent_name_en ? `${s.parent_name_en} · ` : ""}
-                {s.name_en}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="subcategory_id"
+            rules={{ required: true }}
+            render={({ field }) => (
+              <SubcategoryCombobox
+                subcategories={subcategories}
+                value={field.value}
+                onChange={field.onChange}
+                ariaLabel={t("packageForm.subcategoryLabel")}
+              />
+            )}
+          />
         </Field>
       </div>
 

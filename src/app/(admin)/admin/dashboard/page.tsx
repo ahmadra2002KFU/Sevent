@@ -2,15 +2,24 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
+  AlertTriangle,
   ArrowRight,
   Bell,
+  CalendarCheck,
   CheckCircle2,
   Clock,
+  FileCheck,
   FileWarning,
+  FileX,
   Inbox,
+  Info,
   ListChecks,
+  MailWarning,
+  MessageSquare,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
@@ -68,6 +77,62 @@ type AdminNotificationRow = {
   created_at: string;
 };
 
+type Tone = "success" | "danger" | "warning" | "info" | "neutral";
+
+const TONE_CLASSES: Record<Tone, string> = {
+  success: "bg-semantic-success-100 text-semantic-success-500",
+  danger: "bg-semantic-danger-100 text-semantic-danger-500",
+  warning: "bg-semantic-warning-100 text-semantic-warning-500",
+  info: "bg-brand-cobalt-100 text-brand-cobalt-500",
+  neutral: "bg-neutral-200 text-neutral-600",
+};
+
+function iconForNotificationKind(kind: string): { icon: LucideIcon; tone: Tone } {
+  switch (kind) {
+    case "supplier.approved":
+      return { icon: CheckCircle2, tone: "success" };
+    case "supplier.rejected":
+      return { icon: XCircle, tone: "danger" };
+    case "supplier.doc.approved":
+      return { icon: FileCheck, tone: "success" };
+    case "supplier.doc.rejected":
+      return { icon: FileX, tone: "danger" };
+    case "supplier.email.delivery_failed":
+      return { icon: MailWarning, tone: "warning" };
+    case "quote.sent":
+    case "quote.revised":
+      return { icon: MessageSquare, tone: "info" };
+    case "quote.accepted":
+      return { icon: CheckCircle2, tone: "success" };
+    case "quote.rejected":
+      return { icon: XCircle, tone: "danger" };
+    case "booking.created":
+      return { icon: CalendarCheck, tone: "info" };
+    case "booking.awaiting_supplier":
+      return { icon: AlertTriangle, tone: "warning" };
+    default:
+      return { icon: Info, tone: "neutral" };
+  }
+}
+
+function pickString(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): string | null {
+  if (!payload) return null;
+  const v = payload[key];
+  return typeof v === "string" && v.trim().length > 0 ? v : null;
+}
+
+function pickNumber(
+  payload: Record<string, unknown> | null | undefined,
+  key: string,
+): number | null {
+  if (!payload) return null;
+  const v = payload[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
   try {
@@ -96,29 +161,8 @@ function fmtDateTime(iso: string | null): string {
   }
 }
 
-function summarizePayload(
-  payload: Record<string, unknown> | null | undefined,
-): string {
-  if (!payload || typeof payload !== "object") return "—";
-  const preferred = ["title", "subject", "message", "summary"] as const;
-  for (const key of preferred) {
-    const val = payload[key];
-    if (typeof val === "string" && val.trim().length > 0) {
-      return val.length > 120 ? `${val.slice(0, 117)}…` : val;
-    }
-  }
-  try {
-    const json = JSON.stringify(payload);
-    return json.length > 120 ? `${json.slice(0, 117)}…` : json;
-  } catch {
-    return "—";
-  }
-}
-
-// Map the raw rfq.status + notification.kind strings onto the shared
-// StatusPill status union. Anything unknown falls through to "pending"
-// (neutral tone) — the visual stays consistent even when a new kind lands
-// before this map is updated.
+// Map the raw rfq.status strings onto the shared StatusPill status union.
+// Anything unknown falls through to "pending" (neutral tone).
 function rfqStatusPill(status: string): StatusPillStatus {
   switch (status) {
     case "draft":
@@ -132,16 +176,6 @@ function rfqStatusPill(status: string): StatusPillStatus {
     default:
       return "pending";
   }
-}
-
-function notificationStatusPill(kind: string): StatusPillStatus {
-  if (kind.endsWith(".approved") || kind.endsWith(".accepted")) return "approved";
-  if (kind.endsWith(".rejected") || kind.endsWith(".declined")) return "rejected";
-  if (kind.endsWith(".created") || kind.endsWith(".sent")) return "sent";
-  if (kind.endsWith(".awaiting_supplier")) return "awaiting_supplier";
-  if (kind.endsWith(".revised")) return "quoted";
-  if (kind.endsWith(".delivery_failed")) return "cancelled";
-  return "pending";
 }
 
 export default async function AdminDashboardPage() {
@@ -237,6 +271,132 @@ export default async function AdminDashboardPage() {
     .limit(10);
   const notifications = (notificationsData ?? []) as AdminNotificationRow[];
 
+  // Resolve supplier_id → business_name for any supplier.* notifications so
+  // the admin row body can read "Supplier approved — Acme Events" instead of
+  // dumping the raw UUID.
+  const supplierIdsInNotifications = Array.from(
+    new Set(
+      notifications
+        .map((n) => pickString(n.payload_jsonb, "supplier_id"))
+        .filter((x): x is string => x !== null),
+    ),
+  );
+  const supplierNameById = new Map<string, string>();
+  if (supplierIdsInNotifications.length > 0) {
+    const { data: supplierNameRows } = await admin
+      .from("suppliers")
+      .select("id, business_name")
+      .in("id", supplierIdsInNotifications);
+    for (const row of (supplierNameRows ?? []) as Array<{
+      id: string;
+      business_name: string;
+    }>) {
+      supplierNameById.set(row.id, row.business_name);
+    }
+  }
+
+  const notificationsT = await getTranslations(
+    "admin.dashboard.notifications",
+  );
+  const notificationViews = notifications.map((n) => {
+    const payload = n.payload_jsonb;
+    const supplierId = pickString(payload, "supplier_id");
+    const businessName =
+      pickString(payload, "business_name") ??
+      (supplierId ? supplierNameById.get(supplierId) ?? null : null);
+    const version = pickNumber(payload, "version");
+    const reason = pickString(payload, "reason");
+    const { icon, tone } = iconForNotificationKind(n.kind);
+
+    // Build a localized per-kind title line. Unknown kinds fall through to a
+    // human-readable split of the raw identifier so nothing hard-crashes when
+    // the NotificationKind union grows.
+    let title: string;
+    switch (n.kind) {
+      case "supplier.approved":
+        title = businessName
+          ? notificationsT("kindLine.supplier_approved_named", {
+              name: businessName,
+            })
+          : notificationsT("kindLine.supplier_approved");
+        break;
+      case "supplier.rejected":
+        title = businessName
+          ? notificationsT("kindLine.supplier_rejected_named", {
+              name: businessName,
+            })
+          : notificationsT("kindLine.supplier_rejected");
+        break;
+      case "supplier.doc.approved":
+        title = notificationsT("kindLine.supplier_doc_approved");
+        break;
+      case "supplier.doc.rejected":
+        title = notificationsT("kindLine.supplier_doc_rejected");
+        break;
+      case "supplier.email.delivery_failed":
+        title = businessName
+          ? notificationsT("kindLine.supplier_email_delivery_failed_named", {
+              name: businessName,
+            })
+          : notificationsT("kindLine.supplier_email_delivery_failed");
+        break;
+      case "quote.sent":
+        title =
+          version != null
+            ? notificationsT("kindLine.quote_sent_versioned", { version })
+            : notificationsT("kindLine.quote_sent");
+        break;
+      case "quote.revised":
+        title =
+          version != null
+            ? notificationsT("kindLine.quote_revised_versioned", { version })
+            : notificationsT("kindLine.quote_revised");
+        break;
+      case "quote.accepted":
+        title = notificationsT("kindLine.quote_accepted");
+        break;
+      case "quote.rejected":
+        title = notificationsT("kindLine.quote_rejected");
+        break;
+      case "booking.created":
+        title = notificationsT("kindLine.booking_created");
+        break;
+      case "booking.awaiting_supplier":
+        title = notificationsT("kindLine.booking_awaiting_supplier");
+        break;
+      default:
+        title = n.kind.replace(/[._]/g, " ");
+    }
+
+    let detail: string | null = null;
+    if (n.kind === "quote.rejected" && reason === "another_quote_accepted") {
+      detail = notificationsT("kindDetail.quote_rejected_another_accepted");
+    } else if (
+      n.kind === "supplier.email.delivery_failed" &&
+      pickString(payload, "error")
+    ) {
+      detail = pickString(payload, "error");
+    }
+
+    // Deep link: admin only routes to /admin/verifications/:id for supplier.*
+    // kinds today. Sprint 5 may add /admin/rfqs + /admin/bookings routes.
+    const href =
+      n.kind.startsWith("supplier.") && supplierId
+        ? `/admin/verifications/${supplierId}`
+        : null;
+
+    return {
+      id: n.id,
+      kind: n.kind,
+      title,
+      detail,
+      href,
+      icon,
+      tone,
+      created_at: n.created_at,
+    };
+  });
+
   return (
     <section className="flex flex-col gap-8">
       <PageHeader title={t("title")} description={t("subtitle")} />
@@ -312,7 +472,7 @@ export default async function AdminDashboardPage() {
                         <Button asChild variant="ghost" size="sm">
                           <Link href={`/admin/verifications/${s.id}`}>
                             {t("verificationQueue.reviewCta")}
-                            <ArrowRight aria-hidden />
+                            <ArrowRight aria-hidden className="rtl:-scale-x-100" />
                           </Link>
                         </Button>
                       </TableCell>
@@ -342,31 +502,53 @@ export default async function AdminDashboardPage() {
             <CardDescription>{t("notifications.description")}</CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
-            {notifications.length === 0 ? (
+            {notificationViews.length === 0 ? (
               <EmptyState icon={Inbox} title={t("notifications.empty")} />
             ) : (
               <ul className="flex flex-col divide-y divide-border">
-                {notifications.map((n) => (
-                  <li
-                    key={n.id}
-                    className="flex flex-wrap items-start justify-between gap-2 py-3 first:pt-0 last:pb-0"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <StatusPill
-                          status={notificationStatusPill(n.kind)}
-                          label={n.kind.replace(/[._]/g, " ")}
-                        />
+                {notificationViews.map((n) => {
+                  const Icon = n.icon;
+                  const row = (
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                          TONE_CLASSES[n.tone],
+                        )}
+                        aria-hidden
+                      >
+                        <Icon className="size-4" />
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {summarizePayload(n.payload_jsonb)}
-                      </p>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="text-sm font-medium text-foreground">
+                          {n.title}
+                        </span>
+                        {n.detail ? (
+                          <span className="line-clamp-2 text-xs text-muted-foreground">
+                            {n.detail}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="whitespace-nowrap text-xs text-muted-foreground">
+                        {fmtDateTime(n.created_at)}
+                      </span>
                     </div>
-                    <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      {fmtDateTime(n.created_at)}
-                    </span>
-                  </li>
-                ))}
+                  );
+                  return (
+                    <li key={n.id} className="py-3 first:pt-0 last:pb-0">
+                      {n.href ? (
+                        <Link
+                          href={n.href}
+                          className="block rounded-md -mx-2 px-2 py-1 transition-colors hover:bg-muted/60"
+                        >
+                          {row}
+                        </Link>
+                      ) : (
+                        row
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -41,10 +42,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type WizardProps = { bootstrap: OnboardingBootstrap };
 type Step = 1 | 2 | 3;
+
+// Leaflet touches `window` on import so it must be client-only. Dynamic-import
+// keeps it out of the SSR bundle; the Map container itself is marked
+// "use client" in LocationPicker.tsx.
+const LocationPicker = dynamic(
+  () => import("./LocationPicker").then((m) => m.LocationPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[320px] items-center justify-center rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
+        Loading map…
+      </div>
+    ),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Category presentation: each parent slug maps to a lucide icon + accent class.
@@ -79,8 +102,16 @@ function localizedName(
   return entry.name_en;
 }
 
+type PreviewState = {
+  business_name: string;
+  bio: string;
+  base_city: string;
+  subcategoryIds: string[];
+};
+
 export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
+  const locale = useLocale();
   const router = useRouter();
   const [step, setStep] = useState<Step>(() => resolveInitialStep(bootstrap));
   const [serverMessage, setServerMessage] = useState<string | null>(null);
@@ -88,6 +119,15 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     bootstrap.supplier?.id ?? null,
   );
   const [isPending, startTransition] = useTransition();
+  const [preview, setPreview] = useState<PreviewState>({
+    business_name: bootstrap.supplier?.business_name ?? "",
+    bio: bootstrap.supplier?.bio ?? "",
+    base_city: bootstrap.supplier?.base_city ?? "",
+    subcategoryIds: bootstrap.subcategoryIds ?? [],
+  });
+
+  const updatePreview = (patch: Partial<PreviewState>) =>
+    setPreview((prev) => ({ ...prev, ...patch }));
 
   const handleStepResult = (result: OnboardingState, nextStep?: Step) => {
     if (!result.ok) {
@@ -100,79 +140,104 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     return true;
   };
 
+  const progressPct = Math.round(((step - 0.5) / 3) * 100);
+
   return (
     <div className="flex flex-col gap-6">
+      <ProgressBar percent={progressPct} label={t("progressLabel", { percent: progressPct })} />
+
       <Stepper current={step} t={t} />
 
-      <Card>
-        <CardContent className="p-6">
-          {step === 1 ? (
-            <Step1Form
-              initial={bootstrap.supplier}
-              pending={isPending}
-              onSubmit={(values) => {
-                const fd = new FormData();
-                fd.append("business_name", values.business_name);
-                fd.append("legal_type", values.legal_type);
-                if (values.cr_number) fd.append("cr_number", values.cr_number);
-                if (values.national_id) fd.append("national_id", values.national_id);
-                if (values.bio) fd.append("bio", values.bio);
-                startTransition(async () => {
-                  const result = await submitOnboardingStep1(undefined, fd);
-                  handleStepResult(result, 2);
-                });
-              }}
-            />
-          ) : null}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
+        <Card>
+          <CardContent className="p-6">
+            {step === 1 ? (
+              <Step1Form
+                initial={bootstrap.supplier}
+                pending={isPending}
+                onPreview={(p) =>
+                  updatePreview({
+                    business_name: p.business_name,
+                    bio: p.bio ?? "",
+                  })
+                }
+                onSubmit={(values) => {
+                  const fd = new FormData();
+                  fd.append("business_name", values.business_name);
+                  fd.append("legal_type", values.legal_type);
+                  if (values.cr_number) fd.append("cr_number", values.cr_number);
+                  if (values.national_id) fd.append("national_id", values.national_id);
+                  if (values.bio) fd.append("bio", values.bio);
+                  startTransition(async () => {
+                    const result = await submitOnboardingStep1(undefined, fd);
+                    handleStepResult(result, 2);
+                  });
+                }}
+              />
+            ) : null}
 
-          {step === 2 ? (
-            <Step2Form
-              existingDocs={bootstrap.docs}
-              pending={isPending}
-              disabled={!supplierId}
-              onBack={() => setStep(1)}
-              onSubmit={(fd) => {
-                startTransition(async () => {
-                  const result = await submitOnboardingStep2(undefined, fd);
-                  handleStepResult(result, 3);
-                });
-              }}
-            />
-          ) : null}
+            {step === 2 ? (
+              <Step2Form
+                existingDocs={bootstrap.docs}
+                pending={isPending}
+                disabled={!supplierId}
+                onBack={() => setStep(1)}
+                onSubmit={(fd) => {
+                  startTransition(async () => {
+                    const result = await submitOnboardingStep2(undefined, fd);
+                    handleStepResult(result, 3);
+                  });
+                }}
+              />
+            ) : null}
 
-          {step === 3 ? (
-            <Step3Form
-              initial={bootstrap.supplier}
-              categories={bootstrap.categories}
-              selectedSubcategoryIds={bootstrap.subcategoryIds}
-              pending={isPending}
-              disabled={!supplierId}
-              onBack={() => setStep(2)}
-              onSubmit={(fd) => {
-                startTransition(async () => {
-                  const result = await submitOnboardingStep3(undefined, fd);
-                  if (result.ok) {
-                    setServerMessage(t("submittedForReview"));
-                    // Leave the supplier on the dashboard where the "awaiting
-                    // verification" banner lives. `router.refresh()` keeps the
-                    // server components in sync with the new pending state.
-                    router.push("/supplier/dashboard?submitted=1");
-                    router.refresh();
-                  } else {
-                    setServerMessage(result.message ?? t("genericError"));
-                  }
-                });
-              }}
-            />
-          ) : null}
+            {step === 3 ? (
+              <Step3Form
+                initial={bootstrap.supplier}
+                categories={bootstrap.categories}
+                selectedSubcategoryIds={bootstrap.subcategoryIds}
+                pending={isPending}
+                disabled={!supplierId}
+                onBack={() => setStep(2)}
+                onPreview={(p) =>
+                  updatePreview({
+                    base_city: p.base_city,
+                    subcategoryIds: p.subcategory_ids,
+                  })
+                }
+                onSubmit={(fd) => {
+                  startTransition(async () => {
+                    const result = await submitOnboardingStep3(undefined, fd);
+                    if (result.ok) {
+                      setServerMessage(t("submittedForReview"));
+                      // Leave the supplier on the dashboard where the "awaiting
+                      // verification" banner lives. `router.refresh()` keeps the
+                      // server components in sync with the new pending state.
+                      router.push("/supplier/dashboard?submitted=1");
+                      router.refresh();
+                    } else {
+                      setServerMessage(result.message ?? t("genericError"));
+                    }
+                  });
+                }}
+              />
+            ) : null}
 
-          {serverMessage ? (
-            <Alert className="mt-4">
-              <AlertDescription>{serverMessage}</AlertDescription>
-            </Alert>
-          ) : null}
-        </CardContent>
-      </Card>
+            {serverMessage ? (
+              <Alert className="mt-4">
+                <AlertDescription>{serverMessage}</AlertDescription>
+              </Alert>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <PreviewCard
+          preview={preview}
+          categories={bootstrap.categories}
+          locale={locale}
+          t={t}
+        />
+      </div>
     </div>
   );
 }
@@ -257,16 +322,19 @@ function Step1Form({
   initial,
   pending,
   onSubmit,
+  onPreview,
 }: {
   initial: OnboardingBootstrap["supplier"];
   pending: boolean;
   onSubmit: SubmitHandler<Step1Values>;
+  onPreview?: (values: { business_name: string; bio?: string }) => void;
 }) {
   const t = useTranslations("supplier.onboarding");
   const {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm<Step1Values>({
     resolver: zodResolver(OnboardingStep1),
@@ -281,22 +349,45 @@ function Step1Form({
 
   const legalType = watch("legal_type");
 
+  const step1PreviewRef = useRef(onPreview);
+  step1PreviewRef.current = onPreview;
+  useEffect(() => {
+    const sub = watch((values) => {
+      step1PreviewRef.current?.({
+        business_name: values.business_name ?? "",
+        bio: values.bio ?? "",
+      });
+    });
+    return () => sub.unsubscribe();
+    // Subscribe once per mount. The ref lets parent re-renders update the
+    // callback target without re-subscribing (RHF's watch() identity is
+    // stable for this form but onPreview is new every parent render).
+  }, [watch]);
+
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Field label={t("businessNameLabel")} error={errors.business_name?.message}>
         <Input {...register("business_name")} />
       </Field>
       <Field label={t("legalTypeLabel")} error={errors.legal_type?.message}>
-        <select
-          {...register("legal_type")}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
-        >
-          {LEGAL_TYPES.map((lt) => (
-            <option key={lt} value={lt}>
-              {t(`legalType.${lt}`)}
-            </option>
-          ))}
-        </select>
+        <Controller
+          control={control}
+          name="legal_type"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LEGAL_TYPES.map((lt) => (
+                  <SelectItem key={lt} value={lt}>
+                    {t(`legalType.${lt}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </Field>
       {legalType === "company" ? (
         <Field label={t("crNumberLabel")} error={errors.cr_number?.message}>
@@ -424,21 +515,25 @@ function Step2Form({
               ) : null}
             </div>
             <Field label={t("docTypeLabel")}>
-              <select
+              <Select
                 value={draft.doc_type}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   updateDraft(draft.id, {
-                    doc_type: e.target.value as DocDraft["doc_type"],
+                    doc_type: v as DocDraft["doc_type"],
                   })
                 }
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               >
-                {DOC_TYPES.map((dt) => (
-                  <option key={dt} value={dt}>
-                    {t(`docType.${dt}`)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOC_TYPES.map((dt) => (
+                    <SelectItem key={dt} value={dt}>
+                      {t(`docType.${dt}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label={t("docFileLabel")}>
               <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
@@ -515,6 +610,7 @@ function Step3Form({
   disabled,
   onBack,
   onSubmit,
+  onPreview,
 }: {
   initial: OnboardingBootstrap["supplier"];
   categories: OnboardingBootstrap["categories"];
@@ -523,26 +619,51 @@ function Step3Form({
   disabled: boolean;
   onBack: () => void;
   onSubmit: (fd: FormData) => void;
+  onPreview?: (values: {
+    base_city: string;
+    subcategory_ids: string[];
+  }) => void;
 }) {
   const t = useTranslations("supplier.onboarding");
   const locale = useLocale();
 
-  const { register, handleSubmit, formState, watch } = useForm<Step3Values>({
-    defaultValues: {
-      base_city: initial?.base_city ?? "",
-      base_lat: "",
-      base_lng: "",
-      service_area_cities: (initial?.service_area_cities ?? []).join(", "),
-      capacity: initial?.capacity != null ? String(initial.capacity) : "",
-      concurrent_event_limit: initial?.concurrent_event_limit ?? 1,
-      languages: (initial?.languages ?? ["en"]).filter((l) =>
-        (LANGUAGES as readonly string[]).includes(l),
-      ) as Step3Values["languages"],
-      subcategory_ids: selectedSubcategoryIds,
-    },
-  });
+  const { register, handleSubmit, formState, watch, setValue, getValues } =
+    useForm<Step3Values>({
+      defaultValues: {
+        base_city: initial?.base_city ?? "",
+        base_lat: "",
+        base_lng: "",
+        service_area_cities: (initial?.service_area_cities ?? []).join(", "),
+        capacity: initial?.capacity != null ? String(initial.capacity) : "",
+        concurrent_event_limit: initial?.concurrent_event_limit ?? 1,
+        languages: (initial?.languages ?? ["en"]).filter((l) =>
+          (LANGUAGES as readonly string[]).includes(l),
+        ) as Step3Values["languages"],
+        subcategory_ids: selectedSubcategoryIds,
+      },
+    });
   const watchedSubs = watch("subcategory_ids") ?? [];
   const watchedLanguages = watch("languages") ?? [];
+  const watchedLat = watch("base_lat");
+  const watchedLng = watch("base_lng");
+
+  const step3PreviewRef = useRef(onPreview);
+  step3PreviewRef.current = onPreview;
+  useEffect(() => {
+    const sub = watch((values) => {
+      step3PreviewRef.current?.({
+        base_city: values.base_city ?? "",
+        subcategory_ids: (values.subcategory_ids ?? []).filter(
+          (x): x is string => typeof x === "string",
+        ),
+      });
+    });
+    return () => sub.unsubscribe();
+  }, [watch]);
+  const mapValue =
+    watchedLat && watchedLng && !Number.isNaN(Number(watchedLat)) && !Number.isNaN(Number(watchedLng))
+      ? { lat: Number(watchedLat), lng: Number(watchedLng) }
+      : null;
 
   const parents = useMemo(
     () => categories.filter((c) => c.parent_id === null),
@@ -582,19 +703,31 @@ function Step3Form({
 
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit(submit)} noValidate>
+      <Field label={t("pinLocationLabel")} hint={t("pinLocationHint")}>
+        <LocationPicker
+          value={mapValue}
+          onChange={(v) => {
+            setValue("base_lat", v.lat.toFixed(6), { shouldDirty: true });
+            setValue("base_lng", v.lng.toFixed(6), { shouldDirty: true });
+            // Only auto-fill city if the user hasn't typed their own.
+            const currentCity = getValues("base_city");
+            if (v.city && (!currentCity || currentCity.trim() === "")) {
+              setValue("base_city", v.city, { shouldDirty: true });
+            }
+          }}
+        />
+      </Field>
       <Field label={t("baseCityLabel")}>
         <Input
           {...register("base_city", { required: true, minLength: 2 })}
         />
       </Field>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label={t("baseLatLabel")} hint={t("latLngHint")}>
-          <Input {...register("base_lat")} />
-        </Field>
-        <Field label={t("baseLngLabel")}>
-          <Input {...register("base_lng")} />
-        </Field>
-      </div>
+      {/*
+        Coordinates are set silently by LocationPicker via setValue and
+        submitted as part of the form state. No manual input surface.
+      */}
+      <input type="hidden" {...register("base_lat")} />
+      <input type="hidden" {...register("base_lng")} />
       <Field label={t("serviceAreaLabel")} hint={t("serviceAreaHint")}>
         <Input {...register("service_area_cities", { required: true })} />
       </Field>
@@ -799,5 +932,156 @@ function Field({
         <span className="text-xs text-semantic-danger-500">{error}</span>
       ) : null}
     </Label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Live public-profile preview — reflects inputs in real time on the end side.
+// ---------------------------------------------------------------------------
+
+function PreviewCard({
+  preview,
+  categories,
+  locale,
+  t,
+}: {
+  preview: PreviewState;
+  categories: OnboardingBootstrap["categories"];
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const subNameById = useMemo(() => {
+    const m = new Map<string, { slug: string | null; name_en: string; name_ar: string | null }>();
+    for (const c of categories) {
+      m.set(c.id, {
+        slug: c.slug ?? null,
+        name_en: c.name_en,
+        name_ar: c.name_ar ?? null,
+      });
+    }
+    return m;
+  }, [categories]);
+
+  const parentSlugForSub = useMemo(() => {
+    const childToParent = new Map<string, string | null>();
+    const parentSlugById = new Map<string, string>();
+    for (const c of categories) {
+      if (c.parent_id === null) parentSlugById.set(c.id, c.slug);
+    }
+    for (const c of categories) {
+      if (c.parent_id) childToParent.set(c.id, parentSlugById.get(c.parent_id) ?? null);
+    }
+    return childToParent;
+  }, [categories]);
+
+  const selected = preview.subcategoryIds
+    .map((id) => subNameById.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x);
+
+  const businessName = preview.business_name.trim() || t("preview.placeholderName");
+  const bioShort = preview.bio.trim() || t("preview.placeholderBio");
+  const city = preview.base_city.trim() || t("preview.placeholderCity");
+
+  const initials = businessName
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <aside className="lg:sticky lg:top-20 self-start">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <div aria-hidden className="size-2 animate-pulse rounded-full bg-brand-cobalt-500" />
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("preview.title")}
+          </h2>
+        </div>
+        <Card className="overflow-hidden">
+          <div className="h-24 bg-gradient-to-br from-brand-navy-900 via-brand-cobalt-500 to-brand-cobalt-400" aria-hidden />
+          <CardContent className="-mt-10 flex flex-col gap-4 p-5">
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-white text-lg font-bold text-brand-navy-900 shadow-brand-md ring-1 ring-inset ring-border">
+              {initials || "?"}
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-brand-navy-900">
+                {businessName}
+              </h3>
+              <p className="text-xs text-muted-foreground">{city}</p>
+            </div>
+            <p className="line-clamp-3 text-sm text-muted-foreground">
+              {bioShort}
+            </p>
+            {selected.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {selected.slice(0, 6).map((s, idx) => {
+                  const parentSlug = parentSlugForSub.get(
+                    preview.subcategoryIds[idx] ?? "",
+                  );
+                  const Icon = iconForCategory(parentSlug);
+                  const label = locale === "ar" && s.name_ar ? s.name_ar : s.name_en;
+                  return (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-cobalt-100 px-2 py-0.5 text-xs text-brand-cobalt-500"
+                    >
+                      <Icon className="size-3" aria-hidden />
+                      {label}
+                    </span>
+                  );
+                })}
+                {selected.length > 6 ? (
+                  <span className="inline-flex items-center rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-muted-foreground">
+                    +{selected.length - 6}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-xs italic text-muted-foreground">
+                {t("preview.placeholderCategories")}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        <p className="text-xs text-muted-foreground">
+          {t("preview.hint")}
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+function ProgressBar({
+  percent,
+  label,
+}: {
+  percent: number;
+  label: string;
+}) {
+  const clamped = Math.max(0, Math.min(100, percent));
+  return (
+    <div
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={clamped}
+      aria-label={label}
+      className="flex flex-col gap-2"
+    >
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular-nums font-medium text-brand-navy-900">
+          {clamped}%
+        </span>
+      </div>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+        <div
+          className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-brand-cobalt-500 to-brand-navy-900 transition-[width] duration-500 ease-out"
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+    </div>
   );
 }

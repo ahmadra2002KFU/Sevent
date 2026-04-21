@@ -9,8 +9,11 @@ export type CatalogSubcategory = {
   id: string;
   slug: string;
   name_en: string;
+  name_ar: string | null;
   parent_id: string | null;
+  parent_slug: string | null;
   parent_name_en: string | null;
+  parent_name_ar: string | null;
 };
 
 export type CatalogBootstrap =
@@ -72,7 +75,7 @@ export async function loadCatalogBootstrap(): Promise<CatalogBootstrap> {
       .order("version", { ascending: false }),
     supabase
       .from("categories")
-      .select("id, slug, name_en, parent_id")
+      .select("id, slug, name_en, name_ar, parent_id")
       .order("sort_order", { ascending: true }),
     supabase
       .from("supplier_categories")
@@ -97,22 +100,37 @@ export async function loadCatalogBootstrap(): Promise<CatalogBootstrap> {
   }
 
   const allCats = catsRes.data ?? [];
-  const parentNameById = new Map<string, string>();
+  const parentById = new Map<
+    string,
+    { slug: string; name_en: string; name_ar: string | null }
+  >();
   for (const c of allCats) {
-    if (c.parent_id === null) parentNameById.set(c.id as string, c.name_en as string);
+    if (c.parent_id === null) {
+      parentById.set(c.id as string, {
+        slug: c.slug as string,
+        name_en: c.name_en as string,
+        name_ar: (c.name_ar as string | null) ?? null,
+      });
+    }
   }
 
   const subcategories: CatalogSubcategory[] = allCats
     .filter((c) => c.parent_id !== null)
-    .map((c) => ({
-      id: c.id as string,
-      slug: c.slug as string,
-      name_en: c.name_en as string,
-      parent_id: (c.parent_id as string | null) ?? null,
-      parent_name_en: c.parent_id
-        ? parentNameById.get(c.parent_id as string) ?? null
-        : null,
-    }));
+    .map((c) => {
+      const parent = c.parent_id
+        ? parentById.get(c.parent_id as string) ?? null
+        : null;
+      return {
+        id: c.id as string,
+        slug: c.slug as string,
+        name_en: c.name_en as string,
+        name_ar: (c.name_ar as string | null) ?? null,
+        parent_id: (c.parent_id as string | null) ?? null,
+        parent_slug: parent?.slug ?? null,
+        parent_name_en: parent?.name_en ?? null,
+        parent_name_ar: parent?.name_ar ?? null,
+      };
+    });
 
   const selectedSubcategoryIds = (linksRes.data ?? []).map(
     (r) => r.subcategory_id as string,

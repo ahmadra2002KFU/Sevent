@@ -141,6 +141,7 @@
       "step2Heading": "Upload verification documents",
       "step3Heading": "Where you work",
       "stepOfTotal": "Step {current} of {total}",
+      "progressLabel": "Application progress",
       "chooseFileHint": "Click to choose a PDF or image",
       "continue": "Continue",
       "back": "Back",
@@ -182,6 +183,25 @@
       "baseLatLabel": "Latitude (optional)",
       "baseLngLabel": "Longitude (optional)",
       "latLngHint": "Optional; helps travel-fee calculations.",
+      "pinLocationLabel": "Pin your base location",
+      "pinLocationHint": "Click on the map to drop a pin, or drag the existing pin. We'll auto-fill the city for you.",
+      "advancedCoordsToggle": "Enter coordinates manually",
+      "preview": {
+        "title": "Live preview",
+        "hint": "This is how your public profile will appear to organizers.",
+        "placeholderName": "Your business name",
+        "placeholderBio": "A short description of your business will appear here.",
+        "placeholderCity": "Your base city",
+        "placeholderCategories": "Select services in step 3 to see them here."
+      },
+      "location": {
+        "searchPlaceholder": "Search city or address",
+        "searchCta": "Search",
+        "loading": "Loading…",
+        "noResults": "No results found",
+        "searchError": "Could not search. Please try again.",
+        "hint": "Tip: click the map or drag the pin to fine-tune. Powered by OpenStreetMap."
+      },
       "serviceAreaLabel": "Service area cities",
       "serviceAreaHint": "Comma-separated list, e.g. Riyadh, Jeddah, Dammam.",
       "languagesLabel": "Languages you can work in",
@@ -242,6 +262,12 @@
         "distance_fee": "Distance fee",
         "date_surcharge": "Date surcharge",
         "duration_multiplier": "Duration multiplier"
+      },
+      "subcategoryPicker": {
+        "placeholder": "Pick a subcategory",
+        "searchPlaceholder": "Search categories…",
+        "empty": "No matches",
+        "uncategorized": "Other"
       },
       "packageForm": {
         "nameLabel": "Package name",
@@ -393,7 +419,38 @@
         "heading": "Welcome",
         "body": "Start onboarding to create your supplier profile, upload verification documents, and begin receiving RFQ invites.",
         "cta": "Start onboarding"
-      }
+      },
+      "journey": {
+        "heading": "Your application",
+        "steps": {
+          "submit": "Submitted",
+          "submitHintDone": "Application complete",
+          "submitHintPending": "Finish the 3-step wizard",
+          "review": "Under review",
+          "reviewHintPending": "Waiting for submission",
+          "reviewHintActive": "Usually within 24–48 hours",
+          "reviewHintDone": "Review complete",
+          "live": "Live",
+          "liveHintPending": "Public profile publishes on approval",
+          "liveHintActive": "Your profile is live"
+        }
+      },
+      "resubmit": {
+        "title": "Continue registration",
+        "body": "Finish the remaining onboarding steps to send your application for review.",
+        "cta": "Continue registration"
+      },
+      "underReview": {
+        "title": "We're reviewing your application",
+        "body": "Every supplier profile is hand-checked before it goes live. We'll email you the moment it's approved — usually within 24–48 hours.",
+        "editCta": "Edit submission"
+      },
+      "rejected": {
+        "title": "Submission needs changes",
+        "body": "Please review the admin's feedback and resubmit when ready.",
+        "cta": "Edit submission"
+      },
+      "statsLockedHint": "Unlocks after approval"
     },
     "rfqInbox": {
       "title": "RFQ inbox",
@@ -547,6 +604,27 @@
           "kind": "Kind",
           "payload": "Payload",
           "time": "Time"
+        },
+        "kindLine": {
+          "supplier_approved": "Supplier approved",
+          "supplier_approved_named": "Supplier approved — {name}",
+          "supplier_rejected": "Supplier rejected",
+          "supplier_rejected_named": "Supplier rejected — {name}",
+          "supplier_doc_approved": "Document approved",
+          "supplier_doc_rejected": "Document rejected",
+          "supplier_email_delivery_failed": "Email delivery failed",
+          "supplier_email_delivery_failed_named": "Email delivery failed — {name}",
+          "quote_sent": "Quote sent",
+          "quote_sent_versioned": "Quote sent · v{version}",
+          "quote_revised": "Quote revised",
+          "quote_revised_versioned": "Quote revised · v{version}",
+          "quote_accepted": "Quote accepted",
+          "quote_rejected": "Quote rejected",
+          "booking_created": "Booking created",
+          "booking_awaiting_supplier": "Booking awaiting supplier"
+        },
+        "kindDetail": {
+          "quote_rejected_another_accepted": "Another supplier's quote was accepted on this RFQ."
         }
       }
     },

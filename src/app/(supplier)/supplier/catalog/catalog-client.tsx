@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { formatHalalas } from "@/lib/domain/money";
 import type { PackageRow, PricingRuleRow } from "@/lib/supabase/types";
@@ -52,6 +52,20 @@ type Props = {
   subcategories: CatalogSubcategory[];
 };
 
+function formatSubcategoryLabel(
+  sub: CatalogSubcategory,
+  locale: string,
+): string {
+  const childName =
+    locale === "ar" && sub.name_ar ? sub.name_ar : sub.name_en;
+  const parent = sub.parent_name_en
+    ? locale === "ar" && sub.parent_name_ar
+      ? sub.parent_name_ar
+      : sub.parent_name_en
+    : null;
+  return parent ? `${parent} · ${childName}` : childName;
+}
+
 type PackageEditor =
   | { kind: "closed" }
   | { kind: "new" }
@@ -69,6 +83,7 @@ export function CatalogClient({
   subcategories,
 }: Props) {
   const t = useTranslations("supplier.catalog");
+  const locale = useLocale();
   const [pkgEditor, setPkgEditor] = useState<PackageEditor>({ kind: "closed" });
   const [ruleEditor, setRuleEditor] = useState<RuleEditor>({ kind: "closed" });
   const [banner, setBanner] = useState<{
@@ -172,11 +187,7 @@ export function CatalogClient({
                           {p.name}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {sub
-                            ? `${
-                                sub.parent_name_en ? `${sub.parent_name_en} · ` : ""
-                              }${sub.name_en}`
-                            : ""}
+                          {sub ? formatSubcategoryLabel(sub, locale) : ""}
                         </TableCell>
                         <TableCell className="text-xs">
                           {t(`packageForm.unit.${p.unit}`)}
