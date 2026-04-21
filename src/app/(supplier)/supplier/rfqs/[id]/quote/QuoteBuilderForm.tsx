@@ -23,12 +23,25 @@ import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
+import { Trash2 } from "lucide-react";
 import { formatHalalas, halalasToSar, sarToHalalas } from "@/lib/domain/money";
 import type {
   QuoteLineItemKind,
   QuoteSnapshot,
   QuoteSource,
 } from "@/lib/domain/quote";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sendQuoteAction } from "./actions";
 import type { ActionState } from "./action-state";
 import { initialActionState } from "./action-state";
@@ -177,9 +190,11 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       <ActionBanner state={state} />
 
       {props.locked ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          {t("sendBlockedTerminal", { status: props.initialSnapshot.source })}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {t("sendBlockedTerminal", { status: props.initialSnapshot.source })}
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {/* Mode toggle */}
@@ -195,9 +210,13 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       {/* Line items */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">{t("lineItemsHeading")}</h2>
-          <button
+          <h2 className="text-base font-semibold text-brand-navy-900">
+            {t("lineItemsHeading")}
+          </h2>
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
             onClick={() =>
               append({
                 kind: "free_form",
@@ -208,51 +227,59 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                 total_sar: "",
               })
             }
-            className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]"
           >
             {t("addLineItem")}
-          </button>
+          </Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <th className="py-2 pe-3">{t("label")}</th>
-                <th className="py-2 pe-3">{t("qty")}</th>
-                <th className="py-2 pe-3">{t("unit")}</th>
-                <th className="py-2 pe-3">{t("unitPrice")}</th>
-                <th className="py-2 pe-3">{t("total")}</th>
-                <th className="py-2" aria-hidden />
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border border-border">
+          <Table className="min-w-[720px]">
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("label")}
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("qty")}
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("unit")}
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("unitPrice")}
+                </TableHead>
+                <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("total")}
+                </TableHead>
+                <TableHead aria-hidden />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {fields.map((field, idx) => (
-                <tr key={field.id} className="border-b border-[var(--color-border)]">
-                  <td className="py-2 pe-3 align-top">
-                    <input
+                <TableRow key={field.id}>
+                  <TableCell className="align-top whitespace-normal">
+                    <Input
                       {...register(`line_items.${idx}.label`)}
-                      className="w-full rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
                     />
                     <ErrorText msg={errors.line_items?.[idx]?.label?.message} />
                     <input type="hidden" {...register(`line_items.${idx}.kind`)} />
-                  </td>
-                  <td className="py-2 pe-3 align-top">
-                    <input
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Input
                       type="number"
                       min={1}
+                      className="w-20"
                       {...register(`line_items.${idx}.qty`)}
-                      className="w-20 rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
                     />
-                  </td>
-                  <td className="py-2 pe-3 align-top">
+                  </TableCell>
+                  <TableCell className="align-top">
                     <Controller
                       control={control}
                       name={`line_items.${idx}.unit`}
                       render={({ field: f }) => (
                         <select
                           {...f}
-                          className="rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
+                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                         >
                           {UNITS.map((u) => (
                             <option key={u} value={u}>
@@ -262,46 +289,47 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                         </select>
                       )}
                     />
-                  </td>
-                  <td className="py-2 pe-3 align-top">
-                    <input
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Input
                       type="text"
                       inputMode="decimal"
+                      className="w-28"
                       {...register(`line_items.${idx}.unit_price_sar`)}
-                      className="w-28 rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5"
                     />
                     <ErrorText msg={errors.line_items?.[idx]?.unit_price_sar?.message} />
-                  </td>
-                  <td className="py-2 pe-3 align-top">
-                    <input
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Input
                       type="text"
                       inputMode="decimal"
                       disabled={isEngineMode}
-                      {...register(`line_items.${idx}.total_sar`)}
-                      className="w-28 rounded-md border border-[var(--color-border)] bg-white px-2 py-1.5 disabled:bg-[var(--color-muted)] disabled:text-[var(--color-muted-foreground)]"
+                      className="w-28 disabled:bg-muted disabled:text-muted-foreground"
                       aria-label={t("total")}
+                      {...register(`line_items.${idx}.total_sar`)}
                     />
                     <ErrorText msg={errors.line_items?.[idx]?.total_sar?.message} />
-                  </td>
-                  <td className="py-2 align-top">
-                    <button
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => remove(idx)}
                       disabled={fields.length <= 1}
-                      className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Remove line item"
                     >
-                      ×
-                    </button>
-                  </td>
-                </tr>
+                      <Trash2 />
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {isEngineMode ? (
-          <p className="text-xs text-[var(--color-muted-foreground)]">
+          <p className="text-xs text-muted-foreground">
             {t("travelFeeComputed")}
           </p>
         ) : null}
@@ -309,38 +337,36 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 
       {/* Addons */}
       <section className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold">{t("addonsHeading")}</h2>
+        <h2 className="text-base font-semibold text-brand-navy-900">
+          {t("addonsHeading")}
+        </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <LabeledField label={t("setupFee")} error={errors.setup_fee_sar?.message}>
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               {...register("setup_fee_sar")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
             />
           </LabeledField>
           <LabeledField label={t("teardownFee")} error={errors.teardown_fee_sar?.message}>
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               {...register("teardown_fee_sar")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
             />
           </LabeledField>
           <LabeledField label={t("depositPct")} error={errors.deposit_pct?.message}>
-            <input
+            <Input
               type="number"
               min={0}
               max={100}
               {...register("deposit_pct")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
             />
           </LabeledField>
           <LabeledField label={t("expiresAt")} error={errors.expires_at?.message}>
-            <input
+            <Input
               type="datetime-local"
               {...register("expires_at")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
             />
           </LabeledField>
           <LabeledField
@@ -348,68 +374,48 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
             error={errors.payment_schedule?.message}
             className="sm:col-span-2"
           >
-            <input
-              type="text"
-              {...register("payment_schedule")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <Input type="text" {...register("payment_schedule")} />
           </LabeledField>
           <LabeledField
             label={t("cancellationTerms")}
             error={errors.cancellation_terms?.message}
             className="sm:col-span-2"
           >
-            <textarea
-              rows={2}
-              {...register("cancellation_terms")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <Textarea rows={2} {...register("cancellation_terms")} />
           </LabeledField>
           <LabeledField
             label={t("inclusions")}
             hint="One per line."
             error={errors.inclusions_text?.message}
           >
-            <textarea
-              rows={3}
-              {...register("inclusions_text")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <Textarea rows={3} {...register("inclusions_text")} />
           </LabeledField>
           <LabeledField
             label={t("exclusions")}
             hint="One per line."
             error={errors.exclusions_text?.message}
           >
-            <textarea
-              rows={3}
-              {...register("exclusions_text")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <Textarea rows={3} {...register("exclusions_text")} />
           </LabeledField>
           <LabeledField
             label={t("notes")}
             className="sm:col-span-2"
             error={errors.notes?.message}
           >
-            <textarea
-              rows={3}
-              {...register("notes")}
-              className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <Textarea rows={3} {...register("notes")} />
           </LabeledField>
         </div>
       </section>
 
       {/* Totals summary */}
-      <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm">
+      <section className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
         <div className="flex items-center justify-between">
-          <span className="font-medium">{t("total")}</span>
-          <span className="text-base font-semibold">
+          <span className="font-medium text-foreground">{t("total")}</span>
+          <span className="text-lg font-semibold text-brand-navy-900">
             {formatHalalas(props.initialSnapshot.total_halalas)}
           </span>
         </div>
-        <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+        <p className="mt-1 text-xs text-muted-foreground">
           {isEngineMode
             ? "The server recomputes totals from your rules on send."
             : "Free-form total is the sum of your line items plus addons."}
@@ -418,13 +424,9 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 
       {/* Submit */}
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="submit"
-          disabled={isPending || props.locked}
-          className="rounded-md bg-[var(--color-sevent-green)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-sevent-green-hover,var(--color-sevent-green))] disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" size="lg" disabled={isPending || props.locked}>
           {isPending ? t("sending") : t("sendDraft")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -442,8 +444,8 @@ function ActionBanner({ state }: { state: ActionState }) {
       role="status"
       className={
         isError
-          ? "rounded-md border border-[#F2C2C2] bg-[#FCE9E9] px-3 py-2 text-sm text-[#9F1A1A]"
-          : "rounded-md border border-[#BDE3CB] bg-[#E2F4EA] px-3 py-2 text-sm text-[var(--color-sevent-green)]"
+          ? "rounded-lg border border-semantic-danger-100 bg-semantic-danger-100/60 px-3 py-2 text-sm text-semantic-danger-500"
+          : "rounded-lg border border-semantic-success-100 bg-semantic-success-100/60 px-3 py-2 text-sm text-semantic-success-500"
       }
     >
       {state.message}
@@ -463,11 +465,11 @@ function ModeRadio({
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm has-[:checked]:border-[var(--color-sevent-green)] has-[:checked]:bg-[var(--color-sevent-green)]/10">
+    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm transition-colors has-[:checked]:border-brand-cobalt-500 has-[:checked]:bg-brand-cobalt-100 has-[:checked]:text-brand-navy-900 has-[:checked]:font-medium">
       <input
         type="radio"
         value={value}
-        className="accent-[var(--color-sevent-green)]"
+        className="accent-brand-cobalt-500"
         {...rest}
       />
       <span>{label}</span>
@@ -489,11 +491,11 @@ function LabeledField({
   children: React.ReactNode;
 }) {
   return (
-    <label className={`flex flex-col gap-1 ${className ?? ""}`}>
-      <span className="text-sm font-medium">{label}</span>
+    <label className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <span className="text-sm font-medium text-foreground">{label}</span>
       {children}
       {hint ? (
-        <span className="text-xs text-[var(--color-muted-foreground)]">{hint}</span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
       ) : null}
       <ErrorText msg={error} />
     </label>
@@ -502,7 +504,7 @@ function LabeledField({
 
 function ErrorText({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <span className="text-xs text-red-700">{msg}</span>;
+  return <span className="text-xs text-semantic-danger-500">{msg}</span>;
 }
 
 // ---------------------------------------------------------------------------

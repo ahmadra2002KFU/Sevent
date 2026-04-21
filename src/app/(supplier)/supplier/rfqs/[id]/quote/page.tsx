@@ -24,6 +24,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { AlertTriangle } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import {
   composePrice,
@@ -38,6 +39,9 @@ import {
   type QuoteSource,
   type QuoteUnit,
 } from "@/lib/domain/quote";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { QuoteBuilderForm } from "./QuoteBuilderForm";
 
 export const dynamic = "force-dynamic";
@@ -282,33 +286,35 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("intro")}
-        </p>
-        <p className="text-xs text-[var(--color-muted-foreground)]">
-          {rfq.categories?.name_en ?? "RFQ"} · {event.city} ·{" "}
-          {formatIso(event.starts_at)} → {formatIso(event.ends_at)}
-        </p>
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={`${rfq.categories?.name_en ?? "RFQ"} · ${event.city} · ${formatIso(
+          event.starts_at,
+        )} → ${formatIso(event.ends_at)}`}
+      />
+
+      <p className="-mt-2 text-sm text-muted-foreground">{t("intro")}</p>
 
       {packages.length === 0 ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          You have no active packages in this subcategory yet. You can still
-          submit a free-form quote below — the rule engine needs at least one
-          package to compose a draft.
-        </div>
+        <Alert>
+          <AlertTriangle />
+          <AlertTitle>{t("noPackagesTitle")}</AlertTitle>
+          <AlertDescription>{t("noPackagesBody")}</AlertDescription>
+        </Alert>
       ) : null}
 
-      <QuoteBuilderForm
-        inviteId={invite.id}
-        rfqId={rfq.id}
-        supplierId={supplierId}
-        packageId={selectedPackage?.id ?? null}
-        initialSnapshot={initialSnapshot}
-        locked={locked}
-      />
+      <Card>
+        <CardContent className="p-6">
+          <QuoteBuilderForm
+            inviteId={invite.id}
+            rfqId={rfq.id}
+            supplierId={supplierId}
+            packageId={selectedPackage?.id ?? null}
+            initialSnapshot={initialSnapshot}
+            locked={locked}
+          />
+        </CardContent>
+      </Card>
     </section>
   );
 }
