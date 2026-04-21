@@ -30,6 +30,10 @@
     "admin": {
       "dashboard": "Overview",
       "verifications": "Verifications"
+    },
+    "menu": {
+      "open": "Open menu",
+      "close": "Close menu"
     }
   },
   "common": {

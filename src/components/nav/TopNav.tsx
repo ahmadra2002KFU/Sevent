@@ -4,6 +4,7 @@ import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/brand/Logo";
 import NotificationBell from "@/app/_components/NotificationBell";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { MobileNavSheet } from "./MobileNavSheet";
 import { UserMenu } from "./UserMenu";
 import { cn } from "@/lib/utils";
 
@@ -70,29 +71,40 @@ export async function TopNav({ role }: { role: Role }) {
           : "border-border bg-white/80 text-foreground",
       )}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          aria-label="Sevent home"
-        >
-          <Logo
-            variant="mark"
-            tone={tone === "dark" ? "white" : "color"}
-            className="h-7 w-auto"
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          <MobileNavSheet
+            tone={tone}
+            triggerLabel={nav("menu.open")}
+            title={nav(`role.${role}`)}
+            items={items.map((item) => ({
+              href: item.href,
+              label: nav(item.labelKey),
+            }))}
           />
-          <span
-            className={cn(
-              "text-sm font-semibold tracking-tight hidden sm:inline",
-              tone === "dark" ? "text-white/90" : "text-brand-navy-900",
-            )}
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-3"
+            aria-label="Sevent home"
           >
-            {nav(`role.${role}`)}
-          </span>
-        </Link>
+            <Logo
+              variant="mark"
+              tone={tone === "dark" ? "white" : "color"}
+              className="h-6 w-auto shrink-0 sm:h-7"
+            />
+            <span
+              className={cn(
+                "truncate text-sm font-semibold tracking-tight hidden sm:inline",
+                tone === "dark" ? "text-white/90" : "text-brand-navy-900",
+              )}
+            >
+              {nav(`role.${role}`)}
+            </span>
+          </Link>
+        </div>
 
         <nav className="flex items-center gap-1">
-          <ul className="flex items-center gap-1 text-sm">
+          <ul className="hidden items-center gap-1 text-sm md:flex">
             {items.map((item) => (
               <li key={item.href}>
                 <Link
@@ -109,7 +121,7 @@ export async function TopNav({ role }: { role: Role }) {
               </li>
             ))}
           </ul>
-          <div className="mx-2 h-6 w-px bg-current/10 hidden md:block" />
+          <div className="mx-2 hidden h-6 w-px bg-current/10 md:block" />
           <LanguageSwitcher tone={tone} />
           <NotificationBell
             href={NOTIFICATION_HREF[role]}

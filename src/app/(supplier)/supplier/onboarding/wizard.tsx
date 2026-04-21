@@ -587,7 +587,7 @@ function Step3Form({
           {...register("base_city", { required: true, minLength: 2 })}
         />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label={t("baseLatLabel")} hint={t("latLngHint")}>
           <Input {...register("base_lat")} />
         </Field>
@@ -640,7 +640,7 @@ function Step3Form({
           })}
         </div>
       </fieldset>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label={t("capacityLabel")} hint={t("capacityHint")}>
           <Input type="number" min={0} {...register("capacity")} />
         </Field>

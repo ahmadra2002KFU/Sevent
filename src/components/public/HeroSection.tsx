@@ -45,9 +45,9 @@ export function HeroSection({
         className="pointer-events-none absolute -end-24 top-1/2 hidden size-[28rem] -translate-y-1/2 skew-x-12 bg-brand-cobalt-500/15 md:block"
       />
 
-      <div className="relative mx-auto grid max-w-6xl gap-12 px-6 py-20 sm:py-28 md:grid-cols-[1.15fr_1fr] md:items-center">
-        <div className="flex flex-col gap-6">
-          <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-white/80 ring-1 ring-inset ring-white/10">
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:gap-12 sm:px-6 sm:py-20 md:grid-cols-[1.15fr_1fr] md:items-center md:py-28">
+        <div className="flex flex-col gap-5 sm:gap-6">
+          <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/5 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.22em] text-white/80 ring-1 ring-inset ring-white/10 sm:text-xs">
             <span
               aria-hidden
               className="size-1.5 rounded-full bg-accent-gold-500"
@@ -55,15 +55,15 @@ export function HeroSection({
             {eyebrow}
           </span>
 
-          <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-[3.5rem]">
+          <h1 className="text-3xl font-black leading-[1.1] tracking-tight text-white sm:text-4xl md:text-[3rem] md:leading-[1.05] lg:text-[3.5rem]">
             {title}
           </h1>
 
-          <p className="max-w-xl text-lg leading-relaxed text-white/75">
+          <p className="max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
             {subtitle}
           </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-3">
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               asChild
               size="lg"
@@ -90,12 +90,12 @@ export function HeroSection({
 
         {/* Proof block — elevated surface over the navy, offsets right on md+ */}
         <div className="relative">
-          <div className="relative rounded-2xl bg-white/[0.04] p-7 ring-1 ring-inset ring-white/10 backdrop-blur-sm">
+          <div className="relative rounded-2xl bg-white/[0.04] p-5 ring-1 ring-inset ring-white/10 backdrop-blur-sm sm:p-7">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold-500">
               <Sparkles className="size-3.5" aria-hidden />
               {statLabel}
             </div>
-            <p className="mt-3 text-3xl font-bold leading-tight text-white">
+            <p className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
               {statValue}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">

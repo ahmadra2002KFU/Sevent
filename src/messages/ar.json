@@ -30,6 +30,10 @@
     "admin": {
       "dashboard": "نظرة عامة",
       "verifications": "التحققات"
+    },
+    "menu": {
+      "open": "فتح القائمة",
+      "close": "إغلاق القائمة"
     }
   },
   "common": {
