@@ -1,13 +1,23 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { formatDistanceToNowStrict, parseISO } from "date-fns";
+import { Inbox, MapPin, Users } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
+type InviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
+
 type InviteRow = {
   id: string;
-  status: "invited" | "declined" | "quoted" | "withdrawn";
+  status: InviteStatus;
   sent_at: string;
   response_due_at: string;
   responded_at: string | null;
@@ -41,6 +51,15 @@ function countdownLabel(
   return t("countdownHours", { hours });
 }
 
+function countdownTone(responseDueAt: string): "warning" | "danger" | "info" {
+  const diffMs = Date.parse(responseDueAt) - Date.now();
+  if (Number.isNaN(diffMs) || diffMs <= 0) return "danger";
+  const hours = diffMs / (60 * 60 * 1000);
+  if (hours < 4) return "danger";
+  if (hours < 12) return "warning";
+  return "info";
+}
+
 function formatEventDate(iso: string): string {
   try {
     return new Intl.DateTimeFormat("en-SA", {
@@ -52,6 +71,28 @@ function formatEventDate(iso: string): string {
     }).format(new Date(iso));
   } catch {
     return iso;
+  }
+}
+
+function formatSentRelative(iso: string): string {
+  try {
+    return formatDistanceToNowStrict(parseISO(iso), { addSuffix: true });
+  } catch {
+    return "";
+  }
+}
+
+function mapInviteToStatusPill(status: InviteStatus) {
+  switch (status) {
+    case "quoted":
+      return "quoted" as const;
+    case "declined":
+      return "declined" as const;
+    case "withdrawn":
+      return "withdrawn" as const;
+    case "invited":
+    default:
+      return "invited" as const;
   }
 }
 
@@ -71,9 +112,9 @@ export default async function SupplierRfqInboxPage() {
 
   if (!supplierRow) {
     return (
-      <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">{t("empty")}</p>
+      <section className="flex flex-col gap-6">
+        <PageHeader title={t("title")} description={t("subtitle")} />
+        <EmptyState icon={Inbox} title={t("empty")} />
       </section>
     );
   }
@@ -103,52 +144,79 @@ export default async function SupplierRfqInboxPage() {
 
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <Badge variant="outline" className="gap-1.5">
+            <Inbox className="size-3.5" aria-hidden />
+            {t("openCount", { count: invited.length })}
+          </Badge>
+        }
+      />
 
       {invited.length === 0 ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("empty")}
-        </p>
+        <EmptyState icon={Inbox} title={t("empty")} />
       ) : (
         <ul className="flex flex-col gap-3">
           {invited.map((invite) => {
             const event = invite.rfqs?.events;
             const subcategory = invite.rfqs?.categories;
+            const tone = countdownTone(invite.response_due_at);
             return (
               <li key={invite.id}>
                 <Link
                   href={`/supplier/rfqs/${invite.id}`}
-                  className="block rounded-lg border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
+                  className="group block focus:outline-none"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-semibold">
-                        {subcategory?.name_en ?? "RFQ"}
-                      </span>
-                      <span className="text-sm text-[var(--color-muted-foreground)]">
-                        {event?.city ?? "—"}
-                        {event?.starts_at
-                          ? ` · ${formatEventDate(event.starts_at)}`
-                          : ""}
-                        {event?.guest_count
-                          ? ` · ${event.guest_count} guests`
-                          : ""}
-                      </span>
-                    </div>
-                    <span
-                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium text-[var(--color-foreground)]"
-                      aria-label={t("expiresIn", {
-                        time: countdownLabel(t, invite.response_due_at),
-                      })}
-                    >
-                      {countdownLabel(t, invite.response_due_at)}
-                    </span>
-                  </div>
+                  <Card className="transition-all hover:ring-brand-cobalt-500/40 group-focus-visible:ring-brand-cobalt-500">
+                    <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-semibold text-brand-navy-900">
+                            {subcategory?.name_en ?? "RFQ"}
+                          </h3>
+                          <StatusPill status="invited" label={t("status.invited")} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="size-3.5" aria-hidden />
+                            {event?.city ?? "—"}
+                          </span>
+                          {event?.starts_at ? (
+                            <span>{formatEventDate(event.starts_at)}</span>
+                          ) : null}
+                          {event?.guest_count ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Users className="size-3.5" aria-hidden />
+                              {t("guests", { count: event.guest_count })}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("sentRelative", {
+                            time: formatSentRelative(invite.sent_at),
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <span
+                          className={
+                            tone === "danger"
+                              ? "inline-flex items-center rounded-full bg-semantic-danger-100 px-2.5 py-1 text-xs font-semibold text-semantic-danger-500"
+                              : tone === "warning"
+                                ? "inline-flex items-center rounded-full bg-semantic-warning-100 px-2.5 py-1 text-xs font-semibold text-semantic-warning-500"
+                                : "inline-flex items-center rounded-full bg-brand-cobalt-100 px-2.5 py-1 text-xs font-semibold text-brand-cobalt-500"
+                          }
+                          aria-label={t("expiresIn", {
+                            time: countdownLabel(t, invite.response_due_at),
+                          })}
+                        >
+                          {countdownLabel(t, invite.response_due_at)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               </li>
             );
@@ -157,52 +225,57 @@ export default async function SupplierRfqInboxPage() {
       )}
 
       {past.length > 0 ? (
-        <details className="rounded-md border border-[var(--color-border)] bg-white">
-          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
-            Past ({past.length})
-          </summary>
-          <ul className="flex flex-col divide-y divide-[var(--color-border)]">
-            {past.map((invite) => {
-              const event = invite.rfqs?.events;
-              const subcategory = invite.rfqs?.categories;
-              const isQuoted = invite.status === "quoted";
-              return (
-                <li
-                  key={invite.id}
-                  className="flex flex-col gap-1 px-4 py-3 text-sm"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <Link
-                      href={`/supplier/rfqs/${invite.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {subcategory?.name_en ?? "RFQ"}
-                      {event?.city ? ` · ${event.city}` : ""}
-                    </Link>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-[var(--color-muted-foreground)]">
-                        {t(`status.${invite.status}`)}
-                      </span>
-                      {isQuoted ? (
-                        <Link
-                          href={`/supplier/rfqs/${invite.id}/quote`}
-                          className="text-xs font-medium text-[var(--color-sevent-green,#0a7)] hover:underline"
-                        >
-                          {t("revise")}
-                        </Link>
+        <Card>
+          <details className="group">
+            <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-5 py-4 text-sm font-medium text-brand-navy-900 [&::-webkit-details-marker]:hidden">
+              {t("pastHeading", { count: past.length })}
+              <span className="text-xs font-normal text-muted-foreground transition-transform group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <ul className="flex flex-col divide-y divide-border border-t border-border">
+              {past.map((invite) => {
+                const event = invite.rfqs?.events;
+                const subcategory = invite.rfqs?.categories;
+                const isQuoted = invite.status === "quoted";
+                return (
+                  <li
+                    key={invite.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
+                  >
+                    <div className="flex min-w-0 flex-col">
+                      <Link
+                        href={`/supplier/rfqs/${invite.id}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {subcategory?.name_en ?? "RFQ"}
+                        {event?.city ? ` · ${event.city}` : ""}
+                      </Link>
+                      {event?.starts_at ? (
+                        <span className="text-xs text-muted-foreground">
+                          {formatEventDate(event.starts_at)}
+                        </span>
                       ) : null}
                     </div>
-                  </div>
-                  {event?.starts_at ? (
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {formatEventDate(event.starts_at)}
-                    </span>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        </details>
+                    <div className="flex items-center gap-3">
+                      <StatusPill
+                        status={mapInviteToStatusPill(invite.status)}
+                        label={t(`status.${invite.status}`)}
+                      />
+                      {isQuoted ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/supplier/rfqs/${invite.id}/quote`}>
+                            {t("revise")}
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        </Card>
       ) : null}
     </section>
   );
