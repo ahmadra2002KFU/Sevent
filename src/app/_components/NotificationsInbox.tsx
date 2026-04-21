@@ -1,7 +1,25 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { getTranslations } from "next-intl/server";
+import {
+  AlertTriangle,
+  Bell,
+  CalendarCheck,
+  CheckCircle2,
+  FileCheck,
+  FileX,
+  Info,
+  MailWarning,
+  MessageSquare,
+  XCircle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { NotificationRow } from "@/lib/notifications/reader";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Payload → human-readable sentence + link target
@@ -18,13 +36,19 @@ import type { NotificationRow } from "@/lib/notifications/reader";
 
 type PayloadMap = Record<string, unknown>;
 
-function pickString(payload: PayloadMap | null | undefined, key: string): string | null {
+function pickString(
+  payload: PayloadMap | null | undefined,
+  key: string,
+): string | null {
   if (!payload) return null;
   const v = payload[key];
   return typeof v === "string" && v.trim().length > 0 ? v : null;
 }
 
-function pickNumber(payload: PayloadMap | null | undefined, key: string): number | null {
+function pickNumber(
+  payload: PayloadMap | null | undefined,
+  key: string,
+): number | null {
   if (!payload) return null;
   const v = payload[key];
   return typeof v === "number" && Number.isFinite(v) ? v : null;
@@ -62,7 +86,8 @@ export function linkForNotification(
       return null;
     case "quote.accepted":
       if (role === "supplier") {
-        if (bookingId) return { href: `/supplier/bookings/${bookingId}`, label: "view" };
+        if (bookingId)
+          return { href: `/supplier/bookings/${bookingId}`, label: "view" };
         if (rfqId) return { href: `/supplier/rfqs/${rfqId}`, label: "view" };
       }
       if (role === "organizer" && bookingId) {
@@ -101,15 +126,62 @@ export function linkForNotification(
     default: {
       // Fall back to any ID we can find.
       if (role === "organizer") {
-        if (bookingId) return { href: `/organizer/bookings/${bookingId}`, label: "view" };
+        if (bookingId)
+          return { href: `/organizer/bookings/${bookingId}`, label: "view" };
         if (rfqId) return { href: `/organizer/rfqs/${rfqId}`, label: "view" };
       }
       if (role === "supplier") {
-        if (bookingId) return { href: `/supplier/bookings/${bookingId}`, label: "view" };
-        if (rfqId && inviteId) return { href: `/supplier/rfqs/${inviteId}`, label: "view" };
+        if (bookingId)
+          return { href: `/supplier/bookings/${bookingId}`, label: "view" };
+        if (rfqId && inviteId)
+          return { href: `/supplier/rfqs/${inviteId}`, label: "view" };
       }
       return null;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Kind → icon + tone (shared visual language across all three role inboxes).
+// ---------------------------------------------------------------------------
+
+type Tone = "success" | "danger" | "warning" | "info" | "neutral";
+
+const TONE_CLASSES: Record<Tone, string> = {
+  success: "bg-semantic-success-100 text-semantic-success-500",
+  danger: "bg-semantic-danger-100 text-semantic-danger-500",
+  warning: "bg-semantic-warning-100 text-semantic-warning-500",
+  info: "bg-brand-cobalt-100 text-brand-cobalt-500",
+  neutral: "bg-neutral-200 text-neutral-600",
+};
+
+function iconForKind(kind: string): { icon: LucideIcon; tone: Tone } {
+  switch (kind) {
+    case "supplier.approved":
+      return { icon: CheckCircle2, tone: "success" };
+    case "supplier.rejected":
+      return { icon: XCircle, tone: "danger" };
+    case "supplier.doc.approved":
+      return { icon: FileCheck, tone: "success" };
+    case "supplier.doc.rejected":
+      return { icon: FileX, tone: "danger" };
+    case "supplier.email.delivery_failed":
+      return { icon: MailWarning, tone: "warning" };
+    case "quote.sent":
+    case "quote.revised":
+      return { icon: MessageSquare, tone: "info" };
+    case "quote.accepted":
+      return { icon: CheckCircle2, tone: "success" };
+    case "quote.rejected":
+      return { icon: XCircle, tone: "danger" };
+    case "booking.created":
+      return { icon: CalendarCheck, tone: "info" };
+    case "booking.awaiting_supplier":
+      return { icon: AlertTriangle, tone: "warning" };
+    case "rfq_invite_declined":
+      return { icon: XCircle, tone: "warning" };
+    default:
+      return { icon: Info, tone: "neutral" };
   }
 }
 
@@ -143,6 +215,16 @@ function summarizeNotification(
     default:
       return label;
   }
+}
+
+function bodySnippet(row: NotificationRow): string | null {
+  const payload = (row.payload_jsonb ?? {}) as PayloadMap;
+  const body =
+    pickString(payload, "body") ??
+    pickString(payload, "message") ??
+    pickString(payload, "summary");
+  if (!body) return null;
+  return body.length > 140 ? `${body.slice(0, 137)}…` : body;
 }
 
 // ---------------------------------------------------------------------------
@@ -192,32 +274,38 @@ export default async function NotificationsInbox({
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        </div>
-        {anyUnread ? (
-          <form action={markAllAction}>
-            <button
-              type="submit"
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-            >
-              {t("markAllRead")}
-            </button>
-          </form>
-        ) : null}
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={
+          rows.length > 0 && anyUnread
+            ? t("unreadBadge", { count: unreadRows.length })
+            : null
+        }
+        actions={
+          anyUnread ? (
+            <form action={markAllAction}>
+              <Button type="submit" variant="outline" size="sm">
+                {t("markAllRead")}
+              </Button>
+            </form>
+          ) : null
+        }
+      />
 
       {rows.length === 0 ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("empty")}
-        </p>
+        <EmptyState
+          icon={Bell}
+          title={t("empty")}
+          description={null}
+        />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-3">
           {rows.map((row) => {
             const unread = row.read_at == null;
             const summary = summarizeNotification(row, kindLabels);
+            const snippet = bodySnippet(row);
             const link = linkForNotification(row, role);
+            const { icon: Icon, tone } = iconForKind(row.kind);
             let relative = "";
             try {
               relative = formatDistanceToNow(new Date(row.created_at), {
@@ -228,50 +316,72 @@ export default async function NotificationsInbox({
             }
 
             return (
-              <li
-                key={row.id}
-                className={
-                  unread
-                    ? "flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-sevent-green)]/40 bg-[var(--color-sevent-green)]/5 px-4 py-3"
-                    : "flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3 opacity-75"
-                }
-              >
-                <div className="flex min-w-0 flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    {unread ? (
-                      <span
-                        aria-hidden="true"
-                        className="inline-block h-2 w-2 rounded-full bg-[var(--color-sevent-green)]"
-                      />
-                    ) : null}
-                    <span className="font-medium">{summary}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-                    <time dateTime={row.created_at}>{relative}</time>
-                    {link ? (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <Link
-                          href={link.href}
-                          className="text-[var(--color-sevent-green,#0a7)] hover:underline"
-                        >
-                          View details
-                        </Link>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-                {unread ? (
-                  <form action={markOneAction}>
-                    <input type="hidden" name="notification_id" value={row.id} />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs hover:bg-[var(--color-muted)]"
+              <li key={row.id}>
+                <Card
+                  size="sm"
+                  className={cn(
+                    "transition-colors",
+                    unread
+                      ? "ring-brand-cobalt-500/40 bg-brand-cobalt-100/30"
+                      : "bg-card",
+                  )}
+                >
+                  <div className="flex flex-wrap items-start gap-4 px-4">
+                    <div
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-lg",
+                        TONE_CLASSES[tone],
+                      )}
+                      aria-hidden
                     >
-                      {t("markRead")}
-                    </button>
-                  </form>
-                ) : null}
+                      <Icon className="size-5" />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        {unread ? (
+                          <span
+                            aria-hidden
+                            className="inline-block size-2 shrink-0 rounded-full bg-brand-cobalt-500"
+                          />
+                        ) : null}
+                        <span className="font-medium text-foreground">
+                          {summary}
+                        </span>
+                      </div>
+                      {snippet ? (
+                        <p className="text-sm text-muted-foreground">
+                          {snippet}
+                        </p>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <time dateTime={row.created_at}>{relative}</time>
+                        {link ? (
+                          <>
+                            <span aria-hidden>·</span>
+                            <Link
+                              href={link.href}
+                              className="text-brand-cobalt-500 hover:underline"
+                            >
+                              View details
+                            </Link>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                    {unread ? (
+                      <form action={markOneAction} className="shrink-0">
+                        <input
+                          type="hidden"
+                          name="notification_id"
+                          value={row.id}
+                        />
+                        <Button type="submit" variant="ghost" size="sm">
+                          {t("markRead")}
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
+                </Card>
               </li>
             );
           })}
