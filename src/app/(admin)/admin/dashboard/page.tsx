@@ -2,9 +2,40 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
+  ArrowRight,
+  Bell,
+  CheckCircle2,
+  Clock,
+  FileWarning,
+  Inbox,
+  ListChecks,
+  XCircle,
+} from "lucide-react";
+import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MetricCard } from "@/components/ui-ext/MetricCard";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import type { StatusPillStatus } from "@/components/ui-ext/StatusPill";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +115,35 @@ function summarizePayload(
   }
 }
 
+// Map the raw rfq.status + notification.kind strings onto the shared
+// StatusPill status union. Anything unknown falls through to "pending"
+// (neutral tone) — the visual stays consistent even when a new kind lands
+// before this map is updated.
+function rfqStatusPill(status: string): StatusPillStatus {
+  switch (status) {
+    case "draft":
+    case "pending":
+    case "sent":
+    case "quoted":
+    case "expired":
+    case "booked":
+    case "cancelled":
+      return status as StatusPillStatus;
+    default:
+      return "pending";
+  }
+}
+
+function notificationStatusPill(kind: string): StatusPillStatus {
+  if (kind.endsWith(".approved") || kind.endsWith(".accepted")) return "approved";
+  if (kind.endsWith(".rejected") || kind.endsWith(".declined")) return "rejected";
+  if (kind.endsWith(".created") || kind.endsWith(".sent")) return "sent";
+  if (kind.endsWith(".awaiting_supplier")) return "awaiting_supplier";
+  if (kind.endsWith(".revised")) return "quoted";
+  if (kind.endsWith(".delivery_failed")) return "cancelled";
+  return "pending";
+}
+
 export default async function AdminDashboardPage() {
   const t = await getTranslations("admin.dashboard");
   const eventFormT = await getTranslations("organizer.eventForm");
@@ -128,13 +188,13 @@ export default async function AdminDashboardPage() {
   const approvedCount = approvedCountRes.count ?? 0;
   const rejectedCount = rejectedCountRes.count ?? 0;
 
-  // 3) Verification queue preview — 3 oldest pending suppliers.
+  // 3) Verification queue preview — 5 oldest pending suppliers.
   const { data: pendingPreviewData } = await admin
     .from("suppliers")
     .select("id, business_name, base_city, created_at")
     .eq("verification_status", "pending")
     .order("created_at", { ascending: true })
-    .limit(3);
+    .limit(5);
   const pendingPreview = (pendingPreviewData ?? []) as PendingSupplier[];
 
   // 4) Recent RFQs — last 10. Primary select joins events + both category rows.
@@ -179,156 +239,163 @@ export default async function AdminDashboardPage() {
 
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-      </header>
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
-      {/* Supplier status mix */}
+      {/* Supplier status mix — three metric cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
+        <MetricCard
           label={t("supplierMix.pending")}
           value={pendingCount}
-          href="/admin/verifications?status=pending"
+          hint={t("supplierMix.pendingHint")}
+          icon={Clock}
           tone="warning"
         />
-        <StatCard
+        <MetricCard
           label={t("supplierMix.approved")}
           value={approvedCount}
-          href="/admin/verifications?status=approved"
+          hint={t("supplierMix.approvedHint")}
+          icon={CheckCircle2}
           tone="success"
         />
-        <StatCard
+        <MetricCard
           label={t("supplierMix.rejected")}
           value={rejectedCount}
-          href="/admin/verifications?status=rejected"
+          hint={t("supplierMix.rejectedHint")}
+          icon={XCircle}
           tone="danger"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Verification queue preview */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ListChecks className="size-4 text-brand-cobalt-500" aria-hidden />
               {t("verificationQueue.heading")}
-            </h2>
-            <Link
-              href="/admin/verifications"
-              className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-            >
-              {t("verificationQueue.openQueue")}
-            </Link>
-          </div>
-          {pendingPreview.length === 0 ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("verificationQueue.empty")}
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {pendingPreview.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={`/admin/verifications/${s.id}`}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{s.business_name}</span>
-                      <span className="text-xs text-[var(--color-muted-foreground)]">
-                        {s.base_city} · submitted {fmtDate(s.created_at)}
-                      </span>
-                    </div>
-                    <span className="rounded-full border border-[var(--color-sevent-gold)]/40 bg-[#FFF4DD] px-2 py-0.5 text-xs font-medium text-[#7A5A18]">
-                      pending
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            </CardTitle>
+            <CardDescription>
+              {t("verificationQueue.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {pendingPreview.length === 0 ? (
+              <EmptyState
+                icon={FileWarning}
+                title={t("verificationQueue.empty")}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("verificationQueue.col.supplier")}</TableHead>
+                    <TableHead>{t("verificationQueue.col.city")}</TableHead>
+                    <TableHead>{t("verificationQueue.col.submitted")}</TableHead>
+                    <TableHead className="text-end">
+                      {t("verificationQueue.col.action")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingPreview.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium text-foreground">
+                        {s.business_name}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {s.base_city}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {fmtDate(s.created_at)}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/admin/verifications/${s.id}`}>
+                            {t("verificationQueue.reviewCta")}
+                            <ArrowRight aria-hidden />
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            <div className="mt-3 flex justify-end">
+              <Button asChild variant="link" size="sm">
+                <Link href="/admin/verifications?filter=pending">
+                  {t("verificationQueue.openQueue")}
+                  <ArrowRight aria-hidden />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Recent notifications */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="size-4 text-brand-cobalt-500" aria-hidden />
               {t("notifications.heading")}
-            </h2>
-          </div>
-          {notifications.length === 0 ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("notifications.empty")}
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border border-[var(--color-border)] bg-white">
-              <table className="w-full text-start text-sm">
-                <thead className="bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">
-                      {t("notifications.col.kind")}
-                    </th>
-                    <th className="px-3 py-2 font-medium">
-                      {t("notifications.col.payload")}
-                    </th>
-                    <th className="px-3 py-2 font-medium">
-                      {t("notifications.col.time")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {notifications.map((n) => (
-                    <tr
-                      key={n.id}
-                      className="border-t border-[var(--color-border)] align-top"
-                    >
-                      <td className="px-3 py-2 font-mono text-xs">{n.kind}</td>
-                      <td className="px-3 py-2 text-[var(--color-muted-foreground)]">
+            </CardTitle>
+            <CardDescription>{t("notifications.description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {notifications.length === 0 ? (
+              <EmptyState icon={Inbox} title={t("notifications.empty")} />
+            ) : (
+              <ul className="flex flex-col divide-y divide-border">
+                {notifications.map((n) => (
+                  <li
+                    key={n.id}
+                    className="flex flex-wrap items-start justify-between gap-2 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <StatusPill
+                          status={notificationStatusPill(n.kind)}
+                          label={n.kind.replace(/[._]/g, " ")}
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {summarizePayload(n.payload_jsonb)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
-                        {fmtDateTime(n.created_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+                      </p>
+                    </div>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground">
+                      {fmtDateTime(n.created_at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* RFQ monitor — full width */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("rfqMonitor.heading")}</h2>
-        {rfqs.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("rfqMonitor.empty")}
-          </p>
-        ) : (
-          <div className="overflow-x-auto rounded-md border border-[var(--color-border)] bg-white">
-            <table className="w-full text-start text-sm">
-              <thead className="bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <tr>
-                  <th className="px-3 py-2 font-medium">
-                    {t("rfqMonitor.col.event")}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
-                    {t("rfqMonitor.col.category")}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
-                    {t("rfqMonitor.col.status")}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("rfqMonitor.heading")}</CardTitle>
+          <CardDescription>{t("rfqMonitor.description")}</CardDescription>
+        </CardHeader>
+        <CardContent className="pb-4">
+          {rfqs.length === 0 ? (
+            <EmptyState icon={Inbox} title={t("rfqMonitor.empty")} />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("rfqMonitor.col.event")}</TableHead>
+                  <TableHead>{t("rfqMonitor.col.category")}</TableHead>
+                  <TableHead>{t("rfqMonitor.col.status")}</TableHead>
+                  <TableHead className="text-end">
                     {t("rfqMonitor.col.invites")}
-                  </th>
-                  <th className="px-3 py-2 font-medium">
-                    {t("rfqMonitor.col.sent")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                  <TableHead>{t("rfqMonitor.col.sent")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rfqs.map((r) => {
                   const invites = inviteCountByRfq.get(r.id) ?? 0;
                   const eventType = r.events?.event_type
@@ -338,70 +405,41 @@ export default async function AdminDashboardPage() {
                   const category = r.cat?.name_en ?? "—";
                   const subcategory = r.sub?.name_en ?? "—";
                   return (
-                    <tr
-                      key={r.id}
-                      className="border-t border-[var(--color-border)] align-top"
-                    >
-                      <td className="px-3 py-2">
-                        <span className="font-medium">{eventType}</span>
-                        <span className="text-[var(--color-muted-foreground)]">
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <span className="font-medium text-foreground">
+                          {eventType}
+                        </span>
+                        <span className="text-muted-foreground">
                           {" · "}
                           {city}
                         </span>
-                      </td>
-                      <td className="px-3 py-2 text-[var(--color-muted-foreground)]">
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
                         {category}
                         {" · "}
                         {subcategory}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs font-medium">
-                          {rfqT(`status.${r.status}` as never)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 tabular-nums">{invites}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
+                      </TableCell>
+                      <TableCell>
+                        <StatusPill
+                          status={rfqStatusPill(r.status)}
+                          label={rfqT(`status.${r.status}` as never)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-end tabular-nums">
+                        {invites}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {fmtDateTime(r.sent_at)}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </section>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  href,
-  tone,
-}: {
-  label: string;
-  value: number;
-  href: string;
-  tone: "warning" | "success" | "danger";
-}) {
-  const toneClasses: Record<typeof tone, string> = {
-    warning: "text-[#7A5A18]",
-    success: "text-[var(--color-sevent-green)]",
-    danger: "text-[#9F1A1A]",
-  };
-  return (
-    <Link
-      href={href}
-      className="flex flex-col gap-1 rounded-lg border border-[var(--color-border)] bg-white p-5 transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-    >
-      <span className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-        {label}
-      </span>
-      <span className={`text-3xl font-semibold ${toneClasses[tone]}`}>
-        {value}
-      </span>
-    </Link>
   );
 }
