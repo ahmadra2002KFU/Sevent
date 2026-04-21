@@ -63,7 +63,7 @@ export function Logo({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 680 180"
+      viewBox="0 0 760 180"
       role="img"
       aria-label={ariaLabel}
       direction="ltr"
@@ -97,14 +97,14 @@ export function Logo({
         textAnchor="start"
         direction="ltr"
         fill={tone === "white" ? white : navy}
-        letterSpacing="-4"
+        letterSpacing="-2"
       >
         EVENT
       </text>
       <rect
         x="18"
         y="158"
-        width="642"
+        width="724"
         height="10"
         fill={tone === "white" ? white : cobalt}
       />
