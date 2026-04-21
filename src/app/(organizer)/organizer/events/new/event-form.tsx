@@ -165,7 +165,7 @@ export function EventForm() {
               required
             >
               <Select
-                value={watchedEventType || undefined}
+                value={watchedEventType ?? ""}
                 onValueChange={(v) =>
                   setValue("event_type", v as EventType, {
                     shouldValidate: true,
@@ -196,7 +196,7 @@ export function EventForm() {
               required
             >
               <Select
-                value={watchedCity || undefined}
+                value={watchedCity ?? ""}
                 onValueChange={(v) =>
                   setValue("city", v as CityOption, { shouldValidate: true })
                 }
