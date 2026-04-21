@@ -7,12 +7,30 @@
  * for budgets (converted to halalas by the server action). Client-side Zod
  * validation is authoritative against the form's own input shape; the server
  * action re-parses through the same schema before touching the DB.
+ *
+ * VISUAL RESTYLE (Lane 2): moved the raw markup onto shadcn primitives
+ * (Card, Input, Label, Select, Textarea, Button). The submission pattern and
+ * server action contract (datetime-local strings over FormData) is unchanged.
  */
 
 import { useRef, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   CITY_OPTIONS,
   EVENT_TYPES,
@@ -51,29 +69,30 @@ export function EventForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
     watch,
   } = useForm<FormValues>({
     mode: "onBlur",
-    // We resolve with a **transformed** schema: the form's datetime-local
-    // inputs are converted to ISO strings before Zod sees them. This keeps
-    // the `EventFormInput` Zod rules (including the ends-after-start refine)
-    // working against the serialized wire-shape.
     resolver: async (values) => {
       const candidate = {
         ...values,
         starts_at: toIsoIfPresent(values.starts_at),
         ends_at: toIsoIfPresent(values.ends_at),
-        client_name: values.client_name?.trim() ? values.client_name.trim() : undefined,
+        client_name: values.client_name?.trim()
+          ? values.client_name.trim()
+          : undefined,
         notes: values.notes?.trim() ? values.notes.trim() : undefined,
         guest_count:
           values.guest_count === "" || values.guest_count === undefined
             ? undefined
             : values.guest_count,
-        budget_min_sar:
-          values.budget_min_sar?.trim() ? values.budget_min_sar.trim() : undefined,
-        budget_max_sar:
-          values.budget_max_sar?.trim() ? values.budget_max_sar.trim() : undefined,
+        budget_min_sar: values.budget_min_sar?.trim()
+          ? values.budget_min_sar.trim()
+          : undefined,
+        budget_max_sar: values.budget_max_sar?.trim()
+          ? values.budget_max_sar.trim()
+          : undefined,
       };
       const parsed = EventFormInput.safeParse(candidate);
       if (parsed.success) {
@@ -109,7 +128,6 @@ export function EventForm() {
       try {
         await createEventAction(fd);
       } catch (err) {
-        // Next re-throws NEXT_REDIRECT on success — only surface genuine errors.
         if (err && typeof err === "object" && "digest" in err) {
           throw err;
         }
@@ -119,143 +137,238 @@ export function EventForm() {
   };
 
   const watchedStart = watch("starts_at");
+  const watchedEventType = watch("event_type");
+  const watchedCity = watch("city");
+
+  // Register hidden controlled fields for Radix Select (doesn't emit form data)
+  const eventTypeReg = register("event_type", { required: true });
+  const cityReg = register("city", { required: true });
 
   return (
     <form
       ref={formRef}
       onSubmit={handleSubmit(submit)}
-      className="flex flex-col gap-5 rounded-lg border border-[var(--color-border)] bg-white p-5 shadow-sm"
       noValidate
+      className="flex flex-col gap-6"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("eventTypeLabel")} error={errors.event_type?.message}>
-          <select
-            {...register("event_type")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+      {/* Hidden inputs so FormData picks up the Select values for server action */}
+      <input type="hidden" {...eventTypeReg} value={watchedEventType ?? ""} />
+      <input type="hidden" {...cityReg} value={watchedCity ?? ""} />
+
+      <Card>
+        <CardContent className="flex flex-col gap-5 p-6">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField
+              label={t("eventTypeLabel")}
+              htmlFor="event_type_select"
+              error={errors.event_type?.message}
+              required
+            >
+              <Select
+                value={watchedEventType || undefined}
+                onValueChange={(v) =>
+                  setValue("event_type", v as EventType, {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <SelectTrigger
+                  id="event_type_select"
+                  className="w-full"
+                  aria-invalid={!!errors.event_type}
+                >
+                  <SelectValue placeholder={t("eventTypeLabel")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((et) => (
+                    <SelectItem key={et} value={et}>
+                      {t(`eventType.${et}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+
+            <FormField
+              label={t("cityLabel")}
+              htmlFor="city_select"
+              error={errors.city?.message}
+              required
+            >
+              <Select
+                value={watchedCity || undefined}
+                onValueChange={(v) =>
+                  setValue("city", v as CityOption, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger
+                  id="city_select"
+                  className="w-full"
+                  aria-invalid={!!errors.city}
+                >
+                  <SelectValue placeholder={t("cityLabel")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {CITY_OPTIONS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {t(`city.${c}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          </div>
+
+          <FormField
+            label={t("clientNameLabel")}
+            htmlFor="client_name"
+            error={errors.client_name?.message}
           >
-            <option value="">—</option>
-            {EVENT_TYPES.map((et) => (
-              <option key={et} value={et}>
-                {t(`eventType.${et}`)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label={t("cityLabel")} error={errors.city?.message}>
-          <select
-            {...register("city")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            <Input id="client_name" {...register("client_name")} />
+          </FormField>
+
+          <FormField
+            label={t("venueAddressLabel")}
+            htmlFor="venue_address"
+            error={errors.venue_address?.message}
+            required
           >
-            <option value="">—</option>
-            {CITY_OPTIONS.map((c) => (
-              <option key={c} value={c}>
-                {t(`city.${c}`)}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+            <Textarea
+              id="venue_address"
+              rows={2}
+              {...register("venue_address", { required: true })}
+            />
+          </FormField>
 
-      <Field label={t("clientNameLabel")} error={errors.client_name?.message}>
-        <input
-          {...register("client_name")}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
-      </Field>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField
+              label={t("startsAtLabel")}
+              htmlFor="starts_at"
+              error={errors.starts_at?.message}
+              required
+            >
+              <Input
+                id="starts_at"
+                type="datetime-local"
+                {...register("starts_at", { required: true })}
+              />
+            </FormField>
+            <FormField
+              label={t("endsAtLabel")}
+              htmlFor="ends_at"
+              error={errors.ends_at?.message}
+              required
+            >
+              <Input
+                id="ends_at"
+                type="datetime-local"
+                min={watchedStart || undefined}
+                {...register("ends_at", { required: true })}
+              />
+            </FormField>
+          </div>
 
-      <Field label={t("venueAddressLabel")} error={errors.venue_address?.message}>
-        <textarea
-          {...register("venue_address", { required: true })}
-          rows={2}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
-      </Field>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <FormField
+              label={t("guestCountLabel")}
+              htmlFor="guest_count"
+              error={errors.guest_count?.message}
+            >
+              <Input
+                id="guest_count"
+                type="number"
+                min={1}
+                {...register("guest_count")}
+              />
+            </FormField>
+            <FormField
+              label={t("budgetMinLabel")}
+              htmlFor="budget_min_sar"
+              error={errors.budget_min_sar?.message}
+            >
+              <Input
+                id="budget_min_sar"
+                inputMode="decimal"
+                {...register("budget_min_sar")}
+              />
+            </FormField>
+            <FormField
+              label={t("budgetMaxLabel")}
+              htmlFor="budget_max_sar"
+              error={errors.budget_max_sar?.message}
+            >
+              <Input
+                id="budget_max_sar"
+                inputMode="decimal"
+                {...register("budget_max_sar")}
+              />
+            </FormField>
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("startsAtLabel")} error={errors.starts_at?.message}>
-          <input
-            type="datetime-local"
-            {...register("starts_at", { required: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label={t("endsAtLabel")} error={errors.ends_at?.message}>
-          <input
-            type="datetime-local"
-            min={watchedStart || undefined}
-            {...register("ends_at", { required: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-        </Field>
-      </div>
+          <FormField
+            label={t("notesLabel")}
+            htmlFor="notes"
+            error={errors.notes?.message}
+          >
+            <Textarea id="notes" rows={4} {...register("notes")} />
+          </FormField>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label={t("guestCountLabel")} error={errors.guest_count?.message}>
-          <input
-            type="number"
-            min={1}
-            {...register("guest_count")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label={t("budgetMinLabel")} error={errors.budget_min_sar?.message}>
-          <input
-            inputMode="decimal"
-            {...register("budget_min_sar")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label={t("budgetMaxLabel")} error={errors.budget_max_sar?.message}>
-          <input
-            inputMode="decimal"
-            {...register("budget_max_sar")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-        </Field>
-      </div>
-
-      <Field label={t("notesLabel")} error={errors.notes?.message}>
-        <textarea
-          {...register("notes")}
-          rows={3}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
-      </Field>
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <button
+      <div className="flex items-center justify-end gap-3 border-t pt-5">
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={() => router.push("/organizer/events")}
-          className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
         >
           {t("cancel")}
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
-        >
-          {isPending ? t("saving") : t("submit")}
-        </button>
+        </Button>
+        <Button type="submit" size="lg" disabled={isPending}>
+          {isPending ? (
+            <>
+              <Loader2 className="animate-spin" aria-hidden />
+              {t("saving")}
+            </>
+          ) : (
+            t("submit")
+          )}
+        </Button>
       </div>
     </form>
   );
 }
 
-function Field({
+function FormField({
   label,
+  htmlFor,
   error,
+  required,
   children,
 }: {
   label: string;
+  htmlFor: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <div className="flex flex-col gap-1.5">
+      <Label
+        htmlFor={htmlFor}
+        className={cn(error && "text-destructive")}
+      >
+        {label}
+        {required ? (
+          <span className="text-destructive" aria-hidden>
+            *
+          </span>
+        ) : null}
+      </Label>
       {children}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
-    </label>
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : null}
+    </div>
   );
 }

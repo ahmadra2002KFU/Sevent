@@ -1,6 +1,21 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import {
+  CalendarDays,
+  FileText,
+  MailQuestion,
+  Handshake,
+  Plus,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { MetricCard } from "@/components/ui-ext/MetricCard";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill, type StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { requireRole } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -36,18 +51,42 @@ function fmtDate(iso: string): string {
   }
 }
 
+function toPillStatus(raw: string): StatusPillStatus {
+  const allowed: StatusPillStatus[] = [
+    "draft",
+    "pending",
+    "sent",
+    "quoted",
+    "invited",
+    "awaiting_supplier",
+    "accepted",
+    "confirmed",
+    "booked",
+    "approved",
+    "paid",
+    "completed",
+    "declined",
+    "rejected",
+    "cancelled",
+    "expired",
+    "withdrawn",
+  ];
+  return (allowed as string[]).includes(raw)
+    ? (raw as StatusPillStatus)
+    : "draft";
+}
+
 export default async function OrganizerDashboardPage() {
   const t = await getTranslations("organizer.dashboard");
   const rfqT = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
 
   const gate = await requireRole(["organizer", "agency", "admin"]);
-  if (gate.status === "unauthenticated") redirect("/sign-in?next=/organizer/dashboard");
+  if (gate.status === "unauthenticated")
+    redirect("/sign-in?next=/organizer/dashboard");
   if (gate.status === "forbidden") redirect("/");
   const { user, admin } = gate;
 
-  // Service-role reads with ownership enforced by organizer_id / event joins
-  // (SSR JWT-forwarding gap — matches the rest of the organizer surface).
   const eventsCountRes = await admin
     .from("events")
     .select("id", { count: "exact", head: true })
@@ -59,10 +98,17 @@ export default async function OrganizerDashboardPage() {
     .select("id, status, events!inner(organizer_id)")
     .eq("events.organizer_id", user.id);
   const allRfqs = (rfqStatusData ?? []) as Array<{ id: string; status: string }>;
-  const openRfqs = allRfqs.filter((r) => r.status === "sent").length;
-  const awaitingQuotes = allRfqs.filter(
-    (r) => r.status === "sent" || r.status === "draft",
+  const activeRfqs = allRfqs.filter(
+    (r) => r.status === "sent" || r.status === "quoted",
   ).length;
+  const awaitingQuotes = allRfqs.filter((r) => r.status === "sent").length;
+
+  const confirmedRes = await admin
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("organizer_id", user.id)
+    .eq("confirmation_status", "confirmed");
+  const confirmedBookings = confirmedRes.count ?? 0;
 
   const { data: latestData } = await admin
     .from("rfqs")
@@ -87,140 +133,194 @@ export default async function OrganizerDashboardPage() {
     .limit(3);
   const upcoming = (upcomingData ?? []) as UpcomingEvent[];
 
+  const hasAnyActivity = latest.length > 0 || upcoming.length > 0;
+
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {t("subtitle")}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/organizer/events/new"
-            className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-muted)]"
-          >
-            {t("newEvent")}
-          </Link>
-          <Link
-            href="/organizer/rfqs/new"
-            className="rounded-md bg-[var(--color-primary,#111)] px-3 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
-            New RFQ
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/organizer/events/new">
+                <Plus aria-hidden />
+                {t("newEvent")}
+              </Link>
+            </Button>
+            <Button size="lg" asChild>
+              <Link href="/organizer/rfqs/new">
+                <Sparkles aria-hidden />
+                {t("newRfq")}
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label={t("statTotalEvents")} value={totalEvents} href="/organizer/events" />
-        <StatCard label={t("statOpenRfqs")} value={openRfqs} href="/organizer/rfqs" />
-        <StatCard label={t("statAwaitingQuotes")} value={awaitingQuotes} href="/organizer/rfqs" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          icon={CalendarDays}
+          tone="info"
+          label={t("statTotalEvents")}
+          value={totalEvents}
+          hint={t("statTotalEventsHint")}
+        />
+        <MetricCard
+          icon={FileText}
+          tone="info"
+          label={t("statOpenRfqs")}
+          value={activeRfqs}
+          hint={t("statActiveRfqsHint")}
+        />
+        <MetricCard
+          icon={MailQuestion}
+          tone="warning"
+          label={t("statAwaitingQuotes")}
+          value={awaitingQuotes}
+          hint={t("statAwaitingQuotesHint")}
+        />
+        <MetricCard
+          icon={Handshake}
+          tone="success"
+          label={t("statConfirmedBookings")}
+          value={confirmedBookings}
+          hint={t("statConfirmedBookingsHint")}
+        />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t("latestRfqs")}</h2>
-            <Link
-              href="/organizer/rfqs"
-              className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-            >
-              {t("viewAll")}
-            </Link>
-          </div>
-          {latest.length === 0 ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              No RFQs yet.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {latest.map((r) => (
-                <li key={r.id}>
-                  <Link
-                    href={`/organizer/rfqs/${r.id}`}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {r.sub?.name_en ?? "RFQ"}
-                      </span>
-                      <span className="text-xs text-[var(--color-muted-foreground)]">
-                        {r.events?.city ?? ""}
-                        {" · "}
-                        {r.rfq_invites?.length ?? 0} invites
-                        {" · "}
-                        {fmtDate(r.sent_at ?? r.created_at)}
-                      </span>
-                    </div>
-                    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs font-medium">
-                      {rfqT(`status.${r.status}` as never)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      {!hasAnyActivity ? (
+        <EmptyState
+          icon={Sparkles}
+          title={t("noEvents")}
+          description={t("noRecentActivity")}
+          action={
+            <Button asChild>
+              <Link href="/organizer/events/new">
+                <Plus aria-hidden />
+                {t("newEvent")}
+              </Link>
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+          <Card>
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-lg">{t("latestRfqs")}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {latest.length === 0 ? (
+                <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+                  {t("noRecentActivity")}
+                </p>
+              ) : (
+                <ul className="divide-y">
+                  {latest.map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        href={`/organizer/rfqs/${r.id}`}
+                        className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-muted/40"
+                      >
+                        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                          <span className="truncate font-medium text-brand-navy-900">
+                            {r.sub?.name_en ?? "RFQ"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {r.events?.city ? `${r.events.city} · ` : ""}
+                            {t("invitesCount", {
+                              count: r.rfq_invites?.length ?? 0,
+                            })}
+                            {" · "}
+                            {fmtDate(r.sent_at ?? r.created_at)}
+                          </span>
+                        </div>
+                        <StatusPill
+                          status={toPillStatus(r.status)}
+                          label={rfqT(`status.${r.status}` as never)}
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Upcoming events</h2>
-            <Link
-              href="/organizer/events"
-              className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-            >
-              {t("viewAll")}
-            </Link>
-          </div>
-          {upcoming.length === 0 ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("noEvents")}
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {upcoming.map((e) => (
-                <li key={e.id}>
-                  <Link
-                    href={`/organizer/events/${e.id}`}
-                    className="flex flex-col rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-                  >
-                    <span className="font-medium">
-                      {eventFormT(`eventType.${e.event_type}` as never)}
-                      {e.client_name ? ` · ${e.client_name}` : ""}
-                    </span>
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
-                      {e.city} · {fmtDate(e.starts_at)}
-                    </span>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader className="border-b pb-4">
+                <CardTitle className="text-lg">
+                  {t("upcomingEvents")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {upcoming.length === 0 ? (
+                  <p className="px-5 py-6 text-center text-sm text-muted-foreground">
+                    {t("noEvents")}
+                  </p>
+                ) : (
+                  <ul className="divide-y">
+                    {upcoming.map((e) => (
+                      <li key={e.id}>
+                        <Link
+                          href={`/organizer/events/${e.id}`}
+                          className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/40"
+                        >
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-cobalt-100 text-brand-cobalt-500">
+                            <CalendarDays className="size-5" aria-hidden />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-brand-navy-900">
+                              {eventFormT(`eventType.${e.event_type}` as never)}
+                              {e.client_name ? ` · ${e.client_name}` : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {e.city} · {fmtDate(e.starts_at)}
+                            </p>
+                          </div>
+                          <ArrowRight
+                            className="size-4 shrink-0 text-muted-foreground rtl:rotate-180"
+                            aria-hidden
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
+                  {t("quickActions")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2 px-4 pb-4">
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link href="/organizer/events">
+                    <CalendarDays aria-hidden />
+                    {t("viewAll")}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+                </Button>
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link href="/organizer/bookings">
+                    <Handshake aria-hidden />
+                    {t("bookings")}
+                  </Link>
+                </Button>
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link href="/organizer/notifications">
+                    <MailQuestion aria-hidden />
+                    {t("notifications")}
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </section>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: number;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col gap-1 rounded-lg border border-[var(--color-border)] bg-white p-5 transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-    >
-      <span className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-        {label}
-      </span>
-      <span className="text-3xl font-semibold">{value}</span>
-    </Link>
   );
 }

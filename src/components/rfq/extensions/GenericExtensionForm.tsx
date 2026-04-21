@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { GenericExtension } from "@/lib/domain/rfq";
 
 type Props = {
@@ -13,26 +15,27 @@ export function GenericExtensionForm({ value, onChange, errors }: Props) {
   const t = useTranslations("organizer.rfqWizard.extensions.generic");
 
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-base font-semibold tracking-tight">
+    <fieldset className="flex flex-col gap-3">
+      <legend className="text-base font-semibold tracking-tight text-brand-navy-900">
         {t("heading")}
       </legend>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">{t("notesLabel")}</span>
-        <textarea
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="g-notes">{t("notesLabel")}</Label>
+        <Textarea
+          id="g-notes"
           name="notes"
           value={value.notes}
           onChange={(e) => onChange({ ...value, notes: e.target.value })}
           maxLength={2000}
           rows={6}
           placeholder={t("notesPlaceholder")}
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 leading-relaxed"
+          aria-invalid={!!errors?.notes}
         />
         {errors?.notes ? (
-          <span className="text-xs text-red-600">{errors.notes}</span>
+          <p className="text-xs text-destructive">{errors.notes}</p>
         ) : null}
-      </label>
+      </div>
     </fieldset>
   );
 }

@@ -4,16 +4,54 @@
  * Lane 3 · Sprint 3 — shortlist editor component.
  *
  * Controlled by the RFQ wizard (step 3). Renders:
- *   - Top matches from auto-match with reason chips + remove ✕ button
- *   - "Added by you" manual section with remove ✕ button
- *   - Debounced search box (300ms) to find approved+published suppliers by
+ *   - Top matches from auto-match with reason chips + remove button
+ *   - "Added by you" manual section with remove button
+ *   - Popover/Command (cmdk) search to find approved+published suppliers by
  *     name/slug and append them to the manual section
  *
  * No direct DB access — the parent passes in `onSearchSuppliers` which calls
  * the `searchApprovedSuppliersAction` server action.
+ *
+ * VISUAL RESTYLE (Lane 2): rebuilt on shadcn Table + Command + Popover +
+ * Tooltip. Search behavior (debounced 300ms, request sequencing) is unchanged.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Plus, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { MatchResult } from "@/lib/domain/matching/autoMatch";
 
 export type ShortlistSupplier = {
@@ -52,11 +90,10 @@ export function ShortlistEditor({
   const [query, setQuery] = useState("");
   const [rawSuggestions, setRawSuggestions] = useState<ShortlistSupplier[]>([]);
   const [searching, setSearching] = useState(false);
-  const [dropdownQuery, setDropdownQuery] = useState<string | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reqSeqRef = useRef(0);
 
-  // Union set — used to hide already-shortlisted suppliers from the dropdown.
   const alreadyAdded = useMemo(() => {
     const s = new Set<string>();
     for (const m of matches) s.add(m.supplier_id);
@@ -64,18 +101,17 @@ export function ShortlistEditor({
     return s;
   }, [matches, manualAdds]);
 
-  // Derived visibility — dropdown is shown whenever there's an active query
-  // that has produced a search result for a long-enough term.
   const trimmed = query.trim();
-  const showDropdown = trimmed.length >= 2 && dropdownQuery !== null;
   const suggestions = useMemo(
     () => rawSuggestions.filter((h) => !alreadyAdded.has(h.id)),
     [rawSuggestions, alreadyAdded],
   );
 
   useEffect(() => {
-    // Short queries do not trigger a search; the derived `showDropdown`
-    // naturally hides the panel so we don't need to touch state here.
+    // Short queries don't fire a server search — the render branch below hides
+    // any stale suggestions via `trimmed.length < 2`, so we don't need to wipe
+    // state synchronously here (calling setState in an effect body triggers
+    // cascading renders per the React Compiler lint rule).
     if (trimmed.length < 2) {
       if (timerRef.current) clearTimeout(timerRef.current);
       return;
@@ -89,12 +125,10 @@ export function ShortlistEditor({
         .then((hits) => {
           if (seq !== reqSeqRef.current) return;
           setRawSuggestions(hits);
-          setDropdownQuery(trimmed);
         })
         .catch(() => {
           if (seq !== reqSeqRef.current) return;
           setRawSuggestions([]);
-          setDropdownQuery(trimmed);
         })
         .finally(() => {
           if (seq !== reqSeqRef.current) return;
@@ -112,143 +146,219 @@ export function ShortlistEditor({
       onAddManual(s);
       setQuery("");
       setRawSuggestions([]);
-      setDropdownQuery(null);
+      setPopoverOpen(false);
     },
     [onAddManual],
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Suggested matches
-        </h3>
-        {matches.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            No auto-match suggestions available for this event.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {matches.map((m) => (
-              <li
-                key={m.supplier_id}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3"
+    <TooltipProvider>
+      <div className="flex flex-col gap-6">
+        {/* ------------------------------------------------------------------ */}
+        {/* Suggested matches */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Suggested matches
+            </h3>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {matches.length}
+            </span>
+          </div>
+
+          {matches.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+              No auto-match suggestions available for this event.
+            </p>
+          ) : (
+            <Card className="overflow-hidden py-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-4">Supplier</TableHead>
+                    <TableHead className="px-4">Why we matched</TableHead>
+                    <TableHead className="px-4 text-end">Score</TableHead>
+                    <TableHead className="px-4 w-12" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {matches.map((m) => (
+                    <TableRow key={m.supplier_id}>
+                      <TableCell className="px-4 py-3">
+                        <span className="font-medium text-brand-navy-900">
+                          {m.business_name}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {m.reasons.map((reason) => (
+                            <span
+                              key={reason}
+                              className="inline-flex items-center rounded-full bg-brand-cobalt-100 px-2 py-0.5 text-xs font-medium text-brand-cobalt-500"
+                            >
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-end">
+                        <span className="inline-flex items-center rounded-full border bg-card px-2 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                          {(m.breakdown.total * 100).toFixed(0)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => onRemoveMatch(m.supplier_id)}
+                              aria-label={`Remove ${m.business_name}`}
+                            >
+                              <X aria-hidden />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove from shortlist</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Added by you */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Added by you
+            </h3>
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                  <Plus aria-hidden />
+                  Add supplier
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-[360px] p-0"
+                sideOffset={8}
               >
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">{m.business_name}</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {m.reasons.map((reason) => (
-                      <span
-                        key={reason}
-                        className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs"
-                      >
-                        {reason}
-                      </span>
-                    ))}
-                    <span className="rounded-full border border-[var(--color-border)] bg-white px-2 py-0.5 text-xs text-[var(--color-muted-foreground)]">
-                      Score {(m.breakdown.total * 100).toFixed(0)}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveMatch(m.supplier_id)}
-                  className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-muted)]"
-                  aria-label={`Remove ${m.business_name}`}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Search approved suppliers…"
+                    value={query}
+                    onValueChange={setQuery}
+                  />
+                  <CommandList>
+                    {trimmed.length < 2 ? (
+                      <div className="px-3 py-4 text-sm text-muted-foreground">
+                        <Search
+                          className="mb-2 inline size-4 opacity-70"
+                          aria-hidden
+                        />{" "}
+                        Type at least 2 characters to search.
+                      </div>
+                    ) : searching ? (
+                      <div className="px-3 py-4 text-sm text-muted-foreground">
+                        Searching…
+                      </div>
+                    ) : suggestions.length === 0 ? (
+                      <CommandEmpty>No suppliers found.</CommandEmpty>
+                    ) : (
+                      suggestions.map((s) => (
+                        <CommandItem
+                          key={s.id}
+                          value={`${s.business_name} ${s.slug}`}
+                          onSelect={() => handlePick(s)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate font-medium">
+                              {s.business_name}
+                            </span>
+                            <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                              {s.base_city}
+                              {s.out_of_subcategory ? (
+                                <span className="inline-flex items-center rounded-full bg-semantic-warning-100 px-1.5 py-0.5 text-[11px] font-medium text-semantic-warning-500">
+                                  Outside this subcategory
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
 
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Added by you
-        </h3>
-
-        <div className="relative">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search approved suppliers by name or slug…"
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
-          {showDropdown ? (
-            <div className="absolute start-0 end-0 top-full z-10 mt-1 overflow-hidden rounded-md border border-[var(--color-border)] bg-white shadow-sm">
-              {searching ? (
-                <p className="px-3 py-2 text-sm text-[var(--color-muted-foreground)]">
-                  Searching…
-                </p>
-              ) : suggestions.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-[var(--color-muted-foreground)]">
-                  No suppliers found.
-                </p>
-              ) : (
-                <ul className="max-h-64 overflow-auto">
-                  {suggestions.map((s) => (
-                    <li key={s.id}>
-                      <button
-                        type="button"
-                        onClick={() => handlePick(s)}
-                        className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-start text-sm hover:bg-[var(--color-muted)]"
-                      >
-                        <span className="font-medium">{s.business_name}</span>
-                        <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
-                          {s.base_city}
+          {manualAdds.length === 0 ? (
+            <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+              Click &ldquo;Add supplier&rdquo; above to search approved
+              suppliers.
+            </p>
+          ) : (
+            <Card className="overflow-hidden py-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-4">Supplier</TableHead>
+                    <TableHead className="px-4">City</TableHead>
+                    <TableHead className="px-4 w-12" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {manualAdds.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-brand-navy-900">
+                            {s.business_name}
+                          </span>
                           {s.out_of_subcategory ? (
-                            <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                              Outside this subcategory
+                            <span className="mt-0.5 inline-flex w-fit items-center rounded-full bg-semantic-warning-100 px-2 py-0.5 text-[11px] font-medium text-semantic-warning-500">
+                              Outside this subcategory — supplier may decline
                             </span>
                           ) : null}
-                        </span>
-                      </button>
-                    </li>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                        {s.base_city}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => onRemoveManual(s.id)}
+                              aria-label={`Remove ${s.business_name}`}
+                            >
+                              <X aria-hidden />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove from shortlist</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </ul>
-              )}
-            </div>
-          ) : null}
-        </div>
-
-        {manualAdds.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            Search above to add suppliers manually.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {manualAdds.map((s) => (
-              <li
-                key={s.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3"
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{s.business_name}</span>
-                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
-                    {s.base_city}
-                    {s.out_of_subcategory ? (
-                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                        Outside this subcategory — supplier may decline
-                      </span>
-                    ) : null}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveManual(s.id)}
-                  className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-muted)]"
-                  aria-label={`Remove ${s.business_name}`}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </section>
+      </div>
+    </TooltipProvider>
   );
 }

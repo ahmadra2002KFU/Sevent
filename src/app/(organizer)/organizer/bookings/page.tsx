@@ -1,6 +1,30 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { CalendarCheck, Handshake } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import {
+  StatusPill,
+  type StatusPillStatus,
+} from "@/components/ui-ext/StatusPill";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -56,16 +80,12 @@ function parsePage(value: string | string[] | undefined): number {
   return parsed;
 }
 
-function statusBadgeClass(status: ConfirmationStatus): string {
-  switch (status) {
-    case "confirmed":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
-    case "cancelled":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
-    case "awaiting_supplier":
-    default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
-  }
+function confirmationToPill(
+  status: ConfirmationStatus,
+): StatusPillStatus {
+  if (status === "confirmed") return "confirmed";
+  if (status === "cancelled") return "cancelled";
+  return "awaiting_supplier";
 }
 
 function statusLabel(
@@ -96,7 +116,10 @@ function formatEventDate(iso: string, locale: string): string {
 }
 
 function formatDeadlineCell(
-  t: (key: string, values?: Record<string, string | number>) => string,
+  t: (
+    key: string,
+    values?: Record<string, string | number>,
+  ) => string,
   deadlineIso: string | null,
 ): string {
   const result = formatConfirmDeadline(deadlineIso);
@@ -128,12 +151,11 @@ export default async function OrganizerBookingsListPage({
   const t = await getTranslations("booking");
 
   const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated") redirect("/sign-in?next=/organizer/bookings");
+  if (gate.status === "unauthenticated")
+    redirect("/sign-in?next=/organizer/bookings");
   if (gate.status === "forbidden") redirect("/");
   const { admin, user } = gate;
 
-  // Service-role + explicit organizer_id filter. RLS is bypassed; the
-  // .eq("organizer_id", user.id) below IS the security boundary.
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
@@ -161,55 +183,65 @@ export default async function OrganizerBookingsListPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("listTitle")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("listIntro")}
-        </p>
-      </header>
+      <PageHeader title={t("listTitle")} description={t("listIntro")} />
 
       <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          {t("filterLabel")}
-          <select
-            name="status"
-            defaultValue={filter}
-            className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm font-normal text-[var(--color-foreground)]"
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="status"
+            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
           >
-            <option value="all">{t("filterAll")}</option>
-            <option value="awaiting_supplier">
-              {t("statusAwaitingSupplier")}
-            </option>
-            <option value="confirmed">{t("statusConfirmed")}</option>
-            <option value="cancelled">{t("statusCancelled")}</option>
-          </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-md border border-[var(--color-border)] bg-white px-4 py-2 text-sm hover:bg-[var(--color-muted)]"
-        >
+            {t("filterLabel")}
+          </label>
+          <Select name="status" defaultValue={filter}>
+            <SelectTrigger id="status" className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("filterAll")}</SelectItem>
+              <SelectItem value="awaiting_supplier">
+                {t("statusAwaitingSupplier")}
+              </SelectItem>
+              <SelectItem value="confirmed">
+                {t("statusConfirmed")}
+              </SelectItem>
+              <SelectItem value="cancelled">
+                {t("statusCancelled")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button type="submit" variant="outline">
           {t("filterLabel")}
-        </button>
+        </Button>
       </form>
 
       {rows.length === 0 ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("noBookings")}
-        </p>
+        <EmptyState
+          icon={Handshake}
+          title={t("noBookings")}
+          description={t("listIntro")}
+        />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              <tr>
-                <th className="px-4 py-3 font-medium">{t("table.supplier")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.event")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.status")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.deadline")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.total")}</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden py-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">
+                  {t("table.supplier")}
+                </TableHead>
+                <TableHead className="px-4">{t("table.event")}</TableHead>
+                <TableHead className="px-4">{t("table.status")}</TableHead>
+                <TableHead className="px-4">
+                  {t("table.deadline")}
+                </TableHead>
+                <TableHead className="px-4 text-end">
+                  {t("table.total")}
+                </TableHead>
+                <TableHead className="px-4 text-end" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((row) => {
                 const supplierName = row.suppliers?.business_name ?? "—";
                 const event = row.rfqs?.events ?? null;
@@ -217,80 +249,92 @@ export default async function OrganizerBookingsListPage({
                   row.quote_revisions?.snapshot_jsonb,
                 );
                 return (
-                  <tr
-                    key={row.id}
-                    className="border-t border-[var(--color-border)] hover:bg-[var(--color-muted)]/60"
-                  >
-                    <td className="px-4 py-3 font-medium">{supplierName}</td>
-                    <td className="px-4 py-3">
+                  <TableRow key={row.id}>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-cobalt-100 text-brand-cobalt-500">
+                          <CalendarCheck
+                            className="size-4"
+                            aria-hidden
+                          />
+                        </div>
+                        <span className="font-medium text-brand-navy-900">
+                          {supplierName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="font-medium">{event?.city ?? "—"}</span>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="font-medium">
+                          {event?.city ?? "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
                           {event?.starts_at
                             ? formatEventDate(event.starts_at, locale)
                             : ""}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusBadgeClass(
-                          row.confirmation_status,
-                        )}`}
-                      >
-                        {statusLabel(t, row.confirmation_status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <StatusPill
+                        status={confirmationToPill(row.confirmation_status)}
+                        label={statusLabel(t, row.confirmation_status)}
+                      />
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm text-muted-foreground">
                       {formatDeadlineCell(t, row.confirm_deadline)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-end font-semibold tabular-nums text-brand-navy-900">
                       {total !== null ? formatHalalas(total) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-end">
-                      <Link
-                        href={`/organizer/bookings/${row.id}`}
-                        className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-                      >
-                        {t("table.view")}
-                      </Link>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-end">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/organizer/bookings/${row.id}`}>
+                          {t("table.view")}
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {totalPages > 1 ? (
-        <nav className="flex items-center justify-between gap-3 text-sm">
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-between gap-3 text-sm"
+        >
           {page > 1 ? (
-            <Link
-              href={{
-                pathname: "/organizer/bookings",
-                query: { status: filter, page: page - 1 },
-              }}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 hover:bg-[var(--color-muted)]"
-            >
-              {t("pagination.previous")}
-            </Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/organizer/bookings",
+                  query: { status: filter, page: page - 1 },
+                }}
+              >
+                {t("pagination.previous")}
+              </Link>
+            </Button>
           ) : (
             <span />
           )}
-          <span className="text-[var(--color-muted-foreground)]">
+          <span className="text-muted-foreground">
             {t("pagination.pageOf", { page, totalPages })}
           </span>
           {page < totalPages ? (
-            <Link
-              href={{
-                pathname: "/organizer/bookings",
-                query: { status: filter, page: page + 1 },
-              }}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 hover:bg-[var(--color-muted)]"
-            >
-              {t("pagination.next")}
-            </Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/organizer/bookings",
+                  query: { status: filter, page: page + 1 },
+                }}
+              >
+                {t("pagination.next")}
+              </Link>
+            </Button>
           ) : (
             <span />
           )}
