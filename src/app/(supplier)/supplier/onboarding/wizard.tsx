@@ -10,7 +10,6 @@ import {
   LANGUAGES,
   LEGAL_TYPES,
   OnboardingStep1,
-  OnboardingStep3,
 } from "@/lib/domain/onboarding";
 import {
   submitOnboardingStep1,
@@ -510,24 +509,13 @@ function Step3Form({
     fd.append("concurrent_event_limit", String(values.concurrent_event_limit));
     for (const lang of values.languages) fd.append("languages", lang);
     for (const id of values.subcategory_ids) fd.append("subcategory_ids", id);
-
-    const preCheck = OnboardingStep3.safeParse({
-      base_city: values.base_city.trim(),
-      base_location:
-        values.base_lat && values.base_lng
-          ? { lat: Number(values.base_lat), lng: Number(values.base_lng) }
-          : undefined,
-      service_area_cities: values.service_area_cities
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      languages: values.languages,
-      capacity: values.capacity ? Number(values.capacity) : undefined,
-      concurrent_event_limit: Number(values.concurrent_event_limit),
-      category_ids: [],
-      subcategory_ids: values.subcategory_ids,
-    });
-    if (!preCheck.success) return;
+    // Server action `submitOnboardingStep3` runs the authoritative Zod check
+    // (via `Step3Input` which relaxes the shared `OnboardingStep3` schema's
+    // `category_ids.min(1)` requirement to 0). A previous client-side preCheck
+    // against the stricter schema silently swallowed every submission because
+    // `category_ids` is always [] in the form — bug surfaced as "submit button
+    // does nothing". RHF's field-level `validate` already blocks empty
+    // languages/subcategory_ids before we get here.
     onSubmit(fd);
   };
 
