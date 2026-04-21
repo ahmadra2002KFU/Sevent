@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { formatHalalas } from "@/lib/domain/money";
+import { ImageOff, PackageOpen, Star } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { Breadcrumb } from "@/components/public/Breadcrumb";
+import { GalleryGrid } from "@/components/public/GalleryGrid";
+import { PackageCard } from "@/components/public/PackageCard";
+import { SupplierProfileHero } from "@/components/public/SupplierProfileHero";
 import { getPublicSupplierBySlug } from "@/lib/domain/supplierProfile";
 
 type PageProps = {
@@ -25,8 +29,9 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PublicSupplierProfilePage({ params }: PageProps) {
   const { slug } = await params;
-  const [t, brand, supplier] = await Promise.all([
+  const [t, tCats, brand, supplier] = await Promise.all([
     getTranslations("public.supplier"),
+    getTranslations("public.categories"),
     getTranslations("brand"),
     getPublicSupplierBySlug(slug),
   ]);
@@ -34,164 +39,126 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
   if (!supplier) notFound();
 
   const hasReviews = supplier.reviewSummary.count > 0;
+  // Primary parent category name (first subcategory with a parent label) for
+  // the breadcrumb middle segment. Falls back to the subcategory name when
+  // no parent label is set.
+  const firstCat = supplier.subcategories[0];
+  const breadcrumbCategoryLabel =
+    firstCat?.parent_name_en ?? firstCat?.name_en ?? tCats("title");
+
+  const heroImageUrl = supplier.media[0]?.public_url ?? null;
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-12">
-      <header className="flex flex-col gap-3">
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-sevent-gold)]">
-          {brand("name")} · {t("profileEyebrow")}
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {supplier.business_name}
-          </h1>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-sevent-green)]/10 px-3 py-1 text-xs font-medium text-[var(--color-sevent-green)]">
-            <span aria-hidden>✓</span>
-            {t("verifiedBadge")}
-          </span>
-        </div>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--color-muted-foreground)]">
-          <span>{t("baseCity", { city: supplier.base_city })}</span>
-          {supplier.service_area_cities.length > 0 ? (
-            <span>
-              {t("serviceArea", {
-                cities: supplier.service_area_cities.join(", "),
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-8 sm:py-12">
+      <Breadcrumb
+        items={[
+          { label: brand("name"), href: "/" },
+          { label: breadcrumbCategoryLabel, href: "/categories" },
+          { label: supplier.business_name },
+        ]}
+      />
+
+      <SupplierProfileHero
+        businessName={supplier.business_name}
+        bio={supplier.bio}
+        baseCity={supplier.base_city}
+        serviceAreaCities={supplier.service_area_cities}
+        languages={supplier.languages}
+        heroImageUrl={heroImageUrl}
+        subcategories={supplier.subcategories}
+        verifiedLabel={t("verifiedBadge")}
+        baseCityLabel={t("baseCityLabel")}
+        serviceAreaLabel={t("serviceAreaLabel")}
+        languagesLabel={t("languagesLabel")}
+      />
+
+      <Tabs defaultValue="portfolio" className="w-full">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="portfolio">{t("portfolioHeading")}</TabsTrigger>
+          <TabsTrigger value="packages">{t("packagesHeading")}</TabsTrigger>
+          <TabsTrigger value="reviews">{t("reviewsHeading")}</TabsTrigger>
+        </TabsList>
+
+        {/* --------------------- Portfolio --------------------- */}
+        <TabsContent value="portfolio" className="mt-6">
+          {supplier.media.length === 0 ? (
+            <EmptyState
+              icon={ImageOff}
+              title={t("noPortfolio")}
+              description={t("noPortfolioDescription")}
+            />
+          ) : (
+            <GalleryGrid
+              items={supplier.media.map((m) => ({
+                id: m.id,
+                public_url: m.public_url,
+                title: m.title,
+              }))}
+              businessName={supplier.business_name}
+              dialogTitle={t("portfolioDialogTitle", {
+                name: supplier.business_name,
               })}
-            </span>
-          ) : null}
-          {supplier.languages.length > 0 ? (
-            <span>{t("languages", { list: supplier.languages.join(", ") })}</span>
-          ) : null}
-        </p>
-        {supplier.bio ? (
-          <p className="max-w-3xl text-sm leading-relaxed text-[var(--color-foreground)]">
-            {supplier.bio}
-          </p>
-        ) : null}
-        {supplier.subcategories.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {supplier.subcategories.map((s) => (
-              <span
-                key={s.id}
-                className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)]/40 px-3 py-1 text-xs"
-              >
-                {s.parent_name_en ? `${s.parent_name_en} · ` : ""}
-                {s.name_en}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </header>
+            />
+          )}
+        </TabsContent>
 
-      {/* ============================== Portfolio ============================== */}
-      <section aria-label={t("portfolioHeading")} className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t("portfolioHeading")}
-        </h2>
-        {supplier.media.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("noPortfolio")}
-          </p>
-        ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {supplier.media.map((m) => (
-              <li
-                key={m.id}
-                className="relative aspect-square overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]"
-              >
-                {/* Using next/image with `unoptimized` because the storage host */}
-                {/* is not whitelisted in next.config; behaves like a plain <img>. */}
-                <Image
-                  src={m.public_url}
-                  alt={m.title ?? supplier.business_name}
-                  fill
-                  unoptimized
-                  sizes="(min-width: 768px) 25vw, 50vw"
-                  className="object-cover"
+        {/* --------------------- Packages --------------------- */}
+        <TabsContent value="packages" className="mt-6">
+          {supplier.packages.length === 0 ? (
+            <EmptyState
+              icon={PackageOpen}
+              title={t("noPackages")}
+              description={t("noPackagesDescription")}
+            />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {supplier.packages.map((p) => (
+                <PackageCard
+                  key={p.id}
+                  name={p.name}
+                  description={p.description}
+                  basePriceHalalas={p.base_price_halalas}
+                  fromPriceVisible={p.from_price_visible}
+                  unitLabel={t(`packageUnit.${p.unit}`)}
+                  qtyRangeLabel={t("qtyRange", {
+                    min: p.min_qty,
+                    max: p.max_qty ?? "∞",
+                  })}
+                  fromLabel={t("fromLabel")}
                 />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-      {/* ============================== Packages =============================== */}
-      <section aria-label={t("packagesHeading")} className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t("packagesHeading")}
-        </h2>
-        {supplier.packages.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("noPackages")}
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {supplier.packages.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-white p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {t(`packageUnit.${p.unit}`)} · {t("qtyRange", {
-                        min: p.min_qty,
-                        max: p.max_qty ?? "∞",
-                      })}
-                    </p>
-                  </div>
-                  {p.from_price_visible ? (
-                    <div className="text-end">
-                      <p className="text-[10px] uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                        {t("fromLabel")}
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {formatHalalas(p.base_price_halalas)}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-                {p.description ? (
-                  <p className="text-sm leading-relaxed text-[var(--color-muted-foreground)]">
-                    {p.description}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ============================== Reviews =============================== */}
-      <section aria-label={t("reviewsHeading")} className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t("reviewsHeading")}
-        </h2>
-        {hasReviews ? (
-          <div className="flex items-center gap-3 rounded-md border border-[var(--color-border)] bg-white p-4">
-            <span className="text-3xl font-semibold">
-              {supplier.reviewSummary.average_overall?.toFixed(1)}
-            </span>
-            <span aria-hidden className="text-2xl text-[var(--color-sevent-gold)]">
-              ★
-            </span>
-            <span className="text-sm text-[var(--color-muted-foreground)]">
-              {t("reviewsCount", { count: supplier.reviewSummary.count })}
-            </span>
-          </div>
-        ) : (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("noReviews")}
-          </p>
-        )}
-      </section>
-
-      <footer className="border-t border-[var(--color-border)] pt-6 text-xs text-[var(--color-muted-foreground)]">
-        <Link href="/" className="underline hover:text-[var(--color-foreground)]">
-          {t("backToHome")}
-        </Link>
-      </footer>
+        {/* --------------------- Reviews ---------------------- */}
+        <TabsContent value="reviews" className="mt-6">
+          {hasReviews ? (
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-6">
+              <div className="flex size-14 items-center justify-center rounded-full bg-accent-gold-100 text-accent-gold-500">
+                <Star className="size-6 fill-current" aria-hidden />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-brand-navy-900">
+                  {supplier.reviewSummary.average_overall?.toFixed(1)}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {" / 5"}
+                  </span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t("reviewsCount", { count: supplier.reviewSummary.count })}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Star}
+              title={t("noReviewsTitle")}
+              description={t("noReviews")}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
