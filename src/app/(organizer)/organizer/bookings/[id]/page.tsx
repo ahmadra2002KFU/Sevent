@@ -1,6 +1,34 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ArrowLeft,
+  AlertCircle,
+  CalendarDays,
+  MapPin,
+  Users,
+  Timer,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import {
+  StatusPill,
+  type StatusPillStatus,
+} from "@/components/ui-ext/StatusPill";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -22,7 +50,11 @@ type BookingDetailRow = {
   confirm_deadline: string | null;
   confirmed_at: string | null;
   created_at: string;
-  suppliers: { id: string; business_name: string; base_city: string | null } | null;
+  suppliers: {
+    id: string;
+    business_name: string;
+    base_city: string | null;
+  } | null;
   rfqs: {
     id: string;
     events: {
@@ -42,16 +74,12 @@ type BookingDetailRow = {
   } | null;
 };
 
-function statusBadgeClass(status: ConfirmationStatus): string {
-  switch (status) {
-    case "confirmed":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
-    case "cancelled":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
-    case "awaiting_supplier":
-    default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
-  }
+function confirmationToPill(
+  status: ConfirmationStatus,
+): StatusPillStatus {
+  if (status === "confirmed") return "confirmed";
+  if (status === "cancelled") return "cancelled";
+  return "awaiting_supplier";
 }
 
 function statusLabel(
@@ -84,7 +112,10 @@ function formatEventDateTime(iso: string, locale: string): string {
 }
 
 function deadlineText(
-  t: (key: string, values?: Record<string, string | number>) => string,
+  t: (
+    key: string,
+    values?: Record<string, string | number>,
+  ) => string,
   deadlineIso: string | null,
 ): string {
   const result = formatConfirmDeadline(deadlineIso);
@@ -96,7 +127,9 @@ function deadlineText(
 
 type PageProps = { params: Promise<{ id: string }> };
 
-export default async function OrganizerBookingDetailPage({ params }: PageProps) {
+export default async function OrganizerBookingDetailPage({
+  params,
+}: PageProps) {
   const { id } = await params;
   const locale = await getLocale();
   const t = await getTranslations("booking");
@@ -130,105 +163,144 @@ export default async function OrganizerBookingDetailPage({ params }: PageProps) 
   const event = row.rfqs?.events ?? null;
   const supplier = row.suppliers;
 
-  const deadline = row.confirm_deadline
+  let relativeDeadline: string | null = null;
+  if (row.confirm_deadline) {
+    try {
+      relativeDeadline = formatDistanceToNow(new Date(row.confirm_deadline), {
+        addSuffix: true,
+      });
+    } catch {
+      relativeDeadline = null;
+    }
+  }
+
+  const deadlineAbs = row.confirm_deadline
     ? formatEventDateTime(row.confirm_deadline, locale)
     : null;
 
   return (
     <section className="flex flex-col gap-6">
-      <Link
-        href="/organizer/bookings"
-        className="w-fit text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-      >
-        {t("detail.backToList")}
-      </Link>
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
+        <Link href="/organizer/bookings">
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          {t("detail.backToList")}
+        </Link>
+      </Button>
 
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t("detailTitle")}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {supplier?.business_name ?? "—"}
-            {event?.city ? ` · ${event.city}` : ""}
-          </p>
-        </div>
-        <span
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusBadgeClass(
-            row.confirmation_status,
-          )}`}
-        >
-          {statusLabel(t, row.confirmation_status)}
-        </span>
-      </header>
+      <PageHeader
+        title={t("detailTitle")}
+        description={`${supplier?.business_name ?? "—"}${
+          event?.city ? ` · ${event.city}` : ""
+        }`}
+        actions={
+          <StatusPill
+            status={confirmationToPill(row.confirmation_status)}
+            label={statusLabel(t, row.confirmation_status)}
+          />
+        }
+      />
 
       {row.confirmation_status === "awaiting_supplier" ? (
-        <div className="rounded-md border border-[var(--color-border)] bg-[#FFF8E8] p-4 text-sm">
-          <p className="font-medium text-[var(--color-foreground)]">
-            {t("banner.awaitingOrganizer")}
-          </p>
-          <p className="mt-1 text-[var(--color-muted-foreground)]">
-            {t("confirmDeadline")}: {deadline ?? "—"}
+        <Alert>
+          <Timer aria-hidden />
+          <AlertTitle>{t("banner.awaitingOrganizer")}</AlertTitle>
+          <AlertDescription>
+            <span className="font-medium text-foreground">
+              {t("confirmDeadline")}: {deadlineAbs ?? "—"}
+            </span>
             {" · "}
-            {deadlineText(t, row.confirm_deadline)}
-          </p>
-        </div>
+            <span>
+              {deadlineText(t, row.confirm_deadline)}
+              {relativeDeadline ? ` (${relativeDeadline})` : ""}
+            </span>
+          </AlertDescription>
+        </Alert>
+      ) : row.confirmation_status === "cancelled" ? (
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden />
+          <AlertDescription>
+            This booking was cancelled — the supplier&apos;s calendar has been
+            released.
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
-            {t("detailSupplier")}
-          </h2>
-          <p className="mt-2 text-base font-medium">
-            {supplier?.business_name ?? "—"}
-          </p>
-          {supplier?.base_city ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {supplier.base_city}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("detailSupplier")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 px-4 pb-5">
+            <p className="text-base font-semibold text-brand-navy-900">
+              {supplier?.business_name ?? "—"}
             </p>
-          ) : null}
-        </section>
+            {supplier?.base_city ? (
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <MapPin
+                  className="size-3.5 text-brand-cobalt-500"
+                  aria-hidden
+                />
+                {supplier.base_city}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
 
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
-            {t("detailEvent")}
-          </h2>
-          <p className="mt-2 text-base font-medium">
-            {event
-              ? eventFormT(`eventType.${event.event_type}` as never)
-              : "—"}
-          </p>
-          {event?.client_name ? (
-            <p className="text-sm">{event.client_name}</p>
-          ) : null}
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {event?.city ?? "—"}
-            {event?.starts_at
-              ? ` · ${formatEventDateTime(event.starts_at, locale)}`
-              : ""}
-          </p>
-          {event?.guest_count ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {event.guest_count} guests
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("detailEvent")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 px-4 pb-5">
+            <p className="text-base font-semibold text-brand-navy-900">
+              {event
+                ? eventFormT(`eventType.${event.event_type}` as never)
+                : "—"}
             </p>
-          ) : null}
-        </section>
+            {event?.client_name ? (
+              <p className="text-sm text-foreground">{event.client_name}</p>
+            ) : null}
+            {event ? (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="size-3" aria-hidden /> {event.city}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDays className="size-3" aria-hidden />
+                  {formatEventDateTime(event.starts_at, locale)}
+                </span>
+                {event.guest_count ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="size-3" aria-hidden />
+                    {event.guest_count}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
       </div>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-white">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border)] px-5 py-3">
-          <h2 className="text-base font-semibold">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between border-b pb-4">
+          <CardTitle className="text-lg">
             {t("detailAcceptedRevision")}
-          </h2>
-          <span className="text-xs text-[var(--color-muted-foreground)]">
+          </CardTitle>
+          <span className="text-xs text-muted-foreground">
             {t("detail.revision")} #{row.quote_revisions?.version ?? "—"}
           </span>
-        </header>
-        {snapshot ? (
-          <BookingSnapshotBody snapshot={snapshot} t={t} />
-        ) : (
-          <p className="p-5 text-sm text-[var(--color-muted-foreground)]">—</p>
-        )}
-      </section>
+        </CardHeader>
+        <CardContent className="p-0">
+          {snapshot ? <BookingSnapshotBody snapshot={snapshot} t={t} /> : (
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+              —
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }
@@ -238,119 +310,118 @@ function BookingSnapshotBody({
   t,
 }: {
   snapshot: QuoteSnapshot;
-  t: (key: string, values?: Record<string, string | number>) => string;
+  t: (
+    key: string,
+    values?: Record<string, string | number>,
+  ) => string;
 }) {
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-6 p-6">
       {snapshot.line_items.length > 0 ? (
         <section>
-          <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t("detail.lineItemsHeading")}
           </h3>
-          <table className="mt-2 w-full text-sm">
-            <tbody>
+          <Table>
+            <TableBody>
               {snapshot.line_items.map((item, idx) => (
-                <tr
+                <TableRow
                   key={`${item.label}-${idx}`}
-                  className="border-t border-[var(--color-border)] first:border-t-0"
+                  className="border-b last:border-0"
                 >
-                  <td className="py-2 pe-3">
+                  <TableCell className="py-2.5 pe-3">
                     <div className="font-medium">{item.label}</div>
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
-                      {item.qty} × {formatHalalas(item.unit_price_halalas)}{" "}
-                      ({item.unit})
+                    <div className="text-xs text-muted-foreground">
+                      {item.qty} ×{" "}
+                      {formatHalalas(item.unit_price_halalas)} ({item.unit})
                     </div>
-                  </td>
-                  <td className="py-2 text-end font-medium">
+                  </TableCell>
+                  <TableCell className="py-2.5 text-end font-medium tabular-nums">
                     {formatHalalas(item.total_halalas)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       ) : null}
 
       <section>
-        <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("detail.totalsHeading")}
         </h3>
-        <dl className="mt-2 flex flex-col gap-1 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-[var(--color-muted-foreground)]">
-              {t("detail.subtotal")}
-            </dt>
-            <dd>{formatHalalas(snapshot.subtotal_halalas)}</dd>
-          </div>
+        <dl className="flex flex-col gap-1.5 text-sm">
+          <TotalRow
+            label={t("detail.subtotal")}
+            value={formatHalalas(snapshot.subtotal_halalas)}
+          />
           {snapshot.travel_fee_halalas > 0 ? (
-            <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.travelFee")}
-              </dt>
-              <dd>{formatHalalas(snapshot.travel_fee_halalas)}</dd>
-            </div>
+            <TotalRow
+              label={t("detail.travelFee")}
+              value={formatHalalas(snapshot.travel_fee_halalas)}
+            />
           ) : null}
           {snapshot.setup_fee_halalas > 0 ? (
-            <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.setupFee")}
-              </dt>
-              <dd>{formatHalalas(snapshot.setup_fee_halalas)}</dd>
-            </div>
+            <TotalRow
+              label={t("detail.setupFee")}
+              value={formatHalalas(snapshot.setup_fee_halalas)}
+            />
           ) : null}
           {snapshot.teardown_fee_halalas > 0 ? (
-            <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.teardownFee")}
-              </dt>
-              <dd>{formatHalalas(snapshot.teardown_fee_halalas)}</dd>
-            </div>
+            <TotalRow
+              label={t("detail.teardownFee")}
+              value={formatHalalas(snapshot.teardown_fee_halalas)}
+            />
           ) : null}
           {snapshot.vat_amount_halalas > 0 ? (
-            <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.vat", { pct: snapshot.vat_rate_pct })}
-              </dt>
-              <dd>{formatHalalas(snapshot.vat_amount_halalas)}</dd>
-            </div>
+            <TotalRow
+              label={t("detail.vat", { pct: snapshot.vat_rate_pct })}
+              value={formatHalalas(snapshot.vat_amount_halalas)}
+            />
           ) : null}
-          <div className="mt-1 flex justify-between border-t border-[var(--color-border)] pt-2 text-base font-semibold">
-            <dt>{t("detail.total")}</dt>
-            <dd>{formatHalalas(snapshot.total_halalas)}</dd>
+          <div className="mt-2 flex items-baseline justify-between border-t pt-3">
+            <dt className="text-base font-semibold text-brand-navy-900">
+              {t("detail.total")}
+            </dt>
+            <dd className="text-lg font-semibold tabular-nums text-brand-navy-900">
+              {formatHalalas(snapshot.total_halalas)}
+            </dd>
           </div>
         </dl>
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("detail.termsHeading")}
         </h3>
-        <dl className="mt-2 flex flex-col gap-2 text-sm">
-          <div className="flex justify-between gap-3">
-            <dt className="text-[var(--color-muted-foreground)]">
+        <dl className="flex flex-col gap-3 text-sm">
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">
               {t("detail.depositPct")}
             </dt>
-            <dd>{snapshot.deposit_pct}%</dd>
+            <dd className="font-medium">{snapshot.deposit_pct}%</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-[var(--color-muted-foreground)]">
+            <dt className="text-muted-foreground">
               {t("detail.paymentSchedule")}
             </dt>
-            <dd>{snapshot.payment_schedule}</dd>
+            <dd className="whitespace-pre-line">{snapshot.payment_schedule}</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-[var(--color-muted-foreground)]">
+            <dt className="text-muted-foreground">
               {t("detail.cancellationTerms")}
             </dt>
-            <dd>{snapshot.cancellation_terms}</dd>
+            <dd className="whitespace-pre-line">
+              {snapshot.cancellation_terms}
+            </dd>
           </div>
           {snapshot.inclusions.length > 0 ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
+              <dt className="text-muted-foreground">
                 {t("detail.inclusions")}
               </dt>
               <dd>
-                <ul className="list-inside list-disc">
+                <ul className="list-disc space-y-0.5 ps-5">
                   {snapshot.inclusions.map((item, idx) => (
                     <li key={`${item}-${idx}`}>{item}</li>
                   ))}
@@ -360,11 +431,11 @@ function BookingSnapshotBody({
           ) : null}
           {snapshot.exclusions.length > 0 ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
+              <dt className="text-muted-foreground">
                 {t("detail.exclusions")}
               </dt>
               <dd>
-                <ul className="list-inside list-disc">
+                <ul className="list-disc space-y-0.5 ps-5">
                   {snapshot.exclusions.map((item, idx) => (
                     <li key={`${item}-${idx}`}>{item}</li>
                   ))}
@@ -374,14 +445,21 @@ function BookingSnapshotBody({
           ) : null}
           {snapshot.notes ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.notes")}
-              </dt>
-              <dd>{snapshot.notes}</dd>
+              <dt className="text-muted-foreground">{t("detail.notes")}</dt>
+              <dd className="whitespace-pre-line">{snapshot.notes}</dd>
             </div>
           ) : null}
         </dl>
       </section>
+    </div>
+  );
+}
+
+function TotalRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="tabular-nums">{value}</dd>
     </div>
   );
 }
