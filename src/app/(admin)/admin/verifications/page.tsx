@@ -1,10 +1,26 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import type {
   SupplierDocStatus,
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import type { StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -24,21 +40,14 @@ type SupplierListRow = {
   }>;
 };
 
-const TAB_TO_STATUS: Record<string, SupplierVerificationStatus> = {
-  pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-};
+type FilterKey = "all" | "pending" | "approved" | "rejected";
 
-function tabLabel(tab: string): string {
-  switch (tab) {
-    case "approved":
-      return "Approved";
-    case "rejected":
-      return "Rejected";
-    default:
-      return "Pending";
-  }
+const FILTER_KEYS: FilterKey[] = ["all", "pending", "approved", "rejected"];
+
+function parseFilter(raw: string | undefined): FilterKey {
+  const v = (raw ?? "pending").toLowerCase();
+  if ((FILTER_KEYS as string[]).includes(v)) return v as FilterKey;
+  return "pending";
 }
 
 function formatDate(iso: string): string {
@@ -55,63 +64,31 @@ function formatDate(iso: string): string {
   }
 }
 
-function legalTypeLabel(value: string): string {
-  switch (value) {
-    case "company":
-      return "Company";
-    case "freelancer":
-      return "Freelancer";
-    case "foreign":
-      return "Foreign entity";
-    default:
-      return value;
-  }
+function verificationStatusPill(
+  status: SupplierVerificationStatus,
+): StatusPillStatus {
+  if (status === "approved") return "approved";
+  if (status === "rejected") return "rejected";
+  return "pending";
 }
 
-function docTypeLabel(value: string): string {
-  switch (value) {
-    case "cr":
-      return "CR";
-    case "vat":
-      return "VAT";
-    case "id":
-      return "ID";
-    case "gea_permit":
-      return "GEA permit";
-    case "certification":
-      return "Cert";
-    default:
-      return value;
-  }
-}
+type Translator = (key: string) => string;
 
-function StatusPill({ status }: { status: SupplierDocStatus }) {
-  const styles: Record<SupplierDocStatus, string> = {
-    pending:
-      "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border-[var(--color-border)]",
-    approved: "bg-[#E2F4EA] text-[var(--color-sevent-green)] border-[#BDE3CB]",
-    rejected: "bg-[#FCE9E9] text-[#9F1A1A] border-[#F2C2C2]",
-  };
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
-        styles[status],
-      )}
-    >
-      {status}
-    </span>
-  );
+function legalTypeLabel(raw: string, t: Translator): string {
+  const known = ["company", "freelancer", "foreign"];
+  if (known.includes(raw)) return t(`legalType.${raw}`);
+  return raw;
 }
 
 export default async function AdminVerificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ filter?: string; tab?: string }>;
 }) {
+  const t = await getTranslations("admin.verifications");
   const params = await searchParams;
-  const tabRaw = (params.tab ?? "pending").toLowerCase();
-  const status = TAB_TO_STATUS[tabRaw] ?? "pending";
+  // Accept both legacy `?tab=` and the new `?filter=` for URL stability.
+  const filter = parseFilter(params.filter ?? params.tab);
 
   const gate = await requireRole("admin");
   if (gate.status === "unauthenticated") {
@@ -120,130 +97,143 @@ export default async function AdminVerificationsPage({
   if (gate.status === "forbidden") {
     return (
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold">Verifications queue</h1>
-        <p className="text-sm text-[#9F1A1A]">
-          Admin role required to view this page.
+        <PageHeader title={t("title")} />
+        <p className="text-sm text-semantic-danger-500">
+          {t("errorAdminRequired")}
         </p>
       </section>
     );
   }
   const { admin } = gate;
 
-  const { data, error } = await admin
+  let query = admin
     .from("suppliers")
     .select(
       "id, business_name, slug, base_city, legal_type, verification_status, created_at, supplier_docs(id, doc_type, status)",
     )
-    .eq("verification_status", status)
     .order("created_at", { ascending: false });
 
-  const suppliers: SupplierListRow[] = (data as SupplierListRow[] | null) ?? [];
+  if (filter !== "all") {
+    query = query.eq("verification_status", filter);
+  }
 
-  const tabs: Array<keyof typeof TAB_TO_STATUS> = [
-    "pending",
-    "approved",
-    "rejected",
-  ];
+  const { data, error } = await query;
+  const suppliers: SupplierListRow[] = (data as SupplierListRow[] | null) ?? [];
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Verifications queue</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          Review supplier documents, approve or reject each application, and
-          notify the supplier by email.
-        </p>
-      </header>
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
-      <nav className="flex items-center gap-1 border-b border-[var(--color-border)]">
-        {tabs.map((t) => {
-          const active = t === tabRaw || (t === "pending" && status === "pending" && tabRaw !== "approved" && tabRaw !== "rejected");
+      {/* URL-controlled filter — rendered as a link group so the page stays
+          a pure server component. shadcn Tabs is a client primitive; we want
+          crawlable, shareable URLs for the admin queue, so links are better
+          here than `<Tabs value onValueChange>`. */}
+      <nav
+        aria-label={t("title")}
+        className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1"
+      >
+        {FILTER_KEYS.map((key) => {
+          const active = key === filter;
+          const labelKey =
+            key === "all"
+              ? "allTab"
+              : key === "pending"
+                ? "pendingTab"
+                : key === "approved"
+                  ? "approvedTab"
+                  : "rejectedTab";
           return (
             <Link
-              key={t}
-              href={`/admin/verifications?tab=${t}`}
+              key={key}
+              href={`/admin/verifications?filter=${key}`}
               className={cn(
-                "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+                "inline-flex h-7 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors",
                 active
-                  ? "border-[var(--color-sevent-green)] text-[var(--color-sevent-green)]"
-                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]",
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
+              aria-current={active ? "page" : undefined}
             >
-              {tabLabel(t)}
+              {t(labelKey)}
             </Link>
           );
         })}
       </nav>
 
       {error ? (
-        <p className="rounded-md border border-[#F2C2C2] bg-[#FCE9E9] px-3 py-2 text-sm text-[#9F1A1A]">
+        <div
+          role="alert"
+          className="rounded-md border border-semantic-danger-500/30 bg-semantic-danger-100 px-3 py-2 text-sm text-semantic-danger-500"
+        >
           Failed to load suppliers: {error.message}
-        </p>
+        </div>
       ) : null}
 
       {suppliers.length === 0 ? (
-        <p className="rounded-md border border-dashed border-[var(--color-border)] bg-white px-4 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
-          No suppliers in this tab.
-        </p>
+        <EmptyState
+          icon={ShieldCheck}
+          title={filter === "all" ? t("list.emptyAll") : t("empty")}
+        />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {suppliers.map((s) => {
-            const pendingDocs = s.supplier_docs?.filter(
-              (d) => d.status === "pending",
-            ) ?? [];
-            return (
-              <li
-                key={s.id}
-                className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-3 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <Link
-                      href={`/admin/verifications/${s.id}`}
-                      className="text-base font-semibold text-[var(--color-sevent-dark)] hover:text-[var(--color-sevent-green)]"
-                    >
-                      {s.business_name}
-                    </Link>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {s.base_city} · {legalTypeLabel(s.legal_type)} ·
-                      submitted {formatDate(s.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {pendingDocs.length === 0 ? (
-                      <span className="text-xs text-[var(--color-muted-foreground)]">
-                        {s.supplier_docs?.length
-                          ? "All docs reviewed"
-                          : "No docs uploaded"}
-                      </span>
-                    ) : (
-                      pendingDocs.map((d) => (
-                        <span
-                          key={d.id}
-                          className="inline-flex items-center gap-1 rounded-full border border-[var(--color-sevent-gold)]/40 bg-[#FFF4DD] px-2 py-0.5 text-[11px] font-medium text-[#7A5A18]"
-                        >
-                          {docTypeLabel(d.doc_type)}
-                          <StatusPill status={d.status} />
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <code className="text-[11px] text-[var(--color-muted-foreground)]">
-                    /{s.slug}
-                  </code>
-                  <Link
-                    href={`/admin/verifications/${s.id}`}
-                    className="text-sm font-medium text-[var(--color-sevent-green)] hover:underline"
-                  >
-                    Open review →
-                  </Link>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("list.col.business")}</TableHead>
+                  <TableHead>{t("list.col.legalType")}</TableHead>
+                  <TableHead>{t("list.col.submitted")}</TableHead>
+                  <TableHead>{t("list.col.docs")}</TableHead>
+                  <TableHead>{t("list.col.status")}</TableHead>
+                  <TableHead className="text-end">
+                    {t("list.col.action")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {suppliers.map((s) => {
+                  const docCount = s.supplier_docs?.length ?? 0;
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">
+                            {s.business_name}
+                          </span>
+                          <code className="text-xs text-muted-foreground">
+                            /{s.slug}
+                          </code>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {legalTypeLabel(s.legal_type, t)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(s.created_at)}
+                      </TableCell>
+                      <TableCell className="tabular-nums text-muted-foreground">
+                        {t("list.docCount", { count: docCount })}
+                      </TableCell>
+                      <TableCell>
+                        <StatusPill
+                          status={verificationStatusPill(s.verification_status)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-end">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/admin/verifications/${s.id}`}>
+                            {t("list.review")}
+                            <ArrowRight aria-hidden />
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </section>
   );

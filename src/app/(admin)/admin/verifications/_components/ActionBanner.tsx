@@ -1,26 +1,38 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { ActionState } from "../action-state";
 
 /**
  * Toast-style banner that surfaces the result of a server action consumed via
  * `useActionState`. Idempotent: nothing renders for the idle state.
+ *
+ * Visually hosted by a shadcn Alert so the tone/border matches every other
+ * inline feedback surface.
  */
 export function ActionBanner({ state }: { state: ActionState }) {
   if (state.status === "idle") return null;
   const isError = state.status === "error";
+  const Icon = isError ? AlertTriangle : CheckCircle2;
   return (
-    <div
+    <Alert
       role="status"
       className={cn(
-        "rounded-md border px-3 py-2 text-sm",
         isError
-          ? "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]"
-          : "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]",
+          ? "border-semantic-danger-500/30 bg-semantic-danger-100 text-semantic-danger-500"
+          : "border-semantic-success-500/30 bg-semantic-success-100 text-semantic-success-500",
       )}
     >
-      {state.message}
-    </div>
+      <Icon className="size-4" aria-hidden />
+      <AlertDescription
+        className={cn(
+          isError ? "text-semantic-danger-500" : "text-semantic-success-500",
+        )}
+      >
+        {state.message}
+      </AlertDescription>
+    </Alert>
   );
 }

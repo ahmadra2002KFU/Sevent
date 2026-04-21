@@ -1,44 +1,49 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost";
+type Variant = "default" | "outline" | "destructive" | "ghost" | "secondary";
 
-const variantClass: Record<Variant, string> = {
-  primary:
-    "bg-[var(--color-sevent-green)] text-white hover:bg-[var(--color-sevent-green-soft)]",
-  secondary:
-    "border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:bg-[var(--color-muted)]",
-  danger: "bg-[#9F1A1A] text-white hover:bg-[#831414]",
-  ghost:
-    "text-[var(--color-sevent-green)] hover:underline",
-};
-
+/**
+ * Form-submit button that reflects `useFormStatus` pending state and delegates
+ * presentation to the shadcn `<Button>`. Kept as a thin wrapper so the admin
+ * verification server-action call sites (`<form action={...}>`) don't need to
+ * reason about pending UI.
+ */
 export function SubmitButton({
   children,
-  variant = "primary",
+  variant = "default",
   pendingLabel,
   className,
+  size,
 }: {
   children: React.ReactNode;
   variant?: Variant;
   pendingLabel?: string;
   className?: string;
+  size?: "xs" | "sm" | "default" | "lg";
 }) {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
+      variant={variant}
+      size={size}
       disabled={pending}
-      className={cn(
-        "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-        "disabled:cursor-not-allowed disabled:opacity-60",
-        variantClass[variant],
-        className,
-      )}
+      className={cn(className)}
+      aria-busy={pending || undefined}
     >
-      {pending ? pendingLabel ?? "Working…" : children}
-    </button>
+      {pending ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden />
+          {pendingLabel ?? "Working…"}
+        </>
+      ) : (
+        children
+      )}
+    </Button>
   );
 }

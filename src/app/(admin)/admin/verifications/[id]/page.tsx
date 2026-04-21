@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import {
+  ArrowLeft,
+  ExternalLink,
+  FileText,
+  ShieldCheck,
+} from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import {
   STORAGE_BUCKETS,
@@ -9,7 +16,19 @@ import type {
   SupplierDocStatus,
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import type { StatusPillStatus } from "@/components/ui-ext/StatusPill";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { DocActions } from "../_components/DocActions";
 import { SupplierActions } from "../_components/SupplierActions";
 
@@ -62,41 +81,32 @@ function fmtDate(iso: string | null): string {
   }
 }
 
-function docTypeLabel(value: string): string {
-  switch (value) {
-    case "cr":
-      return "Commercial Registration (CR)";
-    case "vat":
-      return "VAT certificate";
-    case "id":
-      return "National ID";
-    case "gea_permit":
-      return "GEA permit";
-    case "certification":
-      return "Certification";
-    default:
-      return value;
-  }
+function docStatusPill(status: SupplierDocStatus): StatusPillStatus {
+  if (status === "approved") return "approved";
+  if (status === "rejected") return "rejected";
+  return "pending";
 }
 
-function statusBadge(status: SupplierDocStatus | SupplierVerificationStatus) {
-  const s = status.toString();
-  const styles: Record<string, string> = {
-    pending:
-      "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border-[var(--color-border)]",
-    approved: "bg-[#E2F4EA] text-[var(--color-sevent-green)] border-[#BDE3CB]",
-    rejected: "bg-[#FCE9E9] text-[#9F1A1A] border-[#F2C2C2]",
-  };
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
-        styles[s] ?? styles.pending,
-      )}
-    >
-      {s}
-    </span>
-  );
+function verificationStatusPill(
+  status: SupplierVerificationStatus,
+): StatusPillStatus {
+  if (status === "approved") return "approved";
+  if (status === "rejected") return "rejected";
+  return "pending";
+}
+
+type Translator = (key: string) => string;
+
+function legalTypeLabel(raw: string, t: Translator): string {
+  if (["company", "freelancer", "foreign"].includes(raw))
+    return t(`legalType.${raw}`);
+  return raw;
+}
+
+function docTypeLabel(raw: string, t: Translator): string {
+  if (["cr", "vat", "id", "gea_permit", "certification"].includes(raw))
+    return t(`docType.${raw}`);
+  return raw;
 }
 
 export default async function AdminVerificationDetailPage({
@@ -104,6 +114,7 @@ export default async function AdminVerificationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslations("admin.verifications");
   const { id } = await params;
 
   const gate = await requireRole("admin");
@@ -115,9 +126,9 @@ export default async function AdminVerificationDetailPage({
   if (gate.status === "forbidden") {
     return (
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold">Verification</h1>
-        <p className="text-sm text-[#9F1A1A]">
-          Admin role required to view this page.
+        <PageHeader title={t("title")} />
+        <p className="text-sm text-semantic-danger-500">
+          {t("errorAdminRequired")}
         </p>
       </section>
     );
@@ -134,8 +145,8 @@ export default async function AdminVerificationDetailPage({
   if (supplierErr) {
     return (
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold">Verification</h1>
-        <p className="text-sm text-[#9F1A1A]">
+        <PageHeader title={t("title")} />
+        <p className="text-sm text-semantic-danger-500">
           Failed to load supplier: {supplierErr.message}
         </p>
       </section>
@@ -157,12 +168,7 @@ export default async function AdminVerificationDetailPage({
   // never has to depend on a per-object storage policy lookup beyond the
   // `is_admin()` SELECT policy on `supplier-docs` (we already verified role
   // above). Failing to sign one URL must not break the page.
-  let signedDocs: Array<SupplierDoc & { signedUrl: string | null; signError: string | null }> = docs.map((d) => ({
-    ...d,
-    signedUrl: null,
-    signError: null,
-  }));
-  signedDocs = await Promise.all(
+  const signedDocs = await Promise.all(
     docs.map(async (d) => {
       try {
         const url = await createSignedPreviewUrl(
@@ -170,7 +176,7 @@ export default async function AdminVerificationDetailPage({
           STORAGE_BUCKETS.docs,
           d.file_path,
         );
-        return { ...d, signedUrl: url, signError: null };
+        return { ...d, signedUrl: url, signError: null as string | null };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return { ...d, signedUrl: null, signError: message };
@@ -180,204 +186,222 @@ export default async function AdminVerificationDetailPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link
-          href="/admin/verifications"
-          className="text-sm text-[var(--color-sevent-green)] hover:underline"
-        >
-          ← Back to queue
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">{supplier.business_name}</h1>
-            <p className="text-xs text-[var(--color-muted-foreground)]">
-              Submitted {fmtDate(supplier.created_at)} · /{supplier.slug}
-            </p>
-          </div>
-          {statusBadge(supplier.verification_status)}
-        </div>
+      <div className="flex flex-col gap-3">
+        <Button asChild variant="link" size="sm" className="w-fit px-0">
+          <Link href="/admin/verifications">
+            <ArrowLeft aria-hidden />
+            {t("back")}
+          </Link>
+        </Button>
+        <PageHeader
+          title={supplier.business_name}
+          description={`${t("submitted")} ${fmtDate(supplier.created_at)} · /${supplier.slug}`}
+          actions={
+            <StatusPill status={verificationStatusPill(supplier.verification_status)} />
+          }
+        />
       </div>
 
       {docsErr ? (
-        <p className="rounded-md border border-[#F2C2C2] bg-[#FCE9E9] px-3 py-2 text-sm text-[#9F1A1A]">
+        <div
+          role="alert"
+          className="rounded-md border border-semantic-danger-500/30 bg-semantic-danger-100 px-3 py-2 text-sm text-semantic-danger-500"
+        >
           Failed to load documents: {docsErr.message}
-        </p>
+        </div>
       ) : null}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
-          <article className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-            <h2 className="text-base font-semibold">Profile snapshot</h2>
-            <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Legal type
-                </dt>
-                <dd>{supplier.legal_type}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Base city
-                </dt>
-                <dd>{supplier.base_city}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  CR number
-                </dt>
-                <dd>{supplier.cr_number ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  National ID
-                </dt>
-                <dd>{supplier.national_id ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Service area
-                </dt>
-                <dd>
-                  {supplier.service_area_cities?.length
-                    ? supplier.service_area_cities.join(", ")
-                    : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Languages
-                </dt>
-                <dd>
-                  {supplier.languages?.length
-                    ? supplier.languages.join(", ")
-                    : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Capacity
-                </dt>
-                <dd>{supplier.capacity ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Concurrent events
-                </dt>
-                <dd>{supplier.concurrent_event_limit}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Published
-                </dt>
-                <dd>{supplier.is_published ? "Yes" : "No"}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Verified at
-                </dt>
-                <dd>{fmtDate(supplier.verified_at)}</dd>
-              </div>
-            </dl>
-            {supplier.bio ? (
-              <div className="mt-4">
-                <h3 className="text-[11px] uppercase text-[var(--color-muted-foreground)]">
-                  Bio
-                </h3>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{supplier.bio}</p>
-              </div>
-            ) : null}
-            {supplier.verification_notes ? (
-              <div className="mt-4 rounded-md border border-[#F2C2C2] bg-[#FCE9E9] p-3">
-                <h3 className="text-[11px] uppercase text-[#9F1A1A]">
-                  Last reviewer notes
-                </h3>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-[#9F1A1A]">
-                  {supplier.verification_notes}
-                </p>
-              </div>
-            ) : null}
-          </article>
+          {/* Profile snapshot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="size-4 text-brand-cobalt-500" aria-hidden />
+                {t("profileSnapshot")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                <DetailRow
+                  label={t("list.col.legalType")}
+                  value={legalTypeLabel(supplier.legal_type, t)}
+                />
+                <DetailRow
+                  label={t("detail.baseCity")}
+                  value={supplier.base_city}
+                />
+                <DetailRow
+                  label={t("detail.crNumber")}
+                  value={supplier.cr_number ?? "—"}
+                />
+                <DetailRow
+                  label={t("detail.nationalId")}
+                  value={supplier.national_id ?? "—"}
+                />
+                <DetailRow
+                  label={t("detail.serviceArea")}
+                  value={
+                    supplier.service_area_cities?.length
+                      ? supplier.service_area_cities.join(", ")
+                      : "—"
+                  }
+                />
+                <DetailRow
+                  label={t("detail.languages")}
+                  value={
+                    supplier.languages?.length
+                      ? supplier.languages.join(", ")
+                      : "—"
+                  }
+                />
+                <DetailRow
+                  label={t("detail.capacity")}
+                  value={supplier.capacity != null ? String(supplier.capacity) : "—"}
+                />
+                <DetailRow
+                  label={t("detail.concurrent")}
+                  value={String(supplier.concurrent_event_limit)}
+                />
+                <DetailRow
+                  label={t("detail.published")}
+                  value={supplier.is_published ? t("detail.yes") : t("detail.no")}
+                />
+                <DetailRow
+                  label={t("detail.verifiedAt")}
+                  value={fmtDate(supplier.verified_at)}
+                />
+              </dl>
+              {supplier.bio ? (
+                <>
+                  <Separator className="my-4" />
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t("detail.bio")}
+                    </dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                      {supplier.bio}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+              {supplier.verification_notes ? (
+                <div className="mt-4 rounded-md border border-semantic-danger-500/30 bg-semantic-danger-100 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-semantic-danger-500">
+                    {t("lastReviewerNotes")}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-semantic-danger-500">
+                    {supplier.verification_notes}
+                  </p>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
 
-          <article className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-            <h2 className="text-base font-semibold">Documents ({docs.length})</h2>
-            {docs.length === 0 ? (
-              <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">
-                No documents uploaded yet.
-              </p>
-            ) : (
-              <ul className="mt-3 flex flex-col divide-y divide-[var(--color-border)]">
-                {signedDocs.map((d) => (
-                  <li key={d.id} className="flex flex-col gap-2 py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {docTypeLabel(d.doc_type)}
+          {/* Documents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileText className="size-4 text-brand-cobalt-500" aria-hidden />
+                {t("detail.docsHeading")}
+              </CardTitle>
+              <CardDescription>
+                {t("detail.docsCount", { count: docs.length })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {docs.length === 0 ? (
+                <EmptyState icon={FileText} title={t("noDocs")} />
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {signedDocs.map((d) => (
+                    <li key={d.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {docTypeLabel(d.doc_type, t)}
+                          </span>
+                          <StatusPill status={docStatusPill(d.status)} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {t("uploaded")} {fmtDate(d.created_at)}
                         </span>
-                        {statusBadge(d.status)}
                       </div>
-                      <span className="text-[11px] text-[var(--color-muted-foreground)]">
-                        Uploaded {fmtDate(d.created_at)}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-                      {d.signedUrl ? (
-                        <a
-                          href={d.signedUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[var(--color-sevent-green)] hover:underline"
-                        >
-                          Open preview
-                        </a>
-                      ) : d.signError ? (
-                        <span className="text-[#9F1A1A]">
-                          Preview unavailable: {d.signError}
-                        </span>
-                      ) : (
-                        <span>Preview unavailable</span>
-                      )}
-                      {d.reviewed_at ? (
-                        <span>· Reviewed {fmtDate(d.reviewed_at)}</span>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        {d.signedUrl ? (
+                          <Button asChild variant="outline" size="xs">
+                            <a
+                              href={d.signedUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {t("openPreview")}
+                              <ExternalLink aria-hidden />
+                            </a>
+                          </Button>
+                        ) : d.signError ? (
+                          <span className="text-semantic-danger-500">
+                            {t("previewUnavailable")}: {d.signError}
+                          </span>
+                        ) : (
+                          <span>{t("previewUnavailable")}</span>
+                        )}
+                        {d.reviewed_at ? (
+                          <span>
+                            · {t("reviewed")} {fmtDate(d.reviewed_at)}
+                          </span>
+                        ) : null}
+                      </div>
+                      {d.notes ? (
+                        <p className="rounded-md bg-muted p-2 text-xs text-muted-foreground">
+                          {d.notes}
+                        </p>
                       ) : null}
-                    </div>
-                    {d.notes ? (
-                      <p className="rounded-md bg-[var(--color-muted)] p-2 text-xs text-[var(--color-muted-foreground)]">
-                        Notes: {d.notes}
-                      </p>
-                    ) : null}
-                    <DocActions
-                      docId={d.id}
-                      supplierId={supplier.id}
-                      currentStatus={d.status}
-                      currentNotes={d.notes}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
+                      <DocActions
+                        docId={d.id}
+                        supplierId={supplier.id}
+                        currentStatus={d.status}
+                        currentNotes={d.notes}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <aside className="flex flex-col gap-4">
           <SupplierActions
             supplierId={supplier.id}
             defaultNotes={supplier.verification_notes}
+            currentStatus={supplier.verification_status}
           />
-          <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-xs text-[var(--color-muted-foreground)]">
-            <p>
-              Approving sets <code>verification_status=approved</code>,{" "}
-              <code>is_published=true</code>, marks all non-rejected documents
-              as approved, sends the welcome email and writes a{" "}
-              <code>supplier.approved</code> notification.
-            </p>
-            <p className="mt-2">
-              Rejecting sets <code>verification_status=rejected</code>, hides
-              the listing, marks every non-approved document as rejected with
-              the notes you provide, and emails the supplier the next steps.
-            </p>
-          </div>
+          <Card size="sm">
+            <CardContent className="text-xs text-muted-foreground">
+              <p>{t("approveSummary")}</p>
+              <p className="mt-2">{t("rejectSummary")}</p>
+            </CardContent>
+          </Card>
         </aside>
       </div>
     </section>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="text-sm text-foreground">{value}</dd>
+    </div>
   );
 }
