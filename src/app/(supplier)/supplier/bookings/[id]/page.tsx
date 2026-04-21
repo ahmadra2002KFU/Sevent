@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, CalendarClock, ReceiptText, Users } from "lucide-react";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -8,6 +9,25 @@ import {
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { requireRole } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 
 export const dynamic = "force-dynamic";
 
@@ -42,30 +62,23 @@ type BookingDetailRow = {
   } | null;
 };
 
-function statusBadgeClass(status: ConfirmationStatus): string {
-  switch (status) {
-    case "confirmed":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
-    case "cancelled":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
-    case "awaiting_supplier":
-    default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
-  }
-}
-
-function statusLabel(
+function statusPillFor(
   t: (key: string) => string,
   status: ConfirmationStatus,
-): string {
+) {
   switch (status) {
     case "confirmed":
-      return t("statusConfirmed");
+      return <StatusPill status="confirmed" label={t("statusConfirmed")} />;
     case "cancelled":
-      return t("statusCancelled");
+      return <StatusPill status="cancelled" label={t("statusCancelled")} />;
     case "awaiting_supplier":
     default:
-      return t("statusAwaitingSupplier");
+      return (
+        <StatusPill
+          status="awaiting_supplier"
+          label={t("statusAwaitingSupplier")}
+        />
+      );
   }
 }
 
@@ -146,100 +159,99 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Link
-        href="/supplier/bookings"
-        className="w-fit text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-      >
-        {t("detail.backToList")}
-      </Link>
+      <Button asChild variant="ghost" size="sm" className="w-fit">
+        <Link href="/supplier/bookings">
+          <ArrowLeft className="rtl:rotate-180" />
+          {t("detail.backToList")}
+        </Link>
+      </Button>
 
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t("detailTitle")}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {organizerName}
-            {event?.city ? ` · ${event.city}` : ""}
-          </p>
-        </div>
-        <span
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusBadgeClass(
-            row.confirmation_status,
-          )}`}
-        >
-          {statusLabel(t, row.confirmation_status)}
-        </span>
-      </header>
+      <PageHeader
+        title={t("detailTitle")}
+        description={`${organizerName}${event?.city ? ` · ${event.city}` : ""}`}
+        actions={statusPillFor(t, row.confirmation_status)}
+      />
 
       {row.confirmation_status === "awaiting_supplier" ? (
-        <div
-          className={`rounded-md border p-4 text-sm ${
-            deadlineResult.kind === "expired"
-              ? "border-[#F2C2C2] bg-[#FCE9E9]"
-              : "border-[#E6CC7A] bg-[#FFF8E8]"
-          }`}
+        <Alert
+          variant={deadlineResult.kind === "expired" ? "destructive" : "default"}
         >
-          <p className="text-base font-semibold">{t("banner.awaitingSupplier")}</p>
-          <p className="mt-1 text-sm text-[var(--color-foreground)]">
-            {t("confirmDeadline")}: {deadlineFormatted ?? "—"}
-          </p>
-          <p className="mt-1 text-sm font-medium">
-            {deadlineText(t, row.confirm_deadline)}
-          </p>
-          <p className="mt-3 inline-flex rounded-md border border-dashed border-[var(--color-border)] bg-white px-3 py-2 text-xs text-[var(--color-muted-foreground)]">
-            {t("detail.sprint5Placeholder")}
-          </p>
-        </div>
+          <CalendarClock />
+          <AlertTitle>{t("banner.awaitingSupplier")}</AlertTitle>
+          <AlertDescription>
+            <div className="flex flex-col gap-1">
+              <span>
+                {t("confirmDeadline")}: {deadlineFormatted ?? "—"}
+              </span>
+              <span className="font-medium text-foreground">
+                {deadlineText(t, row.confirm_deadline)}
+              </span>
+              <span className="mt-1 inline-flex w-fit rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+                {t("detail.sprint5Placeholder")}
+              </span>
+            </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
-            {t("detailOrganizer")}
-          </h2>
-          <p className="mt-2 text-base font-medium">{organizerName}</p>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardDescription>{t("detailOrganizer")}</CardDescription>
+            <CardTitle>{organizerName}</CardTitle>
+          </CardHeader>
+        </Card>
 
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
-            {t("detailEvent")}
-          </h2>
-          <p className="mt-2 text-base font-medium">
-            {event
-              ? eventFormT(`eventType.${event.event_type}` as never)
-              : "—"}
-          </p>
-          {event?.client_name ? (
-            <p className="text-sm">{event.client_name}</p>
-          ) : null}
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {event?.city ?? "—"}
-            {event?.starts_at
-              ? ` · ${formatEventDateTime(event.starts_at, locale)}`
-              : ""}
-          </p>
-          {event?.guest_count ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {event.guest_count} guests
+        <Card>
+          <CardHeader>
+            <CardDescription>{t("detailEvent")}</CardDescription>
+            <CardTitle>
+              {event
+                ? eventFormT(`eventType.${event.event_type}` as never)
+                : "—"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
+            {event?.client_name ? (
+              <p className="text-foreground">{event.client_name}</p>
+            ) : null}
+            <p>
+              {event?.city ?? "—"}
+              {event?.starts_at
+                ? ` · ${formatEventDateTime(event.starts_at, locale)}`
+                : ""}
             </p>
-          ) : null}
-        </section>
+            {event?.guest_count ? (
+              <p className="inline-flex items-center gap-1">
+                <Users className="size-3.5" aria-hidden />
+                {event.guest_count} guests
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
       </div>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-white">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border)] px-5 py-3">
-          <h2 className="text-base font-semibold">
-            {t("detailAcceptedRevision")}
-          </h2>
-          <span className="text-xs text-[var(--color-muted-foreground)]">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 border-b">
+          <div className="flex items-center gap-2">
+            <ReceiptText
+              className="size-4 text-brand-cobalt-500"
+              aria-hidden
+            />
+            <CardTitle>{t("detailAcceptedRevision")}</CardTitle>
+          </div>
+          <Badge variant="outline">
             {t("detail.revision")} #{row.quote_revisions?.version ?? "—"}
-          </span>
-        </header>
-        {snapshot ? (
-          <BookingSnapshotBody snapshot={snapshot} t={t} />
-        ) : (
-          <p className="p-5 text-sm text-[var(--color-muted-foreground)]">—</p>
-        )}
-      </section>
+          </Badge>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {snapshot ? (
+            <BookingSnapshotBody snapshot={snapshot} t={t} />
+          ) : (
+            <p className="text-sm text-muted-foreground">—</p>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }
@@ -252,80 +264,72 @@ function BookingSnapshotBody({
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   return (
-    <div className="flex flex-col gap-5 p-5">
+    <div className="flex flex-col gap-6">
       {snapshot.line_items.length > 0 ? (
         <section>
-          <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t("detail.lineItemsHeading")}
           </h3>
-          <table className="mt-2 w-full text-sm">
-            <tbody>
+          <Table className="mt-2">
+            <TableBody>
               {snapshot.line_items.map((item, idx) => (
-                <tr
-                  key={`${item.label}-${idx}`}
-                  className="border-t border-[var(--color-border)] first:border-t-0"
-                >
-                  <td className="py-2 pe-3">
-                    <div className="font-medium">{item.label}</div>
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
+                <TableRow key={`${item.label}-${idx}`}>
+                  <TableCell className="whitespace-normal">
+                    <div className="font-medium text-foreground">
+                      {item.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
                       {item.qty} × {formatHalalas(item.unit_price_halalas)}{" "}
                       ({item.unit})
                     </div>
-                  </td>
-                  <td className="py-2 text-end font-medium">
+                  </TableCell>
+                  <TableCell className="text-end font-medium">
                     {formatHalalas(item.total_halalas)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       ) : null}
 
       <section>
-        <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("detail.totalsHeading")}
         </h3>
         <dl className="mt-2 flex flex-col gap-1 text-sm">
           <div className="flex justify-between">
-            <dt className="text-[var(--color-muted-foreground)]">
-              {t("detail.subtotal")}
-            </dt>
+            <dt className="text-muted-foreground">{t("detail.subtotal")}</dt>
             <dd>{formatHalalas(snapshot.subtotal_halalas)}</dd>
           </div>
           {snapshot.travel_fee_halalas > 0 ? (
             <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.travelFee")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.travelFee")}</dt>
               <dd>{formatHalalas(snapshot.travel_fee_halalas)}</dd>
             </div>
           ) : null}
           {snapshot.setup_fee_halalas > 0 ? (
             <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.setupFee")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.setupFee")}</dt>
               <dd>{formatHalalas(snapshot.setup_fee_halalas)}</dd>
             </div>
           ) : null}
           {snapshot.teardown_fee_halalas > 0 ? (
             <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.teardownFee")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.teardownFee")}</dt>
               <dd>{formatHalalas(snapshot.teardown_fee_halalas)}</dd>
             </div>
           ) : null}
           {snapshot.vat_amount_halalas > 0 ? (
             <div className="flex justify-between">
-              <dt className="text-[var(--color-muted-foreground)]">
+              <dt className="text-muted-foreground">
                 {t("detail.vat", { pct: snapshot.vat_rate_pct })}
               </dt>
               <dd>{formatHalalas(snapshot.vat_amount_halalas)}</dd>
             </div>
           ) : null}
-          <div className="mt-1 flex justify-between border-t border-[var(--color-border)] pt-2 text-base font-semibold">
+          <Separator className="my-2" />
+          <div className="flex justify-between text-base font-semibold text-brand-navy-900">
             <dt>{t("detail.total")}</dt>
             <dd>{formatHalalas(snapshot.total_halalas)}</dd>
           </div>
@@ -333,33 +337,29 @@ function BookingSnapshotBody({
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-[var(--color-muted-foreground)]">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("detail.termsHeading")}
         </h3>
-        <dl className="mt-2 flex flex-col gap-2 text-sm">
+        <dl className="mt-2 flex flex-col gap-3 text-sm">
           <div className="flex justify-between gap-3">
-            <dt className="text-[var(--color-muted-foreground)]">
-              {t("detail.depositPct")}
-            </dt>
+            <dt className="text-muted-foreground">{t("detail.depositPct")}</dt>
             <dd>{snapshot.deposit_pct}%</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-[var(--color-muted-foreground)]">
+            <dt className="text-muted-foreground">
               {t("detail.paymentSchedule")}
             </dt>
             <dd>{snapshot.payment_schedule}</dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-[var(--color-muted-foreground)]">
+            <dt className="text-muted-foreground">
               {t("detail.cancellationTerms")}
             </dt>
             <dd>{snapshot.cancellation_terms}</dd>
           </div>
           {snapshot.inclusions.length > 0 ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.inclusions")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.inclusions")}</dt>
               <dd>
                 <ul className="list-inside list-disc">
                   {snapshot.inclusions.map((item, idx) => (
@@ -371,9 +371,7 @@ function BookingSnapshotBody({
           ) : null}
           {snapshot.exclusions.length > 0 ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.exclusions")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.exclusions")}</dt>
               <dd>
                 <ul className="list-inside list-disc">
                   {snapshot.exclusions.map((item, idx) => (
@@ -385,9 +383,7 @@ function BookingSnapshotBody({
           ) : null}
           {snapshot.notes ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[var(--color-muted-foreground)]">
-                {t("detail.notes")}
-              </dt>
+              <dt className="text-muted-foreground">{t("detail.notes")}</dt>
               <dd>{snapshot.notes}</dd>
             </div>
           ) : null}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { ArrowUpRight, ClipboardList } from "lucide-react";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -8,6 +9,20 @@ import {
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { requireRole } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const dynamic = "force-dynamic";
 
@@ -56,30 +71,23 @@ function parsePage(value: string | string[] | undefined): number {
   return parsed;
 }
 
-function statusBadgeClass(status: ConfirmationStatus): string {
-  switch (status) {
-    case "confirmed":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
-    case "cancelled":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
-    case "awaiting_supplier":
-    default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
-  }
-}
-
-function statusLabel(
+function statusPillFor(
   t: (key: string) => string,
   status: ConfirmationStatus,
-): string {
+) {
   switch (status) {
     case "confirmed":
-      return t("statusConfirmed");
+      return <StatusPill status="confirmed" label={t("statusConfirmed")} />;
     case "cancelled":
-      return t("statusCancelled");
+      return <StatusPill status="cancelled" label={t("statusCancelled")} />;
     case "awaiting_supplier":
     default:
-      return t("statusAwaitingSupplier");
+      return (
+        <StatusPill
+          status="awaiting_supplier"
+          label={t("statusAwaitingSupplier")}
+        />
+      );
   }
 }
 
@@ -143,11 +151,9 @@ export default async function SupplierBookingsListPage({
 
   if (!supplierRow) {
     return (
-      <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{t("listTitle")}</h1>
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("noBookings")}
-        </p>
+      <section className="flex flex-col gap-6">
+        <PageHeader title={t("listTitle")} description={t("listIntro")} />
+        <EmptyState icon={ClipboardList} title={t("noBookings")} />
       </section>
     );
   }
@@ -181,20 +187,18 @@ export default async function SupplierBookingsListPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("listTitle")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("listIntro")}
-        </p>
-      </header>
+      <PageHeader title={t("listTitle")} description={t("listIntro")} />
 
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+      <form
+        method="get"
+        className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4"
+      >
+        <Label className="flex flex-col items-start gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("filterLabel")}
           <select
             name="status"
             defaultValue={filter}
-            className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm font-normal text-[var(--color-foreground)]"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm font-normal text-foreground shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           >
             <option value="all">{t("filterAll")}</option>
             <option value="awaiting_supplier">
@@ -203,33 +207,28 @@ export default async function SupplierBookingsListPage({
             <option value="confirmed">{t("statusConfirmed")}</option>
             <option value="cancelled">{t("statusCancelled")}</option>
           </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-md border border-[var(--color-border)] bg-white px-4 py-2 text-sm hover:bg-[var(--color-muted)]"
-        >
+        </Label>
+        <Button type="submit" variant="outline">
           {t("filterLabel")}
-        </button>
+        </Button>
       </form>
 
       {rows.length === 0 ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("noBookings")}
-        </p>
+        <EmptyState icon={ClipboardList} title={t("noBookings")} />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              <tr>
-                <th className="px-4 py-3 font-medium">{t("table.organizer")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.event")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.status")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.deadline")}</th>
-                <th className="px-4 py-3 font-medium">{t("table.total")}</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>{t("table.organizer")}</TableHead>
+                <TableHead>{t("table.event")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead>{t("table.deadline")}</TableHead>
+                <TableHead>{t("table.total")}</TableHead>
+                <TableHead aria-hidden />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((row) => {
                 const organizerName = row.profiles?.full_name ?? "—";
                 const event = row.rfqs?.events ?? null;
@@ -237,80 +236,77 @@ export default async function SupplierBookingsListPage({
                   row.quote_revisions?.snapshot_jsonb,
                 );
                 return (
-                  <tr
-                    key={row.id}
-                    className="border-t border-[var(--color-border)] hover:bg-[var(--color-muted)]/60"
-                  >
-                    <td className="px-4 py-3 font-medium">{organizerName}</td>
-                    <td className="px-4 py-3">
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium text-brand-navy-900">
+                      {organizerName}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{event?.city ?? "—"}</span>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="font-medium text-foreground">
+                          {event?.city ?? "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
                           {event?.starts_at
                             ? formatEventDate(event.starts_at, locale)
                             : ""}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusBadgeClass(
-                          row.confirmation_status,
-                        )}`}
-                      >
-                        {statusLabel(t, row.confirmation_status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
+                      {statusPillFor(t, row.confirmation_status)}
+                    </TableCell>
+                    <TableCell className="text-sm">
                       {formatDeadlineCell(t, row.confirm_deadline)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="font-medium">
                       {total !== null ? formatHalalas(total) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-end">
-                      <Link
-                        href={`/supplier/bookings/${row.id}`}
-                        className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-                      >
-                        {t("table.view")}
-                      </Link>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-end">
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/supplier/bookings/${row.id}`}>
+                          {t("table.view")}
+                          <ArrowUpRight />
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {totalPages > 1 ? (
         <nav className="flex items-center justify-between gap-3 text-sm">
           {page > 1 ? (
-            <Link
-              href={{
-                pathname: "/supplier/bookings",
-                query: { status: filter, page: page - 1 },
-              }}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 hover:bg-[var(--color-muted)]"
-            >
-              {t("pagination.previous")}
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link
+                href={{
+                  pathname: "/supplier/bookings",
+                  query: { status: filter, page: page - 1 },
+                }}
+              >
+                {t("pagination.previous")}
+              </Link>
+            </Button>
           ) : (
             <span />
           )}
-          <span className="text-[var(--color-muted-foreground)]">
+          <span className="text-muted-foreground">
             {t("pagination.pageOf", { page, totalPages })}
           </span>
           {page < totalPages ? (
-            <Link
-              href={{
-                pathname: "/supplier/bookings",
-                query: { status: filter, page: page + 1 },
-              }}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 hover:bg-[var(--color-muted)]"
-            >
-              {t("pagination.next")}
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link
+                href={{
+                  pathname: "/supplier/bookings",
+                  query: { status: filter, page: page + 1 },
+                }}
+              >
+                {t("pagination.next")}
+              </Link>
+            </Button>
           ) : (
             <span />
           )}

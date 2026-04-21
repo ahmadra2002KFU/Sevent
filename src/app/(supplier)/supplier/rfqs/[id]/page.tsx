@@ -1,9 +1,22 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { ArrowUpRight, ClipboardList, FileText, MapPin } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { DeclineInviteForm } from "./decline-form";
 import { declineInviteAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -91,22 +104,36 @@ function formatBudget(
   return "—";
 }
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
+function Field({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="flex flex-col gap-1">
-      <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+    <div className={className}>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="text-sm text-[var(--color-foreground)]">{value}</dd>
+      <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   );
 }
 
-function RequirementsBlock({ requirements }: { requirements: unknown }) {
+function RequirementsBlock({
+  requirements,
+  t,
+}: {
+  requirements: unknown;
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
   if (!requirements || typeof requirements !== "object") {
     return (
-      <p className="text-sm text-[var(--color-muted-foreground)]">
-        No structured requirements.
+      <p className="text-sm text-muted-foreground">
+        {t("noStructuredRequirements")}
       </p>
     );
   }
@@ -119,49 +146,60 @@ function RequirementsBlock({ requirements }: { requirements: unknown }) {
       const io = r.indoor_outdoor as string | undefined;
       const parking = r.needs_parking as boolean | undefined;
       const kitchen = r.needs_kitchen as boolean | undefined;
-      if (seating) rows.push({ label: "Seating style", value: seating });
-      if (io) rows.push({ label: "Indoor / outdoor", value: io });
-      rows.push({ label: "Needs parking", value: parking ? "Yes" : "No" });
-      rows.push({ label: "Needs kitchen", value: kitchen ? "Yes" : "No" });
+      if (seating) rows.push({ label: t("requirements.seatingStyle"), value: seating });
+      if (io) rows.push({ label: t("requirements.indoorOutdoor"), value: io });
+      rows.push({
+        label: t("requirements.needsParking"),
+        value: parking ? t("requirements.yes") : t("requirements.no"),
+      });
+      rows.push({
+        label: t("requirements.needsKitchen"),
+        value: kitchen ? t("requirements.yes") : t("requirements.no"),
+      });
       break;
     }
     case "catering": {
       const meal = r.meal_type as string | undefined;
       const dietary = r.dietary as string[] | undefined;
       const style = r.service_style as string | undefined;
-      if (meal) rows.push({ label: "Meal type", value: meal });
+      if (meal) rows.push({ label: t("requirements.mealType"), value: meal });
       if (dietary && dietary.length > 0)
-        rows.push({ label: "Dietary", value: dietary.join(", ") });
-      if (style) rows.push({ label: "Service style", value: style });
+        rows.push({ label: t("requirements.dietary"), value: dietary.join(", ") });
+      if (style) rows.push({ label: t("requirements.serviceStyle"), value: style });
       break;
     }
     case "photography": {
       const hours = r.coverage_hours as number | undefined;
       const deliverables = r.deliverables as string[] | undefined;
       const crew = r.crew_size as number | undefined;
-      if (hours != null) rows.push({ label: "Coverage hours", value: String(hours) });
+      if (hours != null)
+        rows.push({ label: t("requirements.coverageHours"), value: String(hours) });
       if (deliverables && deliverables.length > 0)
-        rows.push({ label: "Deliverables", value: deliverables.join(", ") });
-      if (crew != null) rows.push({ label: "Crew size", value: String(crew) });
+        rows.push({
+          label: t("requirements.deliverables"),
+          value: deliverables.join(", "),
+        });
+      if (crew != null)
+        rows.push({ label: t("requirements.crewSize"), value: String(crew) });
       break;
     }
     case "generic": {
       const notes = r.notes as string | undefined;
-      if (notes) rows.push({ label: "Notes", value: notes });
+      if (notes) rows.push({ label: t("requirements.notes"), value: notes });
       break;
     }
     default:
       return (
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          Requirements payload kind not recognized.
+        <p className="text-sm text-muted-foreground">
+          {t("unknownRequirements")}
         </p>
       );
   }
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-[var(--color-muted-foreground)]">
-        No requirements provided.
+      <p className="text-sm text-muted-foreground">
+        {t("noStructuredRequirements")}
       </p>
     );
   }
@@ -250,160 +288,182 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const quoteIsTerminal = quote ? TERMINAL_QUOTE_STATUSES.has(quote.status) : false;
   const hasActiveQuote = quote !== null && !quoteIsTerminal;
 
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <StatusPill
+        status={
+          invite.status === "invited"
+            ? "invited"
+            : invite.status === "quoted"
+              ? "quoted"
+              : invite.status === "declined"
+                ? "declined"
+                : "withdrawn"
+        }
+        label={t(`status.${invite.status}`)}
+      />
+    </div>
+  );
+
   return (
-    <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">
-          {subcategory?.name_en ?? "RFQ"}
-        </h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-      </header>
+    <section className="flex flex-col gap-6">
+      <PageHeader
+        title={subcategory?.name_en ?? t("detailTitle")}
+        description={
+          event?.starts_at
+            ? `${event.city ?? ""} · ${formatDate(event.starts_at)}`
+            : t("detailSubtitle")
+        }
+        actions={headerActions}
+      />
 
-      <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-        <h2 className="text-lg font-semibold">Event snapshot</h2>
-        <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="City" value={event?.city ?? "—"} />
-          <Field
-            label="Venue address"
-            value={event?.venue_address ?? "—"}
-          />
-          <Field label="Starts" value={formatDate(event?.starts_at)} />
-          <Field label="Ends" value={formatDate(event?.ends_at)} />
-          <Field
-            label="Guest count"
-            value={event?.guest_count != null ? event.guest_count : "—"}
-          />
-          <Field
-            label="Budget range"
-            value={formatBudget(
-              event?.budget_range_min_halalas,
-              event?.budget_range_max_halalas,
-            )}
-          />
-          {event?.notes ? (
-            <div className="sm:col-span-2">
-              <Field label="Organizer notes" value={event.notes} />
-            </div>
-          ) : null}
-        </dl>
-      </article>
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b">
+          <MapPin className="size-4 text-brand-cobalt-500" aria-hidden />
+          <CardTitle>{t("eventCardHeading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label={t("cityLabel")} value={event?.city ?? "—"} />
+            <Field
+              label={t("venueAddressLabel")}
+              value={event?.venue_address ?? "—"}
+            />
+            <Field label={t("startsLabel")} value={formatDate(event?.starts_at)} />
+            <Field label={t("endsLabel")} value={formatDate(event?.ends_at)} />
+            <Field
+              label={t("guestCountLabel")}
+              value={event?.guest_count != null ? event.guest_count : "—"}
+            />
+            <Field
+              label={t("budgetLabel")}
+              value={formatBudget(
+                event?.budget_range_min_halalas,
+                event?.budget_range_max_halalas,
+              )}
+            />
+            {event?.notes ? (
+              <Field
+                className="sm:col-span-2"
+                label={t("organizerNotes")}
+                value={event.notes}
+              />
+            ) : null}
+          </dl>
+        </CardContent>
+      </Card>
 
-      <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-        <h2 className="text-lg font-semibold">Requirements</h2>
-        <div className="mt-4">
-          <RequirementsBlock requirements={rfq?.requirements_jsonb} />
-        </div>
-      </article>
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b">
+          <ClipboardList className="size-4 text-brand-cobalt-500" aria-hidden />
+          <CardTitle>{t("requirementsHeading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <RequirementsBlock requirements={rfq?.requirements_jsonb} t={t} />
+        </CardContent>
+      </Card>
 
       {hasActiveQuote && quote && snapshot ? (
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-          <h2 className="text-lg font-semibold">{t("yourQuoteTitle")}</h2>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            {t("yourQuoteSubtitle", {
-              version: latestRevision?.version ?? 1,
-              sentAt: formatDate(quote.sent_at ?? latestRevision?.created_at ?? null),
-            })}
-          </p>
-          <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              label={t("totalLabel")}
-              value={formatHalalas(snapshot.total_halalas)}
-            />
-          </dl>
-          <p className="mt-3 text-sm text-[var(--color-muted-foreground)]">
-            {t("validUntil", {
-              expiresAt: formatDate(quote.expires_at ?? snapshot.expires_at),
-            })}
-          </p>
-          <div className="mt-4">
-            <Link
-              href={`/supplier/rfqs/${invite.id}/quote`}
-              className="inline-flex rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
-              {t("revise")}
-            </Link>
-          </div>
-        </article>
-      ) : quote && quoteIsTerminal ? (
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-          <h2 className="text-lg font-semibold">{t("yourQuoteTitle")}</h2>
-          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-            {t("terminalStatus", { status: quote.status })}
-          </p>
-        </article>
-      ) : invite.status === "declined" ? (
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-          <h2 className="text-lg font-semibold">Respond</h2>
-          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-            {t("declinedNote")}
-          </p>
-        </article>
-      ) : invite.status !== "invited" ? (
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-          <h2 className="text-lg font-semibold">Respond</h2>
-          <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-            {t(`status.${invite.status}`)}
-          </p>
-        </article>
-      ) : (
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-          <h2 className="text-lg font-semibold">Respond</h2>
-          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Due by {formatDate(invite.response_due_at)}
-          </p>
-
-          <div className="mt-4 flex flex-col gap-6 lg:flex-row">
-            <form
-              action={declineInviteAction}
-              className="flex flex-1 flex-col gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4"
-            >
-              <input type="hidden" name="invite_id" value={invite.id} />
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium">{t("declineReasonLabel")}</span>
-                <select
-                  name="decline_reason_code"
-                  required
-                  className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-                >
-                  <option value="too_busy">{t("declineReason.too_busy")}</option>
-                  <option value="out_of_area">
-                    {t("declineReason.out_of_area")}
-                  </option>
-                  <option value="price_mismatch">
-                    {t("declineReason.price_mismatch")}
-                  </option>
-                  <option value="other">{t("declineReason.other")}</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium">Note (optional)</span>
-                <textarea
-                  name="note"
-                  rows={3}
-                  maxLength={500}
-                  className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-                />
-              </label>
-              <button
-                type="submit"
-                className="self-start rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-              >
-                {t("decline")}
-              </button>
-            </form>
-
-            <div className="flex flex-1 flex-col gap-3 rounded-md border border-dashed border-[var(--color-border)] p-4">
-              <Link
-                href={`/supplier/rfqs/${invite.id}/quote`}
-                className="self-start rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
-                {t("quoteLater")}
-              </Link>
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b">
+            <FileText className="size-4 text-brand-cobalt-500" aria-hidden />
+            <div className="flex-1">
+              <CardTitle>{t("yourQuoteTitle")}</CardTitle>
+              <CardDescription>
+                {t("yourQuoteSubtitle", {
+                  version: latestRevision?.version ?? 1,
+                  sentAt: formatDate(
+                    quote.sent_at ?? latestRevision?.created_at ?? null,
+                  ),
+                })}
+              </CardDescription>
             </div>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field
+                label={t("totalLabel")}
+                value={
+                  <span className="text-lg font-semibold text-brand-navy-900">
+                    {formatHalalas(snapshot.total_halalas)}
+                  </span>
+                }
+              />
+              <Field
+                label={t("validUntil", {
+                  expiresAt: formatDate(quote.expires_at ?? snapshot.expires_at),
+                })}
+                value=""
+              />
+            </dl>
+            <Separator className="my-4" />
+            <Button asChild>
+              <Link href={`/supplier/rfqs/${invite.id}/quote`}>
+                {t("revise")}
+                <ArrowUpRight />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : quote && quoteIsTerminal ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("yourQuoteTitle")}</CardTitle>
+            <CardDescription>
+              {t("terminalStatus", { status: quote.status })}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : invite.status === "declined" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("respondHeading")}</CardTitle>
+            <CardDescription>{t("declinedNote")}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : invite.status !== "invited" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("respondHeading")}</CardTitle>
+            <CardDescription>{t(`status.${invite.status}`)}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle>{t("respondHeading")}</CardTitle>
+            <CardDescription>
+              {t("respondDueBy", { date: formatDate(invite.response_due_at) })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <Button asChild size="lg" className="sm:w-auto">
+              <Link href={`/supplier/rfqs/${invite.id}/quote`}>
+                {t("quoteCta")}
+                <ArrowUpRight />
+              </Link>
+            </Button>
+            <DeclineInviteForm
+              inviteId={invite.id}
+              action={declineInviteAction}
+              labels={{
+                trigger: t("decline"),
+                heading: t("declineConfirmHeading"),
+                body: t("declineConfirmBody"),
+                reasonLabel: t("declineReasonLabel"),
+                noteLabel: t("noteOptional"),
+                cancel: t("cancel"),
+                confirm: t("declineConfirmCta"),
+                reasons: {
+                  too_busy: t("declineReason.too_busy"),
+                  out_of_area: t("declineReason.out_of_area"),
+                  price_mismatch: t("declineReason.price_mismatch"),
+                  other: t("declineReason.other"),
+                },
+              }}
+            />
+          </CardContent>
+        </Card>
       )}
     </section>
   );

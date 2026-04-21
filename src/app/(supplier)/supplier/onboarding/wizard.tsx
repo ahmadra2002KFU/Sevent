@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
+import { Check, FileText, Trash2, Upload } from "lucide-react";
 import {
   DOC_TYPES,
   LANGUAGES,
@@ -18,6 +19,14 @@ import {
   type OnboardingState,
 } from "./actions";
 import type { OnboardingBootstrap } from "./loader";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type WizardProps = { bootstrap: OnboardingBootstrap };
 type Step = 1 | 2 | 3;
@@ -26,7 +35,9 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
   const [step, setStep] = useState<Step>(() => resolveInitialStep(bootstrap));
   const [serverMessage, setServerMessage] = useState<string | null>(null);
-  const [supplierId, setSupplierId] = useState<string | null>(bootstrap.supplier?.id ?? null);
+  const [supplierId, setSupplierId] = useState<string | null>(
+    bootstrap.supplier?.id ?? null,
+  );
   const [isPending, startTransition] = useTransition();
 
   const handleStepResult = (result: OnboardingState, nextStep?: Step) => {
@@ -44,68 +55,67 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     <div className="flex flex-col gap-6">
       <Stepper current={step} t={t} />
 
-      <div className="rounded-lg border border-[var(--color-border)] bg-white p-6 shadow-sm">
-        {step === 1 ? (
-          <Step1Form
-            initial={bootstrap.supplier}
-            pending={isPending}
-            onSubmit={(values) => {
-              const fd = new FormData();
-              fd.append("business_name", values.business_name);
-              fd.append("legal_type", values.legal_type);
-              if (values.cr_number) fd.append("cr_number", values.cr_number);
-              if (values.national_id) fd.append("national_id", values.national_id);
-              if (values.bio) fd.append("bio", values.bio);
-              startTransition(async () => {
-                const result = await submitOnboardingStep1(undefined, fd);
-                handleStepResult(result, 2);
-              });
-            }}
-          />
-        ) : null}
+      <Card>
+        <CardContent className="p-6">
+          {step === 1 ? (
+            <Step1Form
+              initial={bootstrap.supplier}
+              pending={isPending}
+              onSubmit={(values) => {
+                const fd = new FormData();
+                fd.append("business_name", values.business_name);
+                fd.append("legal_type", values.legal_type);
+                if (values.cr_number) fd.append("cr_number", values.cr_number);
+                if (values.national_id) fd.append("national_id", values.national_id);
+                if (values.bio) fd.append("bio", values.bio);
+                startTransition(async () => {
+                  const result = await submitOnboardingStep1(undefined, fd);
+                  handleStepResult(result, 2);
+                });
+              }}
+            />
+          ) : null}
 
-        {step === 2 ? (
-          <Step2Form
-            existingDocs={bootstrap.docs}
-            pending={isPending}
-            disabled={!supplierId}
-            onBack={() => setStep(1)}
-            onSubmit={(fd) => {
-              startTransition(async () => {
-                const result = await submitOnboardingStep2(undefined, fd);
-                handleStepResult(result, 3);
-              });
-            }}
-          />
-        ) : null}
+          {step === 2 ? (
+            <Step2Form
+              existingDocs={bootstrap.docs}
+              pending={isPending}
+              disabled={!supplierId}
+              onBack={() => setStep(1)}
+              onSubmit={(fd) => {
+                startTransition(async () => {
+                  const result = await submitOnboardingStep2(undefined, fd);
+                  handleStepResult(result, 3);
+                });
+              }}
+            />
+          ) : null}
 
-        {step === 3 ? (
-          <Step3Form
-            initial={bootstrap.supplier}
-            categories={bootstrap.categories}
-            selectedSubcategoryIds={bootstrap.subcategoryIds}
-            pending={isPending}
-            disabled={!supplierId}
-            onBack={() => setStep(2)}
-            onSubmit={(fd) => {
-              startTransition(async () => {
-                const result = await submitOnboardingStep3(undefined, fd);
-                if (result.ok) setServerMessage(t("submittedForReview"));
-                else setServerMessage(result.message ?? t("genericError"));
-              });
-            }}
-          />
-        ) : null}
+          {step === 3 ? (
+            <Step3Form
+              initial={bootstrap.supplier}
+              categories={bootstrap.categories}
+              selectedSubcategoryIds={bootstrap.subcategoryIds}
+              pending={isPending}
+              disabled={!supplierId}
+              onBack={() => setStep(2)}
+              onSubmit={(fd) => {
+                startTransition(async () => {
+                  const result = await submitOnboardingStep3(undefined, fd);
+                  if (result.ok) setServerMessage(t("submittedForReview"));
+                  else setServerMessage(result.message ?? t("genericError"));
+                });
+              }}
+            />
+          ) : null}
 
-        {serverMessage ? (
-          <p
-            role="status"
-            className="mt-4 rounded-md bg-[var(--color-muted)] p-3 text-sm text-[var(--color-foreground)]"
-          >
-            {serverMessage}
-          </p>
-        ) : null}
-      </div>
+          {serverMessage ? (
+            <Alert className="mt-4">
+              <AlertDescription>{serverMessage}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -117,39 +127,59 @@ function resolveInitialStep(bootstrap: OnboardingBootstrap): Step {
   return 3;
 }
 
-function Stepper({ current, t }: { current: Step; t: ReturnType<typeof useTranslations> }) {
+function Stepper({
+  current,
+  t,
+}: {
+  current: Step;
+  t: ReturnType<typeof useTranslations>;
+}) {
   const steps: Array<{ id: Step; label: string }> = [
     { id: 1, label: t("step1Heading") },
     { id: 2, label: t("step2Heading") },
     { id: 3, label: t("step3Heading") },
   ];
   return (
-    <ol className="flex flex-wrap items-center gap-3 text-sm">
+    <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       {steps.map((s) => {
         const done = current > s.id;
         const active = current === s.id;
         return (
-          <li key={s.id} className="flex items-center gap-2">
+          <li
+            key={s.id}
+            className={cn(
+              "flex items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors",
+              active
+                ? "border-brand-cobalt-500 bg-brand-cobalt-100/50"
+                : done
+                  ? "border-semantic-success-100 bg-semantic-success-100/40"
+                  : "border-border bg-card",
+            )}
+          >
             <span
-              className={[
-                "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium",
+              className={cn(
+                "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                 active
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
+                  ? "bg-brand-cobalt-500 text-white"
                   : done
-                    ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                    : "border-[var(--color-border)] text-[var(--color-muted-foreground)]",
-              ].join(" ")}
+                    ? "bg-semantic-success-500 text-white"
+                    : "bg-neutral-200 text-neutral-600",
+              )}
             >
-              {s.id}
+              {done ? <Check className="size-4" aria-hidden /> : s.id}
             </span>
             <span
-              className={
+              className={cn(
+                "flex flex-col",
                 active
-                  ? "font-medium text-[var(--color-foreground)]"
-                  : "text-[var(--color-muted-foreground)]"
-              }
+                  ? "text-brand-navy-900 font-medium"
+                  : "text-muted-foreground",
+              )}
             >
-              {s.label}
+              <span className="text-xs uppercase tracking-wide">
+                {t("stepOfTotal", { current: s.id, total: 3 })}
+              </span>
+              <span>{s.label}</span>
             </span>
           </li>
         );
@@ -195,17 +225,14 @@ function Step1Form({
   const legalType = watch("legal_type");
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Field label={t("businessNameLabel")} error={errors.business_name?.message}>
-        <input
-          {...register("business_name")}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
+        <Input {...register("business_name")} />
       </Field>
       <Field label={t("legalTypeLabel")} error={errors.legal_type?.message}>
         <select
           {...register("legal_type")}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         >
           {LEGAL_TYPES.map((lt) => (
             <option key={lt} value={lt}>
@@ -216,35 +243,21 @@ function Step1Form({
       </Field>
       {legalType === "company" ? (
         <Field label={t("crNumberLabel")} error={errors.cr_number?.message}>
-          <input
-            {...register("cr_number")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <Input {...register("cr_number")} />
         </Field>
       ) : null}
       {legalType === "freelancer" ? (
         <Field label={t("nationalIdLabel")} error={errors.national_id?.message}>
-          <input
-            {...register("national_id")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <Input {...register("national_id")} />
         </Field>
       ) : null}
       <Field label={t("bioLabel")} error={errors.bio?.message} hint={t("bioHint")}>
-        <textarea
-          {...register("bio")}
-          rows={4}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
+        <Textarea {...register("bio")} rows={4} />
       </Field>
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-        >
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <Button type="submit" size="lg" disabled={pending}>
           {pending ? t("saving") : t("continue")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -277,10 +290,15 @@ function Step2Form({
   const [error, setError] = useState<string | null>(null);
 
   const addDraft = () => {
-    setDrafts((d) => [...d, { id: crypto.randomUUID(), doc_type: "other", notes: "" }]);
+    setDrafts((d) => [
+      ...d,
+      { id: crypto.randomUUID(), doc_type: "other", notes: "" },
+    ]);
   };
   const updateDraft = (id: string, patch: Partial<DocDraft>) => {
-    setDrafts((d) => d.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)));
+    setDrafts((d) =>
+      d.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)),
+    );
   };
   const removeDraft = (id: string) => {
     setDrafts((d) => d.filter((entry) => entry.id !== id));
@@ -305,17 +323,22 @@ function Step2Form({
   };
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
       {existingDocs.length > 0 ? (
-        <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+        <section className="rounded-lg border border-border bg-muted/40 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t("existingDocs")}
           </p>
           <ul className="mt-2 flex flex-col gap-1 text-sm">
             {existingDocs.map((d) => (
               <li key={d.id} className="flex items-center justify-between gap-2">
-                <span className="font-mono text-xs">{d.doc_type}</span>
-                <span className="text-xs text-[var(--color-muted-foreground)]">{d.status}</span>
+                <span className="inline-flex items-center gap-2">
+                  <FileText className="size-4 text-muted-foreground" aria-hidden />
+                  <span className="font-mono text-xs">{d.doc_type}</span>
+                </span>
+                <Badge variant="outline" className="text-xs">
+                  {d.status}
+                </Badge>
               </li>
             ))}
           </ul>
@@ -325,30 +348,33 @@ function Step2Form({
         {drafts.map((draft, idx) => (
           <li
             key={draft.id}
-            className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] p-3"
+            className="flex flex-col gap-3 rounded-lg border border-border p-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("docLabel")} #{idx + 1}
               </span>
               {drafts.length > 1 ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={() => removeDraft(draft.id)}
-                  className="text-xs text-[var(--color-muted-foreground)] hover:text-red-600"
                 >
+                  <Trash2 />
                   {t("remove")}
-                </button>
+                </Button>
               ) : null}
             </div>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{t("docTypeLabel")}</span>
+            <Field label={t("docTypeLabel")}>
               <select
                 value={draft.doc_type}
                 onChange={(e) =>
-                  updateDraft(draft.id, { doc_type: e.target.value as DocDraft["doc_type"] })
+                  updateDraft(draft.id, {
+                    doc_type: e.target.value as DocDraft["doc_type"],
+                  })
                 }
-                className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               >
                 {DOC_TYPES.map((dt) => (
                   <option key={dt} value={dt}>
@@ -356,53 +382,59 @@ function Step2Form({
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{t("docFileLabel")}</span>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => updateDraft(draft.id, { file: e.target.files?.[0] ?? undefined })}
-                className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{t("docNotesLabel")}</span>
-              <input
+            </Field>
+            <Field label={t("docFileLabel")}>
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
+                <Upload
+                  className="size-4 shrink-0 text-brand-cobalt-500"
+                  aria-hidden
+                />
+                <span className="flex-1 truncate text-muted-foreground">
+                  {draft.file
+                    ? `${draft.file.name} (${Math.round(
+                        draft.file.size / 1024,
+                      )} KB)`
+                    : t("chooseFileHint")}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) =>
+                    updateDraft(draft.id, {
+                      file: e.target.files?.[0] ?? undefined,
+                    })
+                  }
+                  className="sr-only"
+                />
+              </label>
+            </Field>
+            <Field label={t("docNotesLabel")}>
+              <Input
                 value={draft.notes}
                 onChange={(e) => updateDraft(draft.id, { notes: e.target.value })}
-                className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
               />
-            </label>
+            </Field>
           </li>
         ))}
       </ul>
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={addDraft}
-          className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-        >
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+        <Button type="button" variant="ghost" onClick={addDraft}>
           {t("addAnother")}
-        </button>
+        </Button>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
-          >
+          <Button type="button" variant="outline" onClick={onBack}>
             {t("back")}
-          </button>
-          <button
-            type="submit"
-            disabled={pending || disabled}
-            className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" size="lg" disabled={pending || disabled}>
             {pending ? t("uploading") : t("continue")}
-          </button>
+          </Button>
         </div>
       </div>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
     </form>
   );
 }
@@ -452,7 +484,10 @@ function Step3Form({
     },
   });
 
-  const parents = useMemo(() => categories.filter((c) => c.parent_id === null), [categories]);
+  const parents = useMemo(
+    () => categories.filter((c) => c.parent_id === null),
+    [categories],
+  );
   const childrenByParent = useMemo(() => {
     const map = new Map<string, typeof categories>();
     for (const c of categories) {
@@ -497,41 +532,34 @@ function Step3Form({
   };
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)} noValidate>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit(submit)} noValidate>
       <Field label={t("baseCityLabel")}>
-        <input
+        <Input
           {...register("base_city", { required: true, minLength: 2 })}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t("baseLatLabel")} hint={t("latLngHint")}>
-          <input
-            {...register("base_lat")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <Input {...register("base_lat")} />
         </Field>
         <Field label={t("baseLngLabel")}>
-          <input
-            {...register("base_lng")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <Input {...register("base_lng")} />
         </Field>
       </div>
       <Field label={t("serviceAreaLabel")} hint={t("serviceAreaHint")}>
-        <input
-          {...register("service_area_cities", { required: true })}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
+        <Input {...register("service_area_cities", { required: true })} />
       </Field>
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{t("languagesLabel")}</legend>
+        <legend className="text-sm font-medium text-foreground">
+          {t("languagesLabel")}
+        </legend>
         <div className="flex gap-4">
           {LANGUAGES.map((lang) => (
             <label key={lang} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 value={lang}
+                className="size-4 rounded border-border accent-brand-cobalt-500"
                 {...register("languages", { validate: (v) => v.length > 0 })}
               />
               {t(`language.${lang}`)}
@@ -541,15 +569,10 @@ function Step3Form({
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t("capacityLabel")} hint={t("capacityHint")}>
-          <input
-            type="number"
-            min={0}
-            {...register("capacity")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <Input type="number" min={0} {...register("capacity")} />
         </Field>
         <Field label={t("concurrentLimitLabel")} hint={t("concurrentLimitHint")}>
-          <input
+          <Input
             type="number"
             min={1}
             {...register("concurrent_event_limit", {
@@ -557,29 +580,41 @@ function Step3Form({
               required: true,
               min: 1,
             })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
         </Field>
       </div>
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium">{t("subcategoriesLabel")}</legend>
-        <p className="text-xs text-[var(--color-muted-foreground)]">{t("subcategoriesHint")}</p>
+        <legend className="text-sm font-medium text-foreground">
+          {t("subcategoriesLabel")}
+        </legend>
+        <p className="text-xs text-muted-foreground">
+          {t("subcategoriesHint")}
+        </p>
         <div className="grid gap-3 md:grid-cols-2">
           {parents.map((parent) => {
             const subs = childrenByParent.get(parent.id) ?? [];
             if (subs.length === 0) return null;
             return (
-              <div key={parent.id} className="rounded-md border border-[var(--color-border)] p-3">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+              <div
+                key={parent.id}
+                className="rounded-lg border border-border p-3"
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {parent.name_en}
                 </p>
-                <div className="flex flex-col gap-1 text-sm">
+                <div className="flex flex-col gap-1.5 text-sm">
                   {subs.map((sub) => (
-                    <label key={sub.id} className="flex items-center gap-2">
+                    <label
+                      key={sub.id}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
                       <input
                         type="checkbox"
                         value={sub.id}
-                        {...register("subcategory_ids", { validate: (v) => v.length > 0 })}
+                        className="size-4 rounded border-border accent-brand-cobalt-500"
+                        {...register("subcategory_ids", {
+                          validate: (v) => v.length > 0,
+                        })}
                       />
                       {sub.name_en}
                     </label>
@@ -590,21 +625,17 @@ function Step3Form({
           })}
         </div>
       </fieldset>
-      <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
-        >
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" onClick={onBack}>
           {t("back")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          size="lg"
           disabled={pending || disabled || formState.isSubmitting}
-          className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
         >
           {pending ? t("saving") : t("submit")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -622,11 +653,15 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <Label className="flex flex-col items-start gap-1.5 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
       {children}
-      {hint ? <span className="text-xs text-[var(--color-muted-foreground)]">{hint}</span> : null}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
-    </label>
+      {hint ? (
+        <span className="text-xs text-muted-foreground">{hint}</span>
+      ) : null}
+      {error ? (
+        <span className="text-xs text-semantic-danger-500">{error}</span>
+      ) : null}
+    </Label>
   );
 }

@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  ClipboardList,
+  Inbox,
+  Package,
+  PercentCircle,
+  ShieldCheck,
+} from "lucide-react";
 import type {
   QuoteStatus,
   RfqInviteStatus,
@@ -7,6 +16,19 @@ import type {
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { MetricCard } from "@/components/ui-ext/MetricCard";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const dynamic = "force-dynamic";
 
@@ -104,26 +126,33 @@ function computeWinRate(rows: Array<{ status: QuoteStatus }>): number | null {
   return accepted / rows.length;
 }
 
-function verificationBadgeClass(status: SupplierVerificationStatus): string {
-  switch (status) {
-    case "approved":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
-    case "rejected":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
-    default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
+function verificationStatusPill(
+  status: SupplierVerificationStatus,
+  t: (key: string) => string,
+) {
+  if (status === "approved") {
+    return <StatusPill status="approved" label={t(`verification.approved`)} />;
   }
+  if (status === "rejected") {
+    return <StatusPill status="rejected" label={t(`verification.rejected`)} />;
+  }
+  return <StatusPill status="pending" label={t(`verification.pending`)} />;
 }
 
-function inviteBadgeClass(status: RfqInviteStatus): string {
+function inviteStatusPill(
+  status: RfqInviteStatus,
+  t: (key: string) => string,
+) {
+  const key = `status.${status}` as const;
   switch (status) {
     case "quoted":
-      return "border-[#BDE3CB] bg-[#E2F4EA] text-[var(--color-sevent-green)]";
+      return <StatusPill status="quoted" label={t(key)} />;
     case "declined":
     case "withdrawn":
-      return "border-[#F2C2C2] bg-[#FCE9E9] text-[#9F1A1A]";
+      return <StatusPill status="declined" label={t(key)} />;
+    case "invited":
     default:
-      return "border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)]";
+      return <StatusPill status="invited" label={t(key)} />;
   }
 }
 
@@ -170,27 +199,18 @@ function WelcomeState({
 }) {
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {subtitle}
-          </p>
-        </div>
-      </header>
-
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-6">
-        <h2 className="text-lg font-semibold">{heading}</h2>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--color-muted-foreground)]">
-          {body}
-        </p>
-        <Link
-          href="/supplier/onboarding"
-          className="mt-4 inline-flex w-fit rounded-md bg-[var(--color-primary,#111)] px-3 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          {cta}
-        </Link>
-      </section>
+      <PageHeader title={title} description={subtitle} />
+      <Card>
+        <CardHeader>
+          <CardTitle>{heading}</CardTitle>
+          <CardDescription>{body}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild size="lg">
+            <Link href="/supplier/onboarding">{cta}</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </section>
   );
 }
@@ -243,6 +263,7 @@ export default async function SupplierDashboardPage() {
     docsRes,
     recentInvitesRes,
     bookingsRes,
+    activePackagesRes,
   ] = await Promise.all([
     admin
       .from("rfq_invites")
@@ -279,7 +300,13 @@ export default async function SupplierDashboardPage() {
     admin
       .from("bookings")
       .select("id", { count: "exact", head: true })
-      .eq("supplier_id", supplierSummary.id),
+      .eq("supplier_id", supplierSummary.id)
+      .in("confirmation_status", ["confirmed", "awaiting_supplier"]),
+    admin
+      .from("packages")
+      .select("id", { count: "exact", head: true })
+      .eq("supplier_id", supplierSummary.id)
+      .eq("is_active", true),
   ]);
 
   const invitesReceived = invitesCountRes.count ?? 0;
@@ -299,143 +326,168 @@ export default async function SupplierDashboardPage() {
   const recentInvites = normalizeRecentInvites(
     (recentInvitesRes.data ?? []) as unknown as RecentInviteQueryRow[],
   );
-  const hasUpcomingBookings = (bookingsRes.count ?? 0) > 0;
+  const upcomingBookings = bookingsRes.count ?? 0;
+  const activePackages = activePackagesRes.count ?? 0;
   const shouldShowOnboardingCta =
     supplierSummary.verification_status === "pending" &&
     (docs.length === 0 || docs.some((doc) => doc.status !== "approved"));
 
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {t("subtitle")}
-          </p>
-        </div>
-        <span
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${verificationBadgeClass(
-            supplierSummary.verification_status,
-          )}`}
-        >
-          {t(
-            `verification.${supplierSummary.verification_status}` as "verification.pending",
-          )}
-        </span>
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={verificationStatusPill(supplierSummary.verification_status, t)}
+      />
 
       {shouldShowOnboardingCta ? (
-        <Link
-          href="/supplier/onboarding"
-          className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-white px-5 py-4 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-        >
-          <span className="font-medium">{t("completeOnboardingCta")}</span>
-          <span className="text-[var(--color-sevent-green)]">{">"}</span>
-        </Link>
+        <Alert>
+          <ShieldCheck />
+          <AlertTitle>{t("completeOnboardingCta")}</AlertTitle>
+          <AlertDescription>
+            {t("welcome.body")}
+            <div className="mt-3">
+              <Button asChild size="sm">
+                <Link href="/supplier/onboarding">
+                  {t("welcome.cta")}
+                  <ArrowUpRight />
+                </Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-md bg-[var(--color-muted)]/50 p-4">
-            <div className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              {t("stats.invitesOpen")}
-            </div>
-            <div className="mt-2 text-3xl font-semibold">{invitesReceived}</div>
-          </div>
-          <div className="rounded-md bg-[var(--color-muted)]/50 p-4">
-            <div className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              {t("stats.responseRate")}
-            </div>
-            <div className="mt-2 text-3xl font-semibold">
-              {formatPercentage(responseRate, t("stats.emptyValue"))}
-            </div>
-          </div>
-          <div className="rounded-md bg-[var(--color-muted)]/50 p-4">
-            <div className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              {t("stats.winRate")}
-            </div>
-            <div className="mt-2 text-3xl font-semibold">
-              {formatPercentage(winRate, t("stats.emptyValue"))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label={t("stats.invitesOpen")}
+          value={invitesReceived}
+          icon={Inbox}
+          tone="info"
+        />
+        <MetricCard
+          label={t("stats.responseRate")}
+          value={formatPercentage(responseRate, t("stats.emptyValue"))}
+          icon={PercentCircle}
+          tone="default"
+        />
+        <MetricCard
+          label={t("upcomingBookings.heading")}
+          value={upcomingBookings}
+          icon={CalendarDays}
+          tone="success"
+        />
+        <MetricCard
+          label={t("stats.activePackages")}
+          value={activePackages}
+          icon={Package}
+          tone="warning"
+        />
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t("recentInvites.heading")}</h2>
-            <Link
-              href="/supplier/rfqs"
-              className="text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-            >
-              {t("recentInvites.openInbox")}
-            </Link>
-          </div>
-          {recentInvites.length === 0 ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("recentInvites.empty")}
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {recentInvites.map((invite) => (
-                <li key={invite.id}>
-                  <Link
-                    href={`/supplier/rfqs/${invite.id}`}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-sm transition hover:border-[var(--color-sevent-green)] hover:shadow-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {invite.rfq?.category?.name_en ?? "RFQ"}
-                      </span>
-                      <span className="text-xs text-[var(--color-muted-foreground)]">
-                        {invite.rfq?.event?.city ?? "-"}
-                        {" | "}
-                        {invite.rfq?.event?.starts_at
-                          ? formatDateTime(invite.rfq.event.starts_at, dateLocale)
-                          : "-"}
-                        {invite.status === "invited" ? (
-                          <>
-                            {" | "}
-                            {countdownLabel(
-                              invite.response_due_at,
-                              (hours) => rfqInboxT("countdownHours", { hours }),
-                              t("recentInvites.expired"),
-                            )}
-                          </>
-                        ) : null}
-                      </span>
-                    </div>
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${inviteBadgeClass(
-                        invite.status,
-                      )}`}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader className="border-b">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle>{t("recentInvites.heading")}</CardTitle>
+                <CardDescription>
+                  {t("stats.winRate")}:{" "}
+                  {formatPercentage(winRate, t("stats.emptyValue"))}
+                </CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/supplier/rfqs">
+                  {t("recentInvites.openInbox")}
+                  <ArrowUpRight />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {recentInvites.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title={t("recentInvites.empty")}
+              />
+            ) : (
+              <ul className="flex flex-col divide-y divide-border">
+                {recentInvites.map((invite) => (
+                  <li key={invite.id}>
+                    <Link
+                      href={`/supplier/rfqs/${invite.id}`}
+                      className="flex flex-wrap items-start justify-between gap-3 py-3 transition-colors hover:bg-muted/60"
                     >
-                      {rfqInboxT(`status.${invite.status}` as "status.invited")}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {invite.rfq?.category?.name_en ?? "RFQ"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {invite.rfq?.event?.city ?? "—"}
+                          {" · "}
+                          {invite.rfq?.event?.starts_at
+                            ? formatDateTime(
+                                invite.rfq.event.starts_at,
+                                dateLocale,
+                              )
+                            : "—"}
+                          {invite.status === "invited" ? (
+                            <>
+                              {" · "}
+                              {countdownLabel(
+                                invite.response_due_at,
+                                (hours) =>
+                                  rfqInboxT("countdownHours", { hours }),
+                                t("recentInvites.expired"),
+                              )}
+                            </>
+                          ) : null}
+                        </p>
+                      </div>
+                      {inviteStatusPill(invite.status, rfqInboxT)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {t("upcomingBookings.heading")}
-            </h2>
-          </div>
-          {!hasUpcomingBookings ? (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("upcomingBookings.empty")}
-            </p>
-          ) : (
-            <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-              {t("upcomingBookings.empty")}
-            </p>
-          )}
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("quickLinks.heading")}</CardTitle>
+            <CardDescription>{t("quickLinks.subtitle")}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/supplier/catalog">
+                <span className="inline-flex items-center gap-2">
+                  <Package className="size-4" aria-hidden />
+                  {t("quickLinks.catalog")}
+                </span>
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/supplier/calendar">
+                <span className="inline-flex items-center gap-2">
+                  <CalendarDays className="size-4" aria-hidden />
+                  {t("quickLinks.calendar")}
+                </span>
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/supplier/bookings">
+                <span className="inline-flex items-center gap-2">
+                  <ClipboardList className="size-4" aria-hidden />
+                  {t("quickLinks.bookings")}
+                </span>
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );

@@ -11,6 +11,11 @@ import {
   upsertPackageAction,
   type CatalogActionResult,
 } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type FormValues = {
   id?: string;
@@ -74,9 +79,12 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
     startTransition(async () => {
       const result = await upsertPackageAction({
         ...values,
-        max_qty: values.max_qty === null || values.max_qty === undefined || Number.isNaN(Number(values.max_qty))
-          ? null
-          : Number(values.max_qty),
+        max_qty:
+          values.max_qty === null ||
+          values.max_qty === undefined ||
+          Number.isNaN(Number(values.max_qty))
+            ? null
+            : Number(values.max_qty),
       });
       onDone(result);
     });
@@ -84,23 +92,22 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
 
   if (subcategories.length === 0) {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-        {t("noSubcategories")}
-      </div>
+      <Alert>
+        <AlertDescription>{t("noSubcategories")}</AlertDescription>
+      </Alert>
     );
   }
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4"
+      className="flex flex-col gap-4"
       onSubmit={handleSubmit(submit)}
       noValidate
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t("packageForm.nameLabel")} error={errors.name?.message}>
-          <input
+          <Input
             {...register("name", { required: true, minLength: 2, maxLength: 120 })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
         </Field>
         <Field
@@ -109,7 +116,7 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
         >
           <select
             {...register("subcategory_id", { required: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           >
             {subcategories.map((s) => (
               <option key={s.id} value={s.id}>
@@ -125,11 +132,7 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
         label={t("packageForm.descriptionLabel")}
         error={errors.description?.message}
       >
-        <textarea
-          {...register("description")}
-          rows={3}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
+        <Textarea {...register("description")} rows={3} />
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -138,16 +141,15 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
           hint={t("packageForm.basePriceHint")}
           error={errors.base_price_sar?.message}
         >
-          <input
+          <Input
             inputMode="decimal"
             {...register("base_price_sar", { required: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
         </Field>
         <Field label={t("packageForm.unitLabel")} error={errors.unit?.message}>
           <select
             {...register("unit")}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           >
             {PACKAGE_UNITS.map((u) => (
               <option key={u} value={u}>
@@ -160,8 +162,12 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
           label={t("packageForm.fromVisibleLabel")}
           hint={t("packageForm.fromVisibleHint")}
         >
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("from_price_visible")} />
+          <label className="flex items-center gap-2 pt-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-border accent-brand-cobalt-500"
+              {...register("from_price_visible")}
+            />
             <span>{t("packageForm.fromVisibleToggle")}</span>
           </label>
         </Field>
@@ -169,11 +175,10 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label={t("packageForm.minQtyLabel")} error={errors.min_qty?.message}>
-          <input
+          <Input
             type="number"
             min={1}
             {...register("min_qty", { valueAsNumber: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
         </Field>
         <Field
@@ -181,36 +186,31 @@ export function PackageForm({ subcategories, initial, onDone, onCancel }: Props)
           hint={t("packageForm.maxQtyHint")}
           error={errors.max_qty?.message}
         >
-          <input
+          <Input
             type="number"
             min={1}
             {...register("max_qty", { valueAsNumber: true })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
           />
         </Field>
         <Field label={t("activeToggle")}>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("is_active")} />
+          <label className="flex items-center gap-2 pt-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-border accent-brand-cobalt-500"
+              {...register("is_active")}
+            />
             <span>{t("packageForm.activeToggle")}</span>
           </label>
         </Field>
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-        >
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           {t("cancel")}
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" disabled={isPending}>
           {isPending ? t("saving") : t("save")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -228,15 +228,15 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <Label className="flex flex-col items-start gap-1.5 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
       {children}
       {hint ? (
-        <span className="text-xs text-[var(--color-muted-foreground)]">
-          {hint}
-        </span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
       ) : null}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
-    </label>
+      {error ? (
+        <span className="text-xs text-semantic-danger-500">{error}</span>
+      ) : null}
+    </Label>
   );
 }

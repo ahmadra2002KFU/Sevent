@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { endOfMonth, startOfMonth } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { loadCalendarData } from "./actions";
 import { MonthGrid } from "./month-grid";
 import { BlockList } from "./block-list";
@@ -38,28 +40,19 @@ export default async function SupplierCalendarPage({
 
   if (!result.ok) {
     return (
-      <section className="flex flex-col gap-4">
-        <header>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        </header>
-        <p
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {result.error}
-        </p>
+      <section className="flex flex-col gap-6">
+        <PageHeader title={t("title")} />
+        <Alert variant="destructive">
+          <AlertTitle>{t("errorHeading")}</AlertTitle>
+          <AlertDescription>{result.error}</AlertDescription>
+        </Alert>
       </section>
     );
   }
 
   return (
     <section className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-      </header>
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
       <MonthGrid
         year={year}
