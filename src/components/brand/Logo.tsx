@@ -12,6 +12,11 @@ type LogoProps = {
  * recolored via currentColor where needed. The SVG font stack references Inter
  * Black Italic; if the senior provides path-traced glyphs, replace the <text>
  * nodes without changing props or viewBox.
+ *
+ * `direction="ltr"` is pinned on the root + text nodes so the Latin glyph
+ * layout does not mirror when the enclosing HTML is `dir="rtl"` (Arabic).
+ * Without it, SVG `text-anchor` and `x` resolve against the inherited RTL
+ * direction and the wordmark renders backwards/clipped.
  */
 export function Logo({
   variant = "wordmark",
@@ -26,6 +31,7 @@ export function Logo({
         viewBox="0 0 210 160"
         role="img"
         aria-label={ariaLabel}
+        direction="ltr"
         className={cn("shrink-0", className)}
       >
         <path
@@ -40,6 +46,7 @@ export function Logo({
           fontStyle="italic"
           fontSize="140"
           textAnchor="middle"
+          direction="ltr"
           fill={tone === "white" ? "#1e7bd8" : "#ffffff"}
           letterSpacing="-4"
         >
@@ -59,6 +66,7 @@ export function Logo({
       viewBox="0 0 680 180"
       role="img"
       aria-label={ariaLabel}
+      direction="ltr"
       className={cn("shrink-0", className)}
     >
       <path
@@ -73,6 +81,7 @@ export function Logo({
         fontStyle="italic"
         fontSize="140"
         textAnchor="middle"
+        direction="ltr"
         fill={tone === "white" ? cobalt : white}
         letterSpacing="-4"
       >
@@ -85,6 +94,8 @@ export function Logo({
         fontWeight="900"
         fontStyle="italic"
         fontSize="140"
+        textAnchor="start"
+        direction="ltr"
         fill={tone === "white" ? white : navy}
         letterSpacing="-4"
       >
