@@ -4,7 +4,22 @@ import { useMemo, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { Check, FileText, Trash2, Upload } from "lucide-react";
+import {
+  Building2,
+  Camera,
+  Car,
+  Check,
+  CircleDot,
+  FileText,
+  Flower2,
+  Music,
+  Speaker,
+  Trash2,
+  Upload,
+  Users,
+  Utensils,
+  type LucideIcon,
+} from "lucide-react";
 import {
   DOC_TYPES,
   LANGUAGES,
@@ -29,6 +44,26 @@ import { cn } from "@/lib/utils";
 
 type WizardProps = { bootstrap: OnboardingBootstrap };
 type Step = 1 | 2 | 3;
+
+// ---------------------------------------------------------------------------
+// Category presentation: each parent slug maps to a lucide icon + accent class.
+// Unknown slugs fall back to CircleDot. Colors use our semantic tokens.
+// ---------------------------------------------------------------------------
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  venues: Building2,
+  catering: Utensils,
+  decor: Flower2,
+  photography: Camera,
+  av: Speaker,
+  entertainment: Music,
+  staffing: Users,
+  transportation: Car,
+};
+
+function iconForCategory(slug: string | null | undefined): LucideIcon {
+  if (!slug) return CircleDot;
+  return CATEGORY_ICON[slug] ?? CircleDot;
+}
 
 export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
@@ -468,7 +503,7 @@ function Step3Form({
 }) {
   const t = useTranslations("supplier.onboarding");
 
-  const { register, handleSubmit, formState } = useForm<Step3Values>({
+  const { register, handleSubmit, formState, watch } = useForm<Step3Values>({
     defaultValues: {
       base_city: initial?.base_city ?? "",
       base_lat: "",
@@ -482,6 +517,8 @@ function Step3Form({
       subcategory_ids: selectedSubcategoryIds,
     },
   });
+  const watchedSubs = watch("subcategory_ids") ?? [];
+  const watchedLanguages = watch("languages") ?? [];
 
   const parents = useMemo(
     () => categories.filter((c) => c.parent_id === null),
@@ -541,18 +578,42 @@ function Step3Form({
         <legend className="text-sm font-medium text-foreground">
           {t("languagesLabel")}
         </legend>
-        <div className="flex gap-4">
-          {LANGUAGES.map((lang) => (
-            <label key={lang} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                value={lang}
-                className="size-4 rounded border-border accent-brand-cobalt-500"
-                {...register("languages", { validate: (v) => v.length > 0 })}
-              />
-              {t(`language.${lang}`)}
-            </label>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {LANGUAGES.map((lang) => {
+            const active = (watchedLanguages as readonly string[]).includes(lang);
+            return (
+              <label
+                key={lang}
+                className="group relative cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  value={lang}
+                  className="peer sr-only"
+                  {...register("languages", { validate: (v) => v.length > 0 })}
+                />
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-all duration-200 ease-out",
+                    "border-neutral-200 bg-neutral-50 text-neutral-900",
+                    "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
+                    "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
+                    "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
+                    "group-active:scale-[0.98]",
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      "size-3.5 transition-all duration-200",
+                      active ? "opacity-100 scale-100" : "opacity-0 scale-75 -ms-1",
+                    )}
+                    aria-hidden
+                  />
+                  {t(`language.${lang}`)}
+                </span>
+              </label>
+            );
+          })}
         </div>
       </fieldset>
       <div className="grid grid-cols-2 gap-3">
@@ -578,35 +639,99 @@ function Step3Form({
         <p className="text-xs text-muted-foreground">
           {t("subcategoriesHint")}
         </p>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {parents.map((parent) => {
             const subs = childrenByParent.get(parent.id) ?? [];
             if (subs.length === 0) return null;
+            const ParentIcon = iconForCategory(parent.slug);
+            const selectedCount = subs.filter((s) =>
+              watchedSubs.includes(s.id),
+            ).length;
+            const hasAny = selectedCount > 0;
             return (
               <div
                 key={parent.id}
-                className="rounded-lg border border-border p-3"
+                data-has-selection={hasAny}
+                className={cn(
+                  "group/card relative flex flex-col gap-3 rounded-2xl border bg-card p-4 transition-all duration-200 ease-out",
+                  "shadow-brand-sm hover:shadow-brand-md",
+                  hasAny
+                    ? "border-brand-cobalt-500/60 ring-1 ring-brand-cobalt-500/20"
+                    : "border-border hover:border-brand-cobalt-500/40",
+                )}
               >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {parent.name_en}
-                </p>
-                <div className="flex flex-col gap-1.5 text-sm">
-                  {subs.map((sub) => (
-                    <label
-                      key={sub.id}
-                      className="flex cursor-pointer items-center gap-2"
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200",
+                        hasAny
+                          ? "bg-brand-cobalt-500 text-white"
+                          : "bg-brand-cobalt-100 text-brand-cobalt-500",
+                      )}
                     >
-                      <input
-                        type="checkbox"
-                        value={sub.id}
-                        className="size-4 rounded border-border accent-brand-cobalt-500"
-                        {...register("subcategory_ids", {
-                          validate: (v) => v.length > 0,
-                        })}
-                      />
-                      {sub.name_en}
-                    </label>
-                  ))}
+                      <ParentIcon className="size-5" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-brand-navy-900">
+                        {parent.name_en}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {subs.length}{" "}
+                        {subs.length === 1 ? "service" : "services"}
+                      </p>
+                    </div>
+                  </div>
+                  {hasAny ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-semantic-success-100 px-2 py-0.5 text-xs font-medium text-semantic-success-500 animate-in fade-in zoom-in-95 duration-200"
+                      aria-label={`${selectedCount} of ${subs.length} selected`}
+                    >
+                      <Check className="size-3" aria-hidden />
+                      {selectedCount}/{subs.length}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {subs.map((sub) => {
+                    const active = watchedSubs.includes(sub.id);
+                    return (
+                      <label
+                        key={sub.id}
+                        className="group/tile relative cursor-pointer select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          value={sub.id}
+                          className="peer sr-only"
+                          {...register("subcategory_ids", {
+                            validate: (v) => v.length > 0,
+                          })}
+                        />
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-all duration-200 ease-out",
+                            "border-neutral-200 bg-neutral-50 text-neutral-900",
+                            "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
+                            "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
+                            "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
+                            "group-active/tile:scale-[0.97]",
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "size-3 transition-all duration-200",
+                              active
+                                ? "opacity-100 scale-100"
+                                : "opacity-0 scale-75 -ms-1",
+                            )}
+                            aria-hidden
+                          />
+                          {sub.name_en}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             );
