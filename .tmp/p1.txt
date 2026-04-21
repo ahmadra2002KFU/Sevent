@@ -1,0 +1,89 @@
+You are Codex, consulted as a senior software architect for a second-opinion review of Sprint 4 design for Sevent, a Saudi event marketplace on Next.js 16 (App Router + Server Actions, --webpack flag required), TypeScript strict, self-hosted Supabase (Postgres 15 + GoTrue), solo dev, 2-week sprint. Sprints 1-3 are merged to origin/main.
+
+TASK: The full plan was approved by the user. Do a pass-through review: spot structural mistakes, race conditions, or architectural risks the user missed. Answer each Q with a concrete recommendation, not "it depends." If you agree with a choice, say so briefly and move on; spend real bytes only on what you would change.
+
+REPO STATE
+Schema file: supabase/migrations/20260420000100_marketplace_schema.sql
+- quotes: status enum, current_revision_id deferred FK, source enum, unique(rfq_id, supplier_id).
+- quote_revisions: immutable, snapshot_jsonb, content_hash text, unique(quote_id, version), insert-only RLS.
+- bookings: accepted_quote_revision_id references quote_revisions on delete restrict, confirmation_status default awaiting_supplier, awaiting_since, confirm_deadline.
+- availability_blocks: reason enum, booking_id, quote_revision_id, expires_at, released_at, GiST index, partial unique on booking_id, CHECK reason=soft_hold implies expires_at not null. No overlap trigger currently deployed.
+- suppliers.concurrent_event_limit default 1.
+
+Domain ready: money.ts, rfq.ts, packages.ts, availability.ts, supplierProfile.ts, pricing/rules.ts (5 rule_type Zod schemas + parsePricingRuleConfig), matching/autoMatch.ts + Vitest suite.
+
+Missing: pricing/engine.ts, pricing/distance.ts, quote.ts canonicalize + hash, booking.ts, supplier quote builder UI, organizer quote comparison, bookings list pages, accept_quote_tx and upsert_quote_revision_tx RPCs, concurrency test.
+
+Established patterns locked in Sprint 2 and 3 retros:
+1. User-scope auth + service-role writes for every mutation because supabase-ssr JWT-forwarding gap. requireRole returns discriminated union for organizer, supplier, admin.
+2. Next 16 "use server" files may only export async functions. Non-async types live in sibling action-state.ts.
+3. Parallel worktree lanes via Agent isolation=worktree after synchronous Lane 0 on main.
+4. 100 approved Riyadh stress suppliers seeded.
+
+v1 cuts: no Google Places (venue_location often NULL), VAT=0 columns written, no contract PDF (Sprint 5), no email templates (Sprint 4 in-app only), single table view no card toggle.
+
+Docs: Claude Docs/pricing-examples.md has 13 deterministic test cases; state-machines.md specifies the soft-hold flow.
+
+DESIGN DECISIONS TO REVIEW
+
+1. Availability overlap: BEFORE-INSERT trigger plus inline RPC pre-check (belt and suspenders). Trigger takes FOR UPDATE lock on suppliers row, checks for overlapping non-released non-expired blocks via GiST, raises P0001 availability_conflict. v1 assumes concurrent_event_limit=1.
+
+Q1: correct call? Is there a hole? Does the FOR UPDATE on suppliers leak a serialisability gap when trigger fires on updates vs inserts, or when two different suppliers are touched simultaneously?
+
+2. accept_quote_tx(p_quote_id, p_organizer_id, p_soft_hold_minutes default 2880), SECURITY DEFINER, GRANT to service_role only. Lock order across every RPC: quotes, then rfqs, then events, then suppliers. Body: lock quote and rfq, lock event and check organizer, insert booking awaiting_supplier, insert soft_hold availability_block (trigger enforces), update statuses, reject siblings.
+
+Q2a: lock order deadlock-free across two organizers accepting different suppliers quotes for the same event? Quotes differ, events same, suppliers differ. They should serialize on the events row lock. Is that right or am I missing a cycle?
+
+Q2b: SECURITY DEFINER + REVOKE ALL FROM public + GRANT EXECUTE TO service_role sufficient, or also set role inside function body for defense-in-depth?
+
+Q2c: LOCK_TIMEOUT not set anywhere. If two 8-way concurrent Vitest tests hit the same event, will any session wait indefinitely? Should the RPC set local lock_timeout = 5s at the top?
+
+3. upsert_quote_revision_tx SECURITY DEFINER service_role only. SELECT quote FOR UPDATE; insert quote if missing; SELECT max(version); insert revision with version=max+1, retry once on unique-violation 23505; update current_revision_id, status, sent_at.
+
+Q3: does FOR UPDATE on quotes actually serialize the version race, or do I still need the retry? If the lock serializes fully, the retry is dead code. Is dropping the retry preferable for simplicity?
+
+4. Snapshot canonicalization. canonicalize sorts keys lexicographically (UTF-16), strips undefined, preserves null and array order, NFC-normalizes strings. Money is integer halalas. Multipliers stringified (e.g. "1.15"). engine_version="1.0.0". inputs_digest over a stable input set. sha256 via node:crypto.
+
+Q4a: RFC-8785 (JCS) has subtle rules about number serialization. If I restrict persisted numbers to integers only, am I safe from V8 JSON.stringify drift across Node versions? Any pitfall?
+
+Q4b: security issue with exposing content_hash in snapshot_jsonb to organizer RLS?
+
+5. Pricing engine pure composePrice(ctx) with distance_km injected. Order: subtotal, duration multiplier, date surcharge (one winner), pct discounts, fixed addons, min-fee floor, distance_fee line, VAT, total. Distance via Haversine using PostGIS ST_Distance divided by 1000; 24h cache keyed by sha256 of supplier_id plus lat.toFixed(4) plus lng.toFixed(4).
+
+Q5: engine calls ST_Distance at DB or receives distance as input and stays pure? Currently engine is pure. Is that the right seam?
+
+6. Supplier quote builder single page /supplier/rfqs/[id]/quote with free-form override toggle and server-side re-sum rejecting total_mismatch greater than 1 halala.
+
+7. Organizer quote comparison nested routes; Accept calls accept_quote_tx, revalidates paths, redirects to /organizer/bookings/(new_id).
+
+8. Bookings lists read-only in Sprint 4.
+
+9. Concurrency test: Vitest against local Supabase, 8 parallel RPC calls, assert exactly one success.
+
+Q9: Vitest spawning 8 concurrent promises against the same DB hit connection-pool saturation in local Docker (pooler default 20)? Configure a bigger pool, or use Promise.allSettled with retry tolerance?
+
+10. Lanes: Lane 0 sync prep on main, then 4 parallel (pricing/distance/tests, supplier UI, organizer UI, booking lists), then Lane 5 concurrency test last.
+
+11. Notifications (Sprint 4): quote.sent, quote.revised, quote.accepted, quote.rejected, booking.created, booking.awaiting_supplier. No emails until Sprint 5.
+
+12. Risks already listed: deadlock under concurrent accepts, content_hash instability, free-form total-mismatch, local vs prod role diff, soft-hold leaking capacity, null venue + active distance_fee, version race, snapshot bloat 1024 char cap.
+
+DELIVERABLE
+1. Answer each Q above with a concrete recommendation (direct, not "it depends").
+2. Top 3 risks NOT listed that you would flag.
+3. Anything unnecessarily complex. Where would you cut scope?
+4. Single biggest thing you would change.
+
+GROUNDING RULES
+- Anchor claims to Postgres semantics, Next.js 16 behavior, or stated repo state. If it is a hypothesis, say so.
+- Do not restate the plan. Only call out what is wrong, risky, or should change.
+- If a design choice is fine, say "agree" in one line and move on.
+
+OUTPUT CONTRACT
+- Under about 1500 words total.
+- Structure: Q1 through Q9 inline, then "Top 3 unlisted risks", then "Scope cuts", then "Biggest change".
+- No preamble, no closing pleasantries.
+
+FOLLOW-THROUGH
+- Do not ask clarifying questions. Commit to a recommendation per Q.
+- If information is truly insufficient, state the single assumption you are making in one line, then answer.

@@ -1,25 +1,96 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-sevent-green: #006c35;
+  /* ---------------------------------------------------------------- */
+  /* Brand — navy anchor, cobalt action, gold trust accent             */
+  /* ---------------------------------------------------------------- */
+  --color-brand-navy-900: #0f2e5c;
+  --color-brand-navy-700: #1c3f73;
+  --color-brand-navy-500: #355b95;
+
+  --color-brand-cobalt-500: #1e7bd8;
+  --color-brand-cobalt-400: #3d91e5;
+  --color-brand-cobalt-100: #dcebfb;
+
+  --color-accent-gold-500: #c8993a;
+  --color-accent-gold-100: #f6ebce;
+
+  /* ---------------------------------------------------------------- */
+  /* Neutrals — warm off-white system                                  */
+  /* ---------------------------------------------------------------- */
+  --color-neutral-50: #fafaf7;
+  --color-neutral-100: #f4f4ef;
+  --color-neutral-200: #e7e6df;
+  --color-neutral-400: #a9a9a1;
+  --color-neutral-600: #6b6b64;
+  --color-neutral-900: #1a1a18;
+
+  /* ---------------------------------------------------------------- */
+  /* Semantic                                                          */
+  /* ---------------------------------------------------------------- */
+  --color-semantic-success-500: #1e9a5b;
+  --color-semantic-success-100: #d8f1e3;
+  --color-semantic-warning-500: #d89423;
+  --color-semantic-warning-100: #faebd3;
+  --color-semantic-danger-500: #c4353c;
+  --color-semantic-danger-100: #f6d7d9;
+  --color-semantic-info-500: #1e7bd8;
+  --color-semantic-info-100: #dcebfb;
+
+  /* ---------------------------------------------------------------- */
+  /* shadcn/ui semantic aliases — also used across existing pages      */
+  /* ---------------------------------------------------------------- */
+  --color-background: #fafaf7;
+  --color-foreground: #1a1a18;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1a18;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1a1a18;
+  --color-primary: #1e7bd8;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f4f4ef;
+  --color-secondary-foreground: #0f2e5c;
+  --color-muted: #f4f4ef;
+  --color-muted-foreground: #6b6b64;
+  --color-accent: #c8993a;
+  --color-accent-foreground: #0f2e5c;
+  --color-destructive: #c4353c;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e7e6df;
+  --color-input: #e7e6df;
+  --color-ring: #1e7bd8;
+
+  /* ---------------------------------------------------------------- */
+  /* Legacy sevent-* shims — temporary bridge while pages migrate.     */
+  /* Remove after Lane 2 (organizer) merges and `rg sevent-` is empty. */
+  /* ---------------------------------------------------------------- */
+  --color-sevent-green: #1e7bd8;
   --color-sevent-green-soft: #1e9a5b;
   --color-sevent-gold: #c8993a;
-  --color-sevent-dark: #0b1e12;
-  --color-sevent-light: #f0faf4;
+  --color-sevent-dark: #0f2e5c;
+  --color-sevent-light: #fafaf7;
 
-  --color-background: #f0faf4;
-  --color-foreground: #0b1e12;
-  --color-muted: #e6f1ea;
-  --color-muted-foreground: #33584a;
-  --color-border: #d4e7db;
-  --color-primary: #006c35;
-  --color-primary-foreground: #ffffff;
-  --color-accent: #c8993a;
-  --color-accent-foreground: #0b1e12;
-  --color-ring: #006c35;
+  /* ---------------------------------------------------------------- */
+  /* Typography — fonts resolved per locale                            */
+  /* ---------------------------------------------------------------- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Inter var", "Inter", sans-serif;
+  /* ---------------------------------------------------------------- */
+  /* Radius                                                            */
+  /* ---------------------------------------------------------------- */
+  --radius: 0.5rem;
+}
+
+/* Arabic locale swaps the sans stack to Tajawal */
+:root[dir="rtl"] {
+  --font-sans: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -33,4 +104,155 @@ body {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Elevation system — navy-tinted shadows for product feel */
+.shadow-brand-sm {
+  box-shadow: 0 1px 2px rgba(15, 46, 92, 0.04);
+}
+.shadow-brand {
+  box-shadow:
+    0 1px 3px rgba(15, 46, 92, 0.08),
+    0 1px 2px rgba(15, 46, 92, 0.04);
+}
+.shadow-brand-md {
+  box-shadow:
+    0 4px 6px rgba(15, 46, 92, 0.08),
+    0 2px 4px rgba(15, 46, 92, 0.04);
+}
+.shadow-brand-lg {
+  box-shadow:
+    0 10px 15px rgba(15, 46, 92, 0.08),
+    0 4px 6px rgba(15, 46, 92, 0.04);
+}
+
+/* Focus ring — cobalt, consistent across shadcn + custom */
+:where(button, a, input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

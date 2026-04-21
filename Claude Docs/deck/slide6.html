@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 26pt 50pt 6pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 11pt; letter-spacing: 3pt; margin: 0 0 6pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 26pt; margin: 0; font-family: Georgia, serif; }
+  .subtitle { color: #2E4053; font-size: 12pt; margin: 4pt 0 0 0; }
+
+  .grid {
+    display: flex; flex-wrap: wrap; padding: 16pt 50pt 20pt 50pt; gap: 12pt; flex: 1;
+  }
+  .ctl {
+    width: calc((100% - 24pt) / 3); background: #FFFFFF; padding: 14pt 14pt 14pt 18pt;
+    border-radius: 5pt; box-shadow: 1px 2px 3px rgba(0,0,0,0.06);
+    border-left: 4pt solid #BF9A4A;
+    box-sizing: border-box;
+  }
+  .ctl-title { color: #1C2833; font-size: 12pt; margin: 0 0 5pt 0; font-weight: bold; }
+  .ctl-body { color: #2E4053; font-size: 9.5pt; margin: 0; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">BUILT-IN CONTROLS</p>
+    <h1>What the platform guarantees</h1>
+    <p class="subtitle">Rules enforced by the system itself — not by procedure, not by user trust.</p>
+  </div>
+  <div class="grid">
+    <div class="ctl">
+      <p class="ctl-title">Role separation</p>
+      <p class="ctl-body">Organizer cannot reach supplier or admin areas, and vice versa. Enforced on every screen.</p>
+    </div>
+    <div class="ctl">
+      <p class="ctl-title">No self-approval</p>
+      <p class="ctl-body">Only an admin can change a supplier's verified status. Suppliers cannot flip their own state.</p>
+    </div>
+    <div class="ctl">
+      <p class="ctl-title">No double-booking</p>
+      <p class="ctl-body">A slot cannot be booked twice. Acceptance transaction locks the slot or fails cleanly.</p>
+    </div>
+    <div class="ctl">
+      <p class="ctl-title">Immutable quotes</p>
+      <p class="ctl-body">Once a quote is sent it cannot be silently edited. Every version is snapshotted with a hash.</p>
+    </div>
+    <div class="ctl">
+      <p class="ctl-title">Contract equals quote</p>
+      <p class="ctl-body">Contract PDFs are generated from the accepted quote — they cannot disagree.</p>
+    </div>
+    <div class="ctl">
+      <p class="ctl-title">Cross-supplier privacy</p>
+      <p class="ctl-body">Supplier A cannot read Supplier B's RFQs, documents, or calendar. Verified by test.</p>
+    </div>
+  </div>
+</body>
+</html>

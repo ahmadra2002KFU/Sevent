@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 28pt 50pt 6pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 11pt; letter-spacing: 3pt; margin: 0 0 6pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 26pt; margin: 0; font-family: Georgia, serif; }
+  .cols { display: flex; padding: 18pt 50pt 25pt 50pt; gap: 15pt; flex: 1; }
+  .col {
+    flex: 1; background: #FFFFFF; padding: 18pt 18pt 20pt 18pt; border-radius: 6pt;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column;
+  }
+  .col-header {
+    border-bottom: 2pt solid #BF9A4A; padding-bottom: 8pt; margin-bottom: 12pt;
+  }
+  .col-kicker { color: #BF9A4A; font-size: 9pt; letter-spacing: 2pt; margin: 0 0 2pt 0; font-weight: bold; }
+  .col-title { color: #1C2833; font-size: 14pt; margin: 0; font-weight: bold; }
+  ul { margin: 0; padding-left: 16pt; color: #2E4053; }
+  li { font-size: 10pt; line-height: 1.5; margin-bottom: 6pt; }
+  li b { color: #1C2833; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">WHAT'S BEEN DELIVERED</p>
+    <h1>Three sprints, three business capabilities</h1>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <div class="col-header">
+        <p class="col-kicker">SPRINT 1 · WEEKS 1–2</p>
+        <p class="col-title">Foundations</p>
+      </div>
+      <ul>
+        <li>All four user roles can sign up and sign in.</li>
+        <li>Full system data model designed, built, and protected.</li>
+        <li>Nightly backups + documented restore procedure.</li>
+        <li>Booking, review, and dispute flows agreed on paper.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-header">
+        <p class="col-kicker">SPRINT 2 · WEEKS 3–4</p>
+        <p class="col-title">Supplier side</p>
+      </div>
+      <ul>
+        <li><b>3-step onboarding wizard</b> for suppliers.</li>
+        <li>Admin <b>verification queue</b> with approval emails.</li>
+        <li>Supplier <b>catalog</b> + public profile page live.</li>
+        <li>Supplier <b>calendar</b> with manual unavailability blocks.</li>
+        <li>25 pilot suppliers seeded across Riyadh + Jeddah.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-header">
+        <p class="col-kicker">SPRINT 3 · WEEKS 5–6</p>
+        <p class="col-title">Organizer &amp; matching</p>
+      </div>
+      <ul>
+        <li>Public <b>browse</b>: category index + city filter.</li>
+        <li>Organizer dashboard + event creator.</li>
+        <li>4-step <b>RFQ wizard</b> with response deadline.</li>
+        <li><b>Auto-match engine</b>: top 5 suppliers with reasons.</li>
+        <li>Supplier <b>RFQ inbox</b> with live countdown.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

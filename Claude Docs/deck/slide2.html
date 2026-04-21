@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 30pt 50pt 10pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 11pt; letter-spacing: 3pt; margin: 0 0 6pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 28pt; margin: 0; font-family: Georgia, serif; }
+  .lead { padding: 10pt 50pt 15pt 50pt; }
+  .lead p { color: #2E4053; font-size: 13pt; line-height: 1.5; margin: 0; }
+  .actors { display: flex; padding: 10pt 50pt 30pt 50pt; gap: 15pt; }
+  .card {
+    flex: 1; background: #FFFFFF; padding: 18pt 16pt; border-radius: 6pt;
+    border-top: 4pt solid #BF9A4A; box-shadow: 1px 2px 4px rgba(0,0,0,0.06);
+  }
+  .card.alt { border-top: 4pt solid #1C2833; }
+  .card-title { color: #1C2833; font-size: 13pt; margin: 0 0 8pt 0; font-weight: bold; }
+  .card-body { color: #2E4053; font-size: 10pt; margin: 0; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">WHAT SEVENT IS</p>
+    <h1>One request. One platform. Full audit trail.</h1>
+  </div>
+  <div class="lead">
+    <p>Sevent replaces the old "tender" pattern in the Saudi event industry. An organizer sends <b>one</b> request; the platform routes it to the best 3–5 verified suppliers and tracks every step from request through contract. Payments stay off-platform in the pilot — the system records state and generates a legally-consistent contract.</p>
+  </div>
+  <div class="actors">
+    <div class="card">
+      <p class="card-title">Organizer</p>
+      <p class="card-body">Posts events, sends RFQs, compares quotes, accepts one, reviews the supplier afterwards.</p>
+    </div>
+    <div class="card">
+      <p class="card-title">Supplier</p>
+      <p class="card-body">Gets verified, publishes catalog + pricing, receives RFQs, sends quotes, confirms bookings.</p>
+    </div>
+    <div class="card alt">
+      <p class="card-title">Admin</p>
+      <p class="card-body">Verifies suppliers, resolves disputes, has read-only oversight of the entire system.</p>
+    </div>
+    <div class="card alt">
+      <p class="card-title">Public visitor</p>
+      <p class="card-body">Browses approved suppliers by category and city — no login required.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 22pt 50pt 4pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 10pt; letter-spacing: 3pt; margin: 0 0 4pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 24pt; margin: 0; font-family: Georgia, serif; }
+  .subtitle { color: #2E4053; font-size: 11pt; margin: 3pt 0 0 0; }
+  .content { display: flex; padding: 12pt 50pt 16pt 50pt; gap: 16pt; flex: 1; }
+  .table-wrap { flex: 2; background: #FFFFFF; border-radius: 6pt; padding: 10pt 14pt; box-shadow: 1px 2px 4px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 8pt; color: #BF9A4A; letter-spacing: 2pt;
+    padding: 4pt 4pt 6pt 4pt; border-bottom: 1pt solid #AAB7B8; font-weight: bold;
+  }
+  td { font-size: 9pt; color: #2E4053; padding: 4pt 4pt; border-bottom: 1pt solid #EDEDED; vertical-align: top; line-height: 1.3; }
+  td.cat { color: #1C2833; font-weight: bold; width: 34%; }
+  .side {
+    flex: 1; background: #1C2833; border-radius: 6pt; padding: 14pt 14pt;
+    color: #F4F6F6; display: flex; flex-direction: column; justify-content: flex-start;
+  }
+  .side-kicker { color: #BF9A4A; font-size: 8pt; letter-spacing: 2pt; margin: 0 0 6pt 0; font-weight: bold; }
+  .side h2 { color: #FFFFFF; font-size: 13pt; margin: 0 0 8pt 0; font-family: Georgia, serif; }
+  .side p { color: #AAB7B8; font-size: 9pt; line-height: 1.35; margin: 0 0 8pt 0; }
+  .side p b { color: #FFFFFF; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">TECHNOLOGY CHOICES</p>
+    <h1>Stack at a glance</h1>
+    <p class="subtitle">The one slide with technical content — everything else is system behavior.</p>
+  </div>
+  <div class="content">
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>AREA</th>
+          <th>CHOICE</th>
+        </tr>
+        <tr>
+          <td class="cat">Hosting</td>
+          <td>Self-hosted on our Ubuntu server (full data control, lower ongoing cost)</td>
+        </tr>
+        <tr>
+          <td class="cat">Application</td>
+          <td>Next.js web app, TypeScript — modern, server-first, single codebase</td>
+        </tr>
+        <tr>
+          <td class="cat">Database</td>
+          <td>PostgreSQL via Supabase (auth, storage, row-level security built in)</td>
+        </tr>
+        <tr>
+          <td class="cat">Email</td>
+          <td>Resend + branded templates (with safe local fallback)</td>
+        </tr>
+        <tr>
+          <td class="cat">Contracts</td>
+          <td>PDF generated server-side from the accepted quote</td>
+        </tr>
+        <tr>
+          <td class="cat">Language support</td>
+          <td>English-first, Arabic wiring in place (full translation in v1.1)</td>
+        </tr>
+        <tr>
+          <td class="cat">Deploy &amp; backups</td>
+          <td>Docker + nightly backups to cloud storage + documented restore drill</td>
+        </tr>
+      </table>
+    </div>
+    <div class="side">
+      <p class="side-kicker">PRINCIPLES</p>
+      <h2>Boring tech, strong invariants</h2>
+      <p>Standard tools the market understands. No exotic dependencies.</p>
+      <p><b>Money</b> is stored as whole halalas — no decimals, no rounding drift.</p>
+      <p><b>Every state change</b> logs who did it and when.</p>
+      <p>If we ever need managed hosting, the same stack moves in a day.</p>
+    </div>
+  </div>
+</body>
+</html>

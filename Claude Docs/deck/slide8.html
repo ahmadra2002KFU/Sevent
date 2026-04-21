@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 22pt 50pt 4pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 10pt; letter-spacing: 3pt; margin: 0 0 4pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 24pt; margin: 0; font-family: Georgia, serif; }
+
+  .split { display: flex; padding: 12pt 50pt 10pt 50pt; gap: 18pt; flex: 1; }
+
+  .col { flex: 1; display: flex; flex-direction: column; }
+  .col-heading {
+    border-bottom: 2pt solid #BF9A4A; padding: 0 0 5pt 0; margin: 0 0 8pt 0;
+  }
+  .col-heading p { color: #1C2833; font-size: 12pt; margin: 0; font-family: Georgia, serif; font-weight: bold; }
+
+  .sprint-row {
+    display: flex; background: #FFFFFF; border-radius: 4pt; padding: 8pt 10pt;
+    margin-bottom: 6pt; align-items: flex-start; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+  }
+  .sprint-row .idx {
+    color: #BF9A4A; font-size: 16pt; font-weight: bold; font-family: Georgia, serif;
+    margin-right: 10pt; line-height: 1; min-width: 22pt;
+  }
+  .sprint-row .body { flex: 1; }
+  .sprint-row .title { color: #1C2833; font-size: 9.5pt; margin: 0 0 2pt 0; font-weight: bold; }
+  .sprint-row .desc { color: #2E4053; font-size: 8.5pt; margin: 0; line-height: 1.3; }
+
+  .risk {
+    background: #FFFFFF; border-left: 3pt solid #2E4053; padding: 6pt 10pt;
+    margin-bottom: 5pt; border-radius: 0 4pt 4pt 0;
+  }
+  .risk p { margin: 0; color: #2E4053; font-size: 8.5pt; line-height: 1.3; }
+  .risk b { color: #1C2833; }
+
+  .footer {
+    padding: 8pt 50pt 14pt 50pt; background: #1C2833;
+    display: flex; align-items: center;
+  }
+  .footer p {
+    margin: 0; color: #F4F6F6; font-size: 10pt; font-family: Georgia, serif; font-style: italic; line-height: 1.4;
+  }
+  .footer p b { color: #BF9A4A; font-style: normal; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">WHAT'S NEXT</p>
+    <h1>The path to pilot</h1>
+  </div>
+  <div class="split">
+    <div class="col">
+      <div class="col-heading"><p>Roadmap — next six weeks</p></div>
+      <div class="sprint-row">
+        <p class="idx">4</p>
+        <div class="body">
+          <p class="title">Pricing, quotes, acceptance</p>
+          <p class="desc">Suppliers send real priced quotes; organizer accepts; slot is locked.</p>
+        </div>
+      </div>
+      <div class="sprint-row">
+        <p class="idx">5</p>
+        <div class="body">
+          <p class="title">Confirm · contract · reviews · disputes</p>
+          <p class="desc">Full loop closed: confirmation → contract PDF → reviews → disputes.</p>
+        </div>
+      </div>
+      <div class="sprint-row">
+        <p class="idx">6</p>
+        <div class="body">
+          <p class="title">Hardening &amp; pilot readiness</p>
+          <p class="desc">Production deploy, backup drill, 2–3 friendly suppliers onboarded for real.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="col-heading"><p>Risks we're watching</p></div>
+      <div class="risk">
+        <p><b>Pricing edge cases.</b> If the math surfaces many exceptions, we pause UI and refine the model. Budget built in.</p>
+      </div>
+      <div class="risk">
+        <p><b>Supplier dry-run late in the plan</b> may reveal usability blockers. Three Sprint 6 days are reserved for polish only.</p>
+      </div>
+      <div class="risk">
+        <p><b>Self-hosted operations load.</b> Managed hosting is the fallback if ops starts eating time. Not needed so far.</p>
+      </div>
+      <div class="risk">
+        <p><b>Local environment boot</b> is the only thing blocking an in-browser end-to-end demo today.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <p>Half the pilot is built. Supplier side is end-to-end. Next six weeks add <b>pricing · acceptance · contracts · reviews · deploy</b>.</p>
+  </div>
+</body>
+</html>

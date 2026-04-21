@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 30pt 50pt 10pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 11pt; letter-spacing: 3pt; margin: 0 0 6pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 28pt; margin: 0; font-family: Georgia, serif; }
+  .stats { display: flex; padding: 20pt 50pt 15pt 50pt; gap: 30pt; }
+  .stat { flex: 1; }
+  .stat-num { color: #BF9A4A; font-size: 42pt; font-weight: bold; margin: 0; line-height: 1; font-family: Georgia, serif; }
+  .stat-label { color: #2E4053; font-size: 11pt; margin: 4pt 0 0 0; line-height: 1.3; }
+  .timeline {
+    display: flex; padding: 20pt 50pt 10pt 50pt; gap: 8pt;
+  }
+  .sprint {
+    flex: 1; padding: 14pt 10pt; border-radius: 4pt;
+    background: #FFFFFF; border-left: 4pt solid #AAB7B8;
+  }
+  .sprint.done { border-left: 4pt solid #BF9A4A; background: #1C2833; }
+  .sprint.next { border-left: 4pt solid #2E4053; background: #FFFFFF; }
+  .sprint-num { font-size: 10pt; letter-spacing: 2pt; margin: 0 0 4pt 0; color: #AAB7B8; font-weight: bold; }
+  .sprint.done .sprint-num { color: #BF9A4A; }
+  .sprint-title { font-size: 10pt; margin: 0 0 6pt 0; color: #2E4053; font-weight: bold; line-height: 1.2; }
+  .sprint.done .sprint-title { color: #FFFFFF; }
+  .sprint-status { font-size: 9pt; margin: 0; color: #2E4053; }
+  .sprint.done .sprint-status { color: #AAB7B8; }
+  .caption { padding: 8pt 50pt 20pt 50pt; color: #2E4053; font-size: 10pt; margin: 0; }
+  .caption span { color: #BF9A4A; font-weight: bold; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">PROGRESS AT A GLANCE</p>
+    <h1>Halfway through a 12-week plan</h1>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <p class="stat-num">3 / 6</p>
+      <p class="stat-label">Sprints complete</p>
+    </div>
+    <div class="stat">
+      <p class="stat-num">~50%</p>
+      <p class="stat-label">Of the pilot system delivered</p>
+    </div>
+    <div class="stat">
+      <p class="stat-num">25</p>
+      <p class="stat-label">Pilot suppliers seeded (Riyadh + Jeddah)</p>
+    </div>
+    <div class="stat">
+      <p class="stat-num">16</p>
+      <p class="stat-label">Automated checks passing</p>
+    </div>
+  </div>
+  <div class="timeline">
+    <div class="sprint done">
+      <p class="sprint-num">SPRINT 1</p>
+      <p class="sprint-title">Foundations &amp; schema</p>
+      <p class="sprint-status">Complete</p>
+    </div>
+    <div class="sprint done">
+      <p class="sprint-num">SPRINT 2</p>
+      <p class="sprint-title">Supplier onboarding</p>
+      <p class="sprint-status">Complete</p>
+    </div>
+    <div class="sprint done">
+      <p class="sprint-num">SPRINT 3</p>
+      <p class="sprint-title">RFQ &amp; auto-match</p>
+      <p class="sprint-status">Complete</p>
+    </div>
+    <div class="sprint next">
+      <p class="sprint-num">SPRINT 4</p>
+      <p class="sprint-title">Pricing &amp; acceptance</p>
+      <p class="sprint-status">Up next</p>
+    </div>
+    <div class="sprint">
+      <p class="sprint-num">SPRINT 5</p>
+      <p class="sprint-title">Contract &amp; reviews</p>
+      <p class="sprint-status">Planned</p>
+    </div>
+    <div class="sprint">
+      <p class="sprint-num">SPRINT 6</p>
+      <p class="sprint-title">Harden &amp; ship</p>
+      <p class="sprint-status">Planned</p>
+    </div>
+  </div>
+  <p class="caption">On track for <span>pilot-ready in mid-July 2026</span> with 20–30 friendly suppliers.</p>
+</body>
+</html>

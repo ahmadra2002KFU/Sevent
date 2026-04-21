@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html { background: #F4F6F6; }
+  body {
+    width: 720pt; height: 405pt; margin: 0; padding: 0;
+    background: #F4F6F6; font-family: Arial, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .header { padding: 26pt 50pt 6pt 50pt; }
+  .kicker { color: #BF9A4A; font-size: 11pt; letter-spacing: 3pt; margin: 0 0 6pt 0; font-weight: bold; }
+  h1 { color: #1C2833; font-size: 26pt; margin: 0; font-family: Georgia, serif; }
+  .subtitle { color: #2E4053; font-size: 12pt; margin: 4pt 0 0 0; }
+
+  .flow {
+    display: flex; padding: 18pt 35pt 10pt 35pt; gap: 4pt;
+    align-items: stretch; flex: 1;
+  }
+  .step {
+    flex: 1; background: #FFFFFF; border-radius: 4pt; padding: 12pt 8pt;
+    display: flex; flex-direction: column; justify-content: flex-start;
+    box-shadow: 1px 2px 3px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .step.done { border-top: 4pt solid #BF9A4A; }
+  .step.next { border-top: 4pt solid #2E4053; }
+  .step-num { color: #BF9A4A; font-size: 18pt; font-weight: bold; margin: 0 0 4pt 0; font-family: Georgia, serif; line-height: 1; }
+  .step.next .step-num { color: #2E4053; }
+  .step-title { color: #1C2833; font-size: 10pt; margin: 0 0 4pt 0; font-weight: bold; line-height: 1.2; }
+  .step-body { color: #2E4053; font-size: 8pt; margin: 0; line-height: 1.35; }
+  .step-tag { font-size: 7pt; letter-spacing: 1pt; margin: 4pt 0 0 0; font-weight: bold; }
+  .step.done .step-tag { color: #BF9A4A; }
+  .step.next .step-tag { color: #2E4053; }
+
+  .legend {
+    display: flex; gap: 20pt; padding: 10pt 50pt 20pt 50pt;
+    color: #2E4053; font-size: 10pt;
+  }
+  .dot { display: inline-block; width: 10pt; height: 10pt; border-radius: 50%; margin-right: 6pt; vertical-align: middle; }
+  .dot.done { background: #BF9A4A; }
+  .dot.next { background: #2E4053; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <p class="kicker">END-TO-END FLOW</p>
+    <h1>Request to signed contract</h1>
+    <p class="subtitle">Each step is a controlled transition — the platform enforces who can act and when.</p>
+  </div>
+  <div class="flow">
+    <div class="step done">
+      <p class="step-num">1</p>
+      <p class="step-title">Event posted</p>
+      <p class="step-body">Organizer creates the event with dates, city, guest count, budget.</p>
+      <p class="step-tag">LIVE</p>
+    </div>
+    <div class="step done">
+      <p class="step-num">2</p>
+      <p class="step-title">RFQ sent</p>
+      <p class="step-body">Auto-match picks top 5; organizer confirms shortlist and deadline.</p>
+      <p class="step-tag">LIVE</p>
+    </div>
+    <div class="step next">
+      <p class="step-num">3</p>
+      <p class="step-title">Quotes received</p>
+      <p class="step-body">Each supplier prices a quote; the system snapshots it immutably.</p>
+      <p class="step-tag">SPRINT 4</p>
+    </div>
+    <div class="step next">
+      <p class="step-num">4</p>
+      <p class="step-title">Acceptance</p>
+      <p class="step-body">Organizer accepts one. Slot is locked — no double booking possible.</p>
+      <p class="step-tag">SPRINT 4</p>
+    </div>
+    <div class="step next">
+      <p class="step-num">5</p>
+      <p class="step-title">Confirmation</p>
+      <p class="step-body">Supplier confirms within 48h or the slot auto-releases.</p>
+      <p class="step-tag">SPRINT 5</p>
+    </div>
+    <div class="step next">
+      <p class="step-num">6</p>
+      <p class="step-title">Contract</p>
+      <p class="step-body">PDF generated from the accepted quote. Emailed to both parties.</p>
+      <p class="step-tag">SPRINT 5</p>
+    </div>
+    <div class="step next">
+      <p class="step-num">7</p>
+      <p class="step-title">Reviews</p>
+      <p class="step-body">14-day window after the event. Disputes pause publication.</p>
+      <p class="step-tag">SPRINT 5</p>
+    </div>
+  </div>
+  <div class="legend">
+    <p><span class="dot done"></span> Live today</p>
+    <p><span class="dot next"></span> Next 4 weeks</p>
+  </div>
+</body>
+</html>

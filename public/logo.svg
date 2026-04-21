@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 180" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Sevent</title>
+  <path d="M24 8 L204 8 L180 148 L0 148 Z" fill="#1E7BD8"/>
+  <text x="102" y="120" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-style="italic" font-size="140" text-anchor="middle" fill="#FFFFFF" letter-spacing="-4">S</text>
+  <text x="218" y="120" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-style="italic" font-size="140" fill="#0F2E5C" letter-spacing="-4">EVENT</text>
+  <rect x="18" y="158" width="642" height="10" fill="#1E7BD8"/>
+</svg>
