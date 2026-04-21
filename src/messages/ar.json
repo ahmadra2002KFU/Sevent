@@ -25,7 +25,8 @@
       "catalog": "الباقات",
       "calendar": "التقويم",
       "rfqs": "طلبات العروض",
-      "bookings": "الحجوزات"
+      "bookings": "الحجوزات",
+      "profile": "تخصيص الملف"
     },
     "admin": {
       "dashboard": "نظرة عامة",
@@ -46,7 +47,28 @@
     "next": "التالي",
     "loading": "جارٍ التحميل…",
     "empty": "لا توجد بيانات بعد.",
-    "error": "حدث خطأ ما."
+    "error": "حدث خطأ ما.",
+    "cityCombobox": {
+      "placeholder": "اختر مدينة",
+      "searchPlaceholder": "ابحث عن مدينة…",
+      "empty": "لا توجد نتائج",
+      "capitalBadge": "عاصمة المنطقة",
+      "region": {
+        "riyadh": "منطقة الرياض",
+        "makkah": "منطقة مكة المكرمة",
+        "madinah": "منطقة المدينة المنورة",
+        "eastern": "المنطقة الشرقية",
+        "qassim": "منطقة القصيم",
+        "asir": "منطقة عسير",
+        "tabuk": "منطقة تبوك",
+        "hail": "منطقة حائل",
+        "northern_borders": "منطقة الحدود الشمالية",
+        "jazan": "منطقة جازان",
+        "najran": "منطقة نجران",
+        "al_bahah": "منطقة الباحة",
+        "al_jawf": "منطقة الجوف"
+      }
+    }
   },
   "languageSwitcher": {
     "label": "اللغة",
@@ -175,7 +197,9 @@
         "id": "الهوية الوطنية",
         "gea_permit": "تصريح هيئة الترفيه",
         "certification": "شهادة مهنية",
-        "other": "أخرى"
+        "other": "أخرى",
+        "iban_certificate": "شهادة الآيبان",
+        "company_profile": "الملف التعريفي للشركة"
       },
       "addAnother": "إضافة مستند آخر",
       "remove": "حذف",
@@ -214,7 +238,68 @@
       "concurrentLimitLabel": "فعاليات متزامنة",
       "concurrentLimitHint": "كم فعالية يمكن أن تتداخل في نفس اليوم.",
       "subcategoriesLabel": "الخدمات المقدمة",
-      "subcategoriesHint": "اختر كل الخدمات التي تستطيع تقديمها. يستخدمها المنظمون للفلترة."
+      "subcategoriesHint": "اختر كل الخدمات التي تستطيع تقديمها. يستخدمها المنظمون للفلترة.",
+      "personCompany": {
+        "label": "من أنت؟",
+        "person": {
+          "title": "فرد",
+          "subtitle": "أنا مستقل أو مورد فردي."
+        },
+        "company": {
+          "title": "شركة",
+          "subtitle": "نحن مؤسسة أو وكالة مسجلة."
+        }
+      },
+      "helper": {
+        "personCompany": "اختر فرد إذا كنت تعمل بمفردك، أو شركة إذا كان لديك سجل تجاري.",
+        "businessName": "الاسم الذي يراه عملاؤك في صفحتك العامة.",
+        "crNumber": "رقم السجل التجاري الصادر من وزارة التجارة.",
+        "nationalId": "رقم الهوية الوطنية المكون من 10 أرقام.",
+        "bio": "نبذة قصيرة عنك وعن خدماتك، تظهر في صفحتك العامة.",
+        "baseCity": "المدينة الأساسية التي تنطلق منها أعمالك.",
+        "serviceArea": "المدن الأخرى التي يمكنك تقديم خدماتك فيها. اختر حتى 15 مدينة.",
+        "languages": "اللغات التي تستطيع التحدث بها مع العملاء.",
+        "categories": "اختر كل الخدمات التي تقدمها. ابحث بالاسم وأضف واحدة تلو الأخرى.",
+        "segments": "اختر نوع الفعاليات التي تخدمها. يمكنك اختيار أكثر من واحدة.",
+        "logo": "صورة شعار شركتك. بصيغة صورة، الحد الأقصى 1 ميجابايت.",
+        "iban": "شهادة الآيبان من البنك. ملف PDF، الحد الأقصى 10 ميجابايت.",
+        "companyProfile": "ملف تعريفي عن شركتك (اختياري). ملف PDF، الحد الأقصى 10 ميجابايت."
+      },
+      "placeholder": {
+        "businessName": "مثال: رايات للكاترينج",
+        "bio": "نحن شركة كاترينج عائلية مقرها الرياض، نخدم حفلات الزفاف وفعاليات الشركات منذ 2018."
+      },
+      "baseCityPlaceholder": "اختر مدينتك الأساسية",
+      "serviceAreaAdd": "أضف مدينة تعمل فيها",
+      "serviceAreaEmpty": "لم تُضَف مدن إضافية بعد.",
+      "serviceAreaMaxReached": "تم الوصول إلى الحد الأقصى 15 مدينة.",
+      "serviceAreaTooMany": "اختر 15 مدينة كحد أقصى.",
+      "serviceAreaRemove": "إزالة {city}",
+      "categoriesLabel": "الخدمات التي تقدمها",
+      "categoryPickerPlaceholder": "ابحث عن خدمة لإضافتها",
+      "categoryRemove": "إزالة {name}",
+      "segmentsLabel": "أنواع الفعاليات التي تخدمها",
+      "step2RequireCategory": "أضف خدمة واحدة على الأقل.",
+      "step2RequireSegment": "اختر نوع فعالية واحد على الأقل.",
+      "logo": {
+        "label": "شعار الشركة (اختياري)",
+        "cta": "اختر صورة الشعار (1 ميجابايت كحد أقصى)",
+        "errorType": "يجب أن يكون الشعار صورة.",
+        "errorSize": "حجم الشعار يجب ألا يتجاوز 1 ميجابايت."
+      },
+      "iban": {
+        "label": "شهادة الآيبان (إلزامي)",
+        "cta": "ارفع شهادة الآيبان (PDF، 10 ميجابايت كحد أقصى)",
+        "required": "شهادة الآيبان مطلوبة.",
+        "errorType": "يجب أن تكون شهادة الآيبان بصيغة PDF.",
+        "errorSize": "حجم شهادة الآيبان يجب ألا يتجاوز 10 ميجابايت."
+      },
+      "companyProfile": {
+        "label": "ملف الشركة التعريفي (اختياري)",
+        "cta": "ارفع ملف تعريفي للشركة (PDF، 10 ميجابايت كحد أقصى)",
+        "errorType": "يجب أن يكون ملف الشركة بصيغة PDF.",
+        "errorSize": "حجم ملف الشركة يجب ألا يتجاوز 10 ميجابايت."
+      }
     },
     "catalog": {
       "title": "الكتالوج",
@@ -397,7 +482,9 @@
         "subtitle": "اقفز مباشرة إلى الأدوات التي تستخدمها أكثر.",
         "catalog": "إدارة الكتالوج",
         "calendar": "تحديث التوفر",
-        "bookings": "فتح الحجوزات"
+        "bookings": "فتح الحجوزات",
+        "customizeProfile": "تخصيص ملفك",
+        "customizeProfileLockedHint": "متاح بعد الاعتماد"
       },
       "verification": {
         "pending": "قيد المراجعة",
@@ -557,6 +644,44 @@
       "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
       "noPackagesTitle": "لا توجد باقات نشطة في هذه الفئة الفرعية",
       "noPackagesBody": "لا يزال بإمكانك تقديم عرض حر أدناه — يحتاج محرك القواعد إلى باقة واحدة على الأقل لإنشاء مسودة."
+    },
+    "profile": {
+      "customizer": {
+        "title": "تخصيص ملفك",
+        "description": "اختر لونًا مميزًا ورتّب الأقسام التي تظهر في ملفك العام.",
+        "accentColor": {
+          "heading": "اللون المميز",
+          "helper": "سيظهر هذا اللون على الأزرار والروابط في ملفك العام."
+        },
+        "sections": {
+          "heading": "ترتيب الأقسام",
+          "helper": "اسحب القسم لتغيير ترتيبه في ملفك العام.",
+          "dragHandle": "اسحب لإعادة الترتيب",
+          "bio": "نبذة",
+          "packages": "الباقات",
+          "portfolio": "الأعمال",
+          "reviews": "التقييمات",
+          "drag": {
+            "bioDescription": "نبذة قصيرة عنك وعن خدماتك.",
+            "packagesDescription": "الباقات المنشورة مع أسعار تقريبية.",
+            "portfolioDescription": "صور ومقاطع من أعمالك السابقة.",
+            "reviewsDescription": "تقييمات ومراجعات من عملائك السابقين."
+          }
+        },
+        "save": "حفظ التغييرات",
+        "saving": "جارٍ الحفظ…",
+        "saved": "تم الحفظ",
+        "noChanges": "لا توجد تغييرات",
+        "error": {
+          "generic": "تعذّر حفظ التغييرات. حاول مرة أخرى.",
+          "invalidAccent": "اختر لونًا من اللوحة.",
+          "invalidOrder": "يجب أن يتضمّن الترتيب كل قسم مرة واحدة فقط."
+        },
+        "empty": {
+          "title": "أكمل التسجيل أولًا",
+          "description": "أنشئ ملف المورّد قبل تخصيصه."
+        }
+      }
     }
   },
   "admin": {
@@ -683,7 +808,17 @@
         "vat": "شهادة ضريبة القيمة المضافة",
         "id": "الهوية الوطنية",
         "gea_permit": "تصريح الهيئة العامة للترفيه",
-        "certification": "شهادة"
+        "certification": "شهادة",
+        "iban_certificate": "شهادة الآيبان",
+        "company_profile": "ملف الشركة"
+      },
+      "logo": {
+        "heading": "شعار المورد",
+        "missing": "لم يتم رفع شعار"
+      },
+      "segments": {
+        "heading": "يعمل ضمن",
+        "none": "لم يتم اختيار فئات"
       },
       "detail": {
         "crNumber": "رقم السجل",
@@ -773,7 +908,9 @@
       "submit": "Save event",
       "cancel": "Cancel",
       "eventTypeLabel": "Event type",
+      "eventTypeHelper": "حدد نوع الفعالية الأقرب لمناسبتك",
       "cityLabel": "City",
+      "cityHelper": "المدينة التي ستُقام فيها الفعالية",
       "clientNameLabel": "Client / host name (optional)",
       "venueAddressLabel": "Venue address",
       "startsAtLabel": "Starts at",
@@ -1123,7 +1260,9 @@
         "day": "باليوم",
         "person": "لكل شخص",
         "unit": "لكل وحدة"
-      }
+      },
+      "companyProfileDownload": "تحميل ملف الشركة",
+      "bioHeading": "نبذة"
     },
     "footer": {
       "exploreHeading": "استكشف",
@@ -1168,6 +1307,16 @@
       "roleOrganizer": "أخطّط لفعالية",
       "roleSupplier": "مورد فعاليات",
       "roleAgency": "وكالة تحجز للعملاء",
+      "rolePicker": {
+        "organizer": {
+          "title": "أخطّط لفعالية",
+          "subline": "أنشئ فعاليتك وادعُ الموردين"
+        },
+        "supplier": {
+          "title": "أقدّم خدمات",
+          "subline": "استقبل طلبات من منظّمي الفعاليات"
+        }
+      },
       "submit": "إنشاء حساب",
       "submitting": "جارٍ إنشاء الحساب…",
       "haveAccount": "لديك حساب؟",

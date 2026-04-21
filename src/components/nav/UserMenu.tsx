@@ -37,8 +37,8 @@ export function UserMenu({ email, displayName, tone = "light" }: UserMenuProps) 
           size="sm"
           className={
             tone === "dark"
-              ? "gap-2 text-white hover:bg-white/10 hover:text-white"
-              : "gap-2"
+              ? "min-h-[44px] min-w-[44px] gap-2 text-white hover:bg-white/10 hover:text-white"
+              : "min-h-[44px] min-w-[44px] gap-2"
           }
           aria-label="Account menu"
         >

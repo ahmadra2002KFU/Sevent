@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
+  Award,
+  BadgeCheck,
   ExternalLink,
+  FileBadge,
   FileText,
+  IdCard,
+  Landmark,
+  ReceiptText,
   ShieldCheck,
+  type LucideIcon,
 } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import {
@@ -13,9 +20,12 @@ import {
   createSignedPreviewUrl,
 } from "@/lib/supabase/storage";
 import type {
+  EventType,
   SupplierDocStatus,
+  SupplierDocType,
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,6 +63,8 @@ type SupplierDetail = {
   verified_at: string | null;
   created_at: string;
   profile_id: string;
+  logo_path: string | null;
+  works_with_segments: EventType[];
 };
 
 type SupplierDoc = {
@@ -103,10 +115,39 @@ function legalTypeLabel(raw: string, t: Translator): string {
   return raw;
 }
 
+const KNOWN_DOC_TYPES: ReadonlyArray<SupplierDocType> = [
+  "cr",
+  "vat",
+  "id",
+  "gea_permit",
+  "certification",
+  "iban_certificate",
+  "company_profile",
+  "other",
+];
+
 function docTypeLabel(raw: string, t: Translator): string {
-  if (["cr", "vat", "id", "gea_permit", "certification"].includes(raw))
+  if ((KNOWN_DOC_TYPES as ReadonlyArray<string>).includes(raw))
     return t(`docType.${raw}`);
   return raw;
+}
+
+const DOC_TYPE_ICONS: Record<SupplierDocType, LucideIcon> = {
+  cr: FileBadge,
+  vat: ReceiptText,
+  id: IdCard,
+  gea_permit: BadgeCheck,
+  certification: Award,
+  iban_certificate: Landmark,
+  company_profile: FileText,
+  other: FileText,
+};
+
+function docTypeIcon(raw: string): LucideIcon {
+  if ((KNOWN_DOC_TYPES as ReadonlyArray<string>).includes(raw)) {
+    return DOC_TYPE_ICONS[raw as SupplierDocType];
+  }
+  return FileText;
 }
 
 export default async function AdminVerificationDetailPage({
@@ -115,6 +156,7 @@ export default async function AdminVerificationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const t = await getTranslations("admin.verifications");
+  const locale = (await getLocale()) as "en" | "ar";
   const { id } = await params;
 
   const gate = await requireRole("admin");
@@ -138,7 +180,7 @@ export default async function AdminVerificationDetailPage({
   const { data: supplierRow, error: supplierErr } = await admin
     .from("suppliers")
     .select(
-      "id, business_name, slug, legal_type, cr_number, national_id, base_city, service_area_cities, languages, capacity, concurrent_event_limit, bio, is_published, verification_status, verification_notes, verified_at, created_at, profile_id",
+      "id, business_name, slug, legal_type, cr_number, national_id, base_city, service_area_cities, languages, capacity, concurrent_event_limit, bio, is_published, verification_status, verification_notes, verified_at, created_at, profile_id, logo_path, works_with_segments",
     )
     .eq("id", id)
     .maybeSingle();
@@ -163,6 +205,24 @@ export default async function AdminVerificationDetailPage({
     .eq("supplier_id", id)
     .order("created_at", { ascending: true });
   const docs: SupplierDoc[] = (docRows as SupplierDoc[] | null) ?? [];
+
+  // Logo preview — optional. If signing fails we silently render the fallback
+  // initial avatar so the page never breaks on a stale/missing logo object.
+  let logoSignedUrl: string | null = null;
+  if (supplier.logo_path) {
+    try {
+      logoSignedUrl = await createSignedPreviewUrl(
+        admin,
+        STORAGE_BUCKETS.logos,
+        supplier.logo_path,
+      );
+    } catch {
+      logoSignedUrl = null;
+    }
+  }
+
+  const businessInitial =
+    supplier.business_name.trim().charAt(0).toUpperCase() || "?";
 
   // Mint signed preview URLs server-side. Use service-role here so the admin
   // never has to depend on a per-object storage policy lookup beyond the
@@ -193,13 +253,23 @@ export default async function AdminVerificationDetailPage({
             {t("back")}
           </Link>
         </Button>
-        <PageHeader
-          title={supplier.business_name}
-          description={`${t("submitted")} ${fmtDate(supplier.created_at)} · /${supplier.slug}`}
-          actions={
-            <StatusPill status={verificationStatusPill(supplier.verification_status)} />
-          }
-        />
+        <div className="flex items-start gap-4">
+          <SupplierLogo
+            signedUrl={logoSignedUrl}
+            businessInitial={businessInitial}
+            missingLabel={t("logo.missing")}
+            headingLabel={t("logo.heading")}
+          />
+          <div className="flex-1 min-w-0">
+            <PageHeader
+              title={supplier.business_name}
+              description={`${t("submitted")} ${fmtDate(supplier.created_at)} · /${supplier.slug}`}
+              actions={
+                <StatusPill status={verificationStatusPill(supplier.verification_status)} />
+              }
+            />
+          </div>
+        </div>
       </div>
 
       {docsErr ? (
@@ -272,6 +342,42 @@ export default async function AdminVerificationDetailPage({
                   value={fmtDate(supplier.verified_at)}
                 />
               </dl>
+              <Separator className="my-4" />
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("segments.heading")}
+                </dt>
+                <dd className="mt-2">
+                  {supplier.works_with_segments &&
+                  supplier.works_with_segments.length > 0 ? (
+                    <ul className="flex flex-wrap gap-2">
+                      {supplier.works_with_segments.map((slug) => {
+                        const seg = getSegmentBySlug(slug);
+                        const label = seg
+                          ? locale === "ar"
+                            ? seg.name_ar
+                            : seg.name_en
+                          : slug;
+                        return (
+                          <li
+                            key={slug}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground"
+                          >
+                            <span aria-hidden className="text-sm leading-none">
+                              {seg?.icon ?? "•"}
+                            </span>
+                            <span>{label}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {t("segments.none")}
+                    </p>
+                  )}
+                </dd>
+              </div>
               {supplier.bio ? (
                 <>
                   <Separator className="my-4" />
@@ -314,10 +420,18 @@ export default async function AdminVerificationDetailPage({
                 <EmptyState icon={FileText} title={t("noDocs")} />
               ) : (
                 <ul className="flex flex-col divide-y divide-border">
-                  {signedDocs.map((d) => (
+                  {signedDocs.map((d) => {
+                    const DocIcon = docTypeIcon(d.doc_type);
+                    return (
                     <li key={d.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            aria-hidden
+                            className="inline-flex size-7 items-center justify-center rounded-md bg-muted text-muted-foreground"
+                          >
+                            <DocIcon className="size-4" />
+                          </span>
                           <span className="text-sm font-medium text-foreground">
                             {docTypeLabel(d.doc_type, t)}
                           </span>
@@ -364,7 +478,8 @@ export default async function AdminVerificationDetailPage({
                         currentNotes={d.notes}
                       />
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
             </CardContent>
@@ -386,6 +501,42 @@ export default async function AdminVerificationDetailPage({
         </aside>
       </div>
     </section>
+  );
+}
+
+function SupplierLogo({
+  signedUrl,
+  businessInitial,
+  missingLabel,
+  headingLabel,
+}: {
+  signedUrl: string | null;
+  businessInitial: string;
+  missingLabel: string;
+  headingLabel: string;
+}) {
+  // Fixed square, 96px — inside the 80-120px band the spec asks for.
+  const size = "size-24"; // 6rem = 96px
+  if (signedUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={signedUrl}
+        alt={headingLabel}
+        width={96}
+        height={96}
+        className={`${size} rounded-lg border border-border object-cover bg-muted`}
+      />
+    );
+  }
+  return (
+    <div
+      role="img"
+      aria-label={missingLabel}
+      className={`${size} flex items-center justify-center rounded-lg border border-dashed border-border bg-muted text-3xl font-semibold text-muted-foreground`}
+    >
+      {businessInitial}
+    </div>
   );
 }
 

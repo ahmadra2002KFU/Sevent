@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Inter, Tajawal } from "next/font/google";
+import { Inter, Readex_Pro } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -12,10 +12,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const tajawal = Tajawal({
-  subsets: ["arabic"],
-  weight: ["400", "500", "700", "900"],
-  variable: "--font-tajawal",
+const readex = Readex_Pro({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-readex",
   display: "swap",
 });
 
@@ -36,12 +36,14 @@ export default async function RootLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <html
-      lang={locale}
-      dir={dir}
-      className={cn("h-full", "antialiased", inter.variable, tajawal.variable)}
-    >
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang={locale} dir={dir} className={cn("h-full", "antialiased")}>
+      <body
+        className={cn(
+          "min-h-full flex flex-col font-sans",
+          inter.variable,
+          readex.variable,
+        )}
+      >
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>

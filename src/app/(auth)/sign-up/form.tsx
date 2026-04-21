@@ -4,13 +4,7 @@ import { useActionState, useId, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  AlertCircle,
-  Briefcase,
-  Building,
-  Loader2,
-  UserRound,
-} from "lucide-react";
+import { AlertCircle, CalendarHeart, Loader2, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { signUpAction, type AuthState } from "../actions";
 
-export type SignUpRole = "organizer" | "supplier" | "agency";
+export type SignUpRole = "organizer" | "supplier";
 
 type Labels = {
   fullNameLabel: string;
@@ -38,9 +32,10 @@ type Labels = {
   passwordPlaceholder: string;
   passwordHint: string;
   roleLabel: string;
-  roleOrganizer: string;
-  roleSupplier: string;
-  roleAgency: string;
+  roleOrganizerTitle: string;
+  roleOrganizerSubline: string;
+  roleSupplierTitle: string;
+  roleSupplierSubline: string;
   submit: string;
   submitting: string;
   errorFullName: string;
@@ -50,16 +45,18 @@ type Labels = {
 
 const initial: AuthState = { ok: false };
 
-const ROLE_META: Record<SignUpRole, { icon: typeof UserRound }> = {
-  organizer: { icon: UserRound },
-  supplier: { icon: Building },
-  agency: { icon: Briefcase },
+type RoleCard = {
+  value: SignUpRole;
+  icon: typeof CalendarHeart;
+  title: string;
+  subline: string;
 };
 
 /**
- * Sign-up form. Chooses a role via a tile-style card picker (click anywhere
- * on the card to select, not just a tiny radio dot) — keeps the step feeling
- * like a meaningful decision rather than a form question.
+ * Sign-up form. The role picker is intentionally large & icon-first so low-literacy
+ * users can spot their choice at a glance: two full-width clickable cards instead of
+ * a tile row of radio-like options. The whole card is the hit target (>=44×44), and
+ * focus/active states use brand-cobalt tokens for visual consistency.
  */
 export function SignUpForm({
   initialRole = "organizer",
@@ -98,10 +95,19 @@ export function SignUpForm({
     startTransition(() => formAction(fd));
   };
 
-  const roleOptions: Array<{ value: SignUpRole; label: string }> = [
-    { value: "organizer", label: labels.roleOrganizer },
-    { value: "supplier", label: labels.roleSupplier },
-    { value: "agency", label: labels.roleAgency },
+  const roleCards: RoleCard[] = [
+    {
+      value: "organizer",
+      icon: CalendarHeart,
+      title: labels.roleOrganizerTitle,
+      subline: labels.roleOrganizerSubline,
+    },
+    {
+      value: "supplier",
+      icon: Store,
+      title: labels.roleSupplierTitle,
+      subline: labels.roleSupplierSubline,
+    },
   ];
 
   return (
@@ -126,32 +132,57 @@ export function SignUpForm({
       >
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-medium">{labels.roleLabel}</Label>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {roleOptions.map((opt) => {
-              const Icon = ROLE_META[opt.value].icon;
-              const isActive = role === opt.value;
+          <div
+            role="radiogroup"
+            aria-label={labels.roleLabel}
+            className="grid gap-3 sm:grid-cols-2"
+          >
+            {roleCards.map((card) => {
+              const Icon = card.icon;
+              const isActive = role === card.value;
               return (
                 <button
-                  key={opt.value}
+                  key={card.value}
                   type="button"
-                  onClick={() => setRole(opt.value)}
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => setRole(card.value)}
                   className={cn(
-                    "group flex flex-col items-start gap-2 rounded-lg border px-3 py-3 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
+                    "group flex min-h-[120px] w-full flex-col items-start justify-between gap-3 rounded-xl border-2 p-4 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
                     isActive
                       ? "border-brand-cobalt-500 bg-brand-cobalt-100 text-brand-navy-900 shadow-brand-sm"
-                      : "border-border bg-card text-foreground hover:border-brand-cobalt-500/30",
+                      : "border-border bg-card text-foreground hover:border-brand-cobalt-500/30 hover:bg-brand-cobalt-500/5",
                   )}
-                  aria-pressed={isActive}
                 >
-                  <Icon
+                  <span
                     className={cn(
-                      "size-4",
-                      isActive ? "text-brand-cobalt-500" : "text-muted-foreground",
+                      "flex size-12 items-center justify-center rounded-lg transition-colors",
+                      isActive
+                        ? "bg-brand-cobalt-500 text-white"
+                        : "bg-neutral-100 text-brand-navy-900 group-hover:bg-brand-cobalt-500/10 group-hover:text-brand-cobalt-500",
                     )}
-                    aria-hidden
-                  />
-                  <span className="text-xs font-semibold leading-tight">
-                    {opt.label}
+                  >
+                    <Icon className="size-6" aria-hidden />
+                  </span>
+                  <span className="flex flex-col gap-1">
+                    <span
+                      className={cn(
+                        "text-base font-semibold leading-tight",
+                        isActive ? "text-brand-navy-900" : "text-foreground",
+                      )}
+                    >
+                      {card.title}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-xs leading-snug",
+                        isActive
+                          ? "text-brand-navy-900/80"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {card.subline}
+                    </span>
                   </span>
                 </button>
               );
@@ -223,7 +254,7 @@ export function SignUpForm({
           type="submit"
           size="lg"
           disabled={isPending}
-          className="mt-2 w-full bg-brand-cobalt-500 text-white hover:bg-brand-cobalt-400"
+          className="mt-2 min-h-[44px] w-full bg-brand-cobalt-500 text-white hover:bg-brand-cobalt-400"
         >
           {isPending ? (
             <>

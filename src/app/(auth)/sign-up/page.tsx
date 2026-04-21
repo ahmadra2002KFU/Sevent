@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "@/components/brand/Logo";
 import { SignUpForm, type SignUpRole } from "./form";
 
-const ROLES: readonly SignUpRole[] = ["organizer", "supplier", "agency"];
+const ROLES: readonly SignUpRole[] = ["organizer", "supplier"];
 
 type PageProps = {
   searchParams: Promise<{ role?: string }>;
@@ -56,9 +56,10 @@ export default async function SignUpPage({ searchParams }: PageProps) {
                 passwordPlaceholder: t("passwordPlaceholder"),
                 passwordHint: t("passwordHint"),
                 roleLabel: t("roleLabel"),
-                roleOrganizer: t("roleOrganizer"),
-                roleSupplier: t("roleSupplier"),
-                roleAgency: t("roleAgency"),
+                roleOrganizerTitle: t("rolePicker.organizer.title"),
+                roleOrganizerSubline: t("rolePicker.organizer.subline"),
+                roleSupplierTitle: t("rolePicker.supplier.title"),
+                roleSupplierSubline: t("rolePicker.supplier.subline"),
                 submit: t("submit"),
                 submitting: t("submitting"),
                 errorFullName: t("errorFullName"),

@@ -42,10 +42,13 @@
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* RTL locale swaps the sans stack to Tajawal (loaded by next/font) */
+/* RTL / Arabic locale swaps the sans stack to Readex Pro (loaded by next/font).
+   Readex Pro is chosen for its large x-height and open apertures, which improve
+   readability for low-vision users. */
+:root:lang(ar),
 :root[dir="rtl"] {
-  --font-sans: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-tajawal), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-readex), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-readex), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,6 +164,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+body {
+  line-height: 1.6;
+}
+
+/* Arabic body copy needs more leading to breathe; Readex Pro + 1.75 line-height
+   keeps dense RTL paragraphs readable for low-vision users. */
+:lang(ar) body,
+[dir="rtl"] body {
+  line-height: 1.75;
 }
 
 *,

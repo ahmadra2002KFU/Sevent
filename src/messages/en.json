@@ -25,7 +25,8 @@
       "catalog": "Catalog",
       "calendar": "Calendar",
       "rfqs": "RFQs",
-      "bookings": "Bookings"
+      "bookings": "Bookings",
+      "profile": "Customize profile"
     },
     "admin": {
       "dashboard": "Overview",
@@ -46,7 +47,28 @@
     "next": "Next",
     "loading": "Loading…",
     "empty": "No data yet.",
-    "error": "Something went wrong."
+    "error": "Something went wrong.",
+    "cityCombobox": {
+      "placeholder": "Pick a city",
+      "searchPlaceholder": "Search cities…",
+      "empty": "No city matches",
+      "capitalBadge": "Capital",
+      "region": {
+        "riyadh": "Riyadh Region",
+        "makkah": "Makkah Region",
+        "madinah": "Madinah Region",
+        "eastern": "Eastern Province",
+        "qassim": "Qassim Region",
+        "asir": "Asir Region",
+        "tabuk": "Tabuk Region",
+        "hail": "Hail Region",
+        "northern_borders": "Northern Borders",
+        "jazan": "Jazan Region",
+        "najran": "Najran Region",
+        "al_bahah": "Al-Bahah Region",
+        "al_jawf": "Al-Jawf Region"
+      }
+    }
   },
   "languageSwitcher": {
     "label": "Language",
@@ -175,7 +197,9 @@
         "id": "National ID",
         "gea_permit": "GEA permit",
         "certification": "Professional certification",
-        "other": "Other"
+        "other": "Other",
+        "iban_certificate": "IBAN certificate",
+        "company_profile": "Company profile"
       },
       "addAnother": "Add another document",
       "remove": "Remove",
@@ -214,7 +238,68 @@
       "concurrentLimitLabel": "Concurrent events",
       "concurrentLimitHint": "How many bookings can overlap on the same date.",
       "subcategoriesLabel": "Services offered",
-      "subcategoriesHint": "Select every sub-service you can fulfil. Organizers filter on these."
+      "subcategoriesHint": "Select every sub-service you can fulfil. Organizers filter on these.",
+      "personCompany": {
+        "label": "Who are you signing up as?",
+        "person": {
+          "title": "Person",
+          "subtitle": "I'm a freelancer or an individual supplier."
+        },
+        "company": {
+          "title": "Company",
+          "subtitle": "We're a registered business or agency."
+        }
+      },
+      "helper": {
+        "personCompany": "Pick Person if you work alone, Company if you have a CR.",
+        "businessName": "The name customers see on your public page.",
+        "crNumber": "Commercial registration number issued by the Ministry of Commerce.",
+        "nationalId": "Your 10-digit Saudi national ID number.",
+        "bio": "A short paragraph about you and your services; shows on your public page.",
+        "baseCity": "Your primary city of operation.",
+        "serviceArea": "Other cities you serve. Pick up to 15.",
+        "languages": "Languages you can communicate with customers in.",
+        "categories": "Pick every service you offer. Search by name, add one at a time.",
+        "segments": "Pick the event types you serve. You can pick more than one.",
+        "logo": "Your company logo. Image file, max 1 MB.",
+        "iban": "IBAN certificate from your bank. PDF, max 10 MB.",
+        "companyProfile": "Company profile brochure (optional). PDF, max 10 MB."
+      },
+      "placeholder": {
+        "businessName": "e.g. Rayat Catering",
+        "bio": "We are a family-run catering company based in Riyadh, serving weddings and corporate events since 2018."
+      },
+      "baseCityPlaceholder": "Pick your base city",
+      "serviceAreaAdd": "Add a city you work in",
+      "serviceAreaEmpty": "No extra service cities yet.",
+      "serviceAreaMaxReached": "Maximum of 15 cities reached.",
+      "serviceAreaTooMany": "Select at most 15 cities.",
+      "serviceAreaRemove": "Remove {city}",
+      "categoriesLabel": "Services you offer",
+      "categoryPickerPlaceholder": "Search a service to add",
+      "categoryRemove": "Remove {name}",
+      "segmentsLabel": "Event types you work with",
+      "step2RequireCategory": "Add at least one service.",
+      "step2RequireSegment": "Pick at least one event type.",
+      "logo": {
+        "label": "Business logo (optional)",
+        "cta": "Choose a logo image (≤1 MB)",
+        "errorType": "Logo must be an image file.",
+        "errorSize": "Logo must be 1 MB or smaller."
+      },
+      "iban": {
+        "label": "IBAN certificate (required)",
+        "cta": "Upload your IBAN certificate (PDF, ≤10 MB)",
+        "required": "IBAN certificate is required.",
+        "errorType": "IBAN certificate must be a PDF.",
+        "errorSize": "IBAN certificate must be 10 MB or smaller."
+      },
+      "companyProfile": {
+        "label": "Company profile (optional)",
+        "cta": "Upload a company profile PDF (≤10 MB)",
+        "errorType": "Company profile must be a PDF.",
+        "errorSize": "Company profile must be 10 MB or smaller."
+      }
     },
     "catalog": {
       "title": "Catalog",
@@ -397,7 +482,9 @@
         "subtitle": "Jump straight into the tools you use most.",
         "catalog": "Manage catalog",
         "calendar": "Update availability",
-        "bookings": "Open bookings"
+        "bookings": "Open bookings",
+        "customizeProfile": "Customize your profile",
+        "customizeProfileLockedHint": "available once approved"
       },
       "verification": {
         "pending": "Pending",
@@ -557,6 +644,44 @@
       "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
       "noPackagesTitle": "No active packages in this subcategory",
       "noPackagesBody": "You can still submit a free-form quote below — the rule engine needs at least one package to compose a draft."
+    },
+    "profile": {
+      "customizer": {
+        "title": "Customize your profile",
+        "description": "Pick an accent color and order the sections shown on your public profile.",
+        "accentColor": {
+          "heading": "Accent color",
+          "helper": "This color appears on buttons and links on your public profile."
+        },
+        "sections": {
+          "heading": "Section order",
+          "helper": "Drag a section to change the order on your public profile.",
+          "dragHandle": "Drag to reorder",
+          "bio": "Bio",
+          "packages": "Packages",
+          "portfolio": "Portfolio",
+          "reviews": "Reviews",
+          "drag": {
+            "bioDescription": "Your short introduction and service story.",
+            "packagesDescription": "Published packages with from-price visibility.",
+            "portfolioDescription": "Photos and videos of past work.",
+            "reviewsDescription": "Ratings and feedback from previous clients."
+          }
+        },
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "noChanges": "No changes",
+        "error": {
+          "generic": "We couldn't save your changes. Try again.",
+          "invalidAccent": "Please pick a color from the palette.",
+          "invalidOrder": "Section order must include every section exactly once."
+        },
+        "empty": {
+          "title": "Finish onboarding first",
+          "description": "Create your supplier profile before customizing it."
+        }
+      }
     }
   },
   "admin": {
@@ -683,7 +808,17 @@
         "vat": "VAT certificate",
         "id": "National ID",
         "gea_permit": "GEA permit",
-        "certification": "Certification"
+        "certification": "Certification",
+        "iban_certificate": "IBAN certificate",
+        "company_profile": "Company profile"
+      },
+      "logo": {
+        "heading": "Supplier logo",
+        "missing": "No logo uploaded"
+      },
+      "segments": {
+        "heading": "Works with",
+        "none": "No segments selected"
       },
       "detail": {
         "crNumber": "CR number",
@@ -773,7 +908,9 @@
       "submit": "Save event",
       "cancel": "Cancel",
       "eventTypeLabel": "Event type",
+      "eventTypeHelper": "Pick the category closest to your occasion",
       "cityLabel": "City",
+      "cityHelper": "The city where the event will take place",
       "clientNameLabel": "Client / host name (optional)",
       "venueAddressLabel": "Venue address",
       "startsAtLabel": "Starts at",
@@ -1123,7 +1260,9 @@
         "day": "Per day",
         "person": "Per person",
         "unit": "Per unit"
-      }
+      },
+      "companyProfileDownload": "Download company profile",
+      "bioHeading": "About"
     },
     "footer": {
       "exploreHeading": "Explore",
@@ -1168,6 +1307,16 @@
       "roleOrganizer": "Planning an event",
       "roleSupplier": "An event supplier",
       "roleAgency": "An agency booking for clients",
+      "rolePicker": {
+        "organizer": {
+          "title": "Plan events",
+          "subline": "Build an event and invite suppliers"
+        },
+        "supplier": {
+          "title": "Supply services",
+          "subline": "Receive jobs from event organizers"
+        }
+      },
       "submit": "Create account",
       "submitting": "Creating account…",
       "haveAccount": "Already have an account?",

@@ -1,33 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import dynamic from "next/dynamic";
+/**
+ * Supplier onboarding wizard — 2026-04-21 rebuild.
+ *
+ * Shape:
+ *   Pre-step (inline gate at top of Step 1): Person vs Company soft picker.
+ *   Step 1 — business info: business_name, bio, base_city, service_area, languages.
+ *   Step 2 — categories + segments.
+ *   Step 3 — documents + profile assets (logo, IBAN cert, company profile).
+ *
+ * Every FormLabel gets a sibling <HelperText> whose key is
+ * `helper.<fieldName>`. HelperText auto-hides in English, so the helper
+ * strings are only read in Arabic locale (boss's low-literacy note).
+ */
+
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Building2,
-  Camera,
-  Car,
   Check,
-  CircleDot,
   FileText,
-  Flower2,
-  Music,
-  Speaker,
+  Image as ImageIcon,
+  Plus,
   Trash2,
   Upload,
-  Users,
-  Utensils,
-  type LucideIcon,
+  UploadCloud,
+  User,
+  X,
 } from "lucide-react";
 import {
-  DOC_TYPES,
   LANGUAGES,
-  LEGAL_TYPES,
-  OnboardingStep1,
+  LOGO_MAX_BYTES,
+  OnboardingStep1 as OnboardingStep1Schema,
+  PDF_MAX_BYTES,
 } from "@/lib/domain/onboarding";
+import type { MarketSegmentSlug } from "@/lib/domain/segments";
 import {
   submitOnboardingStep1,
   submitOnboardingStep2,
@@ -41,77 +52,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { HelperText } from "@/components/ui-ext/HelperText";
+import { CityCombobox } from "@/components/supplier/CityCombobox";
+import { SegmentsPicker } from "@/components/supplier/SegmentsPicker";
+import { cityNameFor } from "@/lib/domain/cities";
+import { SubcategoryCombobox } from "@/app/(supplier)/supplier/catalog/SubcategoryCombobox";
+import type { CatalogSubcategory } from "@/app/(supplier)/supplier/catalog/loader";
 
 type WizardProps = { bootstrap: OnboardingBootstrap };
 type Step = 1 | 2 | 3;
 
-// Leaflet touches `window` on import so it must be client-only. Dynamic-import
-// keeps it out of the SSR bundle; the Map container itself is marked
-// "use client" in LocationPicker.tsx.
-const LocationPicker = dynamic(
-  () => import("./LocationPicker").then((m) => m.LocationPicker),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[320px] items-center justify-center rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
-        Loading map…
-      </div>
-    ),
-  },
-);
-
-// ---------------------------------------------------------------------------
-// Category presentation: each parent slug maps to a lucide icon + accent class.
-// Unknown slugs fall back to CircleDot. Colors use our semantic tokens.
-// ---------------------------------------------------------------------------
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-  venues: Building2,
-  catering: Utensils,
-  decor: Flower2,
-  photography: Camera,
-  av: Speaker,
-  entertainment: Music,
-  staffing: Users,
-  transportation: Car,
-};
-
-function iconForCategory(slug: string | null | undefined): LucideIcon {
-  if (!slug) return CircleDot;
-  return CATEGORY_ICON[slug] ?? CircleDot;
-}
-
-/**
- * Locale-aware name for a category/subcategory. Falls back to English when
- * Arabic isn't available or the active locale isn't ar. Accepts the loose
- * shape returned by the onboarding loader.
- */
-function localizedName(
-  entry: { name_en: string; name_ar?: string | null },
-  locale: string,
-): string {
-  if (locale === "ar" && entry.name_ar) return entry.name_ar;
-  return entry.name_en;
-}
-
-type PreviewState = {
-  business_name: string;
-  bio: string;
-  base_city: string;
-  subcategoryIds: string[];
-};
-
 export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
-  const locale = useLocale();
   const router = useRouter();
   const [step, setStep] = useState<Step>(() => resolveInitialStep(bootstrap));
   const [serverMessage, setServerMessage] = useState<string | null>(null);
@@ -119,15 +72,40 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     bootstrap.supplier?.id ?? null,
   );
   const [isPending, startTransition] = useTransition();
-  const [preview, setPreview] = useState<PreviewState>({
-    business_name: bootstrap.supplier?.business_name ?? "",
-    bio: bootstrap.supplier?.bio ?? "",
-    base_city: bootstrap.supplier?.base_city ?? "",
-    subcategoryIds: bootstrap.subcategoryIds ?? [],
-  });
 
-  const updatePreview = (patch: Partial<PreviewState>) =>
-    setPreview((prev) => ({ ...prev, ...patch }));
+  // Build the CatalogSubcategory shape SubcategoryCombobox expects. The
+  // bootstrap loader returns a flat categories list; we denormalise parent
+  // names onto each child for the grouped-combobox header.
+  const subcategoryOptions: CatalogSubcategory[] = useMemo(() => {
+    const parents = new Map<
+      string,
+      { slug: string; name_en: string; name_ar: string | null }
+    >();
+    for (const c of bootstrap.categories) {
+      if (c.parent_id === null) {
+        parents.set(c.id, {
+          slug: c.slug,
+          name_en: c.name_en,
+          name_ar: c.name_ar ?? null,
+        });
+      }
+    }
+    return bootstrap.categories
+      .filter((c) => c.parent_id !== null)
+      .map((c) => {
+        const parent = c.parent_id ? parents.get(c.parent_id) ?? null : null;
+        return {
+          id: c.id,
+          slug: c.slug,
+          name_en: c.name_en,
+          name_ar: c.name_ar,
+          parent_id: c.parent_id,
+          parent_slug: parent?.slug ?? null,
+          parent_name_en: parent?.name_en ?? null,
+          parent_name_ar: parent?.name_ar ?? null,
+        };
+      });
+  }, [bootstrap.categories]);
 
   const handleStepResult = (result: OnboardingState, nextStep?: Step) => {
     if (!result.ok) {
@@ -144,110 +122,101 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ProgressBar percent={progressPct} label={t("progressLabel", { percent: progressPct })} />
+      <ProgressBar
+        percent={progressPct}
+        label={t("progressLabel", { percent: progressPct })}
+      />
 
       <Stepper current={step} t={t} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
-        <Card>
-          <CardContent className="p-6">
-            {step === 1 ? (
-              <Step1Form
-                initial={bootstrap.supplier}
-                pending={isPending}
-                onPreview={(p) =>
-                  updatePreview({
-                    business_name: p.business_name,
-                    bio: p.bio ?? "",
-                  })
+      <Card>
+        <CardContent className="p-6">
+          {step === 1 ? (
+            <Step1Form
+              initial={bootstrap.supplier}
+              pending={isPending}
+              onSubmit={(values) => {
+                const fd = new FormData();
+                fd.append("business_name", values.business_name);
+                fd.append("legal_type", values.legal_type);
+                if (values.cr_number) fd.append("cr_number", values.cr_number);
+                if (values.national_id) fd.append("national_id", values.national_id);
+                if (values.bio) fd.append("bio", values.bio);
+                fd.append("base_city", values.base_city);
+                for (const city of values.service_area_cities) {
+                  fd.append("service_area_cities", city);
                 }
-                onSubmit={(values) => {
-                  const fd = new FormData();
-                  fd.append("business_name", values.business_name);
-                  fd.append("legal_type", values.legal_type);
-                  if (values.cr_number) fd.append("cr_number", values.cr_number);
-                  if (values.national_id) fd.append("national_id", values.national_id);
-                  if (values.bio) fd.append("bio", values.bio);
-                  startTransition(async () => {
-                    const result = await submitOnboardingStep1(undefined, fd);
-                    handleStepResult(result, 2);
-                  });
-                }}
-              />
-            ) : null}
+                for (const lang of values.languages) fd.append("languages", lang);
+                startTransition(async () => {
+                  const result = await submitOnboardingStep1(undefined, fd);
+                  handleStepResult(result, 2);
+                });
+              }}
+            />
+          ) : null}
 
-            {step === 2 ? (
-              <Step2Form
-                existingDocs={bootstrap.docs}
-                pending={isPending}
-                disabled={!supplierId}
-                onBack={() => setStep(1)}
-                onSubmit={(fd) => {
-                  startTransition(async () => {
-                    const result = await submitOnboardingStep2(undefined, fd);
-                    handleStepResult(result, 3);
-                  });
-                }}
-              />
-            ) : null}
+          {step === 2 ? (
+            <Step2Form
+              subcategoryOptions={subcategoryOptions}
+              initialSubcategoryIds={bootstrap.subcategoryIds}
+              initialSegments={
+                (bootstrap.supplier?.works_with_segments ?? []) as MarketSegmentSlug[]
+              }
+              pending={isPending}
+              disabled={!supplierId}
+              onBack={() => setStep(1)}
+              onSubmit={(fd) => {
+                startTransition(async () => {
+                  const result = await submitOnboardingStep2(undefined, fd);
+                  handleStepResult(result, 3);
+                });
+              }}
+            />
+          ) : null}
 
-            {step === 3 ? (
-              <Step3Form
-                initial={bootstrap.supplier}
-                categories={bootstrap.categories}
-                selectedSubcategoryIds={bootstrap.subcategoryIds}
-                pending={isPending}
-                disabled={!supplierId}
-                onBack={() => setStep(2)}
-                onPreview={(p) =>
-                  updatePreview({
-                    base_city: p.base_city,
-                    subcategoryIds: p.subcategory_ids,
-                  })
-                }
-                onSubmit={(fd) => {
-                  startTransition(async () => {
-                    const result = await submitOnboardingStep3(undefined, fd);
-                    if (result.ok) {
-                      setServerMessage(t("submittedForReview"));
-                      // Leave the supplier on the dashboard where the "awaiting
-                      // verification" banner lives. `router.refresh()` keeps the
-                      // server components in sync with the new pending state.
-                      router.push("/supplier/dashboard?submitted=1");
-                      router.refresh();
-                    } else {
-                      setServerMessage(result.message ?? t("genericError"));
-                    }
-                  });
-                }}
-              />
-            ) : null}
+          {step === 3 ? (
+            <Step3Form
+              initialLogoPath={bootstrap.supplier?.logo_path ?? null}
+              pending={isPending}
+              disabled={!supplierId}
+              onBack={() => setStep(2)}
+              onSubmit={(fd) => {
+                startTransition(async () => {
+                  const result = await submitOnboardingStep3(undefined, fd);
+                  if (result.ok) {
+                    setServerMessage(t("submittedForReview"));
+                    router.push("/supplier/dashboard?submitted=1");
+                    router.refresh();
+                  } else {
+                    setServerMessage(result.message ?? t("genericError"));
+                  }
+                });
+              }}
+            />
+          ) : null}
 
-            {serverMessage ? (
-              <Alert className="mt-4">
-                <AlertDescription>{serverMessage}</AlertDescription>
-              </Alert>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <PreviewCard
-          preview={preview}
-          categories={bootstrap.categories}
-          locale={locale}
-          t={t}
-        />
-      </div>
+          {serverMessage ? (
+            <Alert className="mt-4">
+              <AlertDescription>{serverMessage}</AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 function resolveInitialStep(bootstrap: OnboardingBootstrap): Step {
   if (!bootstrap.supplier) return 1;
-  if (bootstrap.docs.length === 0) return 2;
-  if (!bootstrap.supplier.base_city) return 3;
+  if (bootstrap.subcategoryIds.length === 0) return 2;
+  const hasIban = bootstrap.docs.some((d) => d.doc_type === "iban_certificate");
+  if (!hasIban) return 3;
   return 3;
 }
+
+// ---------------------------------------------------------------------------
+// Stepper + progress
+// ---------------------------------------------------------------------------
 
 function Stepper({
   current,
@@ -310,756 +279,7 @@ function Stepper({
   );
 }
 
-type Step1Values = {
-  business_name: string;
-  legal_type: (typeof LEGAL_TYPES)[number];
-  cr_number?: string;
-  national_id?: string;
-  bio?: string;
-};
-
-function Step1Form({
-  initial,
-  pending,
-  onSubmit,
-  onPreview,
-}: {
-  initial: OnboardingBootstrap["supplier"];
-  pending: boolean;
-  onSubmit: SubmitHandler<Step1Values>;
-  onPreview?: (values: { business_name: string; bio?: string }) => void;
-}) {
-  const t = useTranslations("supplier.onboarding");
-  const {
-    register,
-    handleSubmit,
-    watch,
-    control,
-    formState: { errors },
-  } = useForm<Step1Values>({
-    resolver: zodResolver(OnboardingStep1),
-    defaultValues: {
-      business_name: initial?.business_name ?? "",
-      legal_type: (initial?.legal_type as Step1Values["legal_type"]) ?? "company",
-      cr_number: initial?.cr_number ?? "",
-      national_id: initial?.national_id ?? "",
-      bio: initial?.bio ?? "",
-    },
-  });
-
-  const legalType = watch("legal_type");
-
-  const step1PreviewRef = useRef(onPreview);
-  step1PreviewRef.current = onPreview;
-  useEffect(() => {
-    const sub = watch((values) => {
-      step1PreviewRef.current?.({
-        business_name: values.business_name ?? "",
-        bio: values.bio ?? "",
-      });
-    });
-    return () => sub.unsubscribe();
-    // Subscribe once per mount. The ref lets parent re-renders update the
-    // callback target without re-subscribing (RHF's watch() identity is
-    // stable for this form but onPreview is new every parent render).
-  }, [watch]);
-
-  return (
-    <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <Field label={t("businessNameLabel")} error={errors.business_name?.message}>
-        <Input {...register("business_name")} />
-      </Field>
-      <Field label={t("legalTypeLabel")} error={errors.legal_type?.message}>
-        <Controller
-          control={control}
-          name="legal_type"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LEGAL_TYPES.map((lt) => (
-                  <SelectItem key={lt} value={lt}>
-                    {t(`legalType.${lt}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </Field>
-      {legalType === "company" ? (
-        <Field label={t("crNumberLabel")} error={errors.cr_number?.message}>
-          <Input {...register("cr_number")} />
-        </Field>
-      ) : null}
-      {legalType === "freelancer" ? (
-        <Field label={t("nationalIdLabel")} error={errors.national_id?.message}>
-          <Input {...register("national_id")} />
-        </Field>
-      ) : null}
-      <Field label={t("bioLabel")} error={errors.bio?.message} hint={t("bioHint")}>
-        <Textarea {...register("bio")} rows={4} />
-      </Field>
-      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
-        <Button type="submit" size="lg" disabled={pending}>
-          {pending ? t("saving") : t("continue")}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-type DocDraft = {
-  id: string;
-  doc_type: (typeof DOC_TYPES)[number];
-  notes: string;
-  file?: File;
-};
-
-function Step2Form({
-  existingDocs,
-  pending,
-  disabled,
-  onBack,
-  onSubmit,
-}: {
-  existingDocs: OnboardingBootstrap["docs"];
-  pending: boolean;
-  disabled: boolean;
-  onBack: () => void;
-  onSubmit: (fd: FormData) => void;
-}) {
-  const t = useTranslations("supplier.onboarding");
-  const [drafts, setDrafts] = useState<DocDraft[]>(() => [
-    { id: crypto.randomUUID(), doc_type: "cr", notes: "" },
-  ]);
-  const [error, setError] = useState<string | null>(null);
-
-  const addDraft = () => {
-    setDrafts((d) => [
-      ...d,
-      { id: crypto.randomUUID(), doc_type: "other", notes: "" },
-    ]);
-  };
-  const updateDraft = (id: string, patch: Partial<DocDraft>) => {
-    setDrafts((d) =>
-      d.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)),
-    );
-  };
-  const removeDraft = (id: string) => {
-    setDrafts((d) => d.filter((entry) => entry.id !== id));
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    const withFiles = drafts.filter((d) => d.file && d.file.size > 0);
-    if (withFiles.length === 0) {
-      setError(t("step2RequireFile"));
-      return;
-    }
-    const fd = new FormData();
-    for (const draft of withFiles) {
-      if (!draft.file) continue;
-      fd.append("doc_type", draft.doc_type);
-      fd.append("notes", draft.notes ?? "");
-      fd.append("file", draft.file);
-    }
-    onSubmit(fd);
-  };
-
-  return (
-    <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
-      {existingDocs.length > 0 ? (
-        <section className="rounded-lg border border-border bg-muted/40 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("existingDocs")}
-          </p>
-          <ul className="mt-2 flex flex-col gap-1 text-sm">
-            {existingDocs.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-2">
-                  <FileText className="size-4 text-muted-foreground" aria-hidden />
-                  <span className="font-mono text-xs">{d.doc_type}</span>
-                </span>
-                <Badge variant="outline" className="text-xs">
-                  {d.status}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-      <ul className="flex flex-col gap-4">
-        {drafts.map((draft, idx) => (
-          <li
-            key={draft.id}
-            className="flex flex-col gap-3 rounded-lg border border-border p-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("docLabel")} #{idx + 1}
-              </span>
-              {drafts.length > 1 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => removeDraft(draft.id)}
-                >
-                  <Trash2 />
-                  {t("remove")}
-                </Button>
-              ) : null}
-            </div>
-            <Field label={t("docTypeLabel")}>
-              <Select
-                value={draft.doc_type}
-                onValueChange={(v) =>
-                  updateDraft(draft.id, {
-                    doc_type: v as DocDraft["doc_type"],
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOC_TYPES.map((dt) => (
-                    <SelectItem key={dt} value={dt}>
-                      {t(`docType.${dt}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label={t("docFileLabel")}>
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
-                <Upload
-                  className="size-4 shrink-0 text-brand-cobalt-500"
-                  aria-hidden
-                />
-                <span className="flex-1 truncate text-muted-foreground">
-                  {draft.file
-                    ? `${draft.file.name} (${Math.round(
-                        draft.file.size / 1024,
-                      )} KB)`
-                    : t("chooseFileHint")}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  onChange={(e) =>
-                    updateDraft(draft.id, {
-                      file: e.target.files?.[0] ?? undefined,
-                    })
-                  }
-                  className="sr-only"
-                />
-              </label>
-            </Field>
-            <Field label={t("docNotesLabel")}>
-              <Input
-                value={draft.notes}
-                onChange={(e) => updateDraft(draft.id, { notes: e.target.value })}
-              />
-            </Field>
-          </li>
-        ))}
-      </ul>
-      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
-        <Button type="button" variant="ghost" onClick={addDraft}>
-          {t("addAnother")}
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" onClick={onBack}>
-            {t("back")}
-          </Button>
-          <Button type="submit" size="lg" disabled={pending || disabled}>
-            {pending ? t("uploading") : t("continue")}
-          </Button>
-        </div>
-      </div>
-      {error ? (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
-    </form>
-  );
-}
-
-type Step3Values = {
-  base_city: string;
-  base_lat?: string;
-  base_lng?: string;
-  service_area_cities: string;
-  capacity?: string;
-  concurrent_event_limit: number;
-  languages: Array<(typeof LANGUAGES)[number]>;
-  subcategory_ids: string[];
-};
-
-function Step3Form({
-  initial,
-  categories,
-  selectedSubcategoryIds,
-  pending,
-  disabled,
-  onBack,
-  onSubmit,
-  onPreview,
-}: {
-  initial: OnboardingBootstrap["supplier"];
-  categories: OnboardingBootstrap["categories"];
-  selectedSubcategoryIds: string[];
-  pending: boolean;
-  disabled: boolean;
-  onBack: () => void;
-  onSubmit: (fd: FormData) => void;
-  onPreview?: (values: {
-    base_city: string;
-    subcategory_ids: string[];
-  }) => void;
-}) {
-  const t = useTranslations("supplier.onboarding");
-  const locale = useLocale();
-
-  const { register, handleSubmit, formState, watch, setValue, getValues } =
-    useForm<Step3Values>({
-      defaultValues: {
-        base_city: initial?.base_city ?? "",
-        base_lat: "",
-        base_lng: "",
-        service_area_cities: (initial?.service_area_cities ?? []).join(", "),
-        capacity: initial?.capacity != null ? String(initial.capacity) : "",
-        concurrent_event_limit: initial?.concurrent_event_limit ?? 1,
-        languages: (initial?.languages ?? ["en"]).filter((l) =>
-          (LANGUAGES as readonly string[]).includes(l),
-        ) as Step3Values["languages"],
-        subcategory_ids: selectedSubcategoryIds,
-      },
-    });
-  const watchedSubs = watch("subcategory_ids") ?? [];
-  const watchedLanguages = watch("languages") ?? [];
-  const watchedLat = watch("base_lat");
-  const watchedLng = watch("base_lng");
-
-  const step3PreviewRef = useRef(onPreview);
-  step3PreviewRef.current = onPreview;
-  useEffect(() => {
-    const sub = watch((values) => {
-      step3PreviewRef.current?.({
-        base_city: values.base_city ?? "",
-        subcategory_ids: (values.subcategory_ids ?? []).filter(
-          (x): x is string => typeof x === "string",
-        ),
-      });
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
-  const mapValue =
-    watchedLat && watchedLng && !Number.isNaN(Number(watchedLat)) && !Number.isNaN(Number(watchedLng))
-      ? { lat: Number(watchedLat), lng: Number(watchedLng) }
-      : null;
-
-  const parents = useMemo(
-    () => categories.filter((c) => c.parent_id === null),
-    [categories],
-  );
-  const childrenByParent = useMemo(() => {
-    const map = new Map<string, typeof categories>();
-    for (const c of categories) {
-      if (c.parent_id) {
-        const list = map.get(c.parent_id) ?? [];
-        list.push(c);
-        map.set(c.parent_id, list);
-      }
-    }
-    return map;
-  }, [categories]);
-
-  const submit: SubmitHandler<Step3Values> = (values) => {
-    const fd = new FormData();
-    fd.append("base_city", values.base_city.trim());
-    if (values.base_lat) fd.append("base_lat", values.base_lat);
-    if (values.base_lng) fd.append("base_lng", values.base_lng);
-    fd.append("service_area_cities", values.service_area_cities);
-    if (values.capacity) fd.append("capacity", values.capacity);
-    fd.append("concurrent_event_limit", String(values.concurrent_event_limit));
-    for (const lang of values.languages) fd.append("languages", lang);
-    for (const id of values.subcategory_ids) fd.append("subcategory_ids", id);
-    // Server action `submitOnboardingStep3` runs the authoritative Zod check
-    // (via `Step3Input` which relaxes the shared `OnboardingStep3` schema's
-    // `category_ids.min(1)` requirement to 0). A previous client-side preCheck
-    // against the stricter schema silently swallowed every submission because
-    // `category_ids` is always [] in the form — bug surfaced as "submit button
-    // does nothing". RHF's field-level `validate` already blocks empty
-    // languages/subcategory_ids before we get here.
-    onSubmit(fd);
-  };
-
-  return (
-    <form className="flex flex-col gap-5" onSubmit={handleSubmit(submit)} noValidate>
-      <Field label={t("pinLocationLabel")} hint={t("pinLocationHint")}>
-        <LocationPicker
-          value={mapValue}
-          onChange={(v) => {
-            setValue("base_lat", v.lat.toFixed(6), { shouldDirty: true });
-            setValue("base_lng", v.lng.toFixed(6), { shouldDirty: true });
-            // Only auto-fill city if the user hasn't typed their own.
-            const currentCity = getValues("base_city");
-            if (v.city && (!currentCity || currentCity.trim() === "")) {
-              setValue("base_city", v.city, { shouldDirty: true });
-            }
-          }}
-        />
-      </Field>
-      <Field label={t("baseCityLabel")}>
-        <Input
-          {...register("base_city", { required: true, minLength: 2 })}
-        />
-      </Field>
-      {/*
-        Coordinates are set silently by LocationPicker via setValue and
-        submitted as part of the form state. No manual input surface.
-      */}
-      <input type="hidden" {...register("base_lat")} />
-      <input type="hidden" {...register("base_lng")} />
-      <Field label={t("serviceAreaLabel")} hint={t("serviceAreaHint")}>
-        <Input {...register("service_area_cities", { required: true })} />
-      </Field>
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-foreground">
-          {t("languagesLabel")}
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {LANGUAGES.map((lang) => {
-            const active = (watchedLanguages as readonly string[]).includes(lang);
-            return (
-              <label
-                key={lang}
-                className="group relative cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  value={lang}
-                  className="peer sr-only"
-                  {...register("languages", { validate: (v) => v.length > 0 })}
-                />
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-all duration-200 ease-out",
-                    "border-neutral-200 bg-neutral-50 text-neutral-900",
-                    "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
-                    "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
-                    "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
-                    "group-active:scale-[0.98]",
-                  )}
-                >
-                  <Check
-                    className={cn(
-                      "size-3.5 transition-all duration-200",
-                      active ? "opacity-100 scale-100" : "opacity-0 scale-75 -ms-1",
-                    )}
-                    aria-hidden
-                  />
-                  {t(`language.${lang}`)}
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label={t("capacityLabel")} hint={t("capacityHint")}>
-          <Input type="number" min={0} {...register("capacity")} />
-        </Field>
-        <Field label={t("concurrentLimitLabel")} hint={t("concurrentLimitHint")}>
-          <Input
-            type="number"
-            min={1}
-            {...register("concurrent_event_limit", {
-              valueAsNumber: true,
-              required: true,
-              min: 1,
-            })}
-          />
-        </Field>
-      </div>
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium text-foreground">
-          {t("subcategoriesLabel")}
-        </legend>
-        <p className="text-xs text-muted-foreground">
-          {t("subcategoriesHint")}
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          {parents.map((parent) => {
-            const subs = childrenByParent.get(parent.id) ?? [];
-            if (subs.length === 0) return null;
-            const ParentIcon = iconForCategory(parent.slug);
-            const selectedCount = subs.filter((s) =>
-              watchedSubs.includes(s.id),
-            ).length;
-            const hasAny = selectedCount > 0;
-            return (
-              <div
-                key={parent.id}
-                data-has-selection={hasAny}
-                className={cn(
-                  "group/card relative flex flex-col gap-3 rounded-2xl border bg-card p-4 transition-all duration-200 ease-out",
-                  "shadow-brand-sm hover:shadow-brand-md",
-                  hasAny
-                    ? "border-brand-cobalt-500/60 ring-1 ring-brand-cobalt-500/20"
-                    : "border-border hover:border-brand-cobalt-500/40",
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={cn(
-                        "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200",
-                        hasAny
-                          ? "bg-brand-cobalt-500 text-white"
-                          : "bg-brand-cobalt-100 text-brand-cobalt-500",
-                      )}
-                    >
-                      <ParentIcon className="size-5" aria-hidden />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-brand-navy-900">
-                        {localizedName(parent, locale)}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {t("serviceCount", { count: subs.length })}
-                      </p>
-                    </div>
-                  </div>
-                  {hasAny ? (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full bg-semantic-success-100 px-2 py-0.5 text-xs font-medium text-semantic-success-500 animate-in fade-in zoom-in-95 duration-200"
-                      aria-label={`${selectedCount} of ${subs.length} selected`}
-                    >
-                      <Check className="size-3" aria-hidden />
-                      {selectedCount}/{subs.length}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {subs.map((sub) => {
-                    const active = watchedSubs.includes(sub.id);
-                    return (
-                      <label
-                        key={sub.id}
-                        className="group/tile relative cursor-pointer select-none"
-                      >
-                        <input
-                          type="checkbox"
-                          value={sub.id}
-                          className="peer sr-only"
-                          {...register("subcategory_ids", {
-                            validate: (v) => v.length > 0,
-                          })}
-                        />
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-all duration-200 ease-out",
-                            "border-neutral-200 bg-neutral-50 text-neutral-900",
-                            "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
-                            "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
-                            "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
-                            "group-active/tile:scale-[0.97]",
-                          )}
-                        >
-                          <Check
-                            className={cn(
-                              "size-3 transition-all duration-200",
-                              active
-                                ? "opacity-100 scale-100"
-                                : "opacity-0 scale-75 -ms-1",
-                            )}
-                            aria-hidden
-                          />
-                          {localizedName(sub, locale)}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </fieldset>
-      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
-        <Button type="button" variant="outline" onClick={onBack}>
-          {t("back")}
-        </Button>
-        <Button
-          type="submit"
-          size="lg"
-          disabled={pending || disabled || formState.isSubmitting}
-        >
-          {pending ? t("saving") : t("submit")}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  error,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Label className="flex flex-col items-start gap-1.5 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
-      {children}
-      {hint ? (
-        <span className="text-xs text-muted-foreground">{hint}</span>
-      ) : null}
-      {error ? (
-        <span className="text-xs text-semantic-danger-500">{error}</span>
-      ) : null}
-    </Label>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Live public-profile preview — reflects inputs in real time on the end side.
-// ---------------------------------------------------------------------------
-
-function PreviewCard({
-  preview,
-  categories,
-  locale,
-  t,
-}: {
-  preview: PreviewState;
-  categories: OnboardingBootstrap["categories"];
-  locale: string;
-  t: ReturnType<typeof useTranslations>;
-}) {
-  const subNameById = useMemo(() => {
-    const m = new Map<string, { slug: string | null; name_en: string; name_ar: string | null }>();
-    for (const c of categories) {
-      m.set(c.id, {
-        slug: c.slug ?? null,
-        name_en: c.name_en,
-        name_ar: c.name_ar ?? null,
-      });
-    }
-    return m;
-  }, [categories]);
-
-  const parentSlugForSub = useMemo(() => {
-    const childToParent = new Map<string, string | null>();
-    const parentSlugById = new Map<string, string>();
-    for (const c of categories) {
-      if (c.parent_id === null) parentSlugById.set(c.id, c.slug);
-    }
-    for (const c of categories) {
-      if (c.parent_id) childToParent.set(c.id, parentSlugById.get(c.parent_id) ?? null);
-    }
-    return childToParent;
-  }, [categories]);
-
-  const selected = preview.subcategoryIds
-    .map((id) => subNameById.get(id))
-    .filter((x): x is NonNullable<typeof x> => !!x);
-
-  const businessName = preview.business_name.trim() || t("preview.placeholderName");
-  const bioShort = preview.bio.trim() || t("preview.placeholderBio");
-  const city = preview.base_city.trim() || t("preview.placeholderCity");
-
-  const initials = businessName
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  return (
-    <aside className="lg:sticky lg:top-20 self-start">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div aria-hidden className="size-2 animate-pulse rounded-full bg-brand-cobalt-500" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("preview.title")}
-          </h2>
-        </div>
-        <Card className="overflow-hidden">
-          <div className="h-24 bg-gradient-to-br from-brand-navy-900 via-brand-cobalt-500 to-brand-cobalt-400" aria-hidden />
-          <CardContent className="-mt-10 flex flex-col gap-4 p-5">
-            <div className="flex size-16 items-center justify-center rounded-2xl bg-white text-lg font-bold text-brand-navy-900 shadow-brand-md ring-1 ring-inset ring-border">
-              {initials || "?"}
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-brand-navy-900">
-                {businessName}
-              </h3>
-              <p className="text-xs text-muted-foreground">{city}</p>
-            </div>
-            <p className="line-clamp-3 text-sm text-muted-foreground">
-              {bioShort}
-            </p>
-            {selected.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {selected.slice(0, 6).map((s, idx) => {
-                  const parentSlug = parentSlugForSub.get(
-                    preview.subcategoryIds[idx] ?? "",
-                  );
-                  const Icon = iconForCategory(parentSlug);
-                  const label = locale === "ar" && s.name_ar ? s.name_ar : s.name_en;
-                  return (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 rounded-full bg-brand-cobalt-100 px-2 py-0.5 text-xs text-brand-cobalt-500"
-                    >
-                      <Icon className="size-3" aria-hidden />
-                      {label}
-                    </span>
-                  );
-                })}
-                {selected.length > 6 ? (
-                  <span className="inline-flex items-center rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-muted-foreground">
-                    +{selected.length - 6}
-                  </span>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-xs italic text-muted-foreground">
-                {t("preview.placeholderCategories")}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <p className="text-xs text-muted-foreground">
-          {t("preview.hint")}
-        </p>
-      </div>
-    </aside>
-  );
-}
-
-function ProgressBar({
-  percent,
-  label,
-}: {
-  percent: number;
-  label: string;
-}) {
+function ProgressBar({ percent, label }: { percent: number; label: string }) {
   const clamped = Math.max(0, Math.min(100, percent));
   return (
     <div
@@ -1072,9 +292,7 @@ function ProgressBar({
     >
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{label}</span>
-        <span className="tabular-nums font-medium text-brand-navy-900">
-          {clamped}%
-        </span>
+        <span className="tabular-nums font-medium text-brand-navy-900">{clamped}%</span>
       </div>
       <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
         <div
@@ -1083,5 +301,749 @@ function ProgressBar({
         />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 1 — person/company pre-step + business info
+// ---------------------------------------------------------------------------
+
+type Step1Values = {
+  business_name: string;
+  legal_type: "company" | "freelancer" | "foreign";
+  cr_number?: string;
+  national_id?: string;
+  bio?: string;
+  base_city: string;
+  service_area_cities: string[];
+  languages: Array<(typeof LANGUAGES)[number]>;
+};
+
+function Step1Form({
+  initial,
+  pending,
+  onSubmit,
+}: {
+  initial: OnboardingBootstrap["supplier"];
+  pending: boolean;
+  onSubmit: SubmitHandler<Step1Values>;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<Step1Values>({
+    // Cast: Zod's inferred output marks defaulted fields as optional (`| undefined`),
+    // but react-hook-form's Resolver wants them required because our defaults
+    // always populate them. Safe because we always pass full defaults below.
+    resolver: zodResolver(OnboardingStep1Schema) as unknown as import("react-hook-form").Resolver<Step1Values>,
+    defaultValues: {
+      business_name: initial?.business_name ?? "",
+      legal_type:
+        (initial?.legal_type as Step1Values["legal_type"]) ?? "company",
+      cr_number: initial?.cr_number ?? "",
+      national_id: initial?.national_id ?? "",
+      bio: initial?.bio ?? "",
+      base_city: initial?.base_city ?? "",
+      service_area_cities: (initial?.service_area_cities ?? []) as string[],
+      languages: ((initial?.languages as Step1Values["languages"]) ?? ["ar"]).filter(
+        (l) => (LANGUAGES as readonly string[]).includes(l),
+      ) as Step1Values["languages"],
+    },
+  });
+
+  const legalType = watch("legal_type");
+  const baseCity = watch("base_city");
+  const serviceAreas = watch("service_area_cities") ?? [];
+  const languagesSelected = watch("languages") ?? [];
+
+  return (
+    <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)} noValidate>
+      {/* Person vs Company — soft UI guidance only; flips legal_type. */}
+      <PersonCompanyPicker
+        value={legalType}
+        onChange={(v) => setValue("legal_type", v, { shouldDirty: true })}
+      />
+
+      <Field
+        label={t("businessNameLabel")}
+        helperKey="helper.businessName"
+        error={errors.business_name?.message}
+      >
+        <Input {...register("business_name")} placeholder={t("placeholder.businessName")} />
+      </Field>
+
+      {legalType === "company" ? (
+        <Field
+          label={t("crNumberLabel")}
+          helperKey="helper.crNumber"
+          error={errors.cr_number?.message}
+        >
+          <Input {...register("cr_number")} />
+        </Field>
+      ) : null}
+      {legalType === "freelancer" ? (
+        <Field
+          label={t("nationalIdLabel")}
+          helperKey="helper.nationalId"
+          error={errors.national_id?.message}
+        >
+          <Input {...register("national_id")} />
+        </Field>
+      ) : null}
+
+      <Field
+        label={t("bioLabel")}
+        helperKey="helper.bio"
+        error={errors.bio?.message}
+      >
+        <Textarea
+          {...register("bio")}
+          rows={4}
+          placeholder={t("placeholder.bio")}
+        />
+      </Field>
+
+      <Field
+        label={t("baseCityLabel")}
+        helperKey="helper.baseCity"
+        error={errors.base_city?.message}
+      >
+        <Controller
+          control={control}
+          name="base_city"
+          render={({ field }) => (
+            <CityCombobox
+              value={field.value}
+              onChange={field.onChange}
+              placeholder={t("baseCityPlaceholder")}
+              ariaLabel={t("baseCityLabel")}
+            />
+          )}
+        />
+      </Field>
+
+      <Field label={t("serviceAreaLabel")} helperKey="helper.serviceArea">
+        <Controller
+          control={control}
+          name="service_area_cities"
+          render={({ field }) => (
+            <ServiceAreaPicker
+              excludeSlug={baseCity}
+              value={field.value ?? []}
+              onChange={field.onChange}
+            />
+          )}
+        />
+        {serviceAreas.length > 15 ? (
+          <p className="text-xs text-semantic-danger-500">
+            {t("serviceAreaTooMany")}
+          </p>
+        ) : null}
+      </Field>
+
+      <Field label={t("languagesLabel")} helperKey="helper.languages">
+        <div className="flex flex-wrap gap-2">
+          {LANGUAGES.map((lang) => {
+            const active = (languagesSelected as readonly string[]).includes(lang);
+            return (
+              <label key={lang} className="group relative cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  value={lang}
+                  className="peer sr-only"
+                  {...register("languages", { validate: (v) => v.length > 0 })}
+                />
+                <span
+                  className={cn(
+                    "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-all",
+                    "border-neutral-200 bg-neutral-50 text-neutral-900",
+                    "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
+                    "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
+                    "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      "size-3.5 transition-all",
+                      active ? "opacity-100 scale-100" : "opacity-0 scale-75 -ms-1",
+                    )}
+                    aria-hidden
+                  />
+                  {t(`language.${lang}`)}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </Field>
+
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <Button type="submit" size="lg" disabled={pending}>
+          {pending ? t("saving") : t("continue")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function PersonCompanyPicker({
+  value,
+  onChange,
+}: {
+  value: "company" | "freelancer" | "foreign";
+  onChange: (v: "company" | "freelancer") => void;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const tiles: Array<{
+    value: "company" | "freelancer";
+    Icon: typeof User;
+    title: string;
+    subtitle: string;
+  }> = [
+    {
+      value: "freelancer",
+      Icon: User,
+      title: t("personCompany.person.title"),
+      subtitle: t("personCompany.person.subtitle"),
+    },
+    {
+      value: "company",
+      Icon: Building2,
+      title: t("personCompany.company.title"),
+      subtitle: t("personCompany.company.subtitle"),
+    },
+  ];
+  // Soft guidance copy shown above the tiles (Arabic-only via HelperText).
+  return (
+    <div className="flex flex-col gap-2">
+      <Label className="flex flex-col items-start gap-1.5 text-sm">
+        <span className="font-medium text-foreground">
+          {t("personCompany.label")}
+        </span>
+        <HelperText>{t("helper.personCompany")}</HelperText>
+      </Label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {tiles.map((tile) => {
+          const active = value === tile.value;
+          return (
+            <button
+              key={tile.value}
+              type="button"
+              onClick={() => onChange(tile.value)}
+              aria-pressed={active}
+              className={cn(
+                "group flex min-h-[120px] items-start gap-4 rounded-2xl border p-5 text-start transition-all",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
+                active
+                  ? "border-brand-cobalt-500 bg-brand-cobalt-100 shadow-brand-sm"
+                  : "border-border bg-card hover:border-brand-cobalt-500/40",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-12 shrink-0 items-center justify-center rounded-xl",
+                  active
+                    ? "bg-brand-cobalt-500 text-white"
+                    : "bg-brand-cobalt-100 text-brand-cobalt-500",
+                )}
+              >
+                <tile.Icon className="size-6" aria-hidden />
+              </span>
+              <span className="flex flex-col gap-1">
+                <span className="text-base font-semibold text-brand-navy-900">
+                  {tile.title}
+                </span>
+                <span className="text-xs leading-relaxed text-muted-foreground">
+                  {tile.subtitle}
+                </span>
+              </span>
+              <span
+                className={cn(
+                  "ms-auto inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold",
+                  active
+                    ? "border-brand-cobalt-500 bg-brand-cobalt-500 text-white"
+                    : "border-border text-transparent",
+                )}
+                aria-hidden
+              >
+                ✓
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ServiceAreaPicker({
+  value,
+  excludeSlug,
+  onChange,
+}: {
+  value: string[];
+  excludeSlug: string;
+  onChange: (next: string[]) => void;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const locale = useLocale() as "en" | "ar";
+  // A CityCombobox keyed on a per-pick nonce so it resets after each selection.
+  // Users see: chips of picked cities + an "Add city" combobox underneath.
+  const [nonce, setNonce] = useState(0);
+  const [pending, setPending] = useState<string>("");
+
+  function appendCity(slug: string) {
+    if (!slug) return;
+    if (slug === excludeSlug) return; // base city should not double up
+    if (value.includes(slug)) return;
+    if (value.length >= 15) return;
+    onChange([...value, slug]);
+    setPending("");
+    setNonce((n) => n + 1);
+  }
+
+  function removeCity(slug: string) {
+    onChange(value.filter((s) => s !== slug));
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {value.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {value.map((slug) => (
+            <li key={slug}>
+              <button
+                type="button"
+                onClick={() => removeCity(slug)}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                aria-label={t("serviceAreaRemove", {
+                  city: cityNameFor(slug, locale),
+                })}
+              >
+                <span>{cityNameFor(slug, locale)}</span>
+                <X className="size-3.5 opacity-70" aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs italic text-muted-foreground">
+          {t("serviceAreaEmpty")}
+        </p>
+      )}
+      {value.length < 15 ? (
+        <CityCombobox
+          key={nonce}
+          value={pending}
+          onChange={(slug) => appendCity(slug)}
+          placeholder={t("serviceAreaAdd")}
+          ariaLabel={t("serviceAreaAdd")}
+        />
+      ) : (
+        <p className="text-xs text-muted-foreground">{t("serviceAreaMaxReached")}</p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 2 — categories + segments
+// ---------------------------------------------------------------------------
+
+function Step2Form({
+  subcategoryOptions,
+  initialSubcategoryIds,
+  initialSegments,
+  pending,
+  disabled,
+  onBack,
+  onSubmit,
+}: {
+  subcategoryOptions: CatalogSubcategory[];
+  initialSubcategoryIds: string[];
+  initialSegments: MarketSegmentSlug[];
+  pending: boolean;
+  disabled: boolean;
+  onBack: () => void;
+  onSubmit: (fd: FormData) => void;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const locale = useLocale();
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialSubcategoryIds);
+  const [segments, setSegments] =
+    useState<MarketSegmentSlug[]>(initialSegments);
+  const [pendingPick, setPendingPick] = useState("");
+  const [pickerNonce, setPickerNonce] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedEntries = useMemo(
+    () =>
+      selectedIds
+        .map((id) => subcategoryOptions.find((s) => s.id === id))
+        .filter((x): x is CatalogSubcategory => !!x),
+    [selectedIds, subcategoryOptions],
+  );
+
+  function addSub(id: string) {
+    if (!id || selectedIds.includes(id)) return;
+    setSelectedIds((prev) => [...prev, id]);
+    setPendingPick("");
+    setPickerNonce((n) => n + 1);
+  }
+  function removeSub(id: string) {
+    setSelectedIds((prev) => prev.filter((v) => v !== id));
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (selectedIds.length === 0) {
+      setError(t("step2RequireCategory"));
+      return;
+    }
+    if (segments.length === 0) {
+      setError(t("step2RequireSegment"));
+      return;
+    }
+    setError(null);
+    const fd = new FormData();
+    for (const id of selectedIds) fd.append("subcategory_ids", id);
+    for (const s of segments) fd.append("works_with_segments", s);
+    onSubmit(fd);
+  }
+
+  return (
+    <form className="flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
+      <Field label={t("categoriesLabel")} helperKey="helper.categories">
+        {selectedEntries.length > 0 ? (
+          <ul className="mb-2 flex flex-col gap-1.5">
+            {selectedEntries.map((entry) => {
+              const parent =
+                locale === "ar" && entry.parent_name_ar
+                  ? entry.parent_name_ar
+                  : entry.parent_name_en;
+              const child =
+                locale === "ar" && entry.name_ar ? entry.name_ar : entry.name_en;
+              return (
+                <li
+                  key={entry.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-brand-cobalt-500/30 bg-brand-cobalt-100/40 px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0 truncate">
+                    {parent ? (
+                      <span className="text-muted-foreground">{parent} · </span>
+                    ) : null}
+                    <span className="font-medium text-brand-navy-900">{child}</span>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => removeSub(entry.id)}
+                    aria-label={t("categoryRemove", { name: child })}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <SubcategoryCombobox
+              key={pickerNonce}
+              subcategories={subcategoryOptions.filter(
+                (s) => !selectedIds.includes(s.id),
+              )}
+              value={pendingPick}
+              onChange={addSub}
+              placeholder={t("categoryPickerPlaceholder")}
+              ariaLabel={t("categoryPickerPlaceholder")}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPickerNonce((n) => n + 1)}
+            aria-hidden
+            className="pointer-events-none opacity-60"
+          >
+            <Plus className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </Field>
+
+      <Field label={t("segmentsLabel")} helperKey="helper.segments">
+        <SegmentsPicker
+          value={segments}
+          onChange={setSegments}
+          ariaLabel={t("segmentsLabel")}
+        />
+      </Field>
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" onClick={onBack}>
+          {t("back")}
+        </Button>
+        <Button type="submit" size="lg" disabled={pending || disabled}>
+          {pending ? t("saving") : t("continue")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 3 — documents + profile assets
+// ---------------------------------------------------------------------------
+
+type Step3Values = {
+  logo?: File;
+  iban?: File;
+  companyProfile?: File;
+};
+
+function Step3Form({
+  initialLogoPath,
+  pending,
+  disabled,
+  onBack,
+  onSubmit,
+}: {
+  initialLogoPath: string | null;
+  pending: boolean;
+  disabled: boolean;
+  onBack: () => void;
+  onSubmit: (fd: FormData) => void;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const [values, setValues] = useState<Step3Values>({});
+  const [error, setError] = useState<string | null>(null);
+
+  // Live preview of chosen logo via blob URL, revoked on change/unmount.
+  const logoPreview = useLogoPreview(values.logo);
+
+  function pickFile<K extends keyof Step3Values>(
+    key: K,
+    file: File | undefined,
+    validation: (f: File) => string | null,
+  ) {
+    if (!file) {
+      setValues((prev) => ({ ...prev, [key]: undefined }));
+      return;
+    }
+    const message = validation(file);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setError(null);
+    setValues((prev) => ({ ...prev, [key]: file }));
+  }
+
+  function validateLogo(file: File): string | null {
+    if (!/^image\//.test(file.type)) return t("logo.errorType");
+    if (file.size > LOGO_MAX_BYTES) return t("logo.errorSize");
+    return null;
+  }
+  function validatePdf(file: File, errorType: string, errorSize: string): string | null {
+    if (file.type && file.type !== "application/pdf") return errorType;
+    if (file.size > PDF_MAX_BYTES) return errorSize;
+    return null;
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!values.iban) {
+      setError(t("iban.required"));
+      return;
+    }
+    setError(null);
+    const fd = new FormData();
+    if (values.logo) fd.append("logo_file", values.logo);
+    fd.append("iban_file", values.iban);
+    if (values.companyProfile) fd.append("company_profile_file", values.companyProfile);
+    onSubmit(fd);
+  }
+
+  return (
+    <form className="flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
+      <Field label={t("logo.label")} helperKey="helper.logo">
+        <div className="flex items-start gap-4">
+          <div
+            className={cn(
+              "flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40",
+              logoPreview && "border-solid",
+            )}
+            aria-hidden
+          >
+            {logoPreview ? (
+              // Using <Image> with unoptimized blob URL; logo stays in local memory only.
+              <Image
+                src={logoPreview}
+                alt=""
+                width={80}
+                height={80}
+                unoptimized
+                className="size-full object-cover"
+              />
+            ) : initialLogoPath ? (
+              <ImageIcon className="size-7 text-muted-foreground" aria-hidden />
+            ) : (
+              <ImageIcon className="size-7 text-muted-foreground" aria-hidden />
+            )}
+          </div>
+          <label className="flex flex-1 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
+            <UploadCloud className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+            <span className="flex-1 truncate text-muted-foreground">
+              {values.logo
+                ? `${values.logo.name} (${Math.round(values.logo.size / 1024)} KB)`
+                : t("logo.cta")}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) =>
+                pickFile("logo", e.target.files?.[0] ?? undefined, validateLogo)
+              }
+            />
+          </label>
+        </div>
+      </Field>
+
+      <Field label={t("iban.label")} helperKey="helper.iban">
+        <FileDropzone
+          label={t("iban.cta")}
+          file={values.iban}
+          accept="application/pdf"
+          onSelect={(f) =>
+            pickFile("iban", f, (file) =>
+              validatePdf(file, t("iban.errorType"), t("iban.errorSize")),
+            )
+          }
+        />
+      </Field>
+
+      <Field label={t("companyProfile.label")} helperKey="helper.companyProfile">
+        <FileDropzone
+          label={t("companyProfile.cta")}
+          file={values.companyProfile}
+          accept="application/pdf"
+          onSelect={(f) =>
+            pickFile("companyProfile", f, (file) =>
+              validatePdf(
+                file,
+                t("companyProfile.errorType"),
+                t("companyProfile.errorSize"),
+              ),
+            )
+          }
+        />
+      </Field>
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" onClick={onBack}>
+          {t("back")}
+        </Button>
+        <Button type="submit" size="lg" disabled={pending || disabled}>
+          {pending ? t("uploading") : t("submit")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function useLogoPreview(file: File | undefined): string | null {
+  // Compute the object URL synchronously off the file identity. The effect
+  // below is pure cleanup — it only revokes the URL when the file changes,
+  // never calls setState, so we avoid the cascading-render lint rule.
+  const url = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file],
+  );
+  useEffect(() => {
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
+  return url;
+}
+
+function FileDropzone({
+  label,
+  file,
+  accept,
+  onSelect,
+}: {
+  label: string;
+  file: File | undefined;
+  accept: string;
+  onSelect: (file: File | undefined) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/30">
+      {file ? (
+        <FileText className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+      ) : (
+        <Upload className="size-4 shrink-0 text-brand-cobalt-500" aria-hidden />
+      )}
+      <span className="flex-1 truncate text-muted-foreground">
+        {file
+          ? `${file.name} (${Math.round(file.size / 1024)} KB)`
+          : label}
+      </span>
+      <input
+        type="file"
+        accept={accept}
+        className="sr-only"
+        onChange={(e) => onSelect(e.target.files?.[0] ?? undefined)}
+      />
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shared Field primitive — FormLabel + HelperText + error slot.
+// ---------------------------------------------------------------------------
+
+function Field({
+  label,
+  helperKey,
+  error,
+  children,
+}: {
+  label: string;
+  helperKey?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  return (
+    <Label className="flex flex-col items-start gap-1.5 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      {helperKey ? <HelperText>{t(helperKey)}</HelperText> : null}
+      {children}
+      {error ? (
+        <span className="text-xs text-semantic-danger-500">{error}</span>
+      ) : null}
+    </Label>
   );
 }

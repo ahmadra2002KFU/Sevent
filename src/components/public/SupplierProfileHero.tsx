@@ -10,6 +10,7 @@ type SupplierProfileHeroProps = {
   serviceAreaCities: string[];
   languages: string[];
   heroImageUrl: string | null;
+  logoUrl?: string | null;
   subcategories: Array<{
     id: string;
     name_en: string;
@@ -20,6 +21,14 @@ type SupplierProfileHeroProps = {
   serviceAreaLabel: string;
   languagesLabel: string;
 };
+
+/** Two-letter initials extracted from a supplier's business name. */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
 
 /**
  * Profile hero. Two-layer layout:
@@ -38,12 +47,14 @@ export function SupplierProfileHero({
   serviceAreaCities,
   languages,
   heroImageUrl,
+  logoUrl = null,
   subcategories,
   verifiedLabel,
   baseCityLabel,
   serviceAreaLabel,
   languagesLabel,
 }: SupplierProfileHeroProps) {
+  const initials = getInitials(businessName);
   return (
     <section className="flex flex-col">
       {/* Banner */}
@@ -84,37 +95,63 @@ export function SupplierProfileHero({
         <div className="rounded-2xl border border-border bg-card p-6 shadow-brand-md sm:p-8">
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-2xl font-bold tracking-tight text-brand-navy-900 sm:text-3xl">
-                    {businessName}
-                  </h1>
-                  <VerifiedBadge label={verifiedLabel} />
-                </div>
+              <div className="flex items-start gap-4">
+                {/* Logo / initials block — 80px square. Uses logical
+                    properties (`ms-*`/`me-*` inherited via gap) so the
+                    logo naturally sits at the inline-start in both LTR and
+                    RTL layouts. */}
+                {logoUrl ? (
+                  <div className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-brand-sm">
+                    <Image
+                      src={logoUrl}
+                      alt={`${businessName} logo`}
+                      fill
+                      unoptimized
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    aria-hidden
+                    className="flex size-20 shrink-0 items-center justify-center rounded-xl border border-border bg-neutral-100 text-2xl font-semibold text-brand-navy-900"
+                  >
+                    {initials}
+                  </div>
+                )}
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="size-3.5" aria-hidden />
-                    {baseCityLabel}: <span className="font-medium text-foreground">{baseCity}</span>
-                  </span>
-                  {serviceAreaCities.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-2xl font-bold tracking-tight text-brand-navy-900 sm:text-3xl">
+                      {businessName}
+                    </h1>
+                    <VerifiedBadge label={verifiedLabel} />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">
-                      <Globe2 className="size-3.5" aria-hidden />
-                      {serviceAreaLabel}:{" "}
-                      <span className="font-medium text-foreground">
-                        {serviceAreaCities.join(", ")}
-                      </span>
+                      <MapPin className="size-3.5" aria-hidden />
+                      {baseCityLabel}: <span className="font-medium text-foreground">{baseCity}</span>
                     </span>
-                  ) : null}
-                  {languages.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Languages className="size-3.5" aria-hidden />
-                      {languagesLabel}:{" "}
-                      <span className="font-medium text-foreground">
-                        {languages.join(", ")}
+                    {serviceAreaCities.length > 0 ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Globe2 className="size-3.5" aria-hidden />
+                        {serviceAreaLabel}:{" "}
+                        <span className="font-medium text-foreground">
+                          {serviceAreaCities.join(", ")}
+                        </span>
                       </span>
-                    </span>
-                  ) : null}
+                    ) : null}
+                    {languages.length > 0 ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Languages className="size-3.5" aria-hidden />
+                        {languagesLabel}:{" "}
+                        <span className="font-medium text-foreground">
+                          {languages.join(", ")}
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>

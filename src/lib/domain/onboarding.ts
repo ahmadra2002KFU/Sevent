@@ -2,9 +2,19 @@
  * Zod schemas for the 3-step supplier onboarding wizard.
  * Consumed by Lane 1 (`(supplier)/supplier/onboarding/**`) server actions and
  * by the service-role seed script (scripts/seed-users.ts).
+ *
+ * 2026-04-21 pass: extended with
+ *   - `works_with_segments` (>=1 of the 5 market-segment slugs)
+ *   - `base_city` / `service_area_cities` narrowed to the frozen KSA slug set
+ *   - logo / IBAN / company-profile file upload fields (validated at the
+ *     server-action boundary where real `File`/`Blob` instances are available)
+ *   - `legal_type` stays on Step 1 but is now driven by a soft Person/Company
+ *     tile picker in the UI (no DB enforcement change).
  */
 
 import { z } from "zod";
+import { CITY_SLUGS } from "./cities";
+import { MARKET_SEGMENT_SLUGS } from "./segments";
 
 export const LEGAL_TYPES = ["company", "freelancer", "foreign"] as const;
 export type LegalType = (typeof LEGAL_TYPES)[number];
@@ -18,9 +28,35 @@ export const DOC_TYPES = [
   "id",
   "gea_permit",
   "certification",
+  "iban_certificate",
+  "company_profile",
   "other",
 ] as const;
 export type DocType = (typeof DOC_TYPES)[number];
+
+// -----------------------------------------------------------------------------
+// Shared tuples (see src/lib/domain/events.ts for the same pattern — zod needs
+// a non-empty readonly tuple type for `z.enum`, not a plain string[]).
+// -----------------------------------------------------------------------------
+
+const CITY_TUPLE = CITY_SLUGS as unknown as readonly [string, ...string[]];
+const SEGMENT_TUPLE = MARKET_SEGMENT_SLUGS as unknown as readonly [
+  (typeof MARKET_SEGMENT_SLUGS)[number],
+  ...(typeof MARKET_SEGMENT_SLUGS)[number][],
+];
+
+// Runtime-safe File/Blob check that survives SSR. `File` is only defined in
+// the browser and in modern Node (>=20); guard with `typeof` so Zod schema
+// compilation in edge cases doesn't throw on import.
+const FileLike = z.custom<File | Blob>(
+  (val) => {
+    if (val == null) return false;
+    if (typeof Blob !== "undefined" && val instanceof Blob) return true;
+    if (typeof File !== "undefined" && val instanceof File) return true;
+    return false;
+  },
+  { message: "Expected an uploaded file" },
+);
 
 // -----------------------------------------------------------------------------
 // Step 1 — business info
@@ -33,6 +69,12 @@ export const OnboardingStep1 = z
     cr_number: z.string().trim().optional(),
     national_id: z.string().trim().optional(),
     bio: z.string().trim().max(2000).optional(),
+    base_city: z.enum(CITY_TUPLE),
+    service_area_cities: z
+      .array(z.enum(CITY_TUPLE))
+      .max(15, "Select at most 15 service-area cities")
+      .default([]),
+    languages: z.array(z.enum(LANGUAGES)).min(1).default(["ar"]),
   })
   .superRefine((data, ctx) => {
     if (data.legal_type === "company" && !data.cr_number) {
@@ -53,7 +95,34 @@ export const OnboardingStep1 = z
 export type OnboardingStep1 = z.infer<typeof OnboardingStep1>;
 
 // -----------------------------------------------------------------------------
-// Step 2 — docs upload (metadata only; actual upload happens via storage helper)
+// Step 2 — categories + works-with segments
+// -----------------------------------------------------------------------------
+
+export const OnboardingStep2 = z.object({
+  subcategory_ids: z.array(z.string().uuid()).min(1, "Pick at least one service"),
+  works_with_segments: z
+    .array(z.enum(SEGMENT_TUPLE))
+    .min(1, "Pick at least one market segment"),
+});
+export type OnboardingStep2 = z.infer<typeof OnboardingStep2>;
+
+// -----------------------------------------------------------------------------
+// Step 3 — documents + profile assets
+// -----------------------------------------------------------------------------
+
+export const LOGO_MAX_BYTES = 1 * 1024 * 1024; // 1 MB
+export const PDF_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+export const OnboardingStep3 = z.object({
+  logo_file: FileLike.optional(),
+  iban_file: FileLike,
+  company_profile_file: FileLike.optional(),
+});
+export type OnboardingStep3 = z.infer<typeof OnboardingStep3>;
+
+// -----------------------------------------------------------------------------
+// Legacy metadata schema kept for scripts/seed-users.ts which pre-staged
+// document rows without going through the wizard. Unchanged shape.
 // -----------------------------------------------------------------------------
 
 export const DocUploadItem = z.object({
@@ -62,43 +131,6 @@ export const DocUploadItem = z.object({
   notes: z.string().max(500).optional(),
 });
 export type DocUploadItem = z.infer<typeof DocUploadItem>;
-
-export const OnboardingStep2 = z.object({
-  docs: z.array(DocUploadItem).min(1, "Upload at least one document"),
-});
-export type OnboardingStep2 = z.infer<typeof OnboardingStep2>;
-
-// -----------------------------------------------------------------------------
-// Step 3 — location, service area, capacity
-// -----------------------------------------------------------------------------
-
-export const OnboardingStep3 = z.object({
-  base_city: z.string().trim().min(2).max(80),
-  base_location: z
-    .object({
-      lat: z.number().gte(-90).lte(90),
-      lng: z.number().gte(-180).lte(180),
-    })
-    .optional(),
-  service_area_cities: z.array(z.string().trim().min(2)).min(1),
-  languages: z.array(z.enum(LANGUAGES)).min(1),
-  capacity: z.number().int().positive().optional(),
-  concurrent_event_limit: z.number().int().min(1).default(1),
-  category_ids: z.array(z.string().uuid()).min(1),
-  subcategory_ids: z.array(z.string().uuid()).min(1),
-});
-export type OnboardingStep3 = z.infer<typeof OnboardingStep3>;
-
-// -----------------------------------------------------------------------------
-// Submission bundle (server-side finalise)
-// -----------------------------------------------------------------------------
-
-export const OnboardingSubmission = z.object({
-  step1: OnboardingStep1,
-  step2: OnboardingStep2,
-  step3: OnboardingStep3,
-});
-export type OnboardingSubmission = z.infer<typeof OnboardingSubmission>;
 
 /** Slugify a business name for `suppliers.slug`. */
 export function slugifyBusinessName(name: string): string {

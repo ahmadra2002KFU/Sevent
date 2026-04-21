@@ -16,6 +16,8 @@ export type OnboardingBootstrap = {
     concurrent_event_limit: number;
     verification_status: string;
     is_published: boolean;
+    logo_path: string | null;
+    works_with_segments: string[];
   } | null;
   docs: Array<{
     id: string;
@@ -49,13 +51,17 @@ export async function loadOnboardingBootstrap(): Promise<OnboardingBootstrap> {
     const { data: supplierRow } = await supabase
       .from("suppliers")
       .select(
-        "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, languages, capacity, concurrent_event_limit, verification_status, is_published",
+        "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments",
       )
       .eq("profile_id", user.id)
       .maybeSingle();
 
     if (supplierRow) {
-      supplier = supplierRow;
+      supplier = {
+        ...supplierRow,
+        works_with_segments: (supplierRow.works_with_segments ?? []) as string[],
+        logo_path: (supplierRow.logo_path ?? null) as string | null,
+      } as OnboardingBootstrap["supplier"];
       const { data: docRows } = await supabase
         .from("supplier_docs")
         .select("id, doc_type, file_path, status, notes, created_at")

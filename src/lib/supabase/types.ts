@@ -16,6 +16,8 @@ export type SupplierDocType =
   | "id"
   | "gea_permit"
   | "certification"
+  | "iban_certificate"
+  | "company_profile"
   | "other";
 
 export type SupplierDocStatus = "pending" | "approved" | "rejected";
@@ -63,6 +65,10 @@ export type SupplierRow = {
   concurrent_event_limit: number;
   bio: string | null;
   is_published: boolean;
+  logo_path: string | null;
+  accent_color: string; // DB default '#1E7BD8' — always populated
+  profile_sections_order: string[]; // DB default ['bio','packages','portfolio','reviews']
+  works_with_segments: EventType[]; // DB default []
   created_at: string;
   updated_at: string;
 };
@@ -150,13 +156,18 @@ export type AvailabilityBlockRow = {
 // ---------------------------------------------------------------------------
 
 export type EventType =
-  | "wedding"
-  | "corporate"
-  | "government"
-  | "exhibition"
-  | "birthday"
-  | "private"
-  | "other";
+  | "private_occasions"
+  | "business_events"
+  | "entertainment_culture"
+  | "sports_exhibitions"
+  | "others";
+
+/**
+ * Semantic alias for {@link EventType}: used in supplier-facing contexts
+ * (e.g. `suppliers.works_with_segments`) where the enum represents market
+ * segments a supplier serves rather than the type of an individual event.
+ */
+export type MarketSegment = EventType;
 
 export type RfqStatus =
   | "draft"

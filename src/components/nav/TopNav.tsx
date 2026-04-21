@@ -5,31 +5,41 @@ import { Logo } from "@/components/brand/Logo";
 import NotificationBell from "@/app/_components/NotificationBell";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileNavSheet } from "./MobileNavSheet";
+import { NavLinks } from "./NavLinks";
 import { UserMenu } from "./UserMenu";
 import { cn } from "@/lib/utils";
+import type { NavIconKey } from "./navIcons";
 
 type Role = "organizer" | "supplier" | "admin";
 
-type NavItem = { href: string; labelKey: string };
+type NavItem = { href: string; labelKey: string; iconKey: NavIconKey };
 
+/**
+ * Role-scoped nav items. The trailing Notifications slot is served by the
+ * standalone `<NotificationBell>` icon (badge + icon), not a labeled link, so
+ * it's intentionally absent from this list. If a role needs a labeled
+ * "Notifications" nav item in the future, add a matching `nav.*.notifications`
+ * i18n key and re-introduce it here.
+ */
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   organizer: [
-    { href: "/organizer/dashboard", labelKey: "organizer.dashboard" },
-    { href: "/organizer/events", labelKey: "organizer.events" },
-    { href: "/organizer/rfqs", labelKey: "organizer.rfqs" },
-    { href: "/organizer/bookings", labelKey: "organizer.bookings" },
+    { href: "/organizer/dashboard", labelKey: "organizer.dashboard", iconKey: "dashboard" },
+    { href: "/organizer/events", labelKey: "organizer.events", iconKey: "events" },
+    { href: "/organizer/rfqs", labelKey: "organizer.rfqs", iconKey: "rfqs" },
+    { href: "/organizer/bookings", labelKey: "organizer.bookings", iconKey: "bookings" },
   ],
   supplier: [
-    { href: "/supplier/dashboard", labelKey: "supplier.dashboard" },
-    { href: "/supplier/onboarding", labelKey: "supplier.onboarding" },
-    { href: "/supplier/catalog", labelKey: "supplier.catalog" },
-    { href: "/supplier/calendar", labelKey: "supplier.calendar" },
-    { href: "/supplier/rfqs", labelKey: "supplier.rfqs" },
-    { href: "/supplier/bookings", labelKey: "supplier.bookings" },
+    { href: "/supplier/dashboard", labelKey: "supplier.dashboard", iconKey: "dashboard" },
+    { href: "/supplier/onboarding", labelKey: "supplier.onboarding", iconKey: "onboarding" },
+    { href: "/supplier/catalog", labelKey: "supplier.catalog", iconKey: "catalog" },
+    { href: "/supplier/calendar", labelKey: "supplier.calendar", iconKey: "calendar" },
+    { href: "/supplier/rfqs", labelKey: "supplier.rfqs", iconKey: "supplierRfqs" },
+    { href: "/supplier/bookings", labelKey: "supplier.bookings", iconKey: "bookings" },
+    { href: "/supplier/profile", labelKey: "supplier.profile", iconKey: "profile" },
   ],
   admin: [
-    { href: "/admin/dashboard", labelKey: "admin.dashboard" },
-    { href: "/admin/verifications", labelKey: "admin.verifications" },
+    { href: "/admin/dashboard", labelKey: "admin.dashboard", iconKey: "dashboard" },
+    { href: "/admin/verifications", labelKey: "admin.verifications", iconKey: "verifications" },
   ],
 };
 
@@ -60,7 +70,11 @@ export async function TopNav({ role }: { role: Role }) {
   }
 
   const tone = ROLE_TONE[role];
-  const items = NAV_BY_ROLE[role];
+  const items = NAV_BY_ROLE[role].map((item) => ({
+    href: item.href,
+    label: nav(item.labelKey),
+    iconKey: item.iconKey,
+  }));
 
   return (
     <header
@@ -71,20 +85,17 @@ export async function TopNav({ role }: { role: Role }) {
           : "border-border bg-white/80 text-foreground",
       )}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <MobileNavSheet
             tone={tone}
             triggerLabel={nav("menu.open")}
             title={nav(`role.${role}`)}
-            items={items.map((item) => ({
-              href: item.href,
-              label: nav(item.labelKey),
-            }))}
+            items={items}
           />
           <Link
             href="/"
-            className="flex min-w-0 items-center gap-3"
+            className="flex min-h-[44px] min-w-0 items-center gap-3 rounded-md px-2"
             aria-label="Sevent home"
           >
             <Logo
@@ -104,29 +115,13 @@ export async function TopNav({ role }: { role: Role }) {
         </div>
 
         <nav className="flex items-center gap-1">
-          <ul className="hidden items-center gap-1 text-sm md:flex">
-            {items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 font-medium transition-colors",
-                    tone === "dark"
-                      ? "text-white/80 hover:bg-white/10 hover:text-white"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {nav(item.labelKey)}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <NavLinks items={items} tone={tone} />
           <div className="mx-2 hidden h-6 w-px bg-current/10 md:block" />
           <LanguageSwitcher tone={tone} />
           <NotificationBell
             href={NOTIFICATION_HREF[role]}
             className={cn(
-              "relative ms-1 inline-flex items-center justify-center rounded-md border px-2.5 py-1.5 text-sm transition-colors",
+              "relative ms-1 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border px-2.5 text-sm transition-colors",
               tone === "dark"
                 ? "border-white/30 text-white/90 hover:bg-white/10 hover:text-white"
                 : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",

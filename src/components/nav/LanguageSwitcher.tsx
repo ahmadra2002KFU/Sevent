@@ -35,8 +35,8 @@ export function LanguageSwitcher({ tone = "light" }: LanguageSwitcherProps) {
           size="sm"
           className={
             tone === "dark"
-              ? "border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              : undefined
+              ? "min-h-[44px] min-w-[44px] gap-2 border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              : "min-h-[44px] min-w-[44px] gap-2"
           }
           disabled={pending}
           aria-label="Change language"

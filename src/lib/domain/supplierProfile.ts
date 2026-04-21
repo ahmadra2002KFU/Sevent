@@ -10,8 +10,23 @@
  * unpublished rows.
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { publicPortfolioUrl } from "@/lib/supabase/storage";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrl,
+  publicPortfolioUrl,
+} from "@/lib/supabase/storage";
+import { DEFAULT_ACCENT_HEX } from "@/lib/domain/taxonomy";
+
+const DEFAULT_SECTIONS_ORDER: ReadonlyArray<string> = Object.freeze([
+  "bio",
+  "packages",
+  "portfolio",
+  "reviews",
+]);
 
 export type PublicSupplierPackage = {
   id: string;
@@ -44,6 +59,12 @@ export type PublicSupplierSubcategory = {
   parent_name_en: string | null;
 };
 
+export type PublicSupplierCompanyProfileDoc = {
+  /** Signed, short-lived download URL for the company profile PDF. */
+  download_url: string;
+  file_path: string;
+};
+
 export type PublicSupplierProfile = {
   id: string;
   slug: string;
@@ -54,6 +75,19 @@ export type PublicSupplierProfile = {
   languages: string[];
   verification_status: "approved";
   is_published: true;
+  /** Signed URL for the supplier's uploaded logo, or `null` if none. */
+  logo_url: string | null;
+  /** Hex accent color (always populated — defaults to platform cobalt). */
+  accent_color: string;
+  /**
+   * Order in which to render profile sections. Always contains every known
+   * slug (`bio`, `packages`, `portfolio`, `reviews`) in the saved order, with
+   * any missing slugs appended at the end in the default order. Unknown
+   * slugs coming from the DB are filtered out by the caller.
+   */
+  profile_sections_order: string[];
+  /** Company profile PDF download, when the supplier has an approved row. */
+  company_profile: PublicSupplierCompanyProfileDoc | null;
   packages: PublicSupplierPackage[];
   media: PublicSupplierMedia[];
   subcategories: PublicSupplierSubcategory[];
@@ -77,7 +111,7 @@ export async function getPublicSupplierBySlug(
   const { data: supplier, error: supplierErr } = await supabase
     .from("suppliers")
     .select(
-      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, languages, verification_status, is_published",
+      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -88,7 +122,16 @@ export async function getPublicSupplierBySlug(
   const supplierId = supplier.id as string;
   const profileId = supplier.profile_id as string;
 
-  const [packagesRes, mediaRes, catsRes, reviewsRes] = await Promise.all([
+  // supplier_docs and storage buckets `supplier-logos` / `supplier-docs` are
+  // RLS-gated (supplier_docs = owner/admin only; buckets = non-public). For a
+  // public page we know the supplier is approved+published, so we reach for
+  // the service-role client here strictly to (a) read the company_profile row
+  // and (b) mint short-lived signed URLs for the logo + PDF. This mirrors the
+  // pattern used by the admin verification page and avoids loosening RLS on
+  // otherwise-sensitive rows.
+  const admin = createSupabaseServiceRoleClient();
+
+  const [packagesRes, mediaRes, catsRes, reviewsRes, companyProfileRes] = await Promise.all([
     supabase
       .from("packages")
       .select(
@@ -118,6 +161,15 @@ export async function getPublicSupplierBySlug(
       .select("ratings_jsonb")
       .eq("reviewee_id", profileId)
       .not("published_at", "is", null),
+    admin
+      .from("supplier_docs")
+      .select("file_path")
+      .eq("supplier_id", supplierId)
+      .eq("doc_type", "company_profile")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const packages: PublicSupplierPackage[] = (packagesRes.data ?? []).map(
@@ -199,6 +251,65 @@ export async function getPublicSupplierBySlug(
         : overalls.reduce((a, b) => a + b, 0) / overalls.length,
   };
 
+  // --- Logo: signed download URL from the `supplier-logos` bucket ----------
+  // The bucket is non-public with a public-read RLS policy gated by
+  // approved+published. The row we just loaded satisfies that gate, so any
+  // signed URL we mint is safe to embed in the public page. We prefer signed
+  // URLs over `getPublicUrl` because the bucket's `public` flag is `false` —
+  // `getPublicUrl` would hand back a URL that still requires the RLS policy
+  // to resolve, whereas a signed URL bypasses it cleanly.
+  const logoPath = (supplier.logo_path as string | null) ?? null;
+  let logoUrl: string | null = null;
+  if (logoPath) {
+    try {
+      logoUrl = await createSignedDownloadUrl(admin, STORAGE_BUCKETS.logos, logoPath);
+    } catch {
+      // Best-effort: if the object is missing we just fall back to initials.
+      logoUrl = null;
+    }
+  }
+
+  // --- Company profile PDF: signed download URL -----------------------------
+  let companyProfile: PublicSupplierCompanyProfileDoc | null = null;
+  const companyProfilePath =
+    (companyProfileRes.data?.file_path as string | null | undefined) ?? null;
+  if (companyProfilePath) {
+    try {
+      const url = await createSignedDownloadUrl(
+        admin,
+        STORAGE_BUCKETS.docs,
+        companyProfilePath,
+      );
+      companyProfile = { download_url: url, file_path: companyProfilePath };
+    } catch {
+      companyProfile = null;
+    }
+  }
+
+  // --- Accent color + section order -----------------------------------------
+  const accentRaw = (supplier.accent_color as string | null) ?? DEFAULT_ACCENT_HEX;
+  const accentColor = /^#[0-9a-fA-F]{6}$/.test(accentRaw)
+    ? accentRaw
+    : DEFAULT_ACCENT_HEX;
+
+  const rawOrder = Array.isArray(supplier.profile_sections_order)
+    ? (supplier.profile_sections_order as unknown[]).filter(
+        (v): v is string => typeof v === "string",
+      )
+    : [];
+  // Keep only known slugs (defensive — DB may drift ahead of the UI), then
+  // append any default slugs that were missing so every section still renders.
+  const knownFromDb = rawOrder.filter((slug) =>
+    DEFAULT_SECTIONS_ORDER.includes(slug),
+  );
+  const missingDefaults = DEFAULT_SECTIONS_ORDER.filter(
+    (slug) => !knownFromDb.includes(slug),
+  );
+  const profileSectionsOrder =
+    knownFromDb.length === 0
+      ? [...DEFAULT_SECTIONS_ORDER]
+      : [...knownFromDb, ...missingDefaults];
+
   return {
     id: supplierId,
     slug: supplier.slug as string,
@@ -209,6 +320,10 @@ export async function getPublicSupplierBySlug(
     languages: (supplier.languages as string[]) ?? [],
     verification_status: "approved",
     is_published: true,
+    logo_url: logoUrl,
+    accent_color: accentColor,
+    profile_sections_order: profileSectionsOrder,
+    company_profile: companyProfile,
     packages,
     media,
     subcategories,

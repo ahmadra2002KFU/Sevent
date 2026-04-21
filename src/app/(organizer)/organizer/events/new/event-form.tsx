@@ -16,28 +16,22 @@
 import { useRef, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
-  CITY_OPTIONS,
-  EVENT_TYPES,
   EventFormInput,
   type CityOption,
   type EventType,
 } from "@/lib/domain/events";
+import { MARKET_SEGMENTS } from "@/lib/domain/segments";
+import { CityCombobox } from "@/components/supplier/CityCombobox";
+import { HelperText } from "@/components/ui-ext/HelperText";
 import { createEventAction } from "../actions";
 
 type FormValues = {
@@ -62,6 +56,8 @@ function toIsoIfPresent(local: string): string {
 
 export function EventForm() {
   const t = useTranslations("organizer.eventForm");
+  const locale = useLocale();
+  const isAr = locale === "ar";
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -157,67 +153,72 @@ export function EventForm() {
 
       <Card>
         <CardContent className="flex flex-col gap-5 p-6">
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField
-              label={t("eventTypeLabel")}
-              htmlFor="event_type_select"
-              error={errors.event_type?.message}
-              required
+          <FormField
+            label={t("eventTypeLabel")}
+            htmlFor="event_type_picker"
+            error={errors.event_type?.message}
+            required
+            helper={isAr ? "حدد نوع الفعالية الأقرب لمناسبتك" : null}
+          >
+            <div
+              id="event_type_picker"
+              role="radiogroup"
+              aria-label={t("eventTypeLabel")}
+              aria-invalid={!!errors.event_type}
+              className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
             >
-              <Select
-                value={watchedEventType ?? ""}
-                onValueChange={(v) =>
-                  setValue("event_type", v as EventType, {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <SelectTrigger
-                  id="event_type_select"
-                  className="w-full"
-                  aria-invalid={!!errors.event_type}
-                >
-                  <SelectValue placeholder={t("eventTypeLabel")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map((et) => (
-                    <SelectItem key={et} value={et}>
-                      {t(`eventType.${et}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
+              {MARKET_SEGMENTS.map((segment) => {
+                const isActive = watchedEventType === segment.slug;
+                const label = isAr ? segment.name_ar : segment.name_en;
+                return (
+                  <button
+                    key={segment.slug}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    onClick={() =>
+                      setValue("event_type", segment.slug as EventType, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    className={cn(
+                      "group flex min-h-[56px] items-center gap-3 rounded-lg border px-4 py-3 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
+                      isActive
+                        ? "border-brand-cobalt-500 bg-brand-cobalt-100 text-brand-navy-900 shadow-brand-sm"
+                        : "border-border bg-card text-foreground hover:border-brand-cobalt-500/30",
+                    )}
+                  >
+                    <span className="text-2xl leading-none" aria-hidden>
+                      {segment.icon}
+                    </span>
+                    <span className="flex-1 text-sm font-semibold">
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </FormField>
 
-            <FormField
-              label={t("cityLabel")}
-              htmlFor="city_select"
-              error={errors.city?.message}
-              required
-            >
-              <Select
-                value={watchedCity ?? ""}
-                onValueChange={(v) =>
-                  setValue("city", v as CityOption, { shouldValidate: true })
-                }
-              >
-                <SelectTrigger
-                  id="city_select"
-                  className="w-full"
-                  aria-invalid={!!errors.city}
-                >
-                  <SelectValue placeholder={t("cityLabel")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {CITY_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {t(`city.${c}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-          </div>
+          <FormField
+            label={t("cityLabel")}
+            htmlFor="city_combobox"
+            error={errors.city?.message}
+            required
+            helper={isAr ? "المدينة التي ستُقام فيها الفعالية" : null}
+          >
+            <CityCombobox
+              value={watchedCity || null}
+              onChange={(slug) =>
+                setValue("city", slug as CityOption, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+              ariaLabel={t("cityLabel")}
+            />
+          </FormField>
 
           <FormField
             label={t("clientNameLabel")}
@@ -344,12 +345,14 @@ function FormField({
   htmlFor,
   error,
   required,
+  helper,
   children,
 }: {
   label: string;
   htmlFor: string;
   error?: string;
   required?: boolean;
+  helper?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -365,6 +368,7 @@ function FormField({
           </span>
         ) : null}
       </Label>
+      {helper ? <HelperText>{helper}</HelperText> : null}
       {children}
       {error ? (
         <p className="text-xs text-destructive">{error}</p>

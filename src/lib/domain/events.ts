@@ -5,40 +5,25 @@
  * are stored as `bigint halalas` in the DB; the form accepts SAR strings/numbers
  * and delegates conversion to `src/lib/domain/money.ts` at the engine boundary.
  *
- * Cities: pilot seeded Riyadh + Jeddah suppliers (per plan.md). The seven-city
- * whitelist below matches the cities the seeder is aware of — future seeds can
- * add Dammam/Mecca/Medina/Khobar/Taif suppliers without any schema churn.
+ * After the 2026-04-21 taxonomy pass:
+ *   * `event_type` is one of the 5 market-segment slugs from `segments.ts`
+ *     (was a 7-value enum mixing wedding/corporate/government/etc).
+ *   * `city` is a KSA city slug from `cities.ts` (was title-case strings).
  */
 
 import { z } from "zod";
+import { MARKET_SEGMENT_SLUGS, type MarketSegmentSlug } from "./segments";
+import { CITY_SLUGS } from "./cities";
 
 // =============================================================================
-// Enumerations
+// Enumerations — re-exports so existing call sites don't break.
 // =============================================================================
 
-export const EVENT_TYPES = [
-  "wedding",
-  "corporate",
-  "government",
-  "exhibition",
-  "birthday",
-  "private",
-  "other",
-] as const;
+export const EVENT_TYPES = MARKET_SEGMENT_SLUGS;
+export type EventType = MarketSegmentSlug;
 
-export type EventType = (typeof EVENT_TYPES)[number];
-
-export const CITY_OPTIONS = [
-  "Riyadh",
-  "Jeddah",
-  "Dammam",
-  "Mecca",
-  "Medina",
-  "Khobar",
-  "Taif",
-] as const;
-
-export type CityOption = (typeof CITY_OPTIONS)[number];
+export const CITY_OPTIONS = CITY_SLUGS;
+export type CityOption = string;
 
 // =============================================================================
 // Form schema
@@ -50,10 +35,13 @@ export type CityOption = (typeof CITY_OPTIONS)[number];
  * upstream). Budget fields accept string or number (HTML form inputs always
  * produce strings); Lane 3 converts them to halalas via `sarToHalalas`.
  */
+const EVENT_TYPE_TUPLE = EVENT_TYPES as unknown as readonly [EventType, ...EventType[]];
+const CITY_TUPLE = CITY_OPTIONS as unknown as readonly [string, ...string[]];
+
 export const EventFormInput = z
   .object({
-    event_type: z.enum(EVENT_TYPES),
-    city: z.enum(CITY_OPTIONS),
+    event_type: z.enum(EVENT_TYPE_TUPLE),
+    city: z.enum(CITY_TUPLE),
     client_name: z.string().trim().max(120).optional(),
     venue_address: z.string().trim().min(3).max(500),
     starts_at: z.string().datetime(),

@@ -9,6 +9,7 @@ import {
   Clock3,
   Inbox,
   Package,
+  Palette,
   PercentCircle,
   Rocket,
   ShieldCheck,
@@ -563,6 +564,42 @@ export default async function SupplierDashboardPage() {
                 <ArrowUpRight className="size-4" aria-hidden />
               </Link>
             </Button>
+            {/*
+              "Customize your profile" — visible to every supplier so the
+              option is discoverable pre-approval, but shows a subtle state
+              hint when they aren't live yet. Matches the outline-style tile
+              of its siblings instead of introducing a new visual pattern.
+              When not live we render a non-link visual so clicks don't lead
+              to an editor for a profile the public can't see yet.
+            */}
+            {journeyState === "live" ? (
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="/supplier/profile">
+                  <span className="inline-flex items-center gap-2">
+                    <Palette className="size-4" aria-hidden />
+                    {t("quickLinks.customizeProfile")}
+                  </span>
+                  <ArrowUpRight className="size-4" aria-hidden />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-between opacity-60"
+                aria-disabled
+                disabled
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Palette className="size-4" aria-hidden />
+                  {t("quickLinks.customizeProfile")}
+                  <span className="ms-1 text-xs font-normal text-muted-foreground">
+                    {t("quickLinks.customizeProfileLockedHint")}
+                  </span>
+                </span>
+                <ArrowUpRight className="size-4" aria-hidden />
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
