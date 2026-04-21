@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Building2,
   Camera,
@@ -65,8 +66,22 @@ function iconForCategory(slug: string | null | undefined): LucideIcon {
   return CATEGORY_ICON[slug] ?? CircleDot;
 }
 
+/**
+ * Locale-aware name for a category/subcategory. Falls back to English when
+ * Arabic isn't available or the active locale isn't ar. Accepts the loose
+ * shape returned by the onboarding loader.
+ */
+function localizedName(
+  entry: { name_en: string; name_ar?: string | null },
+  locale: string,
+): string {
+  if (locale === "ar" && entry.name_ar) return entry.name_ar;
+  return entry.name_en;
+}
+
 export function OnboardingWizard({ bootstrap }: WizardProps) {
   const t = useTranslations("supplier.onboarding");
+  const router = useRouter();
   const [step, setStep] = useState<Step>(() => resolveInitialStep(bootstrap));
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [supplierId, setSupplierId] = useState<string | null>(
@@ -136,8 +151,16 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
               onSubmit={(fd) => {
                 startTransition(async () => {
                   const result = await submitOnboardingStep3(undefined, fd);
-                  if (result.ok) setServerMessage(t("submittedForReview"));
-                  else setServerMessage(result.message ?? t("genericError"));
+                  if (result.ok) {
+                    setServerMessage(t("submittedForReview"));
+                    // Leave the supplier on the dashboard where the "awaiting
+                    // verification" banner lives. `router.refresh()` keeps the
+                    // server components in sync with the new pending state.
+                    router.push("/supplier/dashboard?submitted=1");
+                    router.refresh();
+                  } else {
+                    setServerMessage(result.message ?? t("genericError"));
+                  }
                 });
               }}
             />
@@ -502,6 +525,7 @@ function Step3Form({
   onSubmit: (fd: FormData) => void;
 }) {
   const t = useTranslations("supplier.onboarding");
+  const locale = useLocale();
 
   const { register, handleSubmit, formState, watch } = useForm<Step3Values>({
     defaultValues: {
@@ -674,11 +698,10 @@ function Step3Form({
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-brand-navy-900">
-                        {parent.name_en}
+                        {localizedName(parent, locale)}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {subs.length}{" "}
-                        {subs.length === 1 ? "service" : "services"}
+                        {t("serviceCount", { count: subs.length })}
                       </p>
                     </div>
                   </div>
@@ -727,7 +750,7 @@ function Step3Form({
                             )}
                             aria-hidden
                           />
-                          {sub.name_en}
+                          {localizedName(sub, locale)}
                         </span>
                       </label>
                     );

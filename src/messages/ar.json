@@ -145,6 +145,7 @@
       "uploading": "جارٍ الرفع…",
       "genericError": "حدث خطأ. حاول مرة أخرى.",
       "submittedForReview": "تم إرسال ملفك للمراجعة. ستصلك رسالة بعد اعتماد المستندات.",
+      "serviceCount": "{count, plural, zero {بدون خدمات} one {خدمة واحدة} two {خدمتان} few {# خدمات} many {# خدمة} other {# خدمة}}",
       "statusLabel": "الحالة",
       "businessNameLabel": "اسم المنشأة",
       "legalTypeLabel": "الصفة النظامية",

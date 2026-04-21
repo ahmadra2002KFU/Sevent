@@ -145,6 +145,7 @@
       "uploading": "Uploading…",
       "genericError": "Something went wrong. Please try again.",
       "submittedForReview": "Profile submitted for review. You will receive an email once an admin reviews your documents.",
+      "serviceCount": "{count, plural, one {# service} other {# services}}",
       "statusLabel": "Status",
       "businessNameLabel": "Business name",
       "legalTypeLabel": "Legal type",
