@@ -10,7 +10,10 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type {
   AvailabilityBlockRow,
   AvailabilityReason,
@@ -19,9 +22,9 @@ import type {
 type ReasonClass = Record<AvailabilityReason, string>;
 
 const DOT_COLOR: ReasonClass = {
-  manual_block: "bg-[#e08a2b]", // orange — user-controlled block
-  soft_hold: "bg-[#9aa3ab]", // gray — reserved pending supplier confirmation
-  booked: "bg-[var(--color-sevent-green-soft)]", // green — confirmed booking
+  manual_block: "bg-neutral-400", // user-controlled block
+  soft_hold: "bg-semantic-warning-500", // reserved pending supplier confirmation
+  booked: "bg-semantic-success-500", // confirmed booking
 };
 
 const REASON_LABEL: Record<AvailabilityReason, string> = {
@@ -99,31 +102,24 @@ export function MonthGrid({
   const nextHref = `/supplier/calendar?y=${next.getFullYear()}&m=${next.getMonth() + 1}`;
 
   return (
-    <section
-      aria-label={labels.title}
-      className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-6"
-    >
+    <Card aria-label={labels.title} className="p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3 pb-4">
         <div className="flex items-center gap-3">
-          <Link
-            href={prevHref}
-            aria-label={labels.prev}
-            className="rounded-md border border-[var(--color-border)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-          >
-            {"<"}
-          </Link>
-          <h2 className="text-lg font-semibold tracking-tight">
+          <Button asChild variant="outline" size="icon-sm" aria-label={labels.prev}>
+            <Link href={prevHref}>
+              <ChevronLeft className="rtl:rotate-180" />
+            </Link>
+          </Button>
+          <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
             {format(monthStart, "MMMM yyyy")}
           </h2>
-          <Link
-            href={nextHref}
-            aria-label={labels.next}
-            className="rounded-md border border-[var(--color-border)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-          >
-            {">"}
-          </Link>
+          <Button asChild variant="outline" size="icon-sm" aria-label={labels.next}>
+            <Link href={nextHref}>
+              <ChevronRight className="rtl:rotate-180" />
+            </Link>
+          </Button>
         </div>
-        <ul className="flex flex-wrap items-center gap-4 text-xs text-[var(--color-muted-foreground)]">
+        <ul className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           <li className="flex items-center gap-1.5">
             <span
               aria-hidden
@@ -148,11 +144,11 @@ export function MonthGrid({
         </ul>
       </header>
 
-      <div className="grid grid-cols-7 gap-px rounded-lg bg-[var(--color-border)] overflow-hidden">
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-border">
         {labels.weekdays.map((w) => (
           <div
             key={w}
-            className="bg-[var(--color-muted)] px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]"
+            className="bg-muted px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
           >
             {w}
           </div>
@@ -170,20 +166,20 @@ export function MonthGrid({
             <div
               key={day.toISOString()}
               className={cn(
-                "relative min-h-[72px] bg-white p-1.5 text-xs",
-                !inMonth && "bg-[var(--color-muted)]/40 text-[var(--color-muted-foreground)]",
-                isConflict && "ring-2 ring-inset ring-red-400 bg-red-50/60",
+                "relative min-h-[72px] bg-card p-1.5 text-xs",
+                !inMonth && "bg-muted/40 text-muted-foreground",
+                isConflict && "bg-semantic-danger-100/40 ring-2 ring-inset ring-semantic-danger-500",
               )}
             >
               <div className="flex items-start justify-between">
                 <span
                   className={cn(
-                    "inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px]",
+                    "inline-flex size-6 items-center justify-center rounded-full text-[11px]",
                     isToday
-                      ? "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] font-semibold"
+                      ? "bg-brand-cobalt-500 font-semibold text-white"
                       : inMonth
-                        ? "text-[var(--color-foreground)]"
-                        : "text-[var(--color-muted-foreground)]",
+                        ? "text-foreground"
+                        : "text-muted-foreground",
                   )}
                   aria-label={isToday ? `${format(day, "PPP")} · ${labels.today}` : format(day, "PPP")}
                 >
@@ -208,7 +204,7 @@ export function MonthGrid({
                       key={r}
                       title={REASON_LABEL[r]}
                       className={cn(
-                        "inline-block h-2 w-2 rounded-full",
+                        "inline-block size-2 rounded-full",
                         DOT_COLOR[r],
                       )}
                     />
@@ -219,6 +215,6 @@ export function MonthGrid({
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }

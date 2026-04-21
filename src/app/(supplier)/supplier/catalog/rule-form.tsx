@@ -21,6 +21,9 @@ import {
   type CatalogActionResult,
   type UpsertPricingRuleInput,
 } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
@@ -113,18 +116,14 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
   void supplierId;
 
   return (
-    <form
-      className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4"
-      onSubmit={submit}
-      noValidate
-    >
+    <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t("ruleForm.typeLabel")}>
           <select
             value={ruleType}
             onChange={(e) => onRuleTypeChange(e.target.value as PricingRuleType)}
             disabled={Boolean(initial)}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm disabled:bg-[var(--color-muted)]"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50 disabled:bg-muted disabled:text-muted-foreground"
           >
             {PRICING_RULE_TYPES.map((rt) => (
               <option key={rt} value={rt}>
@@ -140,7 +139,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
           <select
             value={meta.package_id}
             onChange={(e) => setMeta({ ...meta, package_id: e.target.value })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           >
             <option value="">{t("ruleForm.packageAny")}</option>
             {packages.map((p) => (
@@ -158,7 +157,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
             type="number"
             value={meta.priority}
             onChange={(e) => setMeta({ ...meta, priority: Number(e.target.value) })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           />
         </Field>
         <Field label={t("ruleForm.versionLabel")}>
@@ -167,7 +166,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
             min={1}
             value={meta.version}
             onChange={(e) => setMeta({ ...meta, version: Number(e.target.value) })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           />
         </Field>
         <Field label={t("validFrom")}>
@@ -175,7 +174,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
             type="date"
             value={meta.valid_from}
             onChange={(e) => setMeta({ ...meta, valid_from: e.target.value })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           />
         </Field>
         <Field label={t("validTo")}>
@@ -183,7 +182,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
             type="date"
             value={meta.valid_to}
             onChange={(e) => setMeta({ ...meta, valid_to: e.target.value })}
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
           />
         </Field>
       </div>
@@ -191,6 +190,7 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
+          className="size-4 rounded border-border accent-brand-cobalt-500"
           checked={meta.is_active}
           onChange={(e) => setMeta({ ...meta, is_active: e.target.checked })}
         />
@@ -218,30 +218,19 @@ export function RuleForm({ supplierId, packages, initial, onDone, onCancel }: Pr
         <IssueList issues={clientIssues} kind="client" />
       ) : null}
       {serverError ? (
-        <div
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-        >
-          {serverError}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{serverError}</AlertDescription>
+        </Alert>
       ) : null}
       {serverIssues ? <IssueList issues={serverIssues} kind="server" /> : null}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-        >
+      <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           {t("cancel")}
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" disabled={isPending}>
           {isPending ? t("saving") : t("save")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -297,8 +286,8 @@ function QtyTierAllUnitsForm({ value, onChange }: SubFormProps) {
   const update = (next: Row[]) => onChange({ breakpoints: next });
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] bg-white p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t("ruleType.qty_tier_all_units")}
       </p>
       <ul className="flex flex-col gap-2">
@@ -313,7 +302,7 @@ function QtyTierAllUnitsForm({ value, onChange }: SubFormProps) {
                 onChange={(e) =>
                   update(rows.map((x, j) => (j === i ? { ...x, gte: Number(e.target.value) } : x)))
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -331,13 +320,13 @@ function QtyTierAllUnitsForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <button
               type="button"
               onClick={() => update(rows.filter((_, j) => j !== i))}
-              className="self-end rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+              className="h-7 self-end rounded-md border border-border px-3 text-xs hover:bg-muted"
             >
               {t("remove")}
             </button>
@@ -347,7 +336,7 @@ function QtyTierAllUnitsForm({ value, onChange }: SubFormProps) {
       <button
         type="button"
         onClick={() => update([...rows, { gte: (rows.at(-1)?.gte ?? 0) + 10, discount_pct: 5 }])}
-        className="self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+        className="h-7 self-start rounded-md border border-border px-3 text-xs hover:bg-muted"
       >
         {t("addRow")}
       </button>
@@ -364,8 +353,8 @@ function QtyTierIncrementalForm({ value, onChange }: SubFormProps) {
   const update = (next: Row[]) => onChange({ breakpoints: next });
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] bg-white p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t("ruleType.qty_tier_incremental")}
       </p>
       <ul className="flex flex-col gap-2">
@@ -380,7 +369,7 @@ function QtyTierIncrementalForm({ value, onChange }: SubFormProps) {
                 onChange={(e) =>
                   update(rows.map((x, j) => (j === i ? { ...x, from: Number(e.target.value) } : x)))
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -399,7 +388,7 @@ function QtyTierIncrementalForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -415,13 +404,13 @@ function QtyTierIncrementalForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <button
               type="button"
               onClick={() => update(rows.filter((_, j) => j !== i))}
-              className="self-end rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+              className="h-7 self-end rounded-md border border-border px-3 text-xs hover:bg-muted"
             >
               {t("remove")}
             </button>
@@ -440,11 +429,11 @@ function QtyTierIncrementalForm({ value, onChange }: SubFormProps) {
             },
           ])
         }
-        className="self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+        className="h-7 self-start rounded-md border border-border px-3 text-xs hover:bg-muted"
       >
         {t("addRow")}
       </button>
-      <p className="text-xs text-[var(--color-muted-foreground)]">
+      <p className="text-xs text-muted-foreground">
         {t("ruleForm.qtyIncr.hint")}
       </p>
     </div>
@@ -469,7 +458,7 @@ function DistanceFeeForm({ value, onChange }: SubFormProps) {
   const patch = (p: Partial<Cfg>) => onChange({ ...cfg, ...p });
 
   return (
-    <div className="grid gap-2 rounded-md border border-[var(--color-border)] bg-white p-3 sm:grid-cols-2">
+    <div className="grid gap-2 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-xs">{t("ruleForm.distance.sarPerKm")}</span>
         <input
@@ -478,7 +467,7 @@ function DistanceFeeForm({ value, onChange }: SubFormProps) {
           min={0}
           value={cfg.sar_per_km}
           onChange={(e) => patch({ sar_per_km: Number(e.target.value) })}
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -489,7 +478,7 @@ function DistanceFeeForm({ value, onChange }: SubFormProps) {
           min={0}
           value={cfg.free_radius_km}
           onChange={(e) => patch({ free_radius_km: Number(e.target.value) })}
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -499,7 +488,7 @@ function DistanceFeeForm({ value, onChange }: SubFormProps) {
           min={0}
           value={cfg.min_fee_halalas}
           onChange={(e) => patch({ min_fee_halalas: Number(e.target.value) })}
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -513,7 +502,7 @@ function DistanceFeeForm({ value, onChange }: SubFormProps) {
               max_fee_halalas: e.target.value === "" ? undefined : Number(e.target.value),
             })
           }
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
     </div>
@@ -568,13 +557,13 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
   const patch = (p: Partial<Cfg>) => onChange({ ...(current ?? {}), ...p });
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] bg-white p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-xs">{t("ruleForm.dateSurcharge.scopeLabel")}</span>
         <select
           value={scope}
           onChange={(e) => setScope(e.target.value as Cfg["scope"])}
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         >
           <option value="specific_date">{t("ruleForm.dateSurcharge.scope.specific_date")}</option>
           <option value="named_period">{t("ruleForm.dateSurcharge.scope.named_period")}</option>
@@ -590,7 +579,7 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
               type="date"
               value={(current as SpecificDate | null)?.date ?? ""}
               onChange={(e) => patch({ date: e.target.value } as Partial<SpecificDate>)}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
             />
           </label>
           <MultiplierAddonFields current={current} patch={patch} t={t} />
@@ -604,7 +593,7 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
             <input
               value={(current as NamedPeriod | null)?.name ?? ""}
               onChange={(e) => patch({ name: e.target.value } as Partial<NamedPeriod>)}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -613,7 +602,7 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
               type="date"
               value={(current as NamedPeriod | null)?.start ?? ""}
               onChange={(e) => patch({ start: e.target.value } as Partial<NamedPeriod>)}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -622,7 +611,7 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
               type="date"
               value={(current as NamedPeriod | null)?.end ?? ""}
               onChange={(e) => patch({ end: e.target.value } as Partial<NamedPeriod>)}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
             />
           </label>
           <div className="sm:col-span-3 grid gap-2 sm:grid-cols-2">
@@ -640,11 +629,12 @@ function DateSurchargeForm({ value, onChange }: SubFormProps) {
               return (
                 <label
                   key={d}
-                  className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs ${
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors",
                     selected
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
-                      : "border-[var(--color-border)]"
-                  }`}
+                      ? "border-brand-cobalt-500 bg-brand-cobalt-100/60 text-brand-navy-900 font-medium"
+                      : "border-border",
+                  )}
                 >
                   <input
                     type="checkbox"
@@ -694,7 +684,7 @@ function MultiplierAddonFields({
           onChange={(e) =>
             patch({ multiplier: e.target.value === "" ? undefined : Number(e.target.value) })
           }
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -708,7 +698,7 @@ function MultiplierAddonFields({
               flat_addon_halalas: e.target.value === "" ? undefined : Number(e.target.value),
             })
           }
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
     </>
@@ -726,8 +716,8 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
     onChange({ ...cfg, tiers: nextTiers, daily_cap_halalas: cap ?? cfg.daily_cap_halalas });
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] bg-white p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t("ruleType.duration_multiplier")}
       </p>
       <ul className="flex flex-col gap-2">
@@ -746,7 +736,7 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -764,7 +754,7 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -778,13 +768,13 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
                     ),
                   )
                 }
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
               />
             </label>
             <button
               type="button"
               onClick={() => update(tiers.filter((_, j) => j !== i))}
-              className="self-end rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+              className="h-7 self-end rounded-md border border-border px-3 text-xs hover:bg-muted"
             >
               {t("remove")}
             </button>
@@ -799,7 +789,7 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
             { applies_from_days: (tiers.at(-1)?.applies_from_days ?? 0) + 7, multiplier: 0.9 },
           ])
         }
-        className="self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+        className="h-7 self-start rounded-md border border-border px-3 text-xs hover:bg-muted"
       >
         {t("addRow")}
       </button>
@@ -816,7 +806,7 @@ function DurationMultiplierForm({ value, onChange }: SubFormProps) {
               daily_cap_halalas: e.target.value === "" ? undefined : Number(e.target.value),
             })
           }
-          className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-3 focus:ring-ring/50"
         />
       </label>
     </div>
@@ -827,7 +817,7 @@ function IssueList({ issues, kind }: { issues: string[]; kind: "client" | "serve
   return (
     <ul
       role={kind === "server" ? "alert" : undefined}
-      className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700"
+      className="rounded-lg border border-semantic-danger-100 bg-semantic-danger-100/40 p-3 text-xs text-semantic-danger-500"
     >
       {issues.map((i, idx) => (
         <li key={idx}>• {i}</li>
@@ -850,7 +840,7 @@ function Field({
       <span className="font-medium">{label}</span>
       {children}
       {hint ? (
-        <span className="text-xs text-[var(--color-muted-foreground)]">{hint}</span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
       ) : null}
     </label>
   );

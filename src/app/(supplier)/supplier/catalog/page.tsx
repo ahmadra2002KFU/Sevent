@@ -1,5 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { loadCatalogBootstrap } from "./loader";
 import { CatalogClient } from "./catalog-client";
 
@@ -11,58 +17,52 @@ export default async function SupplierCatalogPage() {
 
   if (!bootstrap.ok) {
     return (
-      <section className="flex flex-col gap-4">
-        <header>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        </header>
-        <p
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {bootstrap.error}
-        </p>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          <Link
-            href="/supplier/onboarding"
-            className="underline hover:text-[var(--color-foreground)]"
-          >
-            {t("goToOnboarding")}
-          </Link>
-        </p>
+      <section className="flex flex-col gap-6">
+        <PageHeader title={t("title")} />
+        <Alert variant="destructive">
+          <AlertTitle>{t("errorHeading")}</AlertTitle>
+          <AlertDescription>{bootstrap.error}</AlertDescription>
+        </Alert>
+        <Button asChild variant="outline" className="w-fit">
+          <Link href="/supplier/onboarding">{t("goToOnboarding")}</Link>
+        </Button>
       </section>
     );
   }
 
+  const statusPill =
+    bootstrap.supplier.verification_status === "approved" ? (
+      <StatusPill status="approved" />
+    ) : bootstrap.supplier.verification_status === "rejected" ? (
+      <StatusPill status="rejected" />
+    ) : (
+      <StatusPill status="pending" />
+    );
+
+  const actions = (
+    <div className="flex flex-wrap items-center gap-2">
+      {statusPill}
+      <Badge variant="outline" className="font-mono text-[10px]">
+        /{bootstrap.supplier.slug}
+      </Badge>
+      {bootstrap.supplier.is_published ? (
+        <Button asChild variant="ghost" size="sm">
+          <Link href={`/s/${bootstrap.supplier.slug}`} prefetch={false}>
+            {t("viewPublic")}
+            <ArrowUpRight />
+          </Link>
+        </Button>
+      ) : null}
+    </div>
+  );
+
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-        <p className="mt-1 inline-flex w-fit items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-3 py-1 text-xs text-[var(--color-muted-foreground)]">
-          <span className="font-mono text-[10px]">{bootstrap.supplier.slug}</span>
-          <span aria-hidden>·</span>
-          <span>
-            {t("statusLabel")}:{" "}
-            <span className="font-medium text-[var(--color-foreground)]">
-              {bootstrap.supplier.verification_status}
-            </span>
-          </span>
-          {bootstrap.supplier.is_published ? (
-            <>
-              <span aria-hidden>·</span>
-              <Link
-                href={`/s/${bootstrap.supplier.slug}`}
-                className="underline hover:text-[var(--color-foreground)]"
-                prefetch={false}
-              >
-                {t("viewPublic")}
-              </Link>
-            </>
-          ) : null}
-        </p>
-      </header>
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={actions}
+      />
 
       <CatalogClient
         supplierId={bootstrap.supplier.id}

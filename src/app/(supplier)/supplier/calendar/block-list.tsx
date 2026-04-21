@@ -11,6 +11,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO } from "date-fns";
+import { CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
 import { ManualBlockInput } from "@/lib/domain/availability";
 import type { AvailabilityBlockRow } from "@/lib/supabase/types";
 import {
@@ -19,6 +20,27 @@ import {
   updateManualBlockAction,
   type CalendarActionResult,
 } from "./actions";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
 
 type FormValues = {
   id?: string;
@@ -152,140 +174,129 @@ export function BlockList({ blocks, labels, initialError }: Props) {
   };
 
   return (
-    <section
-      aria-label={labels.heading}
-      className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-6"
-    >
-      <header className="flex items-center justify-between pb-3">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {labels.heading}
-        </h2>
-        {!formOpen ? (
-          <button
-            type="button"
-            onClick={openForNew}
-            className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90"
-          >
-            {labels.newBlock}
-          </button>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b">
+        <CardTitle>{labels.heading}</CardTitle>
+        <Button type="button" size="sm" onClick={openForNew}>
+          <Plus />
+          {labels.newBlock}
+        </Button>
+      </CardHeader>
+      <CardContent className="pt-6">
+        {serverError ? (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{serverError}</AlertDescription>
+          </Alert>
         ) : null}
-      </header>
 
-      {serverError ? (
-        <div
-          role="alert"
-          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-        >
-          {serverError}
-        </div>
-      ) : null}
-
-      {formOpen ? (
-        <form onSubmit={onSubmit} className="mb-6 flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4">
-          <p className="text-sm font-medium">
-            {editingId ? labels.formTitleEdit : labels.formTitleNew}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{labels.starts}</span>
-              <input
-                type="datetime-local"
-                {...register("starts_at")}
-                required
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              />
-              {errors.starts_at ? (
-                <span className="text-xs text-red-600">
-                  {errors.starts_at.message}
-                </span>
-              ) : null}
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">{labels.ends}</span>
-              <input
-                type="datetime-local"
-                {...register("ends_at")}
-                required
-                className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              />
-              {errors.ends_at ? (
-                <span className="text-xs text-red-600">
-                  {errors.ends_at.message}
-                </span>
-              ) : null}
-            </label>
-          </div>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">{labels.notes}</span>
-            <textarea
-              {...register("notes")}
-              maxLength={500}
-              rows={2}
-              className="rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
-          </label>
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={closeForm}
-              className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-            >
-              {labels.cancel}
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60"
-            >
-              {isPending ? labels.saving : labels.save}
-            </button>
-          </div>
-        </form>
-      ) : null}
-
-      {blocks.length === 0 ? (
-        <p className="rounded-md bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-          {labels.noBlocks}
-        </p>
-      ) : (
-        <ul className="divide-y divide-[var(--color-border)]">
-          {blocks.map((b) => {
-            const canEdit = b.reason === "manual_block";
-            return (
-              <li
-                key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
-              >
-                <div>
-                  <p className="font-medium">
-                    {format(parseISO(b.starts_at), "PPp")} →{" "}
+        {blocks.length === 0 ? (
+          <EmptyState icon={CalendarDays} title={labels.noBlocks} />
+        ) : (
+          <ul className="divide-y divide-border">
+            {blocks.map((b) => {
+              const canEdit = b.reason === "manual_block";
+              return (
+                <li
+                  key={b.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+                >
+                  <p className="font-medium text-foreground">
+                    {format(parseISO(b.starts_at), "PPp")}
+                    {" → "}
                     {format(parseISO(b.ends_at), "PPp")}
                   </p>
-                </div>
-                {canEdit ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openForEdit(b)}
-                      className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
-                    >
-                      {labels.edit}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(b.id)}
-                      disabled={isPending}
-                      className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
-                    >
-                      {labels.delete}
-                    </button>
-                  </div>
+                  {canEdit ? (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => openForEdit(b)}
+                        aria-label={labels.edit}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={isPending}
+                        onClick={() => onDelete(b.id)}
+                        className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                        aria-label={labels.delete}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+
+      <Dialog open={formOpen} onOpenChange={(open) => (open ? null : closeForm())}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? labels.formTitleEdit : labels.formTitleNew}
+            </DialogTitle>
+            <DialogDescription>{labels.heading}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="block-starts">{labels.starts}</Label>
+                <Input
+                  id="block-starts"
+                  type="datetime-local"
+                  {...register("starts_at")}
+                  required
+                />
+                {errors.starts_at ? (
+                  <span className="text-xs text-semantic-danger-500">
+                    {errors.starts_at.message}
+                  </span>
                 ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="block-ends">{labels.ends}</Label>
+                <Input
+                  id="block-ends"
+                  type="datetime-local"
+                  {...register("ends_at")}
+                  required
+                />
+                {errors.ends_at ? (
+                  <span className="text-xs text-semantic-danger-500">
+                    {errors.ends_at.message}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="block-notes">{labels.notes}</Label>
+              <Textarea
+                id="block-notes"
+                {...register("notes")}
+                maxLength={500}
+                rows={2}
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  {labels.cancel}
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? labels.saving : labels.save}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }

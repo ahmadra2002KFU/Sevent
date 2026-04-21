@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { formatHalalas } from "@/lib/domain/money";
 import type { PackageRow, PricingRuleRow } from "@/lib/supabase/types";
 import type { PricingRuleType } from "@/lib/domain/pricing/rules";
@@ -15,6 +16,34 @@ import {
   togglePricingRuleActiveAction,
   type CatalogActionResult,
 } from "./actions";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
 
 type Props = {
   supplierId: string;
@@ -33,11 +62,19 @@ type RuleEditor =
   | { kind: "new" }
   | { kind: "edit"; rule: PricingRuleRow };
 
-export function CatalogClient({ supplierId, packages, rules, subcategories }: Props) {
+export function CatalogClient({
+  supplierId,
+  packages,
+  rules,
+  subcategories,
+}: Props) {
   const t = useTranslations("supplier.catalog");
   const [pkgEditor, setPkgEditor] = useState<PackageEditor>({ kind: "closed" });
   const [ruleEditor, setRuleEditor] = useState<RuleEditor>({ kind: "closed" });
-  const [banner, setBanner] = useState<{ kind: "success" | "error"; msg: string } | null>(null);
+  const [banner, setBanner] = useState<{
+    kind: "success" | "error";
+    msg: string;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const subcategoryById = useMemo(() => {
@@ -75,224 +112,288 @@ export function CatalogClient({ supplierId, packages, rules, subcategories }: Pr
     } else {
       setBanner({
         kind: "error",
-        msg: result.issues?.length ? `${result.error}: ${result.issues.join("; ")}` : result.error,
+        msg: result.issues?.length
+          ? `${result.error}: ${result.issues.join("; ")}`
+          : result.error,
       });
     }
   };
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {banner ? (
-        <div
-          role={banner.kind === "error" ? "alert" : "status"}
-          className={
-            banner.kind === "error"
-              ? "rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-              : "rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
-          }
-        >
-          {banner.msg}
-        </div>
+        <Alert variant={banner.kind === "error" ? "destructive" : "default"}>
+          <AlertDescription>{banner.msg}</AlertDescription>
+        </Alert>
       ) : null}
 
       {/* ================================== Packages ================================== */}
-      <section className="flex flex-col gap-4">
-        <header className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">
-            {t("packagesHeading")}
-          </h2>
-          {pkgEditor.kind === "closed" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setBanner(null);
-                setPkgEditor({ kind: "new" });
-              }}
-              className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90"
-            >
-              {t("newPackage")}
-            </button>
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 border-b">
+          <div>
+            <CardTitle>{t("packagesHeading")}</CardTitle>
+            <CardDescription>{t("subtitle")}</CardDescription>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setBanner(null);
+              setPkgEditor({ kind: "new" });
+            }}
+          >
+            <Plus />
+            {t("newPackage")}
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {packages.length === 0 ? (
+            <EmptyState icon={Package} title={t("noPackages")} />
+          ) : (
+            <div className="-mx-4 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("packageForm.nameLabel")}</TableHead>
+                    <TableHead>{t("packageForm.subcategoryLabel")}</TableHead>
+                    <TableHead>{t("packageForm.unitLabel")}</TableHead>
+                    <TableHead>{t("packageForm.basePriceLabel")}</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>{t("activeToggle")}</TableHead>
+                    <TableHead aria-hidden />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {packages.map((p) => {
+                    const sub = subcategoryById.get(p.subcategory_id);
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium text-brand-navy-900">
+                          {p.name}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {sub
+                            ? `${
+                                sub.parent_name_en ? `${sub.parent_name_en} · ` : ""
+                              }${sub.name_en}`
+                            : ""}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {t(`packageForm.unit.${p.unit}`)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {t("priceFrom", {
+                            price: formatHalalas(p.base_price_halalas),
+                          })}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {t("qtyRange", {
+                            min: p.min_qty,
+                            max: p.max_qty ?? "∞",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={p.is_active}
+                            disabled={isPending}
+                            onCheckedChange={(next) => {
+                              startTransition(async () => {
+                                const r = await togglePackageActiveAction(
+                                  p.id,
+                                  Boolean(next),
+                                );
+                                handleResult(r, t("savedPackage"));
+                              });
+                            }}
+                            aria-label={t("activeToggle")}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => {
+                                setBanner(null);
+                                setPkgEditor({ kind: "edit", pkg: p });
+                              }}
+                              aria-label={t("edit")}
+                            >
+                              <Pencil />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled={isPending}
+                              onClick={() => {
+                                if (
+                                  typeof window !== "undefined" &&
+                                  !window.confirm(t("confirmDeletePackage"))
+                                )
+                                  return;
+                                startTransition(async () => {
+                                  const r = await deletePackageAction(p.id);
+                                  handleResult(r, t("deletedPackage"));
+                                });
+                              }}
+                              className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                              aria-label={t("delete")}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Package dialog (new/edit) */}
+      <Dialog
+        open={pkgEditor.kind !== "closed"}
+        onOpenChange={(open) => {
+          if (!open) setPkgEditor({ kind: "closed" });
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {pkgEditor.kind === "edit" ? t("edit") : t("newPackage")}
+            </DialogTitle>
+            <DialogDescription>{t("subtitle")}</DialogDescription>
+          </DialogHeader>
+          {pkgEditor.kind !== "closed" ? (
+            <PackageForm
+              subcategories={subcategories}
+              initial={pkgEditor.kind === "edit" ? pkgEditor.pkg : null}
+              onCancel={() => setPkgEditor({ kind: "closed" })}
+              onDone={(r) => handleResult(r, t("savedPackage"))}
+            />
           ) : null}
-        </header>
-
-        {pkgEditor.kind !== "closed" ? (
-          <PackageForm
-            subcategories={subcategories}
-            initial={pkgEditor.kind === "edit" ? pkgEditor.pkg : null}
-            onCancel={() => setPkgEditor({ kind: "closed" })}
-            onDone={(r) => handleResult(r, t("savedPackage"))}
-          />
-        ) : null}
-
-        {packages.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("noPackages")}
-          </p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-white">
-            {packages.map((p) => {
-              const sub = subcategoryById.get(p.subcategory_id);
-              return (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {sub
-                        ? `${sub.parent_name_en ? `${sub.parent_name_en} · ` : ""}${sub.name_en}`
-                        : ""}{" "}
-                      · {t(`packageForm.unit.${p.unit}`)} · {t("priceFrom", { price: formatHalalas(p.base_price_halalas) })}
-                    </p>
-                    <p className="text-xs text-[var(--color-muted-foreground)]">
-                      {t("qtyRange", {
-                        min: p.min_qty,
-                        max: p.max_qty ?? "∞",
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-2 text-xs">
-                      <input
-                        type="checkbox"
-                        checked={p.is_active}
-                        disabled={isPending}
-                        onChange={(e) => {
-                          const next = e.target.checked;
-                          startTransition(async () => {
-                            const r = await togglePackageActiveAction(p.id, next);
-                            handleResult(r, t("savedPackage"));
-                          });
-                        }}
-                      />
-                      {t("activeToggle")}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBanner(null);
-                        setPkgEditor({ kind: "edit", pkg: p });
-                      }}
-                      className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
-                    >
-                      {t("edit")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (typeof window !== "undefined" && !window.confirm(t("confirmDeletePackage"))) return;
-                        startTransition(async () => {
-                          const r = await deletePackageAction(p.id);
-                          handleResult(r, t("deletedPackage"));
-                        });
-                      }}
-                      className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
-                    >
-                      {t("delete")}
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+        </DialogContent>
+      </Dialog>
 
       {/* ================================= Pricing rules ============================ */}
-      <section className="flex flex-col gap-4">
-        <header className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <h2 className="text-lg font-semibold tracking-tight">
-              {t("rulesHeading")}
-            </h2>
-            <p className="text-xs text-[var(--color-muted-foreground)]">
-              {t("rulesSubheading")}
-            </p>
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 border-b">
+          <div>
+            <CardTitle>{t("rulesHeading")}</CardTitle>
+            <CardDescription>{t("rulesSubheading")}</CardDescription>
           </div>
-          {ruleEditor.kind === "closed" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setBanner(null);
-                setRuleEditor({ kind: "new" });
-              }}
-              className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] hover:opacity-90"
-            >
-              {t("newRule")}
-            </button>
-          ) : null}
-        </header>
-
-        {ruleEditor.kind !== "closed" ? (
-          <RuleForm
-            supplierId={supplierId}
-            packages={packages}
-            initial={ruleEditor.kind === "edit" ? ruleEditor.rule : null}
-            onCancel={() => setRuleEditor({ kind: "closed" })}
-            onDone={(r) => handleResult(r, t("savedRule"))}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setBanner(null);
+              setRuleEditor({ kind: "new" });
+            }}
+          >
+            <Plus />
+            {t("newRule")}
+          </Button>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <RuleGroupView
+            heading={t("rulesSupplierWide")}
+            rules={rulesByPackage.supplierWide}
+            packageById={packageById}
+            onEdit={(r) => {
+              setBanner(null);
+              setRuleEditor({ kind: "edit", rule: r });
+            }}
+            onToggle={(r, next) =>
+              startTransition(async () => {
+                const result = await togglePricingRuleActiveAction(r.id, next);
+                handleResult(result, t("savedRule"));
+              })
+            }
+            onDelete={(r) => {
+              if (
+                typeof window !== "undefined" &&
+                !window.confirm(t("confirmDeleteRule"))
+              )
+                return;
+              startTransition(async () => {
+                const result = await deletePricingRuleAction(r.id);
+                handleResult(result, t("deletedRule"));
+              });
+            }}
+            isPending={isPending}
           />
-        ) : null}
 
-        <RuleGroupView
-          heading={t("rulesSupplierWide")}
-          rules={rulesByPackage.supplierWide}
-          packageById={packageById}
-          onEdit={(r) => {
-            setBanner(null);
-            setRuleEditor({ kind: "edit", rule: r });
-          }}
-          onToggle={(r, next) =>
-            startTransition(async () => {
-              const result = await togglePricingRuleActiveAction(r.id, next);
-              handleResult(result, t("savedRule"));
-            })
-          }
-          onDelete={(r) => {
-            if (typeof window !== "undefined" && !window.confirm(t("confirmDeleteRule"))) return;
-            startTransition(async () => {
-              const result = await deletePricingRuleAction(r.id);
-              handleResult(result, t("deletedRule"));
-            });
-          }}
-          isPending={isPending}
-        />
+          {packages.map((p) => {
+            const list = rulesByPackage.byPackage.get(p.id) ?? [];
+            if (list.length === 0) return null;
+            return (
+              <RuleGroupView
+                key={p.id}
+                heading={t("rulesForPackage", { name: p.name })}
+                rules={list}
+                packageById={packageById}
+                onEdit={(r) => {
+                  setBanner(null);
+                  setRuleEditor({ kind: "edit", rule: r });
+                }}
+                onToggle={(r, next) =>
+                  startTransition(async () => {
+                    const result = await togglePricingRuleActiveAction(r.id, next);
+                    handleResult(result, t("savedRule"));
+                  })
+                }
+                onDelete={(r) => {
+                  if (
+                    typeof window !== "undefined" &&
+                    !window.confirm(t("confirmDeleteRule"))
+                  )
+                    return;
+                  startTransition(async () => {
+                    const result = await deletePricingRuleAction(r.id);
+                    handleResult(result, t("deletedRule"));
+                  });
+                }}
+                isPending={isPending}
+              />
+            );
+          })}
 
-        {packages.map((p) => {
-          const list = rulesByPackage.byPackage.get(p.id) ?? [];
-          if (list.length === 0) return null;
-          return (
-            <RuleGroupView
-              key={p.id}
-              heading={t("rulesForPackage", { name: p.name })}
-              rules={list}
-              packageById={packageById}
-              onEdit={(r) => {
-                setBanner(null);
-                setRuleEditor({ kind: "edit", rule: r });
-              }}
-              onToggle={(r, next) =>
-                startTransition(async () => {
-                  const result = await togglePricingRuleActiveAction(r.id, next);
-                  handleResult(result, t("savedRule"));
-                })
-              }
-              onDelete={(r) => {
-                if (typeof window !== "undefined" && !window.confirm(t("confirmDeleteRule"))) return;
-                startTransition(async () => {
-                  const result = await deletePricingRuleAction(r.id);
-                  handleResult(result, t("deletedRule"));
-                });
-              }}
-              isPending={isPending}
+          {rules.length === 0 ? (
+            <EmptyState title={t("noRules")} />
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* Rule dialog (new/edit) */}
+      <Dialog
+        open={ruleEditor.kind !== "closed"}
+        onOpenChange={(open) => {
+          if (!open) setRuleEditor({ kind: "closed" });
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {ruleEditor.kind === "edit" ? t("edit") : t("newRule")}
+            </DialogTitle>
+            <DialogDescription>{t("rulesSubheading")}</DialogDescription>
+          </DialogHeader>
+          {ruleEditor.kind !== "closed" ? (
+            <RuleForm
+              supplierId={supplierId}
+              packages={packages}
+              initial={ruleEditor.kind === "edit" ? ruleEditor.rule : null}
+              onCancel={() => setRuleEditor({ kind: "closed" })}
+              onDone={(r) => handleResult(r, t("savedRule"))}
             />
-          );
-        })}
-
-        {rules.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm text-[var(--color-muted-foreground)]">
-            {t("noRules")}
-          </p>
-        ) : null}
-      </section>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -319,26 +420,31 @@ function RuleGroupView({
   return (
     <section
       aria-label={heading}
-      className="rounded-lg border border-[var(--color-border)] bg-white"
+      className="overflow-hidden rounded-lg border border-border"
     >
-      <header className="border-b border-[var(--color-border)] p-3">
-        <p className="text-sm font-medium">{heading}</p>
+      <header className="border-b border-border bg-muted/40 px-4 py-2.5">
+        <p className="text-sm font-semibold text-brand-navy-900">{heading}</p>
       </header>
-      <ul className="divide-y divide-[var(--color-border)]">
+      <ul className="flex flex-col divide-y divide-border">
         {rules.map((r) => {
           const type = r.rule_type as PricingRuleType;
           return (
-            <li key={r.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
-              <div className="flex flex-col gap-1 text-sm">
+            <li
+              key={r.id}
+              className="flex flex-wrap items-start justify-between gap-3 p-4"
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs">
-                    {t(`ruleType.${type}`)}
-                  </span>
-                  <span className="text-xs text-[var(--color-muted-foreground)]">
+                  <Badge variant="secondary">{t(`ruleType.${type}`)}</Badge>
+                  <StatusPill
+                    status={r.is_active ? "approved" : "pending"}
+                    label={r.is_active ? t("activeToggle") : t("inactive")}
+                  />
+                  <span className="text-xs text-muted-foreground">
                     {t("priority")}: {r.priority} · v{r.version}
                   </span>
                   {r.valid_from || r.valid_to ? (
-                    <span className="text-xs text-[var(--color-muted-foreground)]">
+                    <span className="text-xs text-muted-foreground">
                       {t("validWindow", {
                         from: r.valid_from ?? "…",
                         to: r.valid_to ?? "…",
@@ -346,42 +452,44 @@ function RuleGroupView({
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs text-[var(--color-muted-foreground)]">
+                <p className="text-xs text-muted-foreground">
                   {r.package_id
                     ? t("ruleScopePackage", {
                         name: packageById.get(r.package_id)?.name ?? r.package_id,
                       })
                     : t("ruleScopeSupplier")}
                 </p>
-                <pre className="overflow-x-auto rounded-md bg-[var(--color-muted)]/40 p-2 text-[10px] leading-relaxed">
+                <pre className="overflow-x-auto rounded-md bg-muted/40 p-2 text-[10px] leading-relaxed">
                   {JSON.stringify(r.config_jsonb, null, 2)}
                 </pre>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={r.is_active}
-                    disabled={isPending}
-                    onChange={(e) => onToggle(r, e.target.checked)}
-                  />
-                  {t("activeToggle")}
-                </label>
-                <button
+              <div className="flex items-center gap-1">
+                <Checkbox
+                  checked={r.is_active}
+                  disabled={isPending}
+                  onCheckedChange={(next) => onToggle(r, Boolean(next))}
+                  aria-label={t("activeToggle")}
+                />
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => onEdit(r)}
-                  className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs hover:bg-[var(--color-muted)]"
+                  aria-label={t("edit")}
                 >
-                  {t("edit")}
-                </button>
-                <button
+                  <Pencil />
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   disabled={isPending}
                   onClick={() => onDelete(r)}
-                  className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                  aria-label={t("delete")}
                 >
-                  {t("delete")}
-                </button>
+                  <Trash2 />
+                </Button>
               </div>
             </li>
           );
