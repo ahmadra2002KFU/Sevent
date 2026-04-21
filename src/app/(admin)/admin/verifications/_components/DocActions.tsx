@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import {
-  approveDocAction,
-  rejectDocAction,
-} from "../actions";
+import { useActionState, useId, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Check, X } from "lucide-react";
+import { approveDocAction, rejectDocAction } from "../actions";
 import { initialActionState } from "../action-state";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ActionBanner } from "./ActionBanner";
 import { SubmitButton } from "./SubmitButton";
 
@@ -20,6 +22,7 @@ export function DocActions({
   currentStatus: "pending" | "approved" | "rejected";
   currentNotes: string | null;
 }) {
+  const t = useTranslations("admin.verifications");
   const [approveState, approve] = useActionState(
     approveDocAction,
     initialActionState,
@@ -29,6 +32,7 @@ export function DocActions({
     initialActionState,
   );
   const [showReject, setShowReject] = useState(false);
+  const notesId = useId();
 
   return (
     <div className="flex flex-col gap-2">
@@ -40,49 +44,56 @@ export function DocActions({
           <form action={approve}>
             <input type="hidden" name="doc_id" value={docId} />
             <input type="hidden" name="supplier_id" value={supplierId} />
-            <SubmitButton variant="secondary" pendingLabel="Approving…">
-              Mark approved
+            <SubmitButton
+              variant="outline"
+              size="sm"
+              pendingLabel={t("approveDoc") + "…"}
+            >
+              <Check aria-hidden />
+              {t("approveDoc")}
             </SubmitButton>
           </form>
         ) : null}
         {currentStatus !== "rejected" ? (
-          <button
+          <Button
             type="button"
+            variant="destructive"
+            size="sm"
             onClick={() => setShowReject((v) => !v)}
-            className="inline-flex items-center justify-center rounded-md border border-[#F2C2C2] bg-white px-3 py-1.5 text-sm font-medium text-[#9F1A1A] hover:bg-[#FCE9E9]"
           >
-            {showReject ? "Cancel" : "Mark rejected…"}
-          </button>
+            <X aria-hidden />
+            {showReject ? t("confirm.cancel") : t("rejectDoc")}
+          </Button>
         ) : null}
       </div>
 
       {showReject ? (
         <form
           action={reject}
-          className="mt-1 flex flex-col gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-3"
+          className="mt-1 flex flex-col gap-2 rounded-md border border-border bg-muted/60 p-3"
         >
           <input type="hidden" name="doc_id" value={docId} />
           <input type="hidden" name="supplier_id" value={supplierId} />
-          <label
-            htmlFor={`doc-notes-${docId}`}
-            className="text-xs font-medium text-[var(--color-muted-foreground)]"
-          >
-            Reason for rejection
-          </label>
-          <textarea
-            id={`doc-notes-${docId}`}
+          <Label htmlFor={notesId} className="text-xs">
+            {t("notesLabel")}
+          </Label>
+          <Textarea
+            id={notesId}
             name="notes"
             required
             minLength={1}
             maxLength={2000}
             rows={3}
             defaultValue={currentNotes ?? ""}
-            placeholder="What is wrong or missing with this document?"
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-sevent-green)] focus:outline-none focus:ring-1 focus:ring-[var(--color-sevent-green)]"
+            placeholder={t("docNotesPlaceholder")}
           />
           <div className="flex justify-end">
-            <SubmitButton variant="danger" pendingLabel="Saving…">
-              Save rejection
+            <SubmitButton
+              variant="destructive"
+              size="sm"
+              pendingLabel={t("rejectDoc") + "…"}
+            >
+              {t("rejectDoc")}
             </SubmitButton>
           </div>
         </form>

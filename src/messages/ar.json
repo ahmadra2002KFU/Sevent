@@ -425,36 +425,49 @@
   },
   "admin": {
     "dashboard": {
-      "title": "Admin dashboard",
-      "subtitle": "A read-only monitor of suppliers, RFQs, and notifications across the pilot.",
+      "title": "لوحة المشرف",
+      "subtitle": "مراقبة للقراءة فقط للموردين وطلبات العروض والإشعارات عبر المنصة.",
       "supplierMix": {
-        "pending": "Pending suppliers",
-        "approved": "Approved suppliers",
-        "rejected": "Rejected suppliers"
+        "pending": "موردون قيد المراجعة",
+        "approved": "موردون معتمدون",
+        "rejected": "موردون مرفوضون",
+        "pendingHint": "بانتظار المراجعة",
+        "approvedHint": "نشطون على المنصة",
+        "rejectedHint": "يحتاجون إعادة الإرسال"
       },
       "verificationQueue": {
-        "heading": "Verification queue",
-        "empty": "No suppliers pending verification.",
-        "openQueue": "Open queue"
+        "heading": "الأقدم قيد المراجعة",
+        "description": "الموردون بانتظار مراجعتك، الأقدم أولًا.",
+        "empty": "لا يوجد موردون بانتظار التحقق.",
+        "openQueue": "عرض الكل",
+        "col": {
+          "supplier": "المورد",
+          "city": "المدينة",
+          "submitted": "تاريخ الإرسال",
+          "action": "الإجراء"
+        },
+        "reviewCta": "مراجعة"
       },
       "rfqMonitor": {
-        "heading": "Recent RFQs",
-        "empty": "No RFQs sent yet.",
+        "heading": "طلبات العروض الأخيرة",
+        "description": "آخر 10 طلبات عروض أُرسلت على المنصة.",
+        "empty": "لم تُرسل طلبات عروض بعد.",
         "col": {
-          "event": "Event",
-          "category": "Category",
-          "status": "Status",
-          "invites": "Invites",
-          "sent": "Sent"
+          "event": "الفعالية",
+          "category": "الفئة",
+          "status": "الحالة",
+          "invites": "الدعوات",
+          "sent": "تاريخ الإرسال"
         }
       },
       "notifications": {
-        "heading": "Recent notifications",
-        "empty": "No notifications yet.",
+        "heading": "الإشعارات الأخيرة",
+        "description": "أحدث التنبيهات عبر المنصة.",
+        "empty": "لا توجد إشعارات بعد.",
         "col": {
-          "kind": "Kind",
-          "payload": "Payload",
-          "time": "Time"
+          "kind": "النوع",
+          "payload": "التفاصيل",
+          "time": "الوقت"
         }
       }
     },
@@ -464,6 +477,7 @@
       "pendingTab": "قيد المراجعة",
       "approvedTab": "معتمد",
       "rejectedTab": "مرفوض",
+      "allTab": "الكل",
       "approve": "اعتماد المورد",
       "reject": "رفض",
       "approveDoc": "اعتماد",
@@ -488,7 +502,55 @@
       "rejectSummary": "الرفض يضبط verification_status=rejected ويخفي البطاقة، ويحدّث كل مستند غير معتمد كمرفوض بالملاحظات التي تكتبها، ويرسل بريدًا للمورد بالخطوات التالية.",
       "rejectedToast": "تم الرفض. تم إخطار المورد.",
       "approvedToast": "تم الاعتماد والإخطار.",
-      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة."
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة.",
+      "list": {
+        "col": {
+          "business": "اسم المنشأة",
+          "legalType": "النوع القانوني",
+          "submitted": "تاريخ الإرسال",
+          "docs": "المستندات",
+          "status": "الحالة",
+          "action": "الإجراء"
+        },
+        "review": "مراجعة",
+        "docCount": "{count, plural, =0 {لا توجد مستندات} one {# مستند} two {مستندان} few {# مستندات} many {# مستندًا} other {# مستند}}",
+        "emptyAll": "لا يوجد موردون مطابقون لهذا التصفية."
+      },
+      "legalType": {
+        "company": "شركة",
+        "freelancer": "مستقل",
+        "foreign": "جهة أجنبية"
+      },
+      "docType": {
+        "cr": "السجل التجاري",
+        "vat": "شهادة ضريبة القيمة المضافة",
+        "id": "الهوية الوطنية",
+        "gea_permit": "تصريح الهيئة العامة للترفيه",
+        "certification": "شهادة"
+      },
+      "detail": {
+        "crNumber": "رقم السجل",
+        "nationalId": "الهوية الوطنية",
+        "baseCity": "المدينة الأساسية",
+        "serviceArea": "منطقة الخدمة",
+        "languages": "اللغات",
+        "capacity": "الطاقة",
+        "concurrent": "الفعاليات المتزامنة",
+        "published": "منشور",
+        "verifiedAt": "تاريخ التحقق",
+        "bio": "نبذة",
+        "yes": "نعم",
+        "no": "لا",
+        "notSet": "غير محدد",
+        "docsHeading": "المستندات",
+        "docsCount": "{count, plural, =0 {لا توجد مستندات} one {# مستند} two {مستندان} few {# مستندات} many {# مستندًا} other {# مستند}}"
+      },
+      "confirm": {
+        "approveTitle": "اعتماد هذا المورد؟",
+        "approveBody": "سيتم اعتماد المورد ونشر ملفه، مع اعتماد المستندات غير المرفوضة وإرسال بريد الترحيب.",
+        "approveConfirm": "اعتمد وأخطر",
+        "cancel": "إلغاء"
+      }
     }
   },
   "organizer": {

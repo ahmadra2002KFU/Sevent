@@ -430,15 +430,27 @@
       "supplierMix": {
         "pending": "Pending suppliers",
         "approved": "Approved suppliers",
-        "rejected": "Rejected suppliers"
+        "rejected": "Rejected suppliers",
+        "pendingHint": "Awaiting review",
+        "approvedHint": "Live on platform",
+        "rejectedHint": "Requires resubmission"
       },
       "verificationQueue": {
-        "heading": "Verification queue",
+        "heading": "Oldest pending",
+        "description": "Suppliers awaiting your review, oldest first.",
         "empty": "No suppliers pending verification.",
-        "openQueue": "Open queue"
+        "openQueue": "View all",
+        "col": {
+          "supplier": "Supplier",
+          "city": "Base city",
+          "submitted": "Submitted",
+          "action": "Action"
+        },
+        "reviewCta": "Review"
       },
       "rfqMonitor": {
         "heading": "Recent RFQs",
+        "description": "Last 10 RFQs sent across the platform.",
         "empty": "No RFQs sent yet.",
         "col": {
           "event": "Event",
@@ -450,6 +462,7 @@
       },
       "notifications": {
         "heading": "Recent notifications",
+        "description": "Latest platform-wide alerts.",
         "empty": "No notifications yet.",
         "col": {
           "kind": "Kind",
@@ -464,6 +477,7 @@
       "pendingTab": "Pending",
       "approvedTab": "Approved",
       "rejectedTab": "Rejected",
+      "allTab": "All",
       "approve": "Approve supplier",
       "reject": "Reject",
       "approveDoc": "Mark approved",
@@ -488,7 +502,55 @@
       "rejectSummary": "Rejecting sets verification_status=rejected, hides the listing, marks every non-approved document as rejected with the notes you provide, and emails the supplier the next steps.",
       "rejectedToast": "Rejected. Supplier notified.",
       "approvedToast": "Approved and notified.",
-      "errorAdminRequired": "Admin role required to view this page."
+      "errorAdminRequired": "Admin role required to view this page.",
+      "list": {
+        "col": {
+          "business": "Business name",
+          "legalType": "Legal type",
+          "submitted": "Submitted",
+          "docs": "Documents",
+          "status": "Status",
+          "action": "Action"
+        },
+        "review": "Review",
+        "docCount": "{count, plural, =0 {No docs} one {# doc} other {# docs}}",
+        "emptyAll": "No suppliers match this filter."
+      },
+      "legalType": {
+        "company": "Company",
+        "freelancer": "Freelancer",
+        "foreign": "Foreign entity"
+      },
+      "docType": {
+        "cr": "Commercial Registration (CR)",
+        "vat": "VAT certificate",
+        "id": "National ID",
+        "gea_permit": "GEA permit",
+        "certification": "Certification"
+      },
+      "detail": {
+        "crNumber": "CR number",
+        "nationalId": "National ID",
+        "baseCity": "Base city",
+        "serviceArea": "Service area",
+        "languages": "Languages",
+        "capacity": "Capacity",
+        "concurrent": "Concurrent events",
+        "published": "Published",
+        "verifiedAt": "Verified at",
+        "bio": "Bio",
+        "yes": "Yes",
+        "no": "No",
+        "notSet": "Not set",
+        "docsHeading": "Documents",
+        "docsCount": "{count, plural, =0 {No documents} one {# document} other {# documents}}"
+      },
+      "confirm": {
+        "approveTitle": "Approve this supplier?",
+        "approveBody": "This marks the supplier as approved, publishes their profile, approves non-rejected documents, and emails the welcome message.",
+        "approveConfirm": "Approve and notify",
+        "cancel": "Cancel"
+      }
     }
   },
   "organizer": {

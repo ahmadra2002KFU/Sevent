@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Bell } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 import { readUnreadCountForUser } from "@/lib/notifications/reader";
+import { cn } from "@/lib/utils";
 
 export type NotificationBellProps = {
   /**
@@ -12,19 +14,29 @@ export type NotificationBellProps = {
   /**
    * Tailwind classes for the bell anchor. Layouts pass different classes so
    * the bell blends with the role's nav palette (white-on-dark for admin vs.
-   * muted-on-light for organizer/supplier).
+   * muted-on-light for organizer/supplier). The class is applied to the
+   * `<Link>` wrapper; default styling approximates a shadcn ghost icon Button
+   * while remaining customizable from the caller.
    */
   className?: string;
 };
+
+const DEFAULT_CLASSNAME =
+  "relative ms-1 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
 /**
  * NotificationBell — server component.
  *
  * Reads the current user's unread notification count via the service-role
  * admin client (see `authenticateAndGetAdminClient` for rationale) and renders
- * an accessible bell with a red badge when unread > 0. Re-renders on
- * navigation; no client-side state. Returns `null` when the user isn't
- * signed in (defensive — layouts should already gate access).
+ * an accessible bell with a destructive-toned badge when unread > 0.
+ * Re-renders on navigation; no client-side state. Returns `null` when the
+ * user isn't signed in (defensive — layouts should already gate access).
+ *
+ * Consumed by: `src/components/nav/TopNav.tsx` for organizer/supplier/admin
+ * roles. The caller owns the palette (via `className` override) — this
+ * component is intentionally style-agnostic about hover tone so admin's dark
+ * nav and organizer's light nav can both host the same bell.
  */
 export default async function NotificationBell({
   href,
@@ -44,8 +56,7 @@ export default async function NotificationBell({
     unread = 0;
   }
 
-  const badge =
-    unread > 0 ? (unread > 99 ? "99+" : String(unread)) : null;
+  const badge = unread > 0 ? (unread > 99 ? "99+" : String(unread)) : null;
 
   const title = t("title");
   const ariaLabel =
@@ -58,29 +69,14 @@ export default async function NotificationBell({
       href={href}
       aria-label={ariaLabel}
       title={title}
-      className={
-        className ??
-        "relative ms-1 inline-flex items-center justify-center rounded-md border border-[var(--color-border)] px-2.5 py-1.5 text-sm hover:bg-[var(--color-muted)]"
-      }
+      className={cn(DEFAULT_CLASSNAME, className)}
+      data-slot="notification-bell"
     >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 20 20"
-        width="20"
-        height="20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M10 3.5a4.5 4.5 0 0 0-4.5 4.5v2.2c0 .6-.24 1.18-.66 1.6L3.5 13.14h13l-1.34-1.34a2.25 2.25 0 0 1-.66-1.6V8a4.5 4.5 0 0 0-4.5-4.5Z" />
-        <path d="M8 15.5a2 2 0 0 0 4 0" />
-      </svg>
+      <Bell aria-hidden className="size-4" />
       {badge != null ? (
         <span
           aria-hidden="true"
-          className="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-[1.1rem] text-white"
+          className="absolute -top-1 -end-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-semantic-danger-500 px-1 text-[10px] font-semibold leading-[1.1rem] text-white ring-2 ring-background"
         >
           {badge}
         </span>
