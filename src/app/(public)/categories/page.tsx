@@ -1,5 +1,10 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { PackageSearch } from "lucide-react";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { EmptyState } from "@/components/ui-ext/EmptyState";
+import { CategoryTile } from "@/components/public/CategoryTile";
+import { getCategoryIcon } from "@/components/public/categoryIcons";
+import { Breadcrumb } from "@/components/public/Breadcrumb";
 import { listTopLevelCategories } from "@/lib/domain/publicBrowse";
 
 export const dynamic = "force-dynamic";
@@ -13,58 +18,47 @@ export async function generateMetadata() {
 }
 
 export default async function CategoriesPage() {
-  const [t, brand, categories] = await Promise.all([
+  const [t, tLanding, brand, categories] = await Promise.all([
     getTranslations("public.categories"),
+    getTranslations("landing"),
     getTranslations("brand"),
     listTopLevelCategories(),
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12">
-      <header className="flex flex-col gap-3">
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-sevent-gold)]">
-          {brand("name")}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="max-w-2xl text-sm text-[var(--color-muted-foreground)]">
-          {t("subtitle")}
-        </p>
-      </header>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 sm:py-14">
+      <Breadcrumb
+        items={[
+          { label: brand("name"), href: "/" },
+          { label: t("title") },
+        ]}
+      />
+
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
       {categories.length === 0 ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-6 text-sm text-[var(--color-muted-foreground)]">
-          {t("empty")}
-        </p>
+        <EmptyState
+          icon={PackageSearch}
+          title={t("empty")}
+          description={t("emptyDescription")}
+        />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/categories/${c.slug}`}
-                className="group flex h-full flex-col justify-between gap-4 rounded-lg border border-[var(--color-border)] bg-white p-5 transition hover:border-[var(--color-sevent-green)]/40 hover:shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-lg font-semibold tracking-tight">
-                    {c.name_en}
-                  </h2>
-                  <span className="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-[var(--color-sevent-green)]/10 px-2 py-1 text-xs font-medium text-[var(--color-sevent-green)]">
-                    {c.supplier_count}
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-[var(--color-sevent-green)] group-hover:underline">
-                  {t("viewSubcategory")} →
-                </span>
-              </Link>
-            </li>
+            <CategoryTile
+              key={c.id}
+              href={`/categories/${c.slug}`}
+              name={c.name_en}
+              supplierCount={c.supplier_count}
+              supplierCountLabel={tLanding("categories.supplierCount", {
+                count: c.supplier_count,
+              })}
+              icon={getCategoryIcon(c.slug)}
+              viewLabel={t("viewSubcategory")}
+            />
           ))}
-        </ul>
+        </div>
       )}
-
-      <footer className="border-t border-[var(--color-border)] pt-6 text-xs text-[var(--color-muted-foreground)]">
-        <Link href="/" className="underline hover:text-[var(--color-foreground)]">
-          ← {brand("name")}
-        </Link>
-      </footer>
     </main>
   );
 }
