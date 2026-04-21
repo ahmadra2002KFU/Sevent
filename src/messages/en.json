@@ -59,9 +59,13 @@
       "title": "Plan any event end-to-end in one platform.",
       "subtitle": "Discover verified suppliers, send one request to many, compare quotes, and book with a digital contract — all in Sevent.",
       "ctaOrganizer": "I'm planning an event",
-      "ctaSupplier": "I'm a supplier"
+      "ctaSupplier": "I'm a supplier",
+      "statLabel": "Pilot · Riyadh + Jeddah",
+      "statValue": "Verified suppliers across every category you need.",
+      "sampleCategoriesFallback": "Launching soon"
     },
     "valueProp": {
+      "eyebrow": "Why Sevent",
       "heading": "Built for Saudi events",
       "items": [
         {
@@ -77,6 +81,21 @@
           "body": "Verified suppliers, click-to-agree digital contracts, and every booking tracked end-to-end."
         }
       ]
+    },
+    "categories": {
+      "eyebrow": "Categories",
+      "heading": "Discover suppliers across every category",
+      "subtitle": "From venues and catering to photography and staffing — every supplier is verified before they go live.",
+      "browseAll": "Browse all categories",
+      "supplierCount": "{count, plural, =0 {No suppliers yet} one {# verified supplier} other {# verified suppliers}}",
+      "viewLabel": "Explore"
+    },
+    "pilot": {
+      "eyebrow": "Pilot partners",
+      "title": "We're opening to Riyadh and Jeddah suppliers now.",
+      "subtitle": "Get a verified profile, structured RFQs, and platform-mediated bookings. No cold calls, no paper contracts.",
+      "ctaSupplier": "Become a pilot supplier",
+      "ctaBrowse": "Browse the platform"
     },
     "comingSoon": "The pilot is opening to Riyadh + Jeddah suppliers now."
   },
@@ -729,8 +748,9 @@
   "public": {
     "categories": {
       "title": "Browse categories",
-      "subtitle": "Every supplier category on Sevent. Pick a category to explore subcategories and suppliers.",
+      "subtitle": "Every supplier category on Sevent. Pick a category to explore subcategories and verified suppliers.",
       "empty": "No categories available yet.",
+      "emptyDescription": "Check back soon — we are onboarding new suppliers every week.",
       "viewSubcategory": "View subcategory"
     },
     "search": {
@@ -738,22 +758,31 @@
       "allCities": "All cities",
       "subcategoryHeading": "Suppliers in {name}",
       "noResults": "No suppliers match your filters yet.",
-      "viewProfile": "View profile"
+      "viewProfile": "View profile",
+      "supplierCount": "{count, plural, =0 {No suppliers} one {# supplier} other {# suppliers}}",
+      "resultsSummary": "{count, plural, =0 {No verified suppliers in {city} yet} one {# verified supplier in {city}} other {# verified suppliers in {city}}}"
     },
     "supplier": {
       "profileEyebrow": "Supplier profile",
-      "verifiedBadge": "Verified supplier",
+      "verifiedBadge": "Verified",
       "portfolioHeading": "Portfolio",
-      "noPortfolio": "This supplier has not uploaded any photos yet.",
+      "portfolioDialogTitle": "Portfolio — {name}",
+      "noPortfolio": "No portfolio photos yet",
+      "noPortfolioDescription": "This supplier is still assembling their portfolio. Check back soon.",
       "packagesHeading": "Packages",
-      "noPackages": "This supplier has not published any packages yet.",
+      "noPackages": "No published packages",
+      "noPackagesDescription": "This supplier receives custom quotes directly — send an RFQ to get a tailored offer.",
       "reviewsHeading": "Reviews",
-      "noReviews": "No published reviews yet. Reviews are double-blind and only publish after both parties submit or the 14-day window closes.",
+      "noReviewsTitle": "No reviews yet",
+      "noReviews": "Reviews are double-blind and only publish after both parties submit or the 14-day window closes.",
       "reviewsCount": "{count, plural, one {# published review} other {# published reviews}}",
       "fromLabel": "from",
       "baseCity": "Based in {city}",
+      "baseCityLabel": "Based in",
       "serviceArea": "Serves {cities}",
+      "serviceAreaLabel": "Serves",
       "languages": "Languages: {list}",
+      "languagesLabel": "Languages",
       "backToHome": "← Back to Sevent",
       "qtyRange": "Qty {min} – {max}",
       "packageUnit": {
@@ -763,6 +792,57 @@
         "person": "Per person",
         "unit": "Per unit"
       }
+    },
+    "footer": {
+      "exploreHeading": "Explore",
+      "accountHeading": "Account",
+      "languageHeading": "Language",
+      "organizerLink": "For organizers",
+      "supplierLink": "For suppliers",
+      "rightsReserved": "All rights reserved.",
+      "pilotNote": "Pilot · Riyadh + Jeddah"
+    }
+  },
+  "auth": {
+    "common": {
+      "backHome": "Back to Sevent"
+    },
+    "signIn": {
+      "title": "Sign in to Sevent",
+      "subtitle": "Welcome back.",
+      "confirmBanner": "We sent a confirmation email. Click the link, then return here to sign in.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.sa",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "newHere": "New here?",
+      "createAccount": "Create an account",
+      "errorEmailRequired": "Enter a valid email address.",
+      "errorPasswordRequired": "Enter your password."
+    },
+    "signUp": {
+      "title": "Create your Sevent account",
+      "subtitle": "Choose your role. Organizer ↔ agency can be swapped later. Suppliers complete an onboarding review after sign-up.",
+      "fullNameLabel": "Full name",
+      "fullNamePlaceholder": "Your full name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.sa",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Create a password",
+      "passwordHint": "At least 8 characters with letters and digits.",
+      "roleLabel": "I am…",
+      "roleOrganizer": "Planning an event",
+      "roleSupplier": "An event supplier",
+      "roleAgency": "An agency booking for clients",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "errorFullName": "Enter your full name (at least 2 characters).",
+      "errorEmail": "Enter a valid email address.",
+      "errorPassword": "Password must be at least 8 characters."
     }
   },
   "booking": {

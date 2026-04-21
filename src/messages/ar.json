@@ -59,9 +59,13 @@
       "title": "خطّط لأي فعالية من البداية للنهاية على منصة واحدة.",
       "subtitle": "اكتشف موردين موثوقين، أرسل طلب عروض واحد للعديد منهم، قارن الأسعار، واحجز بعقد رقمي — كل ذلك في سِيفِنت.",
       "ctaOrganizer": "أخطّط لفعالية",
-      "ctaSupplier": "أنا مورد"
+      "ctaSupplier": "أنا مورد",
+      "statLabel": "تجربة أولية · الرياض + جدة",
+      "statValue": "موردون موثّقون في كل فئة تحتاجها.",
+      "sampleCategoriesFallback": "قريبًا"
     },
     "valueProp": {
+      "eyebrow": "لماذا سِيفِنت",
       "heading": "مصمم للفعاليات السعودية",
       "items": [
         {
@@ -77,6 +81,21 @@
           "body": "موردون موثّقون، وعقود رقمية بالنقر، وتتبع كامل لكل حجز من البداية للنهاية."
         }
       ]
+    },
+    "categories": {
+      "eyebrow": "الفئات",
+      "heading": "اكتشف الموردين في كل فئة",
+      "subtitle": "من القاعات والضيافة إلى التصوير والطاقم — كل مورد موثّق قبل النشر.",
+      "browseAll": "تصفّح جميع الفئات",
+      "supplierCount": "{count, plural, zero {لا موردين بعد} one {# مورد موثّق} two {# موردان موثّقان} few {# موردين موثّقين} many {# موردًا موثّقًا} other {# مورد موثّق}}",
+      "viewLabel": "استكشف"
+    },
+    "pilot": {
+      "eyebrow": "الشركاء الأوائل",
+      "title": "نفتح الآن لموردي الرياض وجدة.",
+      "subtitle": "احصل على ملف موثّق، وطلبات عروض منظمة، وحجوزات عبر المنصة. بلا مكالمات باردة ولا عقود ورقية.",
+      "ctaSupplier": "انضم كمورد أولي",
+      "ctaBrowse": "تصفّح المنصة"
     },
     "comingSoon": "التجربة الأولية مفتوحة لموردي الرياض وجدة الآن."
   },
@@ -728,33 +747,43 @@
   },
   "public": {
     "categories": {
-      "title": "Browse categories",
-      "subtitle": "Every supplier category on Sevent. Pick a category to explore subcategories and suppliers.",
-      "empty": "No categories available yet.",
-      "viewSubcategory": "View subcategory"
+      "title": "تصفّح الفئات",
+      "subtitle": "كل فئات الموردين على سِيفِنت. اختر فئة لاستكشاف التصنيفات الفرعية والموردين الموثّقين.",
+      "empty": "لا توجد فئات متاحة بعد.",
+      "emptyDescription": "عُد قريبًا — نضيف موردين جددًا كل أسبوع.",
+      "viewSubcategory": "عرض التصنيف الفرعي"
     },
     "search": {
-      "cityFilterLabel": "City",
-      "allCities": "All cities",
-      "subcategoryHeading": "Suppliers in {name}",
-      "noResults": "No suppliers match your filters yet.",
-      "viewProfile": "View profile"
+      "cityFilterLabel": "المدينة",
+      "allCities": "جميع المدن",
+      "subcategoryHeading": "الموردون في {name}",
+      "noResults": "لا يوجد موردون يطابقون الفلاتر بعد.",
+      "viewProfile": "عرض الملف",
+      "supplierCount": "{count, plural, zero {لا موردين} one {# مورد} two {# موردان} few {# موردين} many {# موردًا} other {# مورد}}",
+      "resultsSummary": "{count, plural, zero {لا موردين موثّقين في {city} بعد} one {# مورد موثّق في {city}} two {# موردان موثّقان في {city}} few {# موردين موثّقين في {city}} many {# موردًا موثّقًا في {city}} other {# مورد موثّق في {city}}}"
     },
     "supplier": {
       "profileEyebrow": "ملف المورد",
-      "verifiedBadge": "مورد موثّق",
+      "verifiedBadge": "موثّق",
       "portfolioHeading": "أعمال سابقة",
-      "noPortfolio": "لم يرفع هذا المورد أي صور بعد.",
+      "portfolioDialogTitle": "أعمال — {name}",
+      "noPortfolio": "لا توجد صور بعد",
+      "noPortfolioDescription": "هذا المورد ما زال يُعدّ أعماله. عُد قريبًا.",
       "packagesHeading": "الباقات",
-      "noPackages": "لم ينشر هذا المورد أي باقات بعد.",
+      "noPackages": "لا باقات منشورة",
+      "noPackagesDescription": "هذا المورد يستقبل عروضًا مخصصة — أرسل طلب عرض للحصول على عرض على مقاسك.",
       "reviewsHeading": "التقييمات",
-      "noReviews": "لا توجد تقييمات منشورة بعد. التقييمات مغلقة ولا تُنشر إلا بعد أن يُرسلها الطرفان أو ينتهي أسبوعان.",
+      "noReviewsTitle": "لا تقييمات بعد",
+      "noReviews": "التقييمات مغلقة ولا تُنشر إلا بعد أن يُرسلها الطرفان أو ينتهي أسبوعان.",
       "reviewsCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
       "fromLabel": "ابتداءً من",
       "baseCity": "مقرها {city}",
+      "baseCityLabel": "المقر",
       "serviceArea": "يخدم {cities}",
+      "serviceAreaLabel": "يخدم",
       "languages": "اللغات: {list}",
-      "backToHome": "← العودة إلى Sevent",
+      "languagesLabel": "اللغات",
+      "backToHome": "← العودة إلى سِيفِنت",
       "qtyRange": "الكمية {min} – {max}",
       "packageUnit": {
         "event": "لكل فعالية",
@@ -763,6 +792,57 @@
         "person": "لكل شخص",
         "unit": "لكل وحدة"
       }
+    },
+    "footer": {
+      "exploreHeading": "استكشف",
+      "accountHeading": "الحساب",
+      "languageHeading": "اللغة",
+      "organizerLink": "للمنظّمين",
+      "supplierLink": "للموردين",
+      "rightsReserved": "جميع الحقوق محفوظة.",
+      "pilotNote": "تجربة أولية · الرياض + جدة"
+    }
+  },
+  "auth": {
+    "common": {
+      "backHome": "العودة إلى سِيفِنت"
+    },
+    "signIn": {
+      "title": "تسجيل الدخول إلى سِيفِنت",
+      "subtitle": "أهلًا بعودتك.",
+      "confirmBanner": "أرسلنا رسالة تأكيد. افتح الرابط ثم عُد للدخول.",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "you@company.sa",
+      "passwordLabel": "كلمة المرور",
+      "passwordPlaceholder": "٨ أحرف على الأقل",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ تسجيل الدخول…",
+      "newHere": "جديد هنا؟",
+      "createAccount": "إنشاء حساب",
+      "errorEmailRequired": "أدخل بريدًا إلكترونيًا صحيحًا.",
+      "errorPasswordRequired": "أدخل كلمة المرور."
+    },
+    "signUp": {
+      "title": "أنشئ حسابك على سِيفِنت",
+      "subtitle": "اختر دورك. يمكن تبديل المنظّم ↔ الوكالة لاحقًا. الموردون يكملون مراجعة التسجيل بعد التسجيل.",
+      "fullNameLabel": "الاسم الكامل",
+      "fullNamePlaceholder": "اسمك الكامل",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "you@company.sa",
+      "passwordLabel": "كلمة المرور",
+      "passwordPlaceholder": "اختر كلمة مرور",
+      "passwordHint": "٨ أحرف على الأقل مع حروف وأرقام.",
+      "roleLabel": "أنا…",
+      "roleOrganizer": "أخطّط لفعالية",
+      "roleSupplier": "مورد فعاليات",
+      "roleAgency": "وكالة تحجز للعملاء",
+      "submit": "إنشاء حساب",
+      "submitting": "جارٍ إنشاء الحساب…",
+      "haveAccount": "لديك حساب؟",
+      "signIn": "تسجيل الدخول",
+      "errorFullName": "أدخل اسمك الكامل (حرفان على الأقل).",
+      "errorEmail": "أدخل بريدًا إلكترونيًا صحيحًا.",
+      "errorPassword": "يجب أن تتكون كلمة المرور من ٨ أحرف على الأقل."
     }
   },
   "booking": {
