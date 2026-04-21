@@ -2,16 +2,37 @@
  * Sprint 4 Lane 3 — organizer quote detail (full snapshot view).
  *
  * Renders every field inside `quote_revisions.snapshot_jsonb` for the current
- * revision of one quote. This is a read-only page; the accept CTA lives on
- * the comparison page so the organizer can compare side-by-side first.
+ * revision of one quote. Read-only; the accept CTA lives on the comparison
+ * page so the organizer can compare side-by-side first.
  *
- * Ownership check mirrors the comparison page: service-role read (the new
- * @supabase/ssr key format does not forward the user JWT reliably), then
- * enforce `events.organizer_id === user.id` in code.
+ * VISUAL RESTYLE (Lane 2): shadcn Card + Table + StatusPill; data shape + RPC
+ * plumbing untouched.
  */
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, ClockAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import {
+  StatusPill,
+  type StatusPillStatus,
+} from "@/components/ui-ext/StatusPill";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot, QuoteLineItem } from "@/lib/domain/quote";
@@ -35,7 +56,12 @@ type QuoteRow = {
   } | null;
   rfqs: {
     id: string;
-    events: { id: string; organizer_id: string; starts_at: string; ends_at: string } | null;
+    events: {
+      id: string;
+      organizer_id: string;
+      starts_at: string;
+      ends_at: string;
+    } | null;
   } | null;
 };
 
@@ -70,14 +96,41 @@ function unitLabel(unit: QuoteLineItem["unit"]): string {
   }
 }
 
-export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
+function toPillStatus(raw: string): StatusPillStatus {
+  const allowed: StatusPillStatus[] = [
+    "draft",
+    "pending",
+    "sent",
+    "quoted",
+    "invited",
+    "awaiting_supplier",
+    "accepted",
+    "confirmed",
+    "booked",
+    "approved",
+    "paid",
+    "completed",
+    "declined",
+    "rejected",
+    "cancelled",
+    "expired",
+    "withdrawn",
+  ];
+  return (allowed as string[]).includes(raw)
+    ? (raw as StatusPillStatus)
+    : "draft";
+}
+
+export default async function OrganizerQuoteDetailPage({
+  params,
+}: PageProps) {
   const { id, quoteId } = await params;
 
   const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect(`/sign-in?next=/organizer/rfqs/${id}/quotes/${quoteId}`);
+  if (!auth)
+    redirect(`/sign-in?next=/organizer/rfqs/${id}/quotes/${quoteId}`);
   const { user, admin } = auth;
 
-  // 1. Load quote + supplier + rfq.event for ownership + header context.
   const { data: quoteRaw } = await admin
     .from("quotes")
     .select(
@@ -103,16 +156,16 @@ export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
     if (role !== "admin") notFound();
   }
 
-  // 2. Load the current revision's snapshot.
   if (!quote.current_revision_id) {
     return (
       <section className="flex flex-col gap-6">
-        <header>
-          <h1 className="text-2xl font-semibold">Quote snapshot</h1>
-        </header>
-        <p className="rounded-md border border-[#F2C2C2] bg-[#FCE9E9] px-3 py-2 text-sm text-[#9F1A1A]">
-          This quote is missing a revision — ask the supplier to re-send.
-        </p>
+        <PageHeader title="Quote snapshot" />
+        <Alert variant="destructive">
+          <ClockAlert aria-hidden />
+          <AlertDescription>
+            This quote is missing a revision — ask the supplier to re-send.
+          </AlertDescription>
+        </Alert>
       </section>
     );
   }
@@ -135,173 +188,193 @@ export default async function OrganizerQuoteDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            Quote snapshot
-          </p>
-          <h1 className="text-2xl font-semibold">
-            {quote.suppliers?.business_name ?? "Supplier"}
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            {quote.suppliers?.base_city ? `${quote.suppliers.base_city} · ` : ""}
-            Revision v{revision.version} · Submitted {fmt(quote.sent_at)}
-          </p>
-        </div>
-        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium capitalize">
-          {quote.status}
-        </span>
-      </header>
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
+        <Link href={`/organizer/rfqs/${id}/quotes`}>
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          Back to compare
+        </Link>
+      </Button>
 
-      <Link
-        href={`/organizer/rfqs/${id}/quotes`}
-        className="w-fit text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
-      >
-        ← Back to compare
-      </Link>
+      <PageHeader
+        title={quote.suppliers?.business_name ?? "Quote snapshot"}
+        description={`${
+          quote.suppliers?.base_city ? `${quote.suppliers.base_city} · ` : ""
+        }Revision v${revision.version} · Submitted ${fmt(quote.sent_at)}`}
+        actions={
+          <StatusPill
+            status={toPillStatus(quote.status)}
+            label={quote.status.replace(/_/g, " ")}
+          />
+        }
+      />
 
       {snap.expires_at ? (
-        <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm">
-          Valid until {fmt(snap.expires_at)}
-        </p>
+        <Alert>
+          <ClockAlert aria-hidden />
+          <AlertDescription>
+            Valid until <strong>{fmt(snap.expires_at)}</strong>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      {/* Line items */}
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <h2 className="mb-3 text-lg font-semibold">Line items</h2>
-        {snap.line_items.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
-        ) : (
-          <div className="overflow-hidden rounded-md border border-[var(--color-border)]">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Item</th>
-                  <th className="px-3 py-2 font-medium">Qty</th>
-                  <th className="px-3 py-2 font-medium">Unit price</th>
-                  <th className="px-3 py-2 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">Line items</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {snap.line_items.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+              —
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4">Item</TableHead>
+                  <TableHead className="px-4">Qty</TableHead>
+                  <TableHead className="px-4">Unit price</TableHead>
+                  <TableHead className="px-4 text-end">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {snap.line_items.map((item, idx) => (
-                  <tr
-                    key={`${item.kind}-${idx}`}
-                    className="border-t border-[var(--color-border)]"
-                  >
-                    <td className="px-3 py-2">
+                  <TableRow key={`${item.kind}-${idx}`}>
+                    <TableCell className="px-4 py-3">
                       <div className="flex flex-col">
                         <span className="font-medium">{item.label}</span>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="text-xs text-muted-foreground">
                           {item.kind.replace(/_/g, " ")}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      {item.qty} <span className="text-xs text-[var(--color-muted-foreground)]">{unitLabel(item.unit)}</span>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 whitespace-nowrap">
+                      {item.qty}{" "}
+                      <span className="text-xs text-muted-foreground">
+                        {unitLabel(item.unit)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 whitespace-nowrap tabular-nums">
                       {formatHalalas(item.unit_price_halalas)}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap font-medium">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 whitespace-nowrap text-end font-medium tabular-nums">
                       {formatHalalas(item.total_halalas)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Totals */}
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <h2 className="mb-3 text-lg font-semibold">Totals</h2>
-        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          <Row label="Subtotal" value={formatHalalas(snap.subtotal_halalas)} />
-          <Row label="Travel" value={formatHalalas(snap.travel_fee_halalas)} />
-          <Row label="Setup" value={formatHalalas(snap.setup_fee_halalas)} />
-          <Row label="Teardown" value={formatHalalas(snap.teardown_fee_halalas)} />
-          <Row
-            label={`VAT (${snap.vat_rate_pct}%)`}
-            value={formatHalalas(snap.vat_amount_halalas)}
-          />
-          <Row
-            label="Total"
-            value={formatHalalas(snap.total_halalas)}
-            emphasize
-          />
-          <Row label="Deposit" value={`${snap.deposit_pct}%`} />
-          <Row label="Payment schedule" value={snap.payment_schedule || "—"} />
-        </dl>
-      </section>
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">Totals</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <dl className="flex flex-col gap-2">
+            <Row
+              label="Subtotal"
+              value={formatHalalas(snap.subtotal_halalas)}
+            />
+            <Row
+              label="Travel"
+              value={formatHalalas(snap.travel_fee_halalas)}
+            />
+            <Row
+              label="Setup"
+              value={formatHalalas(snap.setup_fee_halalas)}
+            />
+            <Row
+              label="Teardown"
+              value={formatHalalas(snap.teardown_fee_halalas)}
+            />
+            <Row
+              label={`VAT (${snap.vat_rate_pct}%)`}
+              value={formatHalalas(snap.vat_amount_halalas)}
+            />
+            <div className="mt-1 flex items-baseline justify-between gap-4 border-t pt-3">
+              <dt className="text-base font-semibold text-brand-navy-900">
+                Total
+              </dt>
+              <dd className="text-lg font-semibold text-brand-navy-900 tabular-nums">
+                {formatHalalas(snap.total_halalas)}
+              </dd>
+            </div>
+            <Row label="Deposit" value={`${snap.deposit_pct}%`} />
+            <Row
+              label="Payment schedule"
+              value={snap.payment_schedule || "—"}
+            />
+          </dl>
+        </CardContent>
+      </Card>
 
-      {/* Terms */}
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <h2 className="mb-3 text-lg font-semibold">Cancellation terms</h2>
-        <p className="whitespace-pre-line text-sm">
-          {snap.cancellation_terms || "—"}
-        </p>
-      </section>
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">Cancellation terms</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <p className="whitespace-pre-line text-sm">
+            {snap.cancellation_terms || "—"}
+          </p>
+        </CardContent>
+      </Card>
 
-      {/* Inclusions + exclusions */}
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="mb-3 text-lg font-semibold">Inclusions</h2>
-          {snap.inclusions.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
-          ) : (
-            <ul className="list-disc space-y-1 ps-5 text-sm">
-              {snap.inclusions.map((inc, idx) => (
-                <li key={`inc-${idx}`}>{inc}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="mb-3 text-lg font-semibold">Exclusions</h2>
-          {snap.exclusions.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
-          ) : (
-            <ul className="list-disc space-y-1 ps-5 text-sm">
-              {snap.exclusions.map((exc, idx) => (
-                <li key={`exc-${idx}`}>{exc}</li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <Card>
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-lg">Inclusions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {snap.inclusions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">—</p>
+            ) : (
+              <ul className="list-disc space-y-1 ps-5 text-sm">
+                {snap.inclusions.map((inc, idx) => (
+                  <li key={`inc-${idx}`}>{inc}</li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-lg">Exclusions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {snap.exclusions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">—</p>
+            ) : (
+              <ul className="list-disc space-y-1 ps-5 text-sm">
+                {snap.exclusions.map((exc, idx) => (
+                  <li key={`exc-${idx}`}>{exc}</li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {snap.notes ? (
-        <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-          <h2 className="mb-3 text-lg font-semibold">Notes</h2>
-          <p className="whitespace-pre-line text-sm">{snap.notes}</p>
-        </section>
+        <Card>
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-lg">Notes</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="whitespace-pre-line text-sm">{snap.notes}</p>
+          </CardContent>
+        </Card>
       ) : null}
     </section>
   );
 }
 
-function Row({
-  label,
-  value,
-  emphasize,
-}: {
-  label: string;
-  value: string;
-  emphasize?: boolean;
-}) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--color-border)] py-1 last:border-b-0 sm:border-b">
-      <dt className="text-sm text-[var(--color-muted-foreground)]">{label}</dt>
-      <dd
-        className={
-          emphasize
-            ? "text-base font-semibold"
-            : "text-sm"
-        }
-      >
-        {value}
-      </dd>
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="text-sm tabular-nums">{value}</dd>
     </div>
   );
 }

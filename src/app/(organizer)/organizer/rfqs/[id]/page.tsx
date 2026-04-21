@@ -1,6 +1,27 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { ArrowLeft, FileCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/ui-ext/PageHeader";
+import {
+  StatusPill,
+  type StatusPillStatus,
+} from "@/components/ui-ext/StatusPill";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +57,12 @@ type InviteDetail = {
   response_due_at: string;
   responded_at: string | null;
   decline_reason_code: string | null;
-  suppliers: { id: string; business_name: string; slug: string; base_city: string } | null;
+  suppliers: {
+    id: string;
+    business_name: string;
+    slug: string;
+    base_city: string;
+  } | null;
 };
 
 function fmt(iso: string | null | undefined): string {
@@ -54,8 +80,34 @@ function fmt(iso: string | null | undefined): string {
   }
 }
 
-function prettyRequirements(req: unknown): React.ReactNode {
-  if (!req || typeof req !== "object") return <p className="text-sm">—</p>;
+function toPillStatus(raw: string): StatusPillStatus {
+  const allowed: StatusPillStatus[] = [
+    "draft",
+    "pending",
+    "sent",
+    "quoted",
+    "invited",
+    "awaiting_supplier",
+    "accepted",
+    "confirmed",
+    "booked",
+    "approved",
+    "paid",
+    "completed",
+    "declined",
+    "rejected",
+    "cancelled",
+    "expired",
+    "withdrawn",
+  ];
+  return (allowed as string[]).includes(raw)
+    ? (raw as StatusPillStatus)
+    : "draft";
+}
+
+function PrettyRequirements({ req }: { req: unknown }) {
+  if (!req || typeof req !== "object")
+    return <p className="text-sm">—</p>;
   const obj = req as Record<string, unknown>;
   const kind = typeof obj.kind === "string" ? obj.kind : "unknown";
 
@@ -76,14 +128,16 @@ function prettyRequirements(req: unknown): React.ReactNode {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
+    <div className="flex flex-col gap-3">
+      <span className="inline-flex w-fit items-center rounded-full bg-brand-cobalt-100 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-brand-cobalt-500">
         {kind}
-      </p>
-      <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+      </span>
+      <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div key={k} className="flex flex-col">
-            <dt className="text-xs text-[var(--color-muted-foreground)]">{k}</dt>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {k}
+            </dt>
             <dd className="text-sm">{v}</dd>
           </div>
         ))}
@@ -101,8 +155,6 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   if (!auth) redirect(`/sign-in?next=/organizer/rfqs/${id}`);
   const { user, admin } = auth;
 
-  // Service-role read because @supabase/ssr + new key format doesn't forward
-  // the user JWT reliably for RLS. Ownership is enforced in code below.
   const { data: rfqData } = await admin
     .from("rfqs")
     .select(
@@ -114,11 +166,15 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
     .eq("id", id)
     .maybeSingle();
 
-  const rfq = rfqData as unknown as (RfqDetail & { events: RfqDetail["events"] & { organizer_id?: string } | null }) | null;
+  const rfq = rfqData as unknown as
+    | (RfqDetail & {
+        events:
+          | (RfqDetail["events"] & { organizer_id?: string })
+          | null;
+      })
+    | null;
   if (!rfq) notFound();
 
-  // Enforce ownership: only the organizer who owns the parent event, or an admin,
-  // may view the RFQ. Admins get a free pass via their profile role lookup.
   const ownsEvent = rfq.events?.organizer_id === user.id;
   if (!ownsEvent) {
     const { data: profile } = await admin
@@ -141,120 +197,146 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
 
   const invites = (invitesData ?? []) as unknown as InviteDetail[];
 
-  // Count sent quotes so we can surface a "Compare quotes" CTA when there is
-  // at least one. The comparison page itself is scoped to status='sent'.
   const { count: sentQuoteCount } = await admin
     .from("quotes")
     .select("id", { count: "exact", head: true })
     .eq("rfq_id", id)
     .eq("status", "sent");
 
+  const title = `${rfq.parent?.name_en ?? "RFQ"}${
+    rfq.sub ? ` · ${rfq.sub.name_en}` : ""
+  }`;
+
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            RFQ detail
-          </p>
-          <h1 className="text-2xl font-semibold">
-            {rfq.parent?.name_en ?? "RFQ"}
-            {rfq.sub ? ` · ${rfq.sub.name_en}` : ""}
-          </h1>
-          {rfq.events ? (
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {eventFormT(`eventType.${rfq.events.event_type}` as never)}
-              {rfq.events.client_name ? ` · ${rfq.events.client_name}` : ""}
-              {" · "}
-              {rfq.events.city}
-              {" · "}
-              {fmt(rfq.events.starts_at)}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {sentQuoteCount && sentQuoteCount > 0 ? (
-            <Link
-              href={`/organizer/rfqs/${id}/quotes`}
-              className="rounded-md bg-[var(--color-sevent-green,#0a7)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-            >
-              Compare quotes ({sentQuoteCount})
-            </Link>
-          ) : null}
-          <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-1 text-xs font-medium">
-            {t(`status.${rfq.status}` as never)}
-          </span>
-        </div>
-      </header>
-
-      {rfq.events ? (
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
         <Link
-          href={`/organizer/events/${rfq.events.id}`}
-          className="w-fit text-sm text-[var(--color-sevent-green,#0a7)] hover:underline"
+          href={
+            rfq.events
+              ? `/organizer/events/${rfq.events.id}`
+              : "/organizer/rfqs"
+          }
         >
-          ← Back to event
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          {rfq.events ? t("backToEvent") : t("backToRfqs")}
         </Link>
-      ) : null}
+      </Button>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-        <h2 className="mb-3 text-lg font-semibold">Requirements</h2>
-        {prettyRequirements(rfq.requirements_jsonb)}
-      </section>
+      <PageHeader
+        title={title}
+        description={
+          rfq.events
+            ? `${eventFormT(`eventType.${rfq.events.event_type}` as never)}${
+                rfq.events.client_name ? ` · ${rfq.events.client_name}` : ""
+              } · ${rfq.events.city} · ${fmt(rfq.events.starts_at)}`
+            : t("detailEyebrow")
+        }
+        actions={
+          <>
+            <StatusPill
+              status={toPillStatus(rfq.status)}
+              label={t(`status.${rfq.status}` as never)}
+            />
+            {sentQuoteCount && sentQuoteCount > 0 ? (
+              <Button size="lg" asChild>
+                <Link href={`/organizer/rfqs/${id}/quotes`}>
+                  <FileCheck aria-hidden />
+                  {t("compareQuotes")} ({sentQuoteCount})
+                </Link>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Invites</h2>
-        {invites.length === 0 ? (
-          <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-            No invites sent yet.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Supplier</th>
-                  <th className="px-4 py-3 font-medium">Source</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Sent</th>
-                  <th className="px-4 py-3 font-medium">Response due</th>
-                  <th className="px-4 py-3 font-medium">Responded</th>
-                  <th className="px-4 py-3 font-medium">Decline reason</th>
-                </tr>
-              </thead>
-              <tbody>
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">
+            {t("requirementsHeading")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <PrettyRequirements req={rfq.requirements_jsonb} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-lg">{t("invitesHeading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {invites.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+              {t("noInvites")}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4">
+                    {t("invitesTable.supplier")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.source")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.status")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.sent")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.responseDue")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.responded")}
+                  </TableHead>
+                  <TableHead className="px-4">
+                    {t("invitesTable.declineReason")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {invites.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="border-t border-[var(--color-border)]"
-                  >
-                    <td className="px-4 py-3">
+                  <TableRow key={inv.id}>
+                    <TableCell className="px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="font-medium">
+                        <span className="font-medium text-brand-navy-900">
                           {inv.suppliers?.business_name ?? "—"}
                         </span>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                        <span className="text-xs text-muted-foreground">
                           {inv.suppliers?.base_city ?? ""}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 capitalize">
-                      {inv.source.replace("_", " ")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs font-medium">
-                        {t(`inviteStatus.${inv.status}` as never)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{fmt(inv.sent_at)}</td>
-                    <td className="px-4 py-3">{fmt(inv.response_due_at)}</td>
-                    <td className="px-4 py-3">{fmt(inv.responded_at)}</td>
-                    <td className="px-4 py-3">{inv.decline_reason_code ?? "—"}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm">
+                      {t(`source.${inv.source}` as never) ?? inv.source}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <StatusPill
+                        status={toPillStatus(inv.status)}
+                        label={t(`inviteStatus.${inv.status}` as never)}
+                      />
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                      {fmt(inv.sent_at)}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                      {fmt(inv.response_due_at)}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm text-muted-foreground">
+                      {fmt(inv.responded_at)}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm">
+                      {inv.decline_reason_code ?? "—"}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

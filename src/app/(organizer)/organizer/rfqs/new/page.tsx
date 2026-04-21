@@ -11,9 +11,12 @@
  *   3. Auto-match preview + shortlist editor.
  *   4. Review + send (deadline 24/48/72h, default 24h).
  *
- * Wizard state lives entirely in `useReducer`; no URL sync except step 1's
- * `?event_id` prefill. All DB/mutation work is routed through the sibling
- * server actions in ./actions.ts.
+ * Wizard state lives in `useReducer`; the current step is persisted to the URL
+ * via `?step=N` so browser back/forward stays in sync.
+ *
+ * VISUAL RESTYLE (Lane 2): chrome rebuilt on shadcn primitives (Card, Button,
+ * Select, RadioGroup, Alert, PageHeader, StatusPill). The reducer + server
+ * action contract is unchanged.
  */
 
 import {
@@ -26,6 +29,28 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Loader2,
+  Send,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { cn } from "@/lib/utils";
 import {
   RfqExtensionForm,
   defaultExtensionFor,
@@ -133,7 +158,8 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, removedMatches: next };
     }
     case "addManual": {
-      if (state.manualAdds.some((s) => s.id === action.supplier.id)) return state;
+      if (state.manualAdds.some((s) => s.id === action.supplier.id))
+        return state;
       return {
         ...state,
         manualAdds: [...state.manualAdds, action.supplier],
@@ -142,7 +168,9 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
     case "removeManual":
       return {
         ...state,
-        manualAdds: state.manualAdds.filter((s) => s.id !== action.supplier_id),
+        manualAdds: state.manualAdds.filter(
+          (s) => s.id !== action.supplier_id,
+        ),
       };
     case "setDeadline":
       return { ...state, responseDeadlineHours: action.hours };
@@ -168,6 +196,12 @@ const INITIAL_STATE: WizardState = {
   matchingOffline: false,
 };
 
+function parseStepParam(raw: string | null): WizardStep {
+  const n = raw ? Number.parseInt(raw, 10) : 1;
+  if (n === 1 || n === 2 || n === 3 || n === 4) return n;
+  return 1;
+}
+
 export default function NewRfqWizardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,22 +221,41 @@ export default function NewRfqWizardPage() {
         if (cancelled) return;
         setEvents(evts);
         setCategories(cats);
-        // If ?event_id=<id> is in the URL and matches a real event, preselect.
         const preselect = searchParams.get("event_id");
         if (preselect && evts.some((e) => e.id === preselect)) {
           dispatch({ type: "setEvent", event_id: preselect });
+        }
+        const stepParam = parseStepParam(searchParams.get("step"));
+        if (stepParam !== 1) {
+          dispatch({ type: "goto", step: stepParam });
         }
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync state.step → URL ?step=N (without adding new history entries per step
+  // click — use router.replace).
+  useEffect(() => {
+    const current = parseStepParam(searchParams.get("step"));
+    if (current === state.step) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("step", String(state.step));
+    router.replace(`/organizer/rfqs/new?${params.toString()}`, {
+      scroll: false,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.step]);
 
   const parents = categories?.parents ?? [];
   const childrenForSelected: CategoryOption[] = useMemo(() => {
     if (!state.category_id || !categories) return [];
-    return categories.children.filter((c) => c.parent_id === state.category_id);
+    return categories.children.filter(
+      (c) => c.parent_id === state.category_id,
+    );
   }, [categories, state.category_id]);
 
   const autoMatchVisible = state.matches.filter(
@@ -210,12 +263,9 @@ export default function NewRfqWizardPage() {
   );
   const shortlistSize = autoMatchVisible.length + state.manualAdds.length;
 
-  const gotoStep = useCallback(
-    (step: WizardStep) => {
-      dispatch({ type: "goto", step });
-    },
-    [],
-  );
+  const gotoStep = useCallback((step: WizardStep) => {
+    dispatch({ type: "goto", step });
+  }, []);
 
   const advanceToMatches = useCallback(() => {
     if (!state.event_id || !state.category_id || !state.subcategory_id) return;
@@ -226,11 +276,23 @@ export default function NewRfqWizardPage() {
         subcategory_id: state.subcategory_id,
       });
       if (result.ok) {
-        dispatch({ type: "setMatches", matches: result.matches, matchingOffline: false });
+        dispatch({
+          type: "setMatches",
+          matches: result.matches,
+          matchingOffline: false,
+        });
       } else if (result.error === "matching_offline") {
-        dispatch({ type: "setMatches", matches: [], matchingOffline: true });
+        dispatch({
+          type: "setMatches",
+          matches: [],
+          matchingOffline: true,
+        });
       } else {
-        dispatch({ type: "setMatches", matches: [], matchingOffline: false });
+        dispatch({
+          type: "setMatches",
+          matches: [],
+          matchingOffline: false,
+        });
       }
       dispatch({ type: "goto", step: 3 });
     });
@@ -307,7 +369,8 @@ export default function NewRfqWizardPage() {
   ]);
 
   const selectedEvent = events?.find((e) => e.id === state.event_id) ?? null;
-  const selectedParent = parents.find((p) => p.id === state.category_id) ?? null;
+  const selectedParent =
+    parents.find((p) => p.id === state.category_id) ?? null;
   const selectedSub =
     categories?.children.find((c) => c.id === state.subcategory_id) ?? null;
 
@@ -316,171 +379,233 @@ export default function NewRfqWizardPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">New RFQ</h1>
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          Step {state.step} of 4
-        </p>
-      </header>
+      <Header stepLabel={state.step} />
+      <Stepper current={state.step} onGoto={gotoStep} />
 
-      <StepTabs current={state.step} onGoto={gotoStep} />
+      <div aria-live="polite" className="min-h-0">
+        {state.step === 1 ? (
+          <Step1
+            events={events}
+            parents={parents}
+            subcategoryOptions={childrenForSelected}
+            allChildren={categories?.children ?? []}
+            state={state}
+            dispatch={dispatch}
+          />
+        ) : null}
 
-      {state.step === 1 ? (
-        <Step1
-          events={events}
-          parents={parents}
-          subcategoryOptions={childrenForSelected}
-          allChildren={categories?.children ?? []}
-          state={state}
-          dispatch={dispatch}
-        />
-      ) : null}
+        {state.step === 2 ? (
+          <Step2 selectedSub={selectedSub} state={state} dispatch={dispatch} />
+        ) : null}
 
-      {state.step === 2 ? (
-        <Step2
-          selectedSub={selectedSub}
-          state={state}
-          dispatch={dispatch}
-        />
-      ) : null}
+        {state.step === 3 ? (
+          <Step3
+            loading={loadingMatches}
+            matchingOffline={state.matchingOffline}
+            matches={autoMatchVisible}
+            manualAdds={state.manualAdds}
+            onRemoveMatch={(id) =>
+              dispatch({ type: "removeMatch", supplier_id: id })
+            }
+            onAddManual={(s) =>
+              dispatch({ type: "addManual", supplier: s })
+            }
+            onRemoveManual={(id) =>
+              dispatch({ type: "removeManual", supplier_id: id })
+            }
+            onSearchSuppliers={handleSearchSuppliers}
+          />
+        ) : null}
 
-      {state.step === 3 ? (
-        <Step3
-          loading={loadingMatches}
-          matchingOffline={state.matchingOffline}
-          matches={autoMatchVisible}
-          manualAdds={state.manualAdds}
-          onRemoveMatch={(id) => dispatch({ type: "removeMatch", supplier_id: id })}
-          onAddManual={(s) => dispatch({ type: "addManual", supplier: s })}
-          onRemoveManual={(id) =>
-            dispatch({ type: "removeManual", supplier_id: id })
-          }
-          onSearchSuppliers={handleSearchSuppliers}
-        />
-      ) : null}
+        {state.step === 4 ? (
+          <Step4
+            state={state}
+            dispatch={dispatch}
+            selectedEvent={selectedEvent}
+            selectedParent={selectedParent}
+            selectedSub={selectedSub}
+            shortlist={[
+              ...autoMatchVisible.map((m) => ({
+                id: m.supplier_id,
+                business_name: m.business_name,
+                source: "auto_match" as const,
+              })),
+              ...state.manualAdds.map((s) => ({
+                id: s.id,
+                business_name: s.business_name,
+                source: "organizer_picked" as const,
+              })),
+            ]}
+            sending={sending}
+            onSend={handleSend}
+            error={sendError}
+          />
+        ) : null}
+      </div>
 
-      {state.step === 4 ? (
-        <Step4
-          state={state}
-          dispatch={dispatch}
-          selectedEvent={selectedEvent}
-          selectedParent={selectedParent}
-          selectedSub={selectedSub}
-          shortlist={[
-            ...autoMatchVisible.map((m) => ({
-              id: m.supplier_id,
-              business_name: m.business_name,
-              source: "auto_match" as const,
-            })),
-            ...state.manualAdds.map((s) => ({
-              id: s.id,
-              business_name: s.business_name,
-              source: "organizer_picked" as const,
-            })),
-          ]}
-          sending={sending}
-          onSend={handleSend}
-          error={sendError}
-        />
-      ) : null}
-
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-4">
-        <div>
-          {state.step > 1 ? (
-            <button
-              type="button"
-              onClick={() =>
-                gotoStep((state.step - 1) as WizardStep)
-              }
-              className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
-            >
-              Back
-            </button>
-          ) : (
-            <Link
-              href="/organizer/rfqs"
-              className="rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
-            >
-              Cancel
-            </Link>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {state.step === 1 ? (
-            <button
-              type="button"
-              disabled={!canLeaveStep1}
-              onClick={() => gotoStep(2)}
-              className="rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              Next
-            </button>
-          ) : null}
-          {state.step === 2 ? (
-            <button
-              type="button"
-              onClick={advanceToMatches}
-              disabled={loadingMatches}
-              className="rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {loadingMatches ? "Matching…" : "Next"}
-            </button>
-          ) : null}
-          {state.step === 3 ? (
-            <button
-              type="button"
-              onClick={() => gotoStep(4)}
-              disabled={shortlistSize < 1 || shortlistSize > 10}
-              className="rounded-md bg-[var(--color-primary,#111)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              Next ({shortlistSize}/10)
-            </button>
-          ) : null}
-        </div>
-      </footer>
+      <WizardFooter
+        step={state.step}
+        canLeaveStep1={canLeaveStep1}
+        loadingMatches={loadingMatches}
+        shortlistSize={shortlistSize}
+        gotoStep={gotoStep}
+        advanceToMatches={advanceToMatches}
+      />
     </section>
   );
 }
 
-function StepTabs({
+function Header({ stepLabel }: { stepLabel: WizardStep }) {
+  return (
+    <header className="flex flex-col gap-1">
+      <p className="text-xs font-medium uppercase tracking-wide text-brand-cobalt-500">
+        Step {stepLabel} of 4
+      </p>
+      <h1 className="text-2xl font-semibold tracking-tight text-brand-navy-900 sm:text-3xl">
+        New RFQ
+      </h1>
+      <p className="text-sm text-muted-foreground">
+        Send a request for quote to a curated shortlist of suppliers.
+      </p>
+    </header>
+  );
+}
+
+function Stepper({
   current,
   onGoto,
 }: {
   current: WizardStep;
   onGoto: (s: WizardStep) => void;
 }) {
-  const labels: Array<{ step: WizardStep; label: string }> = [
+  const items: Array<{ step: WizardStep; label: string }> = [
     { step: 1, label: "Event & category" },
     { step: 2, label: "Requirements" },
     { step: 3, label: "Shortlist" },
     { step: 4, label: "Review & send" },
   ];
+
   return (
-    <ol className="flex flex-wrap gap-2">
-      {labels.map(({ step, label }) => {
+    <ol
+      className="flex flex-wrap gap-2 rounded-xl border bg-card p-2"
+      aria-label="Wizard steps"
+    >
+      {items.map(({ step, label }) => {
         const active = step === current;
-        const clickable = step < current;
+        const done = step < current;
+        const clickable = done;
         return (
-          <li key={step}>
+          <li key={step} className="flex-1">
             <button
               type="button"
               onClick={clickable ? () => onGoto(step) : undefined}
               disabled={!clickable}
-              className={
-                "rounded-full px-3 py-1 text-xs font-medium " +
-                (active
-                  ? "bg-[var(--color-primary,#111)] text-white"
-                  : clickable
-                    ? "border border-[var(--color-border)] bg-white hover:bg-[var(--color-muted)]"
-                    : "border border-[var(--color-border)] bg-[var(--color-muted)] text-[var(--color-muted-foreground)] cursor-default")
-              }
+              aria-current={active ? "step" : undefined}
+              className={cn(
+                "group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-start text-sm transition-colors",
+                active && "bg-brand-cobalt-500 text-white",
+                done &&
+                  "bg-semantic-success-100 text-semantic-success-500 hover:bg-semantic-success-100/80 cursor-pointer",
+                !active && !done && "text-muted-foreground cursor-default",
+              )}
             >
-              {step}. {label}
+              <span
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                  active && "border-white bg-white text-brand-cobalt-500",
+                  done &&
+                    "border-semantic-success-500 bg-semantic-success-500 text-white",
+                  !active &&
+                    !done &&
+                    "border-border bg-card text-muted-foreground",
+                )}
+              >
+                {done ? <Check className="size-3" aria-hidden /> : step}
+              </span>
+              <span className="truncate font-medium">{label}</span>
             </button>
           </li>
         );
       })}
     </ol>
+  );
+}
+
+function WizardFooter({
+  step,
+  canLeaveStep1,
+  loadingMatches,
+  shortlistSize,
+  gotoStep,
+  advanceToMatches,
+}: {
+  step: WizardStep;
+  canLeaveStep1: boolean;
+  loadingMatches: boolean;
+  shortlistSize: number;
+  gotoStep: (s: WizardStep) => void;
+  advanceToMatches: () => void;
+}) {
+  return (
+    <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
+      <div>
+        {step > 1 ? (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => gotoStep((step - 1) as WizardStep)}
+          >
+            <ArrowLeft className="rtl:rotate-180" aria-hidden />
+            Back
+          </Button>
+        ) : (
+          <Button variant="outline" size="lg" asChild>
+            <Link href="/organizer/rfqs">Cancel</Link>
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {step === 1 ? (
+          <Button
+            size="lg"
+            disabled={!canLeaveStep1}
+            onClick={() => gotoStep(2)}
+          >
+            Next
+            <ArrowRight className="rtl:rotate-180" aria-hidden />
+          </Button>
+        ) : null}
+        {step === 2 ? (
+          <Button
+            size="lg"
+            onClick={advanceToMatches}
+            disabled={loadingMatches}
+          >
+            {loadingMatches ? (
+              <>
+                <Loader2 className="animate-spin" aria-hidden />
+                Matching…
+              </>
+            ) : (
+              <>
+                Next
+                <ArrowRight className="rtl:rotate-180" aria-hidden />
+              </>
+            )}
+          </Button>
+        ) : null}
+        {step === 3 ? (
+          <Button
+            size="lg"
+            onClick={() => gotoStep(4)}
+            disabled={shortlistSize < 1 || shortlistSize > 10}
+          >
+            Next ({shortlistSize}/10)
+            <ArrowRight className="rtl:rotate-180" aria-hidden />
+          </Button>
+        ) : null}
+      </div>
+    </footer>
   );
 }
 
@@ -500,90 +625,119 @@ function Step1({
   dispatch: React.Dispatch<WizardAction>;
 }) {
   return (
-    <div className="flex flex-col gap-5 rounded-lg border border-[var(--color-border)] bg-white p-5">
-      <Field label="Event">
-        {events === null ? (
-          <p className="text-sm text-[var(--color-muted-foreground)]">Loading…</p>
-        ) : events.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            You have no events yet.{" "}
-            <Link
-              href="/organizer/events/new"
-              className="text-[var(--color-sevent-green,#0a7)] hover:underline"
-            >
-              Create one
-            </Link>
-            {" "}first.
+    <Card>
+      <CardContent className="flex flex-col gap-5 p-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
+            Event & category
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Pick which event this is for and what you are sourcing.
           </p>
-        ) : (
-          <select
-            value={state.event_id ?? ""}
-            onChange={(e) =>
-              dispatch({ type: "setEvent", event_id: e.target.value })
-            }
-            className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          >
-            <option value="">—</option>
-            {events.map((evt) => (
-              <option key={evt.id} value={evt.id}>
-                {evt.event_type}
-                {evt.client_name ? ` · ${evt.client_name}` : ""} · {evt.city} ·{" "}
-                {evt.starts_at.slice(0, 10)}
-              </option>
-            ))}
-          </select>
-        )}
-      </Field>
+        </div>
 
-      <Field label="Category">
-        <select
-          value={state.category_id ?? ""}
-          onChange={(e) =>
-            dispatch({ type: "setCategory", category_id: e.target.value })
-          }
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        >
-          <option value="">—</option>
-          {parents.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name_en}
-            </option>
-          ))}
-        </select>
-      </Field>
+        <div className="flex flex-col gap-1.5">
+          <Label>Event</Label>
+          {events === null ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              You have no events yet.{" "}
+              <Link
+                href="/organizer/events/new"
+                className="font-medium text-brand-cobalt-500 hover:underline"
+              >
+                Create one
+              </Link>{" "}
+              first.
+            </p>
+          ) : (
+            <Select
+              value={state.event_id ?? undefined}
+              onValueChange={(v) =>
+                dispatch({ type: "setEvent", event_id: v })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an event" />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((evt) => (
+                  <SelectItem key={evt.id} value={evt.id}>
+                    {evt.event_type}
+                    {evt.client_name ? ` · ${evt.client_name}` : ""} ·{" "}
+                    {evt.city} · {evt.starts_at.slice(0, 10)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
 
-      <Field label="Subcategory">
-        <select
-          value={state.subcategory_id ?? ""}
-          onChange={(e) => {
-            const subId = e.target.value;
-            if (!subId) {
-              dispatch({ type: "setSubcategory", subcategory_id: "", autoKind: "generic" });
-              return;
-            }
-            const parent = parents.find((p) => p.id === state.category_id);
-            const sub = allChildren.find((c) => c.id === subId);
-            const parentSlug = parent?.slug;
-            const autoKind = kindFromParentSlug(parentSlug);
-            dispatch({
-              type: "setSubcategory",
-              subcategory_id: subId,
-              autoKind,
-            });
-            void sub; // autoKind already captured
-          }}
-          className="w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          disabled={!state.category_id}
-        >
-          <option value="">—</option>
-          {subcategoryOptions.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name_en}
-            </option>
-          ))}
-        </select>
-      </Field>
-    </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label>Category</Label>
+            <Select
+              value={state.category_id ?? undefined}
+              onValueChange={(v) =>
+                dispatch({ type: "setCategory", category_id: v })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {parents.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name_en}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Subcategory</Label>
+            <Select
+              value={state.subcategory_id ?? undefined}
+              disabled={!state.category_id}
+              onValueChange={(v) => {
+                if (!v) {
+                  dispatch({
+                    type: "setSubcategory",
+                    subcategory_id: "",
+                    autoKind: "generic",
+                  });
+                  return;
+                }
+                const parent = parents.find(
+                  (p) => p.id === state.category_id,
+                );
+                const parentSlug = parent?.slug;
+                const autoKind = kindFromParentSlug(parentSlug);
+                dispatch({
+                  type: "setSubcategory",
+                  subcategory_id: v,
+                  autoKind,
+                });
+                void allChildren;
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a subcategory" />
+              </SelectTrigger>
+              <SelectContent>
+                {subcategoryOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name_en}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -596,28 +750,28 @@ function Step2({
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
 }) {
-  // Extension kind is derived from the selected subcategory in Step 1 — do
-  // NOT let the organizer override it here. Allowing a free override meant a
-  // photography RFQ could be sent with a catering payload (Sprint 3 audit
-  // #10). Subcategories that don't have a dedicated form fall back to the
-  // `generic` renderer automatically via RfqExtensionForm.
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-white p-5">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold">Requirements</h2>
-        <p className="text-xs text-[var(--color-muted-foreground)]">
-          {selectedSub
-            ? `${selectedSub.name_en} · form auto-selected by category`
-            : "Form auto-selected by category"}
-        </p>
-      </div>
-
-      <RfqExtensionForm
-        kind={state.kind}
-        value={state.requirements}
-        onChange={(next) => dispatch({ type: "setRequirements", value: next })}
-      />
-    </div>
+    <Card>
+      <CardContent className="flex flex-col gap-5 p-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
+            Requirements
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            {selectedSub
+              ? `${selectedSub.name_en} · form auto-selected by category`
+              : "Form auto-selected by category"}
+          </p>
+        </div>
+        <RfqExtensionForm
+          kind={state.kind}
+          value={state.requirements}
+          onChange={(next) =>
+            dispatch({ type: "setRequirements", value: next })
+          }
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -641,27 +795,42 @@ function Step3({
   onSearchSuppliers: (q: string) => Promise<ShortlistSupplier[]>;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-white p-5">
-      {loading ? (
-        <p className="text-sm text-[var(--color-muted-foreground)]">
-          Running auto-match…
-        </p>
-      ) : matchingOffline ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Auto-match is unavailable right now. You can still build the shortlist
-          manually below.
-        </p>
-      ) : null}
+    <Card>
+      <CardContent className="flex flex-col gap-5 p-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
+            Shortlist
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            We suggested a few — tweak the shortlist before sending.
+          </p>
+        </div>
 
-      <ShortlistEditor
-        matches={matches}
-        manualAdds={manualAdds}
-        onRemoveMatch={onRemoveMatch}
-        onAddManual={onAddManual}
-        onRemoveManual={onRemoveManual}
-        onSearchSuppliers={onSearchSuppliers}
-      />
-    </div>
+        {loading ? (
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            Running auto-match…
+          </div>
+        ) : matchingOffline ? (
+          <Alert variant="default">
+            <AlertCircle aria-hidden />
+            <AlertTitle>Auto-match offline</AlertTitle>
+            <AlertDescription>
+              You can still build the shortlist manually below.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <ShortlistEditor
+          matches={matches}
+          manualAdds={manualAdds}
+          onRemoveMatch={onRemoveMatch}
+          onAddManual={onAddManual}
+          onRemoveManual={onRemoveManual}
+          onSearchSuppliers={onSearchSuppliers}
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -696,132 +865,180 @@ function Step4({
   const canSend = shortlist.length >= 1 && shortlist.length <= 10;
 
   return (
-    <div className="flex flex-col gap-5 rounded-lg border border-[var(--color-border)] bg-white p-5">
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Event
-        </h2>
-        {selectedEvent ? (
-          <p className="text-sm">
-            {selectedEvent.event_type}
-            {selectedEvent.client_name ? ` · ${selectedEvent.client_name}` : ""}
-            {" · "}
-            {selectedEvent.city}
-            {" · "}
-            {selectedEvent.starts_at.slice(0, 10)}
-          </p>
-        ) : (
-          <p className="text-sm text-[var(--color-muted-foreground)]">—</p>
-        )}
-      </section>
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardContent className="flex flex-col gap-5 p-6">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
+              Review & send
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Final check. You can edit anything before sending.
+            </p>
+          </div>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Category
-        </h2>
-        <p className="text-sm">
-          {selectedParent?.name_en ?? "—"}
-          {selectedSub ? ` · ${selectedSub.name_en}` : ""}
-        </p>
-      </section>
+          <ReviewSection title="Event">
+            {selectedEvent ? (
+              <p className="text-sm">
+                {selectedEvent.event_type}
+                {selectedEvent.client_name
+                  ? ` · ${selectedEvent.client_name}`
+                  : ""}
+                {" · "}
+                {selectedEvent.city}
+                {" · "}
+                {selectedEvent.starts_at.slice(0, 10)}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">—</p>
+            )}
+          </ReviewSection>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Requirements ({state.kind})
-        </h2>
-        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          {reqEntries.map(([k, v]) => (
-            <div key={k} className="flex flex-col">
-              <dt className="text-xs text-[var(--color-muted-foreground)]">{k}</dt>
-              <dd className="text-sm">
-                {Array.isArray(v)
-                  ? v.join(", ") || "—"
-                  : typeof v === "boolean"
-                    ? v
-                      ? "Yes"
-                      : "No"
-                    : v === null || v === undefined || v === ""
-                      ? "—"
-                      : String(v)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+          <ReviewSection title="Category">
+            <p className="text-sm">
+              {selectedParent?.name_en ?? "—"}
+              {selectedSub ? ` · ${selectedSub.name_en}` : ""}
+            </p>
+          </ReviewSection>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          Shortlist ({shortlist.length})
-        </h2>
-        {shortlist.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            No suppliers selected.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-1 text-sm">
-            {shortlist.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-2">
-                <span>{s.business_name}</span>
-                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2 py-0.5 text-xs">
-                  {s.source === "auto_match" ? "Auto match" : "Organizer picked"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <ReviewSection title={`Requirements (${state.kind})`}>
+            <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+              {reqEntries.map(([k, v]) => (
+                <div key={k} className="flex flex-col">
+                  <dt className="text-xs text-muted-foreground">{k}</dt>
+                  <dd className="text-sm">
+                    {Array.isArray(v)
+                      ? v.join(", ") || "—"
+                      : typeof v === "boolean"
+                        ? v
+                          ? "Yes"
+                          : "No"
+                        : v === null || v === undefined || v === ""
+                          ? "—"
+                          : String(v)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </ReviewSection>
 
-      <section>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Response deadline</span>
-          <select
-            value={state.responseDeadlineHours}
-            onChange={(e) =>
-              dispatch({
-                type: "setDeadline",
-                hours: Number(e.target.value) as 24 | 48 | 72,
-              })
-            }
-            className="w-full max-w-xs rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          >
-            <option value={24}>Within 24 hours</option>
-            <option value={48}>Within 48 hours</option>
-            <option value={72}>Within 72 hours</option>
-          </select>
-        </label>
-      </section>
+          <ReviewSection title={`Shortlist (${shortlist.length})`}>
+            {shortlist.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No suppliers selected.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5 text-sm">
+                {shortlist.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2"
+                  >
+                    <span>{s.business_name}</span>
+                    <StatusPill
+                      status={s.source === "auto_match" ? "quoted" : "pending"}
+                      label={
+                        s.source === "auto_match"
+                          ? "Auto match"
+                          : "Organizer picked"
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ReviewSection>
 
-      {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {error}
-        </div>
-      ) : null}
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Response deadline</Label>
+            <RadioGroup
+              value={String(state.responseDeadlineHours)}
+              onValueChange={(v) =>
+                dispatch({
+                  type: "setDeadline",
+                  hours: Number(v) as 24 | 48 | 72,
+                })
+              }
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              {([24, 48, 72] as const).map((h) => (
+                <label
+                  key={h}
+                  htmlFor={`deadline-${h}`}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-brand-cobalt-500/40",
+                    state.responseDeadlineHours === h &&
+                      "border-brand-cobalt-500 bg-brand-cobalt-100/40",
+                  )}
+                >
+                  <RadioGroupItem
+                    id={`deadline-${h}`}
+                    value={String(h)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium">
+                      Within {h} hours
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {h === 24
+                        ? "Tight window — best for urgent RFQs."
+                        : h === 48
+                          ? "Balanced default."
+                          : "Roomy — good for complex RFQs."}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          disabled={!canSend || sending}
-          onClick={onSend}
-          className="rounded-md bg-[var(--color-primary,#111)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
-          {sending ? "Sending…" : "Send RFQ"}
-        </button>
-      </div>
+          {error ? (
+            <Alert variant="destructive">
+              <AlertCircle aria-hidden />
+              <AlertTitle>Could not send RFQ</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="flex justify-end">
+            <Button
+              size="lg"
+              disabled={!canSend || sending}
+              onClick={onSend}
+            >
+              {sending ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  <Send aria-hidden />
+                  Send RFQ
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function Field({
-  label,
+function ReviewSection({
+  title,
   children,
 }: {
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
       {children}
-    </label>
+    </section>
   );
 }

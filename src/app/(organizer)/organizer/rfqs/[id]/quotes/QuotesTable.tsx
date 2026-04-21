@@ -9,12 +9,27 @@
  * clear state from Supplier B's row. The conflict badge is UI-only — the
  * accept button stays enabled because the trigger (`P0007`) is the real
  * guard; if the organizer clicks through, they'll see the mapped error here.
+ *
+ * VISUAL RESTYLE (Lane 2): shadcn Table + Button + StatusPill. Action
+ * plumbing (useActionState / acceptQuoteAction) is unchanged.
  */
 
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { cn } from "@/lib/utils";
+import { AlertTriangle, Check, ExternalLink, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { formatHalalas } from "@/lib/domain/money";
 import { acceptQuoteAction } from "./actions";
 import { initialActionState, type ActionState } from "./action-state";
@@ -25,8 +40,8 @@ export type QuoteRowData = {
   supplier_business_name: string;
   supplier_base_city: string | null;
   total_halalas: number;
-  expires_at: string | null; // snapshot.expires_at
-  submitted_at: string | null; // quotes.sent_at
+  expires_at: string | null;
+  submitted_at: string | null;
   has_conflict: boolean;
 };
 
@@ -53,17 +68,19 @@ function fmt(iso: string | null): string {
 function AcceptSubmit() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className={cn(
-        "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-        "bg-[var(--color-sevent-green)] text-white hover:bg-[var(--color-sevent-green-soft)]",
-        "disabled:cursor-not-allowed disabled:opacity-60",
+    <Button type="submit" size="sm" disabled={pending}>
+      {pending ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden />
+          Accepting…
+        </>
+      ) : (
+        <>
+          <Check aria-hidden />
+          Accept
+        </>
       )}
-    >
-      {pending ? "Accepting…" : "Accept"}
-    </button>
+    </Button>
   );
 }
 
@@ -75,62 +92,64 @@ function QuoteRow({ rfqId, row }: { rfqId: string; row: QuoteRowData }) {
 
   return (
     <>
-      <tr className="border-t border-[var(--color-border)] align-top">
-        <td className="px-4 py-3">
+      <TableRow className="align-top">
+        <TableCell className="px-4 py-4">
           <div className="flex flex-col gap-1">
-            <span className="font-medium">{row.supplier_business_name}</span>
+            <span className="font-medium text-brand-navy-900">
+              {row.supplier_business_name}
+            </span>
             {row.supplier_base_city ? (
-              <span className="text-xs text-[var(--color-muted-foreground)]">
+              <span className="text-xs text-muted-foreground">
                 {row.supplier_base_city}
               </span>
             ) : null}
             {row.has_conflict ? (
               <span
                 title="This supplier already has a block overlapping your event window. Accepting will fail."
-                className="mt-1 inline-flex w-fit items-center gap-1 rounded-full border border-[#F2C2C2] bg-[#FCE9E9] px-2 py-0.5 text-xs font-medium text-[#9F1A1A]"
+                className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-semantic-danger-100 px-2.5 py-0.5 text-xs font-medium text-semantic-danger-500"
               >
-                <span aria-hidden>⚠</span>
-                <span>Date conflict</span>
+                <AlertTriangle className="size-3" aria-hidden />
+                Date conflict
               </span>
             ) : null}
           </div>
-        </td>
-        <td className="px-4 py-3 whitespace-nowrap font-medium">
+        </TableCell>
+        <TableCell className="px-4 py-4 whitespace-nowrap font-semibold text-brand-navy-900 tabular-nums">
           {formatHalalas(row.total_halalas)}
-        </td>
-        <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--color-muted-foreground)]">
+        </TableCell>
+        <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
           {fmt(row.expires_at)}
-        </td>
-        <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--color-muted-foreground)]">
+        </TableCell>
+        <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
           {fmt(row.submitted_at)}
-        </td>
-        <td className="px-4 py-3">
+        </TableCell>
+        <TableCell className="px-4 py-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/organizer/rfqs/${rfqId}/quotes/${row.quote_id}`}
-              className="inline-flex items-center justify-center rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
-            >
-              View snapshot
-            </Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={`/organizer/rfqs/${rfqId}/quotes/${row.quote_id}`}
+              >
+                <ExternalLink aria-hidden />
+                View snapshot
+              </Link>
+            </Button>
             <form action={action}>
               <input type="hidden" name="quote_id" value={row.quote_id} />
               <input type="hidden" name="rfq_id" value={rfqId} />
               <AcceptSubmit />
             </form>
           </div>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
       {state.status === "error" ? (
-        <tr className="border-t border-[var(--color-border)]">
-          <td colSpan={5} className="px-4 py-2">
-            <div
-              role="status"
-              className="rounded-md border border-[#F2C2C2] bg-[#FCE9E9] px-3 py-2 text-sm text-[#9F1A1A]"
-            >
-              {state.message}
-            </div>
-          </td>
-        </tr>
+        <TableRow>
+          <TableCell colSpan={5} className="px-4 py-2">
+            <Alert variant="destructive">
+              <AlertTriangle aria-hidden />
+              <AlertDescription>{state.message}</AlertDescription>
+            </Alert>
+          </TableCell>
+        </TableRow>
       ) : null}
     </>
   );
@@ -139,30 +158,38 @@ function QuoteRow({ rfqId, row }: { rfqId: string; row: QuoteRowData }) {
 export function QuotesTable({ rfqId, rows }: Props) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">
-        No quotes have arrived yet.
-      </p>
+      <Card className="p-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          No quotes have arrived yet.
+        </p>
+      </Card>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-      <table className="w-full text-sm">
-        <thead className="bg-[var(--color-muted)] text-start text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">
-          <tr>
-            <th className="px-4 py-3 font-medium">Supplier</th>
-            <th className="px-4 py-3 font-medium">Total</th>
-            <th className="px-4 py-3 font-medium">Expires</th>
-            <th className="px-4 py-3 font-medium">Submitted</th>
-            <th className="px-4 py-3 font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <Card className="overflow-hidden py-0">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="px-4">Supplier</TableHead>
+            <TableHead className="px-4">Total</TableHead>
+            <TableHead className="px-4">Expires</TableHead>
+            <TableHead className="px-4">Submitted</TableHead>
+            <TableHead className="px-4">
+              <StatusPill
+                className="invisible"
+                status="draft"
+                label="Actions"
+              />
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row) => (
             <QuoteRow key={row.quote_id} rfqId={rfqId} row={row} />
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </Card>
   );
 }
