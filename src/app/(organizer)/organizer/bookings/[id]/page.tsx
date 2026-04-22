@@ -36,6 +36,7 @@ import {
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { requireRole } from "@/lib/supabase/server";
+import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
 
 export const dynamic = "force-dynamic";
 
@@ -163,6 +164,23 @@ export default async function OrganizerBookingDetailPage({
   const event = row.rfqs?.events ?? null;
   const supplier = row.suppliers;
 
+  // Company profile PDF: only surfaced once the booking is confirmed. We
+  // check for an existing doc row here so we don't render an action that
+  // the server action would reject with `missing`. The signed URL itself
+  // is minted lazily by the client button (click → server action → signed
+  // URL → `window.open`) so RLS on `supplier-docs` stays enforced.
+  let hasCompanyProfile = false;
+  if (row.confirmation_status === "confirmed" && row.supplier_id) {
+    const { data: doc } = await admin
+      .from("supplier_docs")
+      .select("id")
+      .eq("supplier_id", row.supplier_id)
+      .eq("doc_type", "company_profile")
+      .limit(1)
+      .maybeSingle();
+    hasCompanyProfile = Boolean(doc);
+  }
+
   let relativeDeadline: string | null = null;
   if (row.confirm_deadline) {
     try {
@@ -232,7 +250,7 @@ export default async function OrganizerBookingDetailPage({
               {t("detailSupplier")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-1 px-4 pb-5">
+          <CardContent className="flex flex-col gap-2 px-4 pb-5">
             <p className="text-base font-semibold text-brand-navy-900">
               {supplier?.business_name ?? "—"}
             </p>
@@ -244,6 +262,17 @@ export default async function OrganizerBookingDetailPage({
                 />
                 {supplier.base_city}
               </p>
+            ) : null}
+            {hasCompanyProfile ? (
+              <CompanyProfileDownloadButton
+                bookingId={row.id}
+                labels={{
+                  download: t("downloadCompanyProfile"),
+                  errorGeneric: t("downloadCompanyProfileError"),
+                  notReady: t("downloadCompanyProfileNotReady"),
+                }}
+                className="mt-1"
+              />
             ) : null}
           </CardContent>
         </Card>

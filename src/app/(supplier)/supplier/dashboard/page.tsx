@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowUpRight,
@@ -12,12 +13,16 @@ import {
   Palette,
   PercentCircle,
   Rocket,
-  ShieldCheck,
   Send,
   XCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PendingReviewChecklist } from "@/components/supplier/onboarding/PendingReviewChecklist";
+import { CelebrationBanner } from "@/components/supplier/onboarding/CelebrationBanner";
+import { FirstRunDashboardCard } from "@/components/supplier/onboarding/FirstRunDashboardCard";
+import { ApprovedCelebration } from "@/components/supplier/ApprovedCelebration";
+import { dismissCelebrationAction } from "./celebration-actions";
 import type {
   QuoteStatus,
   RfqInviteStatus,
@@ -53,8 +58,21 @@ const TERMINAL_QUOTE_STATUSES: QuoteStatus[] = [
 
 type SupplierSummaryRow = {
   id: string;
+  slug: string | null;
   verification_status: SupplierVerificationStatus;
+  business_name: string | null;
+  verified_at: string | null;
+  first_seen_approved_at: string | null;
 };
+
+const CELEBRATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function isWithinCelebrationWindow(iso: string | null): boolean {
+  if (!iso) return false;
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return false;
+  return Date.now() - ms < CELEBRATION_WINDOW_MS;
+}
 
 type RecentInviteRow = {
   id: string;
@@ -245,7 +263,9 @@ export default async function SupplierDashboardPage() {
 
   const { data: supplier } = await admin
     .from("suppliers")
-    .select("id, verification_status")
+    .select(
+      "id, slug, verification_status, business_name, verified_at, first_seen_approved_at",
+    )
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -262,7 +282,76 @@ export default async function SupplierDashboardPage() {
   }
 
   const supplierSummary = supplier as SupplierSummaryRow;
+
+  // -------------------------------------------------------------------------
+  // First-time-approved branch: render the full-page celebration surface and
+  // skip the normal dashboard scaffolding. `first_seen_approved_at` is stamped
+  // client-side on first mount via markApprovedSeenAction(), so a refresh after
+  // that first view falls through to the normal branch below.
+  // -------------------------------------------------------------------------
+  if (
+    supplierSummary.verification_status === "approved" &&
+    supplierSummary.first_seen_approved_at === null
+  ) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    const fullName =
+      (profile as { full_name: string | null } | null)?.full_name ?? "";
+    const firstName = fullName.split(" ")[0] ?? "";
+    const publicProfileUrl = supplierSummary.slug
+      ? `/s/${supplierSummary.slug}`
+      : "/supplier/profile";
+
+    const { count: pendingInvitesCount } = await admin
+      .from("rfq_invites")
+      .select("id", { count: "exact", head: true })
+      .eq("supplier_id", supplierSummary.id)
+      .eq("status", "invited");
+
+    return (
+      <section className="flex flex-col gap-8">
+        <ApprovedCelebration
+          firstName={firstName}
+          publicProfileUrl={publicProfileUrl}
+          pendingRfqCount={pendingInvitesCount ?? 0}
+          matchingRfqs={[]}
+        />
+      </section>
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Pending / rejected branch: swap the dashboard body for the v2 pending
+  // checklist. Steady-state dashboard (approved + already seen) continues to
+  // render the historical content below.
+  // -------------------------------------------------------------------------
+  if (
+    supplierSummary.verification_status === "pending" ||
+    supplierSummary.verification_status === "rejected"
+  ) {
+    return (
+      <section className="flex flex-col gap-8">
+        <PendingReviewChecklist
+          email={user.email ?? ""}
+          verificationStatus={supplierSummary.verification_status}
+        />
+      </section>
+    );
+  }
+
   const cutoffIso = buildThirtyDayCutoffIso();
+
+  // Celebration banner: approved + verified within last 7 days + cookie not set.
+  const celebrationCookie = (await cookies()).get(
+    `sevent_celebrated_${supplierSummary.id}`,
+  );
+  const shouldCelebrate =
+    supplierSummary.verification_status === "approved" &&
+    !celebrationCookie &&
+    isWithinCelebrationWindow(supplierSummary.verified_at);
 
   const [
     invitesCountRes,
@@ -362,41 +451,17 @@ export default async function SupplierDashboardPage() {
           ? "reviewing"
           : "submitting";
 
+  // Reached here only when verification_status === "approved" (pending +
+  // rejected branches returned early above). Keep the narrow-typed variables
+  // so the JSX below stays unchanged — the journey strip always shows "live"
+  // and no status card is needed for the approved path.
   const statusCard: {
     title: string;
     body: string;
     cta: { label: string; href: string } | null;
     tone: "info" | "warning" | "danger";
     icon: LucideIcon;
-  } | null =
-    journeyState === "submitting"
-      ? {
-          title: t("resubmit.title"),
-          body: t("resubmit.body"),
-          cta: { label: t("resubmit.cta"), href: "/supplier/onboarding" },
-          tone: "info",
-          icon: ShieldCheck,
-        }
-      : journeyState === "reviewing"
-        ? {
-            title: t("underReview.title"),
-            body: t("underReview.body"),
-            cta: {
-              label: t("underReview.editCta"),
-              href: "/supplier/onboarding",
-            },
-            tone: "warning",
-            icon: Clock3,
-          }
-        : journeyState === "rejected"
-          ? {
-              title: t("rejected.title"),
-              body: t("rejected.body"),
-              cta: { label: t("rejected.cta"), href: "/supplier/onboarding" },
-              tone: "danger",
-              icon: XCircle,
-            }
-          : null;
+  } | null = null;
   const locked = journeyState !== "live";
 
   return (
@@ -423,6 +488,54 @@ export default async function SupplierDashboardPage() {
           liveHintActive: t("journey.steps.liveHintActive"),
         }}
       />
+
+      {shouldCelebrate ? (
+        <>
+          <CelebrationBanner
+            supplierName={supplierSummary.business_name ?? ""}
+            labels={{
+              smallLabel: t("celebration.smallLabel", {
+                name: supplierSummary.business_name ?? "",
+              }),
+              title: t("celebration.title"),
+              body: t("celebration.body"),
+              ctaPrimary: t("celebration.ctaPrimary"),
+              ctaPrimaryHref: t("celebration.ctaPrimaryHref"),
+              ctaSecondary: t("celebration.ctaSecondary"),
+              ctaSecondaryHref: supplierSummary.slug
+                ? `/s/${supplierSummary.slug}`
+                : "/supplier/profile",
+            }}
+            onDismiss={dismissCelebrationAction.bind(null, supplierSummary.id)}
+          />
+          <FirstRunDashboardCard
+            labels={{
+              heading: t("tour.heading"),
+              subtitle: t("tour.subtitle"),
+              items: [
+                {
+                  title: t("tour.item1Title"),
+                  description: t("tour.item1Desc"),
+                  done: activePackages > 0,
+                  href: t("tour.item1Href"),
+                },
+                {
+                  title: t("tour.item2Title"),
+                  description: t("tour.item2Desc"),
+                  done: false,
+                  href: t("tour.item2Href"),
+                },
+                {
+                  title: t("tour.item3Title"),
+                  description: t("tour.item3Desc"),
+                  done: activePackages > 0,
+                  href: t("tour.item3Href"),
+                },
+              ],
+            }}
+          />
+        </>
+      ) : null}
 
       {statusCard ? <StatusCard card={statusCard} /> : null}
 

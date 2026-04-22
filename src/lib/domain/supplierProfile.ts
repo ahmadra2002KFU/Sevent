@@ -122,16 +122,14 @@ export async function getPublicSupplierBySlug(
   const supplierId = supplier.id as string;
   const profileId = supplier.profile_id as string;
 
-  // supplier_docs and storage buckets `supplier-logos` / `supplier-docs` are
-  // RLS-gated (supplier_docs = owner/admin only; buckets = non-public). For a
-  // public page we know the supplier is approved+published, so we reach for
-  // the service-role client here strictly to (a) read the company_profile row
-  // and (b) mint short-lived signed URLs for the logo + PDF. This mirrors the
-  // pattern used by the admin verification page and avoids loosening RLS on
-  // otherwise-sensitive rows.
+  // `supplier-logos` is RLS-gated non-public. We reach for the service-role
+  // client here strictly to mint short-lived signed URLs for the logo. The
+  // company-profile PDF is no longer surfaced on the public profile (see
+  // Screen 6/7 redesign — decision 6); it's gated behind an accepted quote
+  // and surfaced on the organizer booking detail page instead.
   const admin = createSupabaseServiceRoleClient();
 
-  const [packagesRes, mediaRes, catsRes, reviewsRes, companyProfileRes] = await Promise.all([
+  const [packagesRes, mediaRes, catsRes, reviewsRes] = await Promise.all([
     supabase
       .from("packages")
       .select(
@@ -161,15 +159,6 @@ export async function getPublicSupplierBySlug(
       .select("ratings_jsonb")
       .eq("reviewee_id", profileId)
       .not("published_at", "is", null),
-    admin
-      .from("supplier_docs")
-      .select("file_path")
-      .eq("supplier_id", supplierId)
-      .eq("doc_type", "company_profile")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ]);
 
   const packages: PublicSupplierPackage[] = (packagesRes.data ?? []).map(
@@ -269,22 +258,9 @@ export async function getPublicSupplierBySlug(
     }
   }
 
-  // --- Company profile PDF: signed download URL -----------------------------
-  let companyProfile: PublicSupplierCompanyProfileDoc | null = null;
-  const companyProfilePath =
-    (companyProfileRes.data?.file_path as string | null | undefined) ?? null;
-  if (companyProfilePath) {
-    try {
-      const url = await createSignedDownloadUrl(
-        admin,
-        STORAGE_BUCKETS.docs,
-        companyProfilePath,
-      );
-      companyProfile = { download_url: url, file_path: companyProfilePath };
-    } catch {
-      companyProfile = null;
-    }
-  }
+  // --- Company profile PDF --------------------------------------------------
+  // Intentionally not surfaced on the public profile — see comment above.
+  const companyProfile: PublicSupplierCompanyProfileDoc | null = null;
 
   // --- Accent color + section order -----------------------------------------
   const accentRaw = (supplier.accent_color as string | null) ?? DEFAULT_ACCENT_HEX;

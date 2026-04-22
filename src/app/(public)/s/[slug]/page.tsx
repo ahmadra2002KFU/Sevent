@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Download, ImageOff, PackageOpen, Star } from "lucide-react";
+import { ImageOff, PackageOpen, Star } from "lucide-react";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
 import { GalleryGrid } from "@/components/public/GalleryGrid";
@@ -81,23 +81,11 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
         languagesLabel={t("languagesLabel")}
       />
 
-      {supplier.company_profile ? (
-        <div className="flex justify-start">
-          <a
-            href={supplier.company_profile.download_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold text-white shadow-brand-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{
-              backgroundColor: "var(--accent-supplier)",
-              borderColor: "var(--accent-supplier)",
-            }}
-          >
-            <Download className="size-4" aria-hidden />
-            {t("companyProfileDownload")}
-          </a>
-        </div>
-      ) : null}
+      {/*
+        The supplier company-profile PDF has been moved off the public profile
+        per the onboarding-redesign plan (decision 6). It's now gated behind
+        an accepted quote and surfaced on the organizer booking detail page.
+      */}
 
       <div className="flex flex-col gap-10">
         {supplier.profile_sections_order.map((section) => (
