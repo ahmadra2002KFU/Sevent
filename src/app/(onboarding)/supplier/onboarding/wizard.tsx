@@ -15,7 +15,7 @@
  * strings are only read in Arabic locale.
  */
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,6 +106,26 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     bootstrap.subcategoryIds,
   );
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+  // Stable identity: the child's live-preview effect has this in its dep
+  // array, so an inline arrow would trigger an infinite render loop because
+  // setLivePreview always yields a fresh object and re-renders the parent.
+  const handleLiveChange = useCallback(
+    (partial: { business_name?: string; bio?: string; base_city?: string }) => {
+      setLivePreview((prev) => {
+        const next = { ...prev, ...partial };
+        if (
+          next.business_name === prev.business_name &&
+          next.bio === prev.bio &&
+          next.base_city === prev.base_city
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const goToStep = (next: Step) => {
     setDirection(next > step ? 1 : -1);
@@ -258,9 +278,7 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
                       pathValue
                     }
                     pending={isPending}
-                    onLiveChange={(partial) =>
-                      setLivePreview((prev) => ({ ...prev, ...partial }))
-                    }
+                    onLiveChange={handleLiveChange}
                     onSubmit={(values) => {
                       const fd = new FormData();
                       fd.append("representative_name", values.representative_name);
