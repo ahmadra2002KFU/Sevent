@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
+# dependencies (match at any depth — `/node_modules` only matched the repo
+# root and let nested trees like `Claude Docs/deck/node_modules/**` leak in).
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -45,3 +46,10 @@ backups/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code session state (worktrees, plans, memory, settings). Personal
+# per-machine; never belongs in the repo.
+.claude/
+
+# Scratch / throwaway files
+.tmp/

@@ -1,3 +1,0 @@
-Line 1 with "quotes" OK
-Line 2 with apostrophe like user's stuff
-Line 3 with backtick fine
