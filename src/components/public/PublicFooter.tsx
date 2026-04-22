@@ -42,7 +42,7 @@ export async function PublicFooter() {
             {footer("organizerLink")}
           </Link>
           <Link
-            href="/sign-up?role=supplier"
+            href="/sign-up/supplier"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {footer("supplierLink")}

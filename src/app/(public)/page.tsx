@@ -1,57 +1,112 @@
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import {
-  ArrowRight,
-  FileText,
-  Handshake,
-  ShieldCheck,
-  Star,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { HeroSection } from "@/components/public/HeroSection";
-import { CategoryTile } from "@/components/public/CategoryTile";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Building2, Utensils } from "lucide-react";
 import { listTopLevelCategories } from "@/lib/domain/publicBrowse";
 import { getCategoryIcon } from "@/components/public/categoryIcons";
+import { LandingHero } from "@/components/public/landing/LandingHero";
+import type { HeroCategoryChip } from "@/components/public/landing/LandingHero";
+import { TrustStrip } from "@/components/public/landing/TrustStrip";
+import { PillarsSection } from "@/components/public/landing/PillarsSection";
+import type { PillarItem } from "@/components/public/landing/PillarsSection";
+import { HowItWorks } from "@/components/public/landing/HowItWorks";
+import type { HowItWorksStep } from "@/components/public/landing/HowItWorks";
+import { RfqShowcase } from "@/components/public/landing/RfqShowcase";
+import type { ShowcaseBullet } from "@/components/public/landing/RfqShowcase";
+import { CategoryGrid } from "@/components/public/landing/CategoryGrid";
+import type { CategoryGridItem } from "@/components/public/landing/CategoryGrid";
+import { SupplierShowcase } from "@/components/public/landing/SupplierShowcase";
+import { TestimonialRail } from "@/components/public/landing/TestimonialRail";
+import type { Testimonial } from "@/components/public/landing/TestimonialRail";
+import { FaqSection } from "@/components/public/landing/FaqSection";
+import type { FaqItem } from "@/components/public/landing/FaqSection";
+import { PilotBand } from "@/components/public/landing/PilotBand";
 
 export const dynamic = "force-dynamic";
 
-type ValuePropItem = { title: string; body: string };
+type FallbackCategory = {
+  slug: string;
+  name: string;
+  count: number;
+};
 
 /**
- * Sevent landing page. Chrome (nav, footer) is provided by `(public)/layout`.
+ * Public landing page. Server-rendered top to bottom; the FAQ accordion is
+ * the single client island.
  *
- * Section sequence:
- *   1. HeroSection — navy band, cobalt CTA, gold accent dot, proof card
- *   2. Pillars — 3-up value proposition with icon chips
- *   3. Featured categories — top 6 discoverable categories with live counts
- *   4. Pilot banner — cobalt band, call to join the Riyadh + Jeddah launch
- *
- * No gradients anywhere — depth is achieved via layered navy surfaces, offset
- * cobalt echo cards, and warm neutral-100 bands between sections.
+ * Section flow (aligned with the approved design bundle):
+ *   1. Hero — navy band + proof card with meta stats
+ *   2. Trust strip — four Saudi compliance marks
+ *   3. Pillars — three value-prop cards
+ *   4. How it works — four numbered steps
+ *   5. RFQ showcase — mock comparison panel + bullets
+ *   6. Categories — 8-tile grid fed by live data, falls back to design copy
+ *   7. Supplier showcase — dashboard mock + bullets
+ *   8. Testimonials — three quote cards
+ *   9. FAQ — six-item accordion
+ *  10. Pilot band — navy closing CTA
  */
 export default async function LandingPage() {
-  const [t, brand, landing, categories] = await Promise.all([
-    getTranslations("landing"),
-    getTranslations("brand"),
+  const [t, categories, locale] = await Promise.all([
     getTranslations("landing"),
     listTopLevelCategories(),
+    getLocale(),
   ]);
+  const isAr = locale === "ar";
 
-  const pillarItems = (landing.raw("valueProp.items") as ValuePropItem[]).map(
-    (item, idx) => ({ ...item, key: idx }),
-  );
-  const pillarIcons = [Handshake, Star, ShieldCheck] as const;
+  const categoriesSuffix = t("categories.suffix");
 
-  const featured = categories.slice(0, 6);
+  // Pull the 8 category tiles: prefer live counts, but fall back to the
+  // design's static list when the DB hasn't been seeded yet (pre-launch /
+  // preview envs). Either path renders identical shape to the grid.
+  const fallbackCategories = t.raw(
+    "categories.fallback",
+  ) as FallbackCategory[];
 
-  const heroCategories = featured
-    .slice(0, 4)
-    .map((c) => c.name_en);
+  const categoryItems: CategoryGridItem[] =
+    categories.length > 0
+      ? categories.slice(0, 8).map((c) => ({
+          slug: c.slug,
+          name: isAr && c.name_ar ? c.name_ar : c.name_en,
+          countLabel: t("categories.supplierCount", {
+            count: c.supplier_count,
+          }),
+          icon: getCategoryIcon(c.slug),
+          href: `/categories/${c.slug}`,
+        }))
+      : fallbackCategories.map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          countLabel: `${c.count} ${categoriesSuffix}`,
+          icon: getCategoryIcon(c.slug),
+          href: `/categories/${c.slug}`,
+        }));
+
+  // Hero chips: first 6 categories as icon chips inside the proof card.
+  const heroChips: HeroCategoryChip[] = categoryItems.slice(0, 6).map((c) => ({
+    key: c.slug,
+    label: c.name,
+    icon: c.icon,
+  }));
+
+  // Safety net — the hero proof card looks empty without chips.
+  if (heroChips.length === 0) {
+    heroChips.push(
+      { key: "venues", label: "Venues", icon: Building2 },
+      { key: "catering", label: "Catering", icon: Utensils },
+    );
+  }
+
+  const pillarItems = t.raw("valueProp.items") as PillarItem[];
+  const howSteps = t.raw("how.steps") as HowItWorksStep[];
+  const showcaseBullets = t.raw("showcase.bullets") as ShowcaseBullet[];
+  const supplierBullets = t.raw(
+    "supplierShowcase.bullets",
+  ) as ShowcaseBullet[];
+  const testimonials = t.raw("testimonials.items") as Testimonial[];
+  const faqItems = t.raw("faq.items") as FaqItem[];
 
   return (
     <main className="flex flex-col">
-      <HeroSection
+      <LandingHero
         eyebrow={t("hero.eyebrow")}
         title={t("hero.title")}
         subtitle={t("hero.subtitle")}
@@ -59,153 +114,167 @@ export default async function LandingPage() {
         ctaSupplier={t("hero.ctaSupplier")}
         statLabel={t("hero.statLabel")}
         statValue={t("hero.statValue")}
-        categories={heroCategories.length > 0 ? heroCategories : [
-          t("hero.sampleCategoriesFallback"),
+        chips={heroChips}
+        stats={[
+          { value: t("hero.meta1Value"), label: t("hero.meta1Label") },
+          { value: t("hero.meta2Value"), label: t("hero.meta2Label") },
+          { value: t("hero.meta3Value"), label: t("hero.meta3Label") },
         ]}
       />
 
-      {/* ============================== Pillars ============================= */}
-      <section
-        aria-labelledby="pillars-heading"
-        className="mx-auto w-full max-w-6xl px-6 py-20"
-      >
-        <div className="flex max-w-2xl flex-col gap-3">
-          <span className="text-xs font-semibold uppercase tracking-widest text-brand-cobalt-500">
-            {t("valueProp.eyebrow")}
-          </span>
-          <h2
-            id="pillars-heading"
-            className="text-3xl font-bold tracking-tight text-brand-navy-900 sm:text-4xl"
-          >
-            {t("valueProp.heading")}
-          </h2>
-        </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-3">
-          {pillarItems.map((item, idx) => {
-            const Icon = pillarIcons[idx] ?? FileText;
-            return (
-              <Card
-                key={item.key}
-                className="border-border bg-card transition-colors hover:border-brand-cobalt-500/30"
-              >
-                <CardContent className="flex flex-col gap-4 p-7">
-                  <div className="flex size-11 items-center justify-center rounded-lg bg-brand-cobalt-100 text-brand-cobalt-500">
-                    <Icon className="size-5" aria-hidden />
-                  </div>
-                  <h3 className="text-lg font-semibold tracking-tight text-brand-navy-900">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {item.body}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
+      <TrustStrip
+        label={t("trust.label")}
+        marks={{
+          gea: t("trust.gea"),
+          mada: t("trust.mada"),
+          zatca: t("trust.zatca"),
+          sama: t("trust.sama"),
+        }}
+      />
 
-      {/* ============================== Featured categories ================= */}
-      {featured.length > 0 ? (
-        <section
-          aria-labelledby="featured-heading"
-          className="border-y border-border bg-neutral-100"
-        >
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-20">
-            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-              <div className="flex max-w-2xl flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-widest text-brand-cobalt-500">
-                  {t("categories.eyebrow")}
-                </span>
-                <h2
-                  id="featured-heading"
-                  className="text-3xl font-bold tracking-tight text-brand-navy-900 sm:text-4xl"
-                >
-                  {t("categories.heading")}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("categories.subtitle")}
-                </p>
-              </div>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/categories">
-                  {t("categories.browseAll")}
-                  <ArrowRight
-                    className="size-4 rtl:-scale-x-100"
-                    aria-hidden
-                  />
-                </Link>
-              </Button>
-            </div>
+      <PillarsSection
+        id="pillars-heading"
+        eyebrow={t("valueProp.eyebrow")}
+        heading={t("valueProp.heading")}
+        lede={t("valueProp.lede")}
+        items={pillarItems}
+      />
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((c) => {
-                const Icon = getCategoryIcon(c.slug);
-                return (
-                  <CategoryTile
-                    key={c.id}
-                    href={`/categories/${c.slug}`}
-                    name={c.name_en}
-                    supplierCount={c.supplier_count}
-                    supplierCountLabel={t("categories.supplierCount", {
-                      count: c.supplier_count,
-                    })}
-                    icon={Icon}
-                    viewLabel={t("categories.viewLabel")}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      ) : null}
+      <HowItWorks
+        id="how-heading"
+        eyebrow={t("how.eyebrow")}
+        heading={t("how.heading")}
+        lede={t("how.lede")}
+        steps={howSteps}
+      />
 
-      {/* ============================== Pilot banner ======================== */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-20">
-        <div className="relative overflow-hidden rounded-2xl bg-brand-navy-900 p-10 text-white sm:p-14">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -end-32 -top-16 size-96 skew-x-12 bg-brand-cobalt-500/20"
-          />
-          <div className="relative grid gap-6 sm:grid-cols-[1.4fr_auto] sm:items-center">
-            <div className="flex flex-col gap-3">
-              <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-accent-gold-500 ring-1 ring-inset ring-white/10">
-                <span
-                  aria-hidden
-                  className="size-1.5 rounded-full bg-accent-gold-500"
-                />
-                {t("pilot.eyebrow")}
-              </span>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {t("pilot.title")}
-              </h2>
-              <p className="max-w-xl text-base text-white/75">
-                {t("pilot.subtitle")}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="bg-brand-cobalt-500 text-white hover:bg-brand-cobalt-400"
-              >
-                <Link href="/sign-up?role=supplier">{t("pilot.ctaSupplier")}</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              >
-                <Link href="/categories">{t("pilot.ctaBrowse")}</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {brand("name")} · {t("comingSoon")}
-        </p>
-      </section>
+      <RfqShowcase
+        eyebrow={t("showcase.eyebrow")}
+        heading={t("showcase.heading")}
+        lede={t("showcase.lede")}
+        cta={t("showcase.cta")}
+        bullets={showcaseBullets}
+        mock={{
+          rfqTitle: t("showcase.mock.rfqTitle"),
+          rfqSub: t("showcase.mock.rfqSub"),
+          rfqStatus: t("showcase.mock.rfqStatus"),
+          quotesLeft: t("showcase.mock.quotesLeft"),
+          compareAll: t("showcase.mock.compareAll"),
+          rows: [
+            {
+              initial: "R",
+              initialBg: "cobalt",
+              name: t("showcase.mock.q1Name"),
+              meta: t("showcase.mock.q1Meta"),
+              price: t("showcase.mock.q1Price"),
+              unit: t("showcase.mock.q1Unit"),
+              verified: t("showcase.mock.verified"),
+              best: { label: t("showcase.mock.bestTag") },
+            },
+            {
+              initial: "N",
+              initialBg: "gold",
+              name: t("showcase.mock.q2Name"),
+              meta: t("showcase.mock.q2Meta"),
+              price: t("showcase.mock.q2Price"),
+              unit: t("showcase.mock.q2Unit"),
+              verified: t("showcase.mock.verified"),
+            },
+            {
+              initial: "B",
+              initialBg: "success",
+              name: t("showcase.mock.q3Name"),
+              meta: t("showcase.mock.q3Meta"),
+              price: t("showcase.mock.q3Price"),
+              unit: t("showcase.mock.q3Unit"),
+              verified: t("showcase.mock.verified"),
+            },
+          ],
+        }}
+      />
+
+      <CategoryGrid
+        id="categories-heading"
+        eyebrow={t("categories.eyebrow")}
+        heading={t("categories.heading")}
+        lede={t("categories.subtitle")}
+        browseAll={t("categories.browseAll")}
+        items={categoryItems}
+      />
+
+      <SupplierShowcase
+        id="supplier-showcase-heading"
+        eyebrow={t("supplierShowcase.eyebrow")}
+        heading={t("supplierShowcase.heading")}
+        lede={t("supplierShowcase.lede")}
+        cta1={t("supplierShowcase.cta1")}
+        cta2={t("supplierShowcase.cta2")}
+        bullets={supplierBullets}
+        dashboard={{
+          path: t("supplierShowcase.dashboard.path"),
+          greet: t("supplierShowcase.dashboard.greet"),
+          sub: t("supplierShowcase.dashboard.sub"),
+          approved: t("supplierShowcase.dashboard.approved"),
+          k1Label: t("supplierShowcase.dashboard.k1Label"),
+          k1Value: t("supplierShowcase.dashboard.k1Value"),
+          k1Trend: t("supplierShowcase.dashboard.k1Trend"),
+          k2Label: t("supplierShowcase.dashboard.k2Label"),
+          k2Value: t("supplierShowcase.dashboard.k2Value"),
+          k2Trend: t("supplierShowcase.dashboard.k2Trend"),
+          k3Label: t("supplierShowcase.dashboard.k3Label"),
+          k3Value: t("supplierShowcase.dashboard.k3Value"),
+          invitesHeading: t("supplierShowcase.dashboard.invites"),
+          invites: [
+            {
+              event: t("supplierShowcase.dashboard.i1Event"),
+              sub: t("supplierShowcase.dashboard.i1Sub"),
+              due: t("supplierShowcase.dashboard.i1Due"),
+              cta: t("supplierShowcase.dashboard.quoteCta"),
+              ctaStyle: "primary",
+              open: true,
+            },
+            {
+              event: t("supplierShowcase.dashboard.i2Event"),
+              sub: t("supplierShowcase.dashboard.i2Sub"),
+              due: t("supplierShowcase.dashboard.i2Due"),
+              cta: t("supplierShowcase.dashboard.quoteCta"),
+              ctaStyle: "primary",
+              open: true,
+            },
+            {
+              event: t("supplierShowcase.dashboard.i3Event"),
+              sub: t("supplierShowcase.dashboard.i3Sub"),
+              due: t("supplierShowcase.dashboard.i3Due"),
+              cta: t("supplierShowcase.dashboard.viewCta"),
+              ctaStyle: "ghost",
+            },
+          ],
+        }}
+      />
+
+      <TestimonialRail
+        id="testimonials-heading"
+        eyebrow={t("testimonials.eyebrow")}
+        heading={t("testimonials.heading")}
+        items={testimonials}
+      />
+
+      <FaqSection
+        id="faq-heading"
+        eyebrow={t("faq.eyebrow")}
+        heading={t("faq.heading")}
+        lede={t("faq.lede")}
+        contact={t("faq.contact")}
+        items={faqItems}
+      />
+
+      <PilotBand
+        eyebrow={t("pilot.eyebrow")}
+        title={t("pilot.title")}
+        subtitle={t("pilot.subtitle")}
+        ctaSupplier={t("pilot.ctaSupplier")}
+        ctaBrowse={t("pilot.ctaBrowse")}
+      />
     </main>
   );
 }

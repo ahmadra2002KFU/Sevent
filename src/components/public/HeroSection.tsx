@@ -83,7 +83,7 @@ export function HeroSection({
               variant="outline"
               className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <Link href="/sign-up?role=supplier">{ctaSupplier}</Link>
+              <Link href="/sign-up/supplier">{ctaSupplier}</Link>
             </Button>
           </div>
         </div>
