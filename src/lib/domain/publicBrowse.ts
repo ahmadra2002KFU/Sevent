@@ -17,6 +17,7 @@ export type PublicBrowseCategory = {
   id: string;
   slug: string;
   name_en: string;
+  name_ar: string | null;
   supplier_count: number;
 };
 
@@ -50,7 +51,7 @@ export async function listTopLevelCategories(): Promise<PublicBrowseCategory[]> 
 
   const { data: parentRows, error: parentErr } = await supabase
     .from("categories")
-    .select("id, slug, name_en, sort_order")
+    .select("id, slug, name_en, name_ar, sort_order")
     .is("parent_id", null)
     .order("sort_order", { ascending: true });
 
@@ -122,6 +123,7 @@ export async function listTopLevelCategories(): Promise<PublicBrowseCategory[]> 
     id: r.id as string,
     slug: r.slug as string,
     name_en: r.name_en as string,
+    name_ar: (r as { name_ar?: string | null }).name_ar ?? null,
     supplier_count: countByParent.get(r.id as string) ?? 0,
   }));
 }

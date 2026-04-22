@@ -5,7 +5,9 @@
   },
   "nav": {
     "browse": "تصفّح",
+    "howItWorks": "كيف نعمل",
     "forSuppliers": "للموردين",
+    "faq": "الأسئلة الشائعة",
     "signIn": "تسجيل الدخول",
     "signUp": "إنشاء حساب",
     "role": {
@@ -88,33 +90,265 @@
       "ctaSupplier": "أنا مورد",
       "statLabel": "تجربة أولية · الرياض + جدة",
       "statValue": "موردون موثّقون في كل فئة تحتاجها.",
-      "sampleCategoriesFallback": "قريبًا"
+      "sampleCategoriesFallback": "قريبًا",
+      "meta1Value": "+١٢٠",
+      "meta1Label": "مورد موثّق",
+      "meta2Value": "٨",
+      "meta2Label": "فئة فعاليات",
+      "meta3Value": "أقل من ٢٤ ساعة",
+      "meta3Label": "متوسط وقت العروض"
+    },
+    "trust": {
+      "label": "مصمم للمملكة العربية السعودية",
+      "gea": "تصريح هيئة الترفيه",
+      "mada": "مدى وآبل باي",
+      "zatca": "فوترة زاتكا الإلكترونية",
+      "sama": "ضمان مصرفي بمعايير ساما"
     },
     "valueProp": {
       "eyebrow": "لماذا سِيفِنت",
       "heading": "مصمم للفعاليات السعودية",
+      "lede": "سوق يعامل الموردين والمنظمين كشركاء متكافئين — بما تستحقه الفعاليات من ثقة وأدوات وشفافية.",
       "items": [
         {
           "title": "طلب واحد، عروض متعددة",
-          "body": "أرسل طلب عروض منظم مرة واحدة. نطابقك مع الموردين المعتمدين المناسبين لفئتك ومدينتك وتاريخك."
+          "body": "أرسل طلب عروض منظم مرة واحدة. نطابقك مع الموردين المعتمدين المناسبين لفئتك ومدينتك وتاريخك.",
+          "link": "شاهد مسار الطلب"
         },
         {
           "title": "قارن بأكثر من السعر",
-          "body": "اطّلع على البنود، والمتضمّنات، ورسوم التنقل، والتقييمات الموثّقة جنبًا إلى جنب لتختار بثقة."
+          "body": "اطّلع على البنود، والمتضمّنات، ورسوم التنقل، والتقييمات الموثّقة جنبًا إلى جنب لتختار بثقة.",
+          "link": "كيف نقارن"
         },
         {
           "title": "منصة يمكنك الاعتماد عليها",
-          "body": "موردون موثّقون، وعقود رقمية بالنقر، وتتبع كامل لكل حجز من البداية للنهاية."
+          "body": "موردون موثّقون، وعقود رقمية بالنقر، وتتبع كامل لكل حجز من البداية للنهاية.",
+          "link": "اقرأ عن الثقة"
         }
       ]
     },
+    "how": {
+      "eyebrow": "كيف نعمل",
+      "heading": "من أول طلب إلى عقد موقّع خلال أيام، لا أسابيع.",
+      "lede": "أربع خطوات، بلا جداول معقدة. سواء كنت تخطّط لعشاء شركة من ٣٠ شخصًا أو زفاف لـ ١٢٠٠ ضيف، المسار واحد.",
+      "steps": [
+        {
+          "title": "سجّل موجزك",
+          "body": "أخبرنا بالتاريخ والمدينة وعدد الضيوف والميزانية. يستغرق حوالي ٣ دقائق."
+        },
+        {
+          "title": "ندعو الموردين المناسبين",
+          "body": "نتواصل فقط مع الموردين المعتمدين من هيئة الترفيه والمطابقين لفئتك وطاقتك وتوفرك."
+        },
+        {
+          "title": "قارن عروضًا حقيقية",
+          "body": "البنود والمتضمنات والعربون وشروط الإلغاء — كلها في مكان واحد."
+        },
+        {
+          "title": "احجز بثقة",
+          "body": "وقّع عقدًا رقميًا، وادفع العربون، وتابع مراحل التنفيذ داخل سِيفِنت."
+        }
+      ]
+    },
+    "showcase": {
+      "eyebrow": "قارن العروض باحتراف",
+      "heading": "كل العروض، في نفس البنية المنظمة.",
+      "lede": "لا مزيد من قراءة ملفات PDF من خمس شركات ضيافة. سِيفِنت يحوّل كل عرض إلى نفس الهيكل لتقارن بسهولة ما يهمّك فعلًا.",
+      "cta": "اطّلع على مقارنة تجريبية",
+      "bullets": [
+        {
+          "title": "شفافية كاملة في البنود",
+          "body": "رسوم التجهيز والتفكيك والتنقل والخدمة مفصّلة دائمًا — بلا مفاجآت."
+        },
+        {
+          "title": "تقييمات موثّقة فقط",
+          "body": "التقييمات من حجوزات مؤكدة على سِيفِنت، لا من مواقع تقييم مجهولة."
+        },
+        {
+          "title": "حدود الميزانية",
+          "body": "نُظهر تنبيهًا لأي عرض يتجاوز النطاق الذي حدّدته قبل فتحه."
+        },
+        {
+          "title": "ثنائي اللغة افتراضيًا",
+          "body": "كل عرض وعقد يصدر بالعربية والإنجليزية معًا."
+        }
+      ],
+      "mock": {
+        "rfqTitle": "حفل زفاف · الرياض · ٤٥٠ ضيف",
+        "rfqSub": "ضيافة · أُرسل الطلب لـ ٦ موردين",
+        "rfqStatus": "٣ عروض وردت",
+        "verified": "موثّق",
+        "bestTag": "الأنسب",
+        "q1Name": "رايات للضيافة",
+        "q1Meta": "الرياض · ٤٫٩ ★ · ٨٢ تقييم",
+        "q1Price": "٢٨٬٤٠٠ ر.س",
+        "q1Unit": "لـ ٤٥٠ ضيف",
+        "q2Name": "مطابخ نجد",
+        "q2Meta": "الرياض · ٤٫٧ ★ · ٥١ تقييم",
+        "q2Price": "٣١٬٢٠٠ ر.س",
+        "q2Unit": "لـ ٤٥٠ ضيف",
+        "q3Name": "بيت المنسف",
+        "q3Meta": "جدة · ٤٫٨ ★ · ٣٤ تقييم",
+        "q3Price": "٣٤٬٧٥٠ ر.س",
+        "q3Unit": "لـ ٤٥٠ ضيف",
+        "quotesLeft": "٣ موردين آخرين يستجيبون · خلال ١٨ ساعة",
+        "compareAll": "قارن الجميع"
+      }
+    },
     "categories": {
       "eyebrow": "الفئات",
-      "heading": "اكتشف الموردين في كل فئة",
-      "subtitle": "من القاعات والضيافة إلى التصوير والطاقم — كل مورد موثّق قبل النشر.",
+      "heading": "كل مورد تحتاجه، كلهم موثّقون.",
+      "subtitle": "من القاعات والضيافة إلى التصوير والطاقم — كل مورد معتمد قبل النشر على سِيفِنت.",
       "browseAll": "تصفّح جميع الفئات",
       "supplierCount": "{count, plural, zero {لا موردين بعد} one {# مورد موثّق} two {# موردان موثّقان} few {# موردين موثّقين} many {# موردًا موثّقًا} other {# مورد موثّق}}",
-      "viewLabel": "استكشف"
+      "viewLabel": "استكشف",
+      "suffix": "مورد موثّق",
+      "fallback": [
+        {
+          "slug": "venues",
+          "name": "قاعات وفنادق",
+          "count": 32
+        },
+        {
+          "slug": "catering",
+          "name": "ضيافة",
+          "count": 47
+        },
+        {
+          "slug": "photography",
+          "name": "تصوير",
+          "count": 28
+        },
+        {
+          "slug": "decor",
+          "name": "ديكور وتنسيق زهور",
+          "count": 19
+        },
+        {
+          "slug": "entertainment",
+          "name": "ترفيه",
+          "count": 22
+        },
+        {
+          "slug": "av",
+          "name": "صوتيات وإضاءة",
+          "count": 14
+        },
+        {
+          "slug": "transportation",
+          "name": "نقل",
+          "count": 11
+        },
+        {
+          "slug": "staffing",
+          "name": "طاقم عمل",
+          "count": 16
+        }
+      ]
+    },
+    "supplierShowcase": {
+      "eyebrow": "للموردين",
+      "heading": "املأ جدولك بالفعاليات المناسبة.",
+      "lede": "توقّف عن مطاردة محادثات واتساب. سِيفِنت يطابقك مع منظمين يستوفون حدّك الأدنى — ويتكفّل بالأوراق.",
+      "cta1": "انضم كمورد أولي",
+      "cta2": "أسعار الموردين",
+      "bullets": [
+        {
+          "title": "عملاء محتملون مؤهلون فقط",
+          "body": "كل طلب عروض مفلتر حسب فئتك وطاقتك ونطاق خدمتك — بلا إزعاج."
+        },
+        {
+          "title": "اقبض في وقتك",
+          "body": "عربون ودفعات نهائية عبر المنصة. تدفقك النقدي لا يعتمد على المطاردة."
+        },
+        {
+          "title": "ملف يبيع نيابةً عنك",
+          "body": "أعمال سابقة وباقات وتقييمات ونسخ ثنائية اللغة — كلها في صفحة عامة واحدة."
+        },
+        {
+          "title": "تشغيل خفيف",
+          "body": "تقويم وباقات وباني عروض يحلّون محل عشرات الجداول."
+        }
+      ],
+      "dashboard": {
+        "path": "sevent.sa/supplier/dashboard",
+        "greet": "السلام عليكم، رايات للضيافة",
+        "sub": "٣ طلبات جديدة هذا الأسبوع",
+        "approved": "معتمد",
+        "k1Label": "طلبات مفتوحة",
+        "k1Value": "١٢",
+        "k1Trend": "+٣٠٪",
+        "k2Label": "نسبة الاستجابة",
+        "k2Value": "٦٨٪",
+        "k2Trend": "+٨٪",
+        "k3Label": "محجوز هذا الربع",
+        "k3Value": "١٨٤ ألف ر.س",
+        "invites": "أحدث طلبات العروض",
+        "i1Event": "زفاف · الرياض",
+        "i1Sub": "٤٥٠ ضيفًا · ١٤ يونيو",
+        "i1Due": "خلال ١٨ ساعة",
+        "i2Event": "شركة · الرياض",
+        "i2Sub": "١٢٠ ضيفًا · ٣ مايو",
+        "i2Due": "خلال يومين",
+        "i3Event": "ملكة · الدرعية",
+        "i3Sub": "٢٢٠ ضيفًا · ٢٢ أبريل",
+        "i3Due": "تم التسعير",
+        "quoteCta": "سعّر",
+        "viewCta": "عرض"
+      }
+    },
+    "testimonials": {
+      "eyebrow": "آراء المستخدمين",
+      "heading": "منظّمون وموردون سعوديون عن سِيفِنت.",
+      "items": [
+        {
+          "quote": "أرسلتُ طلبًا واحدًا لحفل زفاف ابنتي وتلقيتُ ستة عروض كاملة خلال يوم. كان ذلك يحتاج أسبوعين من المكالمات من قبل.",
+          "name": "ريم العتيبي",
+          "role": "منظّمة، الرياض"
+        },
+        {
+          "quote": "التقويم وباني العروض حلّوا محل ثلاثة جداول ومجموعتي واتساب. فريقي أخيرًا لديه وقت ليطبخ فعلًا.",
+          "name": "خالد النجّار",
+          "role": "رئيس الطهاة، مطابخ نجد"
+        },
+        {
+          "quote": "ما أقنعني هو العقد الرقمي. لا مزيد من ملفات PDF تتنقّل بالبريد — العربون في ضمان ونحن نطبخ فقط.",
+          "name": "حصّة الدوسري",
+          "role": "مديرة الفعاليات، رايات للضيافة"
+        }
+      ]
+    },
+    "faq": {
+      "eyebrow": "الأسئلة الشائعة",
+      "heading": "كل ما تحتاج معرفته.",
+      "lede": "لديك سؤال حول التجربة الأولية؟ فريقنا يردّ على كل رسالة خلال يوم عمل.",
+      "contact": "تواصل مع مختصّ",
+      "items": [
+        {
+          "q": "هل سِيفِنت متاح الآن؟",
+          "a": "التجربة الأولية مفتوحة للمنظمين والموردين في الرياض وجدة. نتوسّع للمنطقة الشرقية ومنطقة مكة في المرحلة القادمة."
+        },
+        {
+          "q": "ما التكلفة على المنظّمين؟",
+          "a": "لا شيء. إرسال طلبات العروض وتلقي الأسعار والتعاقد عبر سِيفِنت مجاني للمنظمين طوال فترة التجربة."
+        },
+        {
+          "q": "كيف تتحققون من الموردين؟",
+          "a": "كل مورد يُقدّم سجله التجاري وتصاريح الهيئة عند اللزوم وبيانات زاتكا ونماذج من أعماله السابقة. يراجع فريقنا كل ملف قبل نشره."
+        },
+        {
+          "q": "كيف تُدار المدفوعات؟",
+          "a": "العربون والدفعات النهائية عبر ضمان محكم بالمنصة. تُحرَّر للمورد مقابل مراحل محدّدة في العقد الرقمي."
+        },
+        {
+          "q": "هل تدعمون العربية؟",
+          "a": "نعم. كل طلب عرض وعقد ثنائي اللغة افتراضيًا. استخدم مبدّل EN/ع أعلى الصفحة لمعاينة أي منهما."
+        },
+        {
+          "q": "هل أستطيع متابعة العمل مع مورديّ الحاليين؟",
+          "a": "بالتأكيد. ادعهم إلى سِيفِنت وسيُسرَّع مسار توثيقهم. علاقاتك الحالية تحصل على أدوات أفضل فقط."
+        }
+      ]
     },
     "pilot": {
       "eyebrow": "الشركاء الأوائل",
@@ -299,6 +533,123 @@
         "cta": "ارفع ملف تعريفي للشركة (PDF، 10 ميجابايت كحد أقصى)",
         "errorType": "يجب أن يكون ملف الشركة بصيغة PDF.",
         "errorSize": "حجم ملف الشركة يجب ألا يتجاوز 10 ميجابايت."
+      },
+      "pathPicker": {
+        "badge": "قبل أن نبدأ",
+        "title": "حدّثنا عن نشاطك",
+        "subtitle": "نُخصّص رحلة التسجيل بناءً على شكل نشاطك — تستغرق ٨ دقائق في المتوسط.",
+        "freelancer": {
+          "title": "مستقل أو صاحب عمل فردي",
+          "description": "تعمل باسمك الشخصي أو تحت اسم تجاري بسيط — نحتاج فقط هوية وطنية وشهادة آيبان.",
+          "step1": "هوية وطنية",
+          "step2": "شهادة آيبان",
+          "step3": "نبذة قصيرة",
+          "eta": "يستغرق ٥ دقائق"
+        },
+        "company": {
+          "title": "شركة مسجّلة",
+          "description": "لديك سجل تجاري نشط — سنتحقق منه تلقائياً ونعرض شارة التوثيق على ملفك.",
+          "step1": "سجل تجاري",
+          "step2": "شهادة آيبان",
+          "step3": "ملف الشركة (اختياري)",
+          "eta": "يستغرق ٨ دقائق",
+          "tag": "أولوية في المراجعة"
+        },
+        "back": "رجوع",
+        "continue": "متابعة"
+      },
+      "importWebsite": {
+        "title": "لديك موقع إلكتروني؟",
+        "subtitle": "ألصق الرابط ونعبّئ الحقول تلقائياً",
+        "placeholder": "https://",
+        "cta": "استيراد",
+        "comingSoon": "قريباً — سنُفعّل الاستيراد التلقائي لاحقاً"
+      },
+      "wathq": {
+        "prefix": "تحقّق تلقائي من واثق:",
+        "status": "نشط"
+      },
+      "autosave": {
+        "saved": "تم الحفظ تلقائياً قبل ثوانٍ"
+      },
+      "previewRail": {
+        "heading": "معاينة حيّة · كما سيراها المنظّمون",
+        "hintStep1": "أكمل حقل النبذة لتحفّز ثقة المنظّمين — ملفات مكتملة تحصل على طلبات عروض أكثر بـ٤٠٪.",
+        "hintStep2": "الفئات الدقيقة تجذب طلبات عروض أعلى جودة. ٣–٤ فئات أفضل من ١٠.",
+        "hintStep3": "شهادة الآيبان تضمن وصول أرباحك خلال ٢٤ ساعة من انتهاء الفعالية.",
+        "placeholderName": "اسم نشاطك",
+        "placeholderBio": "ستظهر نبذتك القصيرة هنا…",
+        "placeholderCity": "المدينة",
+        "noCategoriesHint": "أضِف الفئات في الخطوة الثانية",
+        "responseLabel": "استجابة",
+        "responseValue": "٤ س",
+        "bookingsLabel": "حجوزات",
+        "bookingsValue": "—",
+        "ratingLabel": "تقييم",
+        "ratingValue": "—"
+      },
+      "uploadChip": {
+        "optional": "(اختياري)",
+        "replace": "استبدال",
+        "click": "اضغط للرفع",
+        "orDrag": "أو اسحب الملف هنا",
+        "verified": "مُتحقق"
+      },
+      "stepper": {
+        "step1": "معلومات النشاط",
+        "step2": "الفئات والشرائح",
+        "step3": "التوثيق والهوية البصرية"
+      },
+      "resume": {
+        "title": "أكمل من حيث توقفت",
+        "body": "الخطوة {step} من ٣ · تم الحفظ تلقائياً قبل دقائق",
+        "cta": "متابعة"
+      },
+      "categoryCloud": {
+        "heading": "الفئات الرئيسية",
+        "hint": "اختر ما لا يزيد عن {max} فئات — الأقل أدق",
+        "searchPlaceholder": "ابحث عن فئة…",
+        "counter": "{picked} من {max}",
+        "addAria": "أضف {name}",
+        "removeAria": "أزل {name}",
+        "noResults": "لا توجد فئات مطابقة"
+      },
+      "path": {
+        "eyebrow": "قبل أن نبدأ",
+        "title": "حدّثنا عن نشاطك",
+        "sub": "نُخصّص رحلة التسجيل بناءً على شكل نشاطك — تستغرق ٨ دقائق في المتوسط.",
+        "freelancer": {
+          "title": "مستقل أو صاحب عمل فردي",
+          "desc": "تعمل باسمك الشخصي أو تحت اسم تجاري بسيط — نحتاج فقط هوية وطنية وشهادة آيبان.",
+          "stepNationalId": "هوية وطنية",
+          "stepIban": "شهادة آيبان",
+          "stepBio": "نبذة قصيرة",
+          "eta": "٥ دقائق"
+        },
+        "company": {
+          "title": "شركة مسجّلة",
+          "desc": "لديك سجل تجاري نشط — سنتحقق منه تلقائياً ونعرض شارة التوثيق على ملفك.",
+          "stepCr": "سجل تجاري",
+          "stepIban": "شهادة آيبان",
+          "stepProfile": "ملف الشركة (اختياري)",
+          "eta": "٨ دقائق",
+          "tag": "شارة مزوّد موثّق"
+        },
+        "needsTitle": "ما ستحتاجه",
+        "etaPrefix": "يستغرق",
+        "etaSuffix": "تقريباً",
+        "cta": "متابعة",
+        "back": "رجوع"
+      },
+      "wizard": {
+        "representativeNameLabel": "اسم المسؤول",
+        "representativeNamePlaceholder": "اسمك الكامل كما يظهر في الهوية",
+        "representativeNameHelp": "الشخص المسؤول عن التواصل مع المنظّمين",
+        "maxCategoriesLabel": "{selected} من {max}",
+        "maxCategoriesReached": "وصلت إلى الحد الأقصى — ٦ فئات",
+        "companyProfileHint": "PDF حتى ٨ ميجابايت — يُعرض للمنظمين بعد قبول العرض",
+        "bioCharCounter": "{count}/{max}",
+        "draftSavedSecondsAgo": "تم الحفظ تلقائياً قبل ثوانٍ"
       }
     },
     "catalog": {
@@ -537,7 +888,64 @@
         "body": "راجع ملاحظات المسؤول وأعد الإرسال عند الاستعداد.",
         "cta": "تعديل الطلب"
       },
-      "statsLockedHint": "يُفتح بعد الاعتماد"
+      "statsLockedHint": "يُفتح بعد الاعتماد",
+      "pendingV2": {
+        "statusPill": "حالة الطلب · قيد المراجعة",
+        "title": "استلمنا طلبك",
+        "body": "فريق التوثيق يراجع الآن مستنداتك. عادةً ما تستغرق المراجعة ٢٤ ساعة عمل. سنرسل إشعاراً على {email} فور اعتماد ملفك.",
+        "primaryCta": "عد إلى لوحة التحكم",
+        "primaryHref": "/supplier/dashboard",
+        "chatCta": "تحدّث مع فريق التوثيق",
+        "chatHref": "mailto:support@sevent.sa",
+        "checklistTitle": "ما يحدث الآن",
+        "check": {
+          "wathqTitle": "التحقق من السجل التجاري",
+          "wathqDone": "مُطابق في قاعدة بيانات واثق · الرياض · نشط",
+          "identityTitle": "مطابقة الهوية",
+          "identityDone": "تمّت المطابقة عبر نفاذ",
+          "ibanTitle": "التحقق من الآيبان",
+          "ibanRunning": "جارٍ التحقق مع البنك — عادةً ٣٠ دقيقة",
+          "portfolioTitle": "مراجعة المعرض والخدمات",
+          "portfolioWaiting": "سيراجعها مختصّ من فريقنا",
+          "badgeTitle": "إصدار شارة مزوّد موثّق",
+          "badgeWaiting": "فور اكتمال الخطوات أعلاه"
+        },
+        "timelineTitle": "ما بعد الاعتماد",
+        "timeline": {
+          "approvalTitle": "اعتماد الملف",
+          "approvalDesc": "خلال ٢٤ ساعة",
+          "firstRfqTitle": "أول طلب عرض",
+          "firstRfqDesc": "خلال ٤٨ ساعة في المتوسط",
+          "firstBookingTitle": "أول حجز",
+          "firstBookingDesc": "حسب جودة عروضك"
+        },
+        "sideCardTitle": "أكمل ملفك العام لتحصل على طلبات أكثر",
+        "sideCardBody": "أضِف صور أعمال سابقة، معرض مشاريع، وباقات جاهزة — يتضاعف عدد الطلبات عادةً بعد إكمال هذه البنود.",
+        "sideCardCta": "ابدأ بينما تنتظر",
+        "sideCardHref": "/supplier/profile"
+      },
+      "celebration": {
+        "smallLabel": "مبروك، {name}",
+        "title": "ملفك معتمد",
+        "body": "شارة 'مزوّد موثّق' ظاهرة الآن على ملفك العام. لديك طلبات عروض تنتظرك.",
+        "ctaPrimary": "اذهب للطلبات",
+        "ctaPrimaryHref": "/supplier/rfqs",
+        "ctaSecondary": "عاين ملفي العام",
+        "dismiss": "إغلاق"
+      },
+      "tour": {
+        "heading": "جولة سريعة (٤٥ ثانية)",
+        "subtitle": "تعرّف على ميزاتك الأساسية في جولة سريعة.",
+        "item1Title": "كيف تكتب عرضاً يربح",
+        "item1Desc": "٣ نصائح من أفضل المزوّدين",
+        "item1Href": "/supplier/catalog",
+        "item2Title": "جدولة التقويم ومنع التعارض",
+        "item2Desc": "سيطر على توفّرك",
+        "item2Href": "/supplier/calendar",
+        "item3Title": "إدارة الباقات والأسعار",
+        "item3Desc": "حدِّد أسعارك بذكاء",
+        "item3Href": "/supplier/catalog"
+      }
     },
     "rfqInbox": {
       "title": "بريد طلبات التسعير",
@@ -585,63 +993,63 @@
       },
       "countdownHours": "متبقي {hours} ساعة",
       "expiresIn": "تنتهي خلال {time}",
-      "decline": "Decline",
-      "declineReasonLabel": "Why are you declining?",
+      "decline": "رفض",
+      "declineReasonLabel": "ليش تبي ترفض؟",
       "declineReason": {
-        "too_busy": "We're booked that day",
-        "out_of_area": "Out of service area",
-        "price_mismatch": "Budget doesn't fit our offering",
-        "other": "Other"
+        "too_busy": "محجوزين في ذاك اليوم",
+        "out_of_area": "خارج منطقة تغطيتنا",
+        "price_mismatch": "الميزانية ما تناسب عرضنا",
+        "other": "سبب ثاني"
       },
-      "quoteLater": "Quote",
-      "revise": "Revise quote",
-      "yourQuoteTitle": "Your quote",
-      "yourQuoteSubtitle": "Revision #{version} · sent {sentAt}",
-      "totalLabel": "Total",
-      "validUntil": "Valid until {expiresAt}",
-      "declinedNote": "You declined this invite.",
-      "terminalStatus": "Quote {status}",
+      "quoteLater": "عرض سعر",
+      "revise": "تعديل العرض",
+      "yourQuoteTitle": "عرضك",
+      "yourQuoteSubtitle": "النسخة #{version} · أُرسلت {sentAt}",
+      "totalLabel": "الإجمالي",
+      "validUntil": "صالح حتى {expiresAt}",
+      "declinedNote": "رفضت هذه الدعوة.",
+      "terminalStatus": "العرض {status}",
       "status": {
-        "invited": "Invited",
-        "declined": "Declined",
-        "quoted": "Quoted",
-        "withdrawn": "Withdrawn"
+        "invited": "مدعو",
+        "declined": "مرفوض",
+        "quoted": "تم التسعير",
+        "withdrawn": "مسحوب"
       },
-      "expired": "Expired"
+      "expired": "منتهي"
     },
     "quote": {
-      "title": "Quote builder",
-      "intro": "Review the engine-drafted quote, edit line items, and send to the organizer.",
-      "modeLabel": "Quote mode",
-      "modeRuleEngine": "Rule-engine draft",
-      "modeFreeForm": "Free-form",
-      "modeMixed": "Mixed",
-      "lineItemsHeading": "Line items",
-      "addLineItem": "Add line item",
-      "label": "Description",
-      "qty": "Quantity",
-      "unit": "Unit",
-      "unitPrice": "Unit price (SAR)",
-      "total": "Total",
-      "addonsHeading": "Add-ons",
-      "setupFee": "Setup fee (SAR)",
-      "teardownFee": "Teardown fee (SAR)",
-      "travelFee": "Travel fee (SAR)",
-      "travelFeeComputed": "Computed from supplier rules",
-      "depositPct": "Deposit %",
-      "paymentSchedule": "Payment schedule",
-      "cancellationTerms": "Cancellation terms",
-      "inclusions": "Inclusions",
-      "exclusions": "Exclusions",
-      "notes": "Notes",
-      "expiresAt": "Quote valid until",
-      "sendDraft": "Send quote",
-      "sending": "Sending…",
-      "saveDraft": "Save draft",
-      "revisionHistory": "Revision history",
-      "revisionNumber": "v{version}",
-      "revisionSentAt": "Sent {sentAt}",
-      "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
+      "title": "منشئ عرض السعر",
+      "intro": "راجع العرض اللي جهّزه المحرك، عدّل بنود التسعير، وأرسله للمنظم.",
+      "modeLabel": "وضع التسعير",
+      "modeRuleEngine": "مسودة من محرك القواعد",
+      "modeFreeForm": "يدوي",
+      "modeMixed": "مختلط",
+      "lineItemsHeading": "بنود التسعير",
+      "addLineItem": "إضافة بند",
+      "label": "الوصف",
+      "qty": "الكمية",
+      "unit": "الوحدة",
+      "unitPrice": "سعر الوحدة (SAR)",
+      "total": "الإجمالي",
+      "addonsHeading": "إضافات",
+      "setupFee": "رسوم التجهيز (SAR)",
+      "teardownFee": "رسوم التفكيك (SAR)",
+      "travelFee": "رسوم التنقل (SAR)",
+      "travelFeeComputed": "تُحتسب من قواعد المورد",
+      "depositPct": "نسبة العربون %",
+      "paymentSchedule": "جدول الدفعات",
+      "cancellationTerms": "شروط الإلغاء",
+      "inclusions": "ما يشمله العرض",
+      "exclusions": "ما لا يشمله العرض",
+      "notes": "ملاحظات",
+      "expiresAt": "صلاحية العرض حتى",
+      "sendDraft": "إرسال العرض",
+      "sending": "جاري الإرسال…",
+      "saveDraft": "حفظ كمسودة",
+      "revisionHistory": "سجل النسخ",
+      "revisionNumber": "نسخة {version}",
+      "revisionSentAt": "أُرسلت {sentAt}",
+      "sendBlockedTerminal": "هذا العرض صار {status}؛ ما يمكن تعديله بعد.",
       "noPackagesTitle": "لا توجد باقات نشطة في هذه الفئة الفرعية",
       "noPackagesBody": "لا يزال بإمكانك تقديم عرض حر أدناه — يحتاج محرك القواعد إلى باقة واحدة على الأقل لإنشاء مسودة."
     },
@@ -682,6 +1090,106 @@
           "description": "أنشئ ملف المورّد قبل تخصيصه."
         }
       }
+    },
+    "pending": {
+      "statusPill": "حالة الطلب · قيد المراجعة",
+      "title": "استلمنا طلبك",
+      "sub": "فريق التوثيق يراجع الآن مستنداتك. عادةً ما تستغرق المراجعة ٢٤ ساعة عمل.",
+      "emailNotice": "سنرسل إشعاراً على {email} فور اعتماد ملفك",
+      "checklistTitle": "ما يحدث الآن",
+      "checks": {
+        "wathq": {
+          "title": "التحقق من السجل التجاري",
+          "descDone": "مُطابق في قاعدة بيانات واثق · {city} · نشط",
+          "descRunning": "جارٍ المطابقة مع واثق",
+          "descWaiting": "سيبدأ فور إرسال الطلب"
+        },
+        "identity": {
+          "title": "مطابقة الهوية",
+          "descDone": "تمّت المطابقة عبر نفاذ",
+          "descRunning": "جارٍ التحقق من الهوية",
+          "descWaiting": "بعد اكتمال التحقق من السجل"
+        },
+        "iban": {
+          "title": "التحقق من الآيبان",
+          "descDone": "تمّ التحقق من الآيبان",
+          "descRunning": "جارٍ التحقق مع البنك — عادةً ٣٠ دقيقة",
+          "descWaiting": "يبدأ بعد التحقق من الهوية"
+        },
+        "portfolio": {
+          "title": "مراجعة المعرض والخدمات",
+          "descDone": "اعتمد مختصّ الفريق الخدمات",
+          "descRunning": "مختصّ من فريقنا يراجع الآن",
+          "descWaiting": "سيراجعها مختصّ من فريقنا"
+        },
+        "badge": {
+          "title": "إصدار شارة مزوّد موثّق",
+          "descDone": "ظهرت الشارة على ملفك العام",
+          "descRunning": "جارٍ إصدار الشارة",
+          "descWaiting": "فور اكتمال الخطوات أعلاه"
+        }
+      },
+      "stateDone": "تم",
+      "stateRunning": "جارٍ",
+      "stateWaiting": "قيد الانتظار",
+      "timelineTitle": "ما بعد الاعتماد",
+      "timeline": [
+        {
+          "title": "اعتماد الملف",
+          "desc": "خلال ٢٤ ساعة"
+        },
+        {
+          "title": "أول طلب عرض",
+          "desc": "خلال ٤٨ ساعة في المتوسط"
+        },
+        {
+          "title": "أول حجز",
+          "desc": "حسب جودة عروضك"
+        }
+      ],
+      "primaryCta": "عد إلى لوحة التحكم",
+      "chatCta": "تحدّث مع فريق التوثيق",
+      "sideCard": {
+        "title": "أكمل ملفك العام لتحصل على طلبات أكثر",
+        "body": "أضِف صور أعمال سابقة، معرض مشاريع، وباقات جاهزة — يتضاعف عدد الطلبات عادةً بعد إكمال هذه البنود.",
+        "cta": "ابدأ بينما تنتظر ←"
+      }
+    },
+    "welcome": {
+      "congratsEyebrow": "مبروك، {name}",
+      "congrats": "مبروك! ملفك معتمد",
+      "sub": "شارة \"مزوّد موثّق\" ظاهرة الآن على ملفك العام. لديك ٣ طلبات عروض تنتظرك.",
+      "cta1": "اذهب للطلبات",
+      "cta2": "عاين ملفي العام",
+      "kpi": {
+        "rfqs": "طلبات العروض",
+        "rfqsSub": "جديد",
+        "views": "زيارات ملفك",
+        "viewsSub": "آخر ٢٤ ساعة",
+        "responseTime": "وقت الاستجابة",
+        "responseTimeSub": "متوسط"
+      },
+      "matchingRfqsTitle": "طلبات عروض مناسبة لك",
+      "matchingRfqsViewAll": "عرض الكل",
+      "matchingRfqsMatch": "تطابق",
+      "matchingRfqsSend": "أرسل عرضاً ←",
+      "matchingRfqsEmpty": "سنعرض طلبات مناسبة فور ظهورها",
+      "tourTitle": "جولة سريعة (٤٥ ثانية)",
+      "tourSub": "تعرّف على ميزاتك الأساسية في جولة سريعة.",
+      "tour": [
+        {
+          "title": "كيف تكتب عرضاً يربح",
+          "desc": "٣ نصائح من أفضل المزوّدين"
+        },
+        {
+          "title": "جدولة التقويم ومنع التعارض",
+          "desc": "سيطر على توفّرك"
+        },
+        {
+          "title": "إدارة الباقات والأسعار",
+          "desc": "حدِّد أسعارك بذكاء"
+        }
+      ]
     }
   },
   "admin": {
@@ -847,370 +1355,382 @@
   },
   "organizer": {
     "dashboard": {
-      "title": "Organizer dashboard",
-      "subtitle": "Your events, RFQs, and incoming quotes — all in one place.",
-      "statTotalEvents": "Total events",
-      "statOpenRfqs": "Active RFQs",
-      "statAwaitingQuotes": "Awaiting quotes",
-      "statConfirmedBookings": "Confirmed bookings",
-      "statTotalEventsHint": "Lifetime events",
-      "statActiveRfqsHint": "Currently out to suppliers",
-      "statAwaitingQuotesHint": "Suppliers still to respond",
-      "statConfirmedBookingsHint": "Signed with suppliers",
-      "noEvents": "No events yet. Create one to send your first RFQ.",
-      "newEvent": "New event",
-      "newRfq": "New RFQ",
-      "viewAll": "View all",
-      "latestRfqs": "Latest RFQs",
-      "upcomingEvents": "Upcoming events",
-      "quickActions": "Quick actions",
-      "recentActivity": "Recent activity",
-      "noRecentActivity": "No activity yet. Create an event and send your first RFQ to get started.",
-      "browseSuppliers": "Browse suppliers",
-      "bookings": "Bookings",
-      "notifications": "Notifications",
-      "invitesCount": "{count, plural, one {# invite} other {# invites}}"
+      "title": "لوحة المنظم",
+      "subtitle": "فعالياتك، طلبات الأسعار، والعروض الواردة — كلها في مكان واحد.",
+      "statTotalEvents": "إجمالي الفعاليات",
+      "statOpenRfqs": "طلبات الأسعار النشطة",
+      "statAwaitingQuotes": "بانتظار العروض",
+      "statConfirmedBookings": "الحجوزات المؤكدة",
+      "statTotalEventsHint": "الفعاليات منذ البداية",
+      "statActiveRfqsHint": "مرسلة حالياً للموردين",
+      "statAwaitingQuotesHint": "موردون لم يردّوا بعد",
+      "statConfirmedBookingsHint": "موقّعة مع الموردين",
+      "noEvents": "ما عندك فعاليات بعد. أنشئ فعالية لإرسال أول طلب سعر.",
+      "newEvent": "فعالية جديدة",
+      "newRfq": "طلب سعر جديد",
+      "viewAll": "عرض الكل",
+      "latestRfqs": "أحدث طلبات الأسعار",
+      "upcomingEvents": "الفعاليات القادمة",
+      "quickActions": "إجراءات سريعة",
+      "recentActivity": "النشاط الأخير",
+      "noRecentActivity": "لا يوجد نشاط بعد. أنشئ فعالية وأرسل أول طلب سعر للبدء.",
+      "browseSuppliers": "تصفح الموردين",
+      "bookings": "الحجوزات",
+      "notifications": "الإشعارات",
+      "invitesCount": "{count, plural, zero {لا يوجد دعوات} one {دعوة واحدة} two {دعوتان} few {# دعوات} many {# دعوة} other {# دعوة}}"
     },
     "events": {
-      "title": "Events",
-      "subtitle": "Every event you are planning on Sevent.",
-      "newEvent": "New event",
-      "empty": "No events yet",
-      "emptyDescription": "Create your first event to start sending RFQs to suppliers.",
-      "createFirst": "Create your first event",
+      "title": "الفعاليات",
+      "subtitle": "جميع الفعاليات التي تخطط لها على Sevent.",
+      "newEvent": "فعالية جديدة",
+      "empty": "لا توجد فعاليات بعد",
+      "emptyDescription": "أنشئ فعاليتك الأولى لبدء إرسال طلبات العروض للموردين.",
+      "createFirst": "أنشئ فعاليتك الأولى",
       "table": {
-        "event": "Event",
-        "date": "Date",
-        "city": "City",
-        "guests": "Guests",
-        "rfqs": "RFQs",
-        "status": "Status"
+        "event": "الفعالية",
+        "date": "التاريخ",
+        "city": "المدينة",
+        "guests": "الضيوف",
+        "rfqs": "طلبات العروض",
+        "status": "الحالة"
       },
-      "detailTitle": "Event detail",
-      "detailEyebrow": "Event detail",
-      "backToEvents": "Back to events",
-      "detailsHeading": "Details",
-      "rfqsHeading": "RFQs",
-      "noRfqsForEvent": "No RFQs yet for this event.",
-      "sendNewRfq": "Send new RFQ",
-      "newRfqForThisEvent": "New RFQ from this event",
-      "editEvent": "Edit event",
-      "noRfqsDescription": "Send your first RFQ to invite suppliers to quote this event.",
-      "rfqOf": "of",
-      "budget": "Budget",
-      "createdAt": "Created",
-      "guestsCount": "{count} guests"
+      "detailTitle": "تفاصيل الفعالية",
+      "detailEyebrow": "تفاصيل الفعالية",
+      "backToEvents": "العودة إلى الفعاليات",
+      "detailsHeading": "التفاصيل",
+      "rfqsHeading": "طلبات العروض",
+      "noRfqsForEvent": "لا توجد طلبات عروض لهذه الفعالية بعد.",
+      "sendNewRfq": "إرسال طلب جديد",
+      "newRfqForThisEvent": "طلب عرض جديد لهذه الفعالية",
+      "editEvent": "تعديل الفعالية",
+      "noRfqsDescription": "أرسل طلب عرضك الأول لدعوة الموردين لتقديم عروض لهذه الفعالية.",
+      "rfqOf": "من",
+      "budget": "الميزانية",
+      "createdAt": "أُنشئ في",
+      "guestsCount": "{count} ضيف",
+      "invitesCount": "{count, plural, =0 {لا دعوات} one {دعوة واحدة} two {دعوتان} few {# دعوات} many {# دعوة} other {# دعوة}}"
     },
     "eventForm": {
-      "title": "New event",
-      "editTitle": "Edit event",
-      "saving": "Saving…",
-      "submit": "Save event",
-      "cancel": "Cancel",
-      "eventTypeLabel": "Event type",
+      "title": "فعالية جديدة",
+      "editTitle": "تعديل الفعالية",
+      "saving": "جاري الحفظ…",
+      "submit": "حفظ الفعالية",
+      "cancel": "إلغاء",
+      "eventTypeLabel": "نوع الفعالية",
       "eventTypeHelper": "حدد نوع الفعالية الأقرب لمناسبتك",
-      "cityLabel": "City",
+      "cityLabel": "المدينة",
       "cityHelper": "المدينة التي ستُقام فيها الفعالية",
-      "clientNameLabel": "Client / host name (optional)",
-      "venueAddressLabel": "Venue address",
-      "startsAtLabel": "Starts at",
-      "endsAtLabel": "Ends at",
-      "guestCountLabel": "Guest count",
-      "budgetMinLabel": "Budget minimum (SAR)",
-      "budgetMaxLabel": "Budget maximum (SAR)",
-      "notesLabel": "Notes",
+      "clientNameLabel": "اسم العميل / المضيف (اختياري)",
+      "venueAddressLabel": "عنوان المكان",
+      "startsAtLabel": "البداية",
+      "endsAtLabel": "النهاية",
+      "guestCountLabel": "عدد المدعوين",
+      "budgetMinLabel": "الحد الأدنى للميزانية (SAR)",
+      "budgetMaxLabel": "الحد الأعلى للميزانية (SAR)",
+      "notesLabel": "ملاحظات",
       "error": {
-        "eventTypeRequired": "Choose an event type.",
-        "cityRequired": "Choose a city.",
-        "venueAddressRequired": "Enter the venue address.",
-        "venueAddressTooLong": "Venue address is too long.",
-        "startsAtRequired": "Pick a start date and time.",
-        "endsAtRequired": "Pick an end date and time.",
-        "endsAfterStart": "End time must be after the start time.",
-        "guestCountRange": "Guest count must be between 1 and 100,000.",
-        "budgetNonNegative": "Budget values cannot be negative.",
-        "budgetMaxLessThanMin": "Maximum budget must be greater than or equal to the minimum.",
-        "notesTooLong": "Notes are too long (2000 character max)."
+        "eventTypeRequired": "اختر نوع الفعالية.",
+        "cityRequired": "اختر المدينة.",
+        "venueAddressRequired": "اكتب عنوان المكان.",
+        "venueAddressTooLong": "عنوان المكان طويل زيادة.",
+        "startsAtRequired": "اختر تاريخ ووقت البداية.",
+        "endsAtRequired": "اختر تاريخ ووقت النهاية.",
+        "endsAfterStart": "وقت النهاية لازم يكون بعد وقت البداية.",
+        "guestCountRange": "عدد المدعوين لازم يكون بين 1 و 100,000.",
+        "budgetNonNegative": "قيم الميزانية لا يمكن تكون بالسالب.",
+        "budgetMaxLessThanMin": "الحد الأعلى للميزانية لازم يكون أكبر من أو يساوي الحد الأدنى.",
+        "notesTooLong": "الملاحظات طويلة زيادة (الحد الأقصى 2000 حرف)."
       },
       "eventType": {
-        "wedding": "Wedding",
-        "corporate": "Corporate",
-        "government": "Government",
-        "exhibition": "Exhibition",
-        "birthday": "Birthday",
-        "private": "Private",
-        "other": "Other"
+        "wedding": "زواج",
+        "corporate": "فعالية شركات",
+        "government": "فعالية حكومية",
+        "exhibition": "معرض",
+        "birthday": "عيد ميلاد",
+        "private": "خاصة",
+        "other": "أخرى"
       },
       "city": {
-        "Riyadh": "Riyadh",
-        "Jeddah": "Jeddah",
-        "Dammam": "Dammam",
-        "Mecca": "Mecca",
-        "Medina": "Medina",
-        "Khobar": "Khobar",
-        "Taif": "Taif"
+        "Riyadh": "الرياض",
+        "Jeddah": "جدة",
+        "Dammam": "الدمام",
+        "Mecca": "مكة المكرمة",
+        "Medina": "المدينة المنورة",
+        "Khobar": "الخبر",
+        "Taif": "الطائف"
       }
     },
     "rfqs": {
-      "title": "RFQs",
-      "subtitle": "Every request for quote you have sent.",
-      "empty": "No RFQs yet",
-      "emptyDescription": "Create an event first, then send your first RFQ to receive supplier quotes.",
-      "emptyAction": "Go to events",
-      "newRfq": "New RFQ",
+      "title": "طلبات العروض",
+      "subtitle": "جميع طلبات العروض التي أرسلتها.",
+      "empty": "لا توجد طلبات عروض بعد",
+      "emptyDescription": "أنشئ فعالية أولاً، ثم أرسل طلب عرضك الأول لتلقي عروض الموردين.",
+      "emptyAction": "الذهاب إلى الفعاليات",
+      "newRfq": "طلب عرض جديد",
       "status": {
-        "draft": "Draft",
-        "sent": "Sent",
-        "quoted": "Quoted",
-        "expired": "Expired",
-        "booked": "Booked",
-        "cancelled": "Cancelled"
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "quoted": "تم التسعير",
+        "expired": "منتهي",
+        "booked": "محجوز",
+        "cancelled": "ملغي"
       },
       "inviteStatus": {
-        "invited": "Invited",
-        "declined": "Declined",
-        "quoted": "Quoted",
-        "withdrawn": "Withdrawn"
+        "invited": "مدعو",
+        "declined": "رفض",
+        "quoted": "قدّم عرضاً",
+        "withdrawn": "انسحب"
       },
       "table": {
-        "event": "Event",
-        "category": "Category",
-        "subcategory": "Subcategory",
-        "status": "Status",
-        "invites": "Invites",
-        "sentAt": "Sent",
-        "responseDue": "Response due",
-        "responseRate": "Response rate"
+        "event": "الفعالية",
+        "category": "الفئة",
+        "subcategory": "الفئة الفرعية",
+        "status": "الحالة",
+        "invites": "الدعوات",
+        "sentAt": "أُرسل في",
+        "responseDue": "موعد الرد",
+        "responseRate": "معدل الاستجابة"
       },
-      "detailEyebrow": "RFQ detail",
-      "backToEvent": "Back to event",
-      "backToRfqs": "Back to RFQs",
-      "requirementsHeading": "Requirements",
-      "invitesHeading": "Invited suppliers",
-      "noInvites": "No invites sent yet.",
-      "compareQuotes": "Compare quotes",
-      "viewQuotes": "View quotes",
+      "detailEyebrow": "تفاصيل الطلب",
+      "backToEvent": "العودة إلى الفعالية",
+      "backToRfqs": "العودة إلى طلبات العروض",
+      "requirementsHeading": "المتطلبات",
+      "invitesHeading": "الموردون المدعوون",
+      "noInvites": "لم تُرسل دعوات بعد.",
+      "compareQuotes": "مقارنة العروض",
+      "viewQuotes": "عرض العروض",
       "invitesTable": {
-        "supplier": "Supplier",
-        "source": "Source",
-        "status": "Status",
-        "sent": "Sent",
-        "responseDue": "Response due",
-        "responded": "Responded",
-        "declineReason": "Decline reason"
+        "supplier": "المورد",
+        "source": "المصدر",
+        "status": "الحالة",
+        "sent": "مُرسل",
+        "responseDue": "موعد الرد",
+        "responded": "الرد",
+        "declineReason": "سبب الرفض"
       },
       "source": {
-        "auto_match": "Auto-match",
-        "organizer_picked": "Picked manually"
+        "auto_match": "مطابقة تلقائية",
+        "organizer_picked": "اختيار يدوي"
       }
     },
     "rfqWizard": {
-      "title": "New RFQ",
-      "subtitle": "Send a request for quote to a curated shortlist of suppliers.",
-      "stepLabel": "Step {current} of {total}",
+      "title": "طلب عرض جديد",
+      "subtitle": "أرسل طلب عرض أسعار إلى قائمة مختارة من الموردين.",
+      "stepLabel": "الخطوة {current} من {total}",
       "stepLabels": {
-        "1": "Event & category",
-        "2": "Requirements",
-        "3": "Shortlist",
-        "4": "Review & send"
+        "1": "الفعالية والفئة",
+        "2": "المتطلبات",
+        "3": "القائمة المختصرة",
+        "4": "المراجعة والإرسال"
       },
       "stepSubtitles": {
-        "1": "Pick which event this is for and what you are sourcing.",
-        "2": "Tell suppliers exactly what you need.",
-        "3": "We suggested a few — tweak the shortlist before sending.",
-        "4": "Final check. You can edit anything before sending."
+        "1": "اختر الفعالية التي يخصها هذا الطلب، وما الذي تبحث عنه.",
+        "2": "أخبر الموردين بما تحتاجه بالضبط.",
+        "3": "اقترحنا بعض الموردين - عدّل القائمة قبل الإرسال.",
+        "4": "مراجعة أخيرة. يمكنك تعديل أي شيء قبل الإرسال."
       },
-      "pickEvent": "Event",
-      "pickEventNone": "Select an event",
-      "pickCategory": "Category",
-      "pickCategoryNone": "Select a category",
-      "pickSubcategory": "Subcategory",
-      "pickSubcategoryNone": "Select a subcategory",
-      "noEventsYet": "You have no events yet.",
-      "createEventFirst": "Create one",
-      "createEventFirstTail": "first.",
-      "autoSelectedForm": "Form auto-selected by category",
-      "extensionHeading": "Requirements",
-      "reviewHeading": "Review",
-      "confirmHeading": "Confirm and send",
-      "responseDeadlineLabel": "Response deadline",
-      "responseDeadlineHelp": "Suppliers must respond within this window.",
-      "deadline24h": "Within 24 hours",
-      "deadline48h": "Within 48 hours",
-      "deadline72h": "Within 72 hours",
-      "sending": "Sending…",
-      "sendRfq": "Send RFQ",
-      "cancelStep": "Cancel",
-      "back": "Back",
-      "next": "Next",
-      "matching": "Matching…",
-      "shortlistSizeLabel": "Next ({size}/{max})",
-      "noMatches": "No matching suppliers yet. Try widening the date range or picking a different subcategory.",
-      "matchingOffline": "Auto-match is unavailable right now. You can still build the shortlist manually below.",
-      "shortlistEmpty": "Add at least one supplier to your shortlist before sending.",
-      "removeSupplier": "Remove",
-      "addSupplier": "Add",
-      "reviewEvent": "Event",
-      "reviewCategory": "Category",
-      "reviewRequirements": "Requirements ({kind})",
-      "reviewShortlist": "Shortlist ({count})",
-      "reviewNoSuppliers": "No suppliers selected.",
-      "sourceAutoMatch": "Auto match",
-      "sourcePicked": "Organizer picked",
+      "pickEvent": "الفعالية",
+      "pickEventNone": "اختر فعالية",
+      "pickCategory": "الفئة",
+      "pickCategoryNone": "اختر فئة",
+      "pickSubcategory": "الفئة الفرعية",
+      "pickSubcategoryNone": "اختر فئة فرعية",
+      "noEventsYet": "لا توجد فعاليات بعد.",
+      "createEventFirst": "أنشئ فعالية",
+      "createEventFirstTail": "أولاً.",
+      "autoSelectedForm": "تم اختيار النموذج تلقائياً حسب الفئة",
+      "extensionHeading": "المتطلبات",
+      "reviewHeading": "مراجعة",
+      "confirmHeading": "تأكيد وإرسال",
+      "responseDeadlineLabel": "مهلة الرد",
+      "responseDeadlineHelp": "يجب على الموردين الرد خلال هذه المهلة.",
+      "deadline24h": "خلال 24 ساعة",
+      "deadline48h": "خلال 48 ساعة",
+      "deadline72h": "خلال 72 ساعة",
+      "deadline24hDesc": "مهلة ضيقة - مناسبة للطلبات العاجلة.",
+      "deadline48hDesc": "الافتراضي المتوازن.",
+      "deadline72hDesc": "مهلة واسعة - مناسبة للطلبات المعقّدة.",
+      "sending": "جارٍ الإرسال...",
+      "sendRfq": "إرسال الطلب",
+      "cancelStep": "إلغاء",
+      "back": "رجوع",
+      "next": "التالي",
+      "matching": "جارٍ المطابقة...",
+      "shortlistSizeLabel": "التالي ({size}/{max})",
+      "noMatches": "لا يوجد موردون مطابقون حالياً. جرّب توسيع نطاق التاريخ أو اختيار فئة فرعية مختلفة.",
+      "matchingOffline": "المطابقة التلقائية غير متاحة حالياً. يمكنك بناء القائمة المختصرة يدوياً أدناه.",
+      "shortlistEmpty": "أضف مورداً واحداً على الأقل إلى قائمتك قبل الإرسال.",
+      "removeSupplier": "إزالة",
+      "addSupplier": "إضافة",
+      "reviewEvent": "الفعالية",
+      "reviewCategory": "الفئة",
+      "reviewRequirements": "المتطلبات ({kind})",
+      "reviewShortlist": "القائمة المختصرة ({count})",
+      "reviewNoSuppliers": "لم يتم اختيار أي مورد.",
+      "sourceAutoMatch": "مطابقة تلقائية",
+      "sourcePicked": "اختيار المنظم",
+      "loading": "جارٍ التحميل...",
+      "runningAutoMatch": "جارٍ تشغيل المطابقة التلقائية...",
+      "autoMatchOfflineTitle": "المطابقة التلقائية غير متاحة",
+      "autoMatchOfflineBody": "يمكنك بناء القائمة المختصرة يدوياً أدناه.",
+      "yes": "نعم",
+      "no": "لا",
+      "sendErrorTitle": "تعذّر إرسال الطلب",
+      "stepperAriaLabel": "خطوات المعالج",
       "extensions": {
         "venues": {
-          "heading": "Venue requirements",
+          "heading": "متطلبات القاعة",
           "seatingStyle": {
-            "label": "Seating style",
-            "rounds": "Round tables",
-            "theatre": "Theatre",
-            "classroom": "Classroom",
-            "cocktail": "Cocktail",
-            "majlis": "Majlis"
+            "label": "نمط الجلوس",
+            "rounds": "طاولات مستديرة",
+            "theatre": "مسرح",
+            "classroom": "فصل دراسي",
+            "cocktail": "كوكتيل",
+            "majlis": "مجلس"
           },
           "indoorOutdoor": {
-            "label": "Indoor or outdoor",
-            "indoor": "Indoor",
-            "outdoor": "Outdoor",
-            "either": "Either"
+            "label": "داخلي أو خارجي",
+            "indoor": "داخلي",
+            "outdoor": "خارجي",
+            "either": "كلاهما"
           },
-          "needsParking": "Needs parking",
-          "needsKitchen": "Needs kitchen access"
+          "needsParking": "يحتاج موقف سيارات",
+          "needsKitchen": "يحتاج وصولاً للمطبخ"
         },
         "catering": {
-          "heading": "Catering requirements",
+          "heading": "متطلبات الضيافة",
           "mealType": {
-            "label": "Meal type",
-            "buffet": "Buffet",
-            "plated": "Plated",
-            "coffee_break": "Coffee break",
-            "cocktail": "Cocktail"
+            "label": "نوع الوجبة",
+            "buffet": "بوفيه",
+            "plated": "وجبات مقدّمة",
+            "coffee_break": "استراحة قهوة",
+            "cocktail": "كوكتيل"
           },
           "dietary": {
-            "label": "Dietary requirements",
-            "halal_only": "Halal only",
-            "vegetarian": "Vegetarian",
-            "vegan": "Vegan",
-            "gluten_free": "Gluten free",
-            "nut_free": "Nut free"
+            "label": "متطلبات غذائية",
+            "halal_only": "حلال فقط",
+            "vegetarian": "نباتي",
+            "vegan": "نباتي صرف",
+            "gluten_free": "خالٍ من الغلوتين",
+            "nut_free": "خالٍ من المكسرات"
           },
           "serviceStyle": {
-            "label": "Service style",
-            "self_serve": "Self-serve",
-            "served": "Served",
-            "mixed": "Mixed"
+            "label": "أسلوب التقديم",
+            "self_serve": "خدمة ذاتية",
+            "served": "تقديم بالنادل",
+            "mixed": "مختلط"
           }
         },
         "photography": {
-          "heading": "Photography requirements",
-          "coverageHours": "Coverage hours",
+          "heading": "متطلبات التصوير",
+          "coverageHours": "ساعات التغطية",
           "deliverables": {
-            "label": "Deliverables",
-            "photos": "Photos",
-            "video": "Video",
-            "drone": "Drone / aerial",
-            "same_day_edit": "Same-day edit",
-            "printed_album": "Printed album"
+            "label": "المخرجات",
+            "photos": "صور",
+            "video": "فيديو",
+            "drone": "تصوير جوي / درون",
+            "same_day_edit": "تعديل في نفس اليوم",
+            "printed_album": "ألبوم مطبوع"
           },
-          "crewSize": "Crew size"
+          "crewSize": "حجم الطاقم"
         },
         "generic": {
-          "heading": "Requirements",
-          "notesLabel": "Notes",
-          "notesPlaceholder": "Describe what you need from this supplier — scope, must-haves, preferences."
+          "heading": "المتطلبات",
+          "notesLabel": "ملاحظات",
+          "notesPlaceholder": "صف ما تحتاجه من هذا المورد - النطاق، الأساسيات، التفضيلات."
         }
       }
     },
     "shortlist": {
-      "heading": "Suggested matches",
-      "addHeading": "Added by you",
-      "searchPlaceholder": "Search approved suppliers by name or slug…",
-      "searching": "Searching…",
-      "noResults": "No suppliers found.",
-      "noMatches": "No auto-match suggestions available for this event.",
-      "noManual": "Search above to add suppliers manually.",
+      "heading": "موردون مقترحون",
+      "addHeading": "أضفتهم بنفسك",
+      "searchPlaceholder": "ابحث عن موردين معتمدين بالاسم أو المعرّف…",
+      "searching": "جاري البحث…",
+      "noResults": "لا يوجد موردين مطابقين.",
+      "noMatches": "لا توجد اقتراحات مطابقة تلقائياً لهذه الفعالية.",
+      "noManual": "ابحث في الأعلى لإضافة موردين يدوياً.",
       "table": {
-        "supplier": "Supplier",
-        "matchReasons": "Why we matched",
-        "score": "Score",
-        "city": "City",
-        "source": "Source",
+        "supplier": "المورد",
+        "matchReasons": "ليش طابقناه",
+        "score": "النتيجة",
+        "city": "المدينة",
+        "source": "المصدر",
         "actions": " "
       },
-      "score": "Score {score}",
-      "remove": "Remove",
-      "removeLabel": "Remove {name}",
-      "outOfSubcategoryShort": "Outside this subcategory",
-      "outOfSubcategoryLong": "Outside this subcategory — supplier may decline",
+      "score": "النتيجة {score}",
+      "remove": "إزالة",
+      "removeLabel": "إزالة {name}",
+      "outOfSubcategoryShort": "خارج هذه الفئة الفرعية",
+      "outOfSubcategoryLong": "خارج هذه الفئة الفرعية — قد يرفض المورد",
       "reasons": {
-        "verified": "Verified supplier",
-        "sameCity": "Based in {city}",
-        "serviceArea": "Serves {city}",
-        "packagesInRange": "Packages match {guests} guests",
-        "respondsWithin": "Usually responds within {hours}h",
-        "availableDate": "Available on {date}",
-        "rotating": "Rotating in new supplier"
+        "verified": "مورد موثّق",
+        "sameCity": "مقرّه في {city}",
+        "serviceArea": "يخدم {city}",
+        "packagesInRange": "باقاته تناسب {guests} ضيف",
+        "respondsWithin": "عادةً يرد خلال {hours} ساعة",
+        "availableDate": "متاح في {date}",
+        "rotating": "مورد جديد ضمن الترتيب"
       }
     },
     "quote": {
-      "compareTitle": "Compare quotes",
-      "compareIntro": "Pick a quote to accept. Accepting creates a booking and holds the supplier's calendar for 48 hours while they confirm.",
-      "emptyList": "No quotes have arrived yet.",
-      "supplierCol": "Supplier",
-      "totalCol": "Total",
-      "expiresAtCol": "Expires",
-      "submittedCol": "Submitted",
-      "actionsCol": "Actions",
-      "viewSnapshot": "View snapshot",
-      "acceptCta": "Accept",
-      "accepting": "Accepting…",
-      "acceptedAt": "Accepted {acceptedAt}",
-      "rejectedAutomatically": "Rejected — another quote was accepted",
-      "conflictBadge": "Date conflict",
-      "conflictHelp": "This supplier already has a block overlapping your event window. Accepting will fail.",
-      "acceptErrorNotFound": "Quote not found.",
-      "acceptErrorAlreadyAccepted": "This quote has already been accepted.",
-      "acceptErrorNotSendable": "Quote is no longer in sendable state.",
-      "acceptErrorMissingRevision": "Quote is missing a revision — ask the supplier to re-send.",
-      "acceptErrorOrganizerMismatch": "You are not the organizer of this RFQ.",
-      "acceptErrorSupplierUnavailable": "Supplier no longer available — date conflict.",
-      "acceptErrorRfqTerminal": "This RFQ is no longer bookable ({status}).",
-      "acceptErrorUnknown": "We couldn't accept this quote. Please try again.",
-      "snapshotHeading": "Quote snapshot",
-      "snapshotLineItems": "Line items",
-      "snapshotSubtotal": "Subtotal",
-      "snapshotTravel": "Travel",
-      "snapshotSetup": "Setup",
-      "snapshotTeardown": "Teardown",
-      "snapshotVat": "VAT",
-      "snapshotTotal": "Total",
-      "snapshotCancellation": "Cancellation terms",
-      "snapshotInclusions": "Inclusions",
-      "snapshotExclusions": "Exclusions",
-      "snapshotNotes": "Notes",
-      "snapshotExpiresAt": "Valid until {expiresAt}",
-      "unitPrice": "Unit price",
-      "item": "Item",
-      "qty": "Qty",
-      "lineTotal": "Total",
-      "unit_event": "per event",
-      "unit_hour": "per hour",
-      "unit_day": "per day",
-      "unit_person": "per person",
-      "unit_unit": "per unit",
-      "deposit": "Deposit",
-      "paymentSchedule": "Payment schedule",
-      "backToCompare": "Back to compare",
-      "revisionLabel": "Revision v{version} · Submitted {submittedAt}",
-      "missingRevision": "This quote is missing a revision — ask the supplier to re-send."
+      "compareTitle": "مقارنة العروض",
+      "compareIntro": "اختر العرض اللي تبي تقبله. القبول ينشئ حجزاً ويحجز تقويم المورد لمدة 48 ساعة ريثما يؤكد.",
+      "emptyList": "لم تصل أي عروض بعد.",
+      "supplierCol": "المورد",
+      "totalCol": "الإجمالي",
+      "expiresAtCol": "ينتهي",
+      "submittedCol": "تاريخ الإرسال",
+      "actionsCol": "الإجراءات",
+      "viewSnapshot": "عرض التفاصيل",
+      "acceptCta": "قبول",
+      "accepting": "جاري القبول…",
+      "acceptedAt": "تم القبول {acceptedAt}",
+      "rejectedAutomatically": "مرفوض — تم قبول عرض آخر",
+      "conflictBadge": "تعارض في التاريخ",
+      "conflictHelp": "هذا المورد عنده حجز متداخل مع وقت فعاليتك. القبول ما راح ينجح.",
+      "acceptErrorNotFound": "العرض غير موجود.",
+      "acceptErrorAlreadyAccepted": "هذا العرض مقبول مسبقاً.",
+      "acceptErrorNotSendable": "العرض لم يعد قابلاً للإرسال.",
+      "acceptErrorMissingRevision": "العرض ينقصه إصدار — اطلب من المورد إعادة الإرسال.",
+      "acceptErrorOrganizerMismatch": "أنت لست منظم طلب السعر هذا.",
+      "acceptErrorSupplierUnavailable": "المورد لم يعد متاحاً — تعارض في التاريخ.",
+      "acceptErrorRfqTerminal": "طلب السعر هذا لم يعد قابلاً للحجز ({status}).",
+      "acceptErrorUnknown": "تعذّر قبول العرض. حاول مرة ثانية.",
+      "snapshotHeading": "ملخص العرض",
+      "snapshotLineItems": "بنود التسعير",
+      "snapshotSubtotal": "المجموع الفرعي",
+      "snapshotTravel": "التنقل",
+      "snapshotSetup": "التجهيز",
+      "snapshotTeardown": "التفكيك",
+      "snapshotVat": "ضريبة القيمة المضافة",
+      "snapshotTotal": "الإجمالي",
+      "snapshotCancellation": "شروط الإلغاء",
+      "snapshotInclusions": "ما يشمله العرض",
+      "snapshotExclusions": "ما لا يشمله العرض",
+      "snapshotNotes": "ملاحظات",
+      "snapshotExpiresAt": "صالح حتى {expiresAt}",
+      "unitPrice": "سعر الوحدة",
+      "item": "البند",
+      "qty": "الكمية",
+      "lineTotal": "الإجمالي",
+      "unit_event": "لكل فعالية",
+      "unit_hour": "لكل ساعة",
+      "unit_day": "لكل يوم",
+      "unit_person": "لكل شخص",
+      "unit_unit": "لكل وحدة",
+      "deposit": "العربون",
+      "paymentSchedule": "جدول الدفعات",
+      "backToCompare": "رجوع للمقارنة",
+      "revisionLabel": "نسخة v{version} · أُرسلت {submittedAt}",
+      "missingRevision": "هذا العرض ينقصه إصدار — اطلب من المورد إعادة الإرسال."
     },
     "common": {
-      "back": "Back",
-      "cancel": "Cancel",
-      "edit": "Edit",
-      "save": "Save",
-      "view": "View",
-      "loading": "Loading…",
+      "back": "رجوع",
+      "cancel": "إلغاء",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "view": "عرض",
+      "loading": "جاري التحميل…",
       "emDash": "—"
     }
   },
@@ -1323,68 +1843,152 @@
       "signIn": "تسجيل الدخول",
       "errorFullName": "أدخل اسمك الكامل (حرفان على الأقل).",
       "errorEmail": "أدخل بريدًا إلكترونيًا صحيحًا.",
-      "errorPassword": "يجب أن تتكون كلمة المرور من ٨ أحرف على الأقل."
+      "errorPassword": "يجب أن تتكون كلمة المرور من ٨ أحرف على الأقل.",
+      "valueHero": {
+        "headline": "انضمّ لأكبر سوق فعاليات في المملكة.",
+        "subtitle": "منصة تربط منظّمي الفعاليات بمزوّدي الخدمات في جميع أنحاء المملكة. خطوات قليلة لتبدأ في استقبال طلبات العروض.",
+        "whyTitle": "لماذا سِفنت؟",
+        "whyTrendingTitle": "طلبات حقيقية",
+        "whyTrendingDesc": "منظمون بميزانيات محددة في كل أنحاء المملكة",
+        "whyShieldTitle": "ضمان الدفع",
+        "whyShieldDesc": "الأموال محفوظة في حساب ضمان حتى انتهاء الفعالية",
+        "whyBadgeTitle": "توثيق رسمي",
+        "whyBadgeDesc": "تحقّق تلقائي من السجل التجاري عبر واثق",
+        "footnote": "مقرّها الرياض · يعمل في ١٢ مدينة سعودية"
+      },
+      "google": {
+        "cta": "أكمل باستخدام جوجل",
+        "orDivider": "أو",
+        "unavailable": "تسجيل جوجل غير مفعّل بعد — استخدم البريد الإلكتروني"
+      },
+      "supplier": {
+        "eyebrow": "حساب مزوّد خدمة",
+        "title": "أنشئ حساب مزود الخدمة",
+        "sub": "انضم إلى أكبر منصة فعاليات في المملكة. خطوات قليلة وتبدأ في استقبال طلبات العروض.",
+        "emailLabel": "البريد الإلكتروني للعمل",
+        "emailPlaceholder": "you@company.sa",
+        "phoneLabel": "رقم الجوال",
+        "phoneCountryCode": "+966",
+        "phonePlaceholder": "5XXXXXXXX",
+        "passwordLabel": "كلمة المرور",
+        "passwordHint": "٨ أحرف على الأقل",
+        "cta": "أنشئ الحساب",
+        "terms": "بالمتابعة، أوافق على الشروط وسياسة الخصوصية",
+        "termsLinkTerms": "الشروط",
+        "termsLinkPrivacy": "سياسة الخصوصية",
+        "alreadyHaveAccount": "لديك حساب بالفعل؟",
+        "signIn": "تسجيل الدخول",
+        "submitting": "جارٍ الإنشاء…",
+        "errorEmail": "أدخل بريدًا إلكترونيًا صحيحًا.",
+        "errorPhone": "رقم جوال سعودي غير صالح — يجب أن يبدأ بـ ٥ ويتكون من ٩ أرقام",
+        "errorPassword": "يجب أن تتكون كلمة المرور من ٨ أحرف على الأقل.",
+        "errorTerms": "يجب الموافقة على الشروط وسياسة الخصوصية للمتابعة",
+        "valueHero": {
+          "headline": "انضمّ لأكبر سوق فعاليات في المملكة.",
+          "whyTitle": "لماذا سِفنت؟",
+          "why": [
+            {
+              "title": "طلبات حقيقية",
+              "desc": "منظمون بميزانيات محددة في كل أنحاء المملكة"
+            },
+            {
+              "title": "ضمان الدفع",
+              "desc": "الأموال محفوظة في حساب ضمان حتى انتهاء الفعالية"
+            },
+            {
+              "title": "توثيق رسمي",
+              "desc": "تحقّق تلقائي من السجل التجاري عبر واثق"
+            }
+          ],
+          "footnote": "معتمد من الهيئة العامة للترفيه · يعمل في ١٢ مدينة سعودية"
+        }
+      }
+    }
+  },
+  "terms": {
+    "title": "الشروط والأحكام",
+    "draftBanner": "نسخة تجريبية — قيد المراجعة القانونية",
+    "body": {
+      "p1": "سِفنت منصة تجمع منظّمي الفعاليات بمزوّدي خدمات موثّقين في مختلف مناطق المملكة العربية السعودية. باستخدامك للمنصة، فأنت توافق على التصرف بحُسن نية والالتزام بالقواعد التي تحفظ حقوق الطرفين في كل حجز.",
+      "p2": "على مزوّدي الخدمات الحفاظ على دقة معلومات نشاطهم، والرد على الطلبات قبل انتهاء المواعيد المحددة، وتقديم الخدمات كما هو متفق عليه في العرض المقبول. أي تحريف للقدرات أو المؤهلات يُعدّ إخلالاً جوهرياً بهذه الشروط.",
+      "p3": "تمر جميع المدفوعات عبر شريك الضمان لدينا. لا تُحوَّل الأموال إلى المزوّد إلا بعد تأكيد إتمام الفعالية. الاسترداد وعمليات رد المبالغ تخضع لسياسة الإلغاء المتفق عليها في كل حجز.",
+      "p4": "تُرفع النزاعات أولاً عبر فريق الدعم الذي يسعى إلى الوساطة خلال ١٤ يوم عمل. وإذا لم تُحلّ القضية فقد تُحال إلى التحكيم الملزم في المكان المتفق عليه.",
+      "p5": "تخضع هذه الشروط لأنظمة المملكة العربية السعودية. ويُنظر في أي دعاوى قضائية أمام المحاكم المختصة في مدينة الرياض."
+    }
+  },
+  "privacy": {
+    "title": "سياسة الخصوصية",
+    "draftBanner": "نسخة تجريبية — قيد المراجعة القانونية",
+    "body": {
+      "p1": "نجمع المعلومات التي تزوّدنا بها عند التسجيل أو رفع المستندات أو نشر المحتوى أو التواصل مع المستخدمين الآخرين على سِفنت. تشمل هذه البيانات اسمك وبيانات التواصل والسجل التجاري وأي ملفات ترفعها لأغراض التوثيق.",
+      "p2": "نستخدم بياناتك للتحقق من هويتك ومطابقة المزوّدين بطلبات المنظّمين ومعالجة المدفوعات وتحسين الخدمة. ولا نقوم ببيع المعلومات الشخصية لأي طرف خارجي.",
+      "p3": "لا نشارك معلومات الحجز إلا مع الأطراف المرتبطة مباشرة بذلك الحجز — المنظّم والمزوّد وفريق التوثيق ومعالج المدفوعات. وقد نشارك بيانات تحليلية مجمّعة ومحدودة مع شركاء لتطوير الخدمة.",
+      "p4": "يُحتفظ بمستندات التوثيق والسجلات المالية للمدة التي تفرضها الأنظمة التجارية في المملكة. وتُحفظ بيانات الحساب طوال فترة اشتراكك ولستة أشهر بعد إغلاقه، ما لم يستلزم النظام مدة أطول.",
+      "p5": "يمكنك الوصول إلى بياناتك الشخصية أو تعديلها أو حذفها في أي وقت من إعدادات الحساب أو بمراسلة فريق الخصوصية. نستجيب لجميع الطلبات خلال ٣٠ يوماً."
     }
   },
   "booking": {
-    "listTitle": "Bookings",
-    "listIntro": "Every quote you accept creates a booking. The supplier must confirm within the deadline or the slot is released.",
-    "statusAwaitingSupplier": "Awaiting supplier",
-    "statusConfirmed": "Confirmed",
-    "statusCancelled": "Cancelled",
-    "confirmDeadline": "Confirm by",
-    "confirmDeadlineExpired": "Decision overdue",
-    "countdownHours": "{hours}h left",
-    "countdownHoursSingular": "1h left",
-    "detailTitle": "Booking detail",
-    "detailOrganizer": "Organizer",
-    "detailSupplier": "Supplier",
-    "detailEvent": "Event",
-    "detailAcceptedRevision": "Accepted revision",
-    "contractPending": "Contract will be available after confirmation.",
-    "noBookings": "No bookings yet.",
-    "navLabel": "Bookings",
-    "filterLabel": "Status",
-    "filterAll": "All",
+    "listTitle": "الحجوزات",
+    "listIntro": "كل عرض تقبله يصير حجز. لازم المورد يؤكد قبل الموعد النهائي، وإلا الوقت ينفك.",
+    "statusAwaitingSupplier": "بانتظار المورد",
+    "statusConfirmed": "مؤكد",
+    "statusCancelled": "ملغى",
+    "confirmDeadline": "يؤكد قبل",
+    "confirmDeadlineExpired": "تأخر القرار",
+    "countdownHours": "باقي {hours} ساعة",
+    "countdownHoursSingular": "باقي ساعة",
+    "detailTitle": "تفاصيل الحجز",
+    "detailOrganizer": "المنظم",
+    "detailSupplier": "المورد",
+    "detailEvent": "الفعالية",
+    "detailAcceptedRevision": "النسخة المقبولة",
+    "contractPending": "العقد راح يصير متاح بعد التأكيد.",
+    "noBookings": "ما عندك حجوزات بعد.",
+    "navLabel": "الحجوزات",
+    "filterLabel": "الحالة",
+    "filterAll": "الكل",
+    "downloadCompanyProfile": "تحميل ملف الشركة",
+    "downloadCompanyProfileError": "تعذّر إنشاء الرابط",
+    "downloadCompanyProfileNotReady": "سيُتاح ملف الشركة بعد قبول العرض",
     "table": {
-      "supplier": "Supplier",
-      "organizer": "Organizer",
-      "event": "Event",
-      "status": "Status",
-      "deadline": "Confirm deadline",
-      "total": "Total",
-      "view": "View"
+      "supplier": "المورد",
+      "organizer": "المنظم",
+      "event": "الفعالية",
+      "status": "الحالة",
+      "deadline": "الموعد النهائي للتأكيد",
+      "total": "الإجمالي",
+      "view": "عرض"
     },
     "pagination": {
-      "previous": "Previous",
-      "next": "Next",
-      "pageOf": "Page {page} of {totalPages}"
+      "previous": "السابق",
+      "next": "التالي",
+      "pageOf": "صفحة {page} من {totalPages}"
     },
     "banner": {
-      "awaitingOrganizer": "Waiting on supplier confirmation — the supplier has until the deadline to confirm or decline.",
-      "awaitingSupplier": "Please confirm or decline this booking before the deadline."
+      "awaitingOrganizer": "بانتظار تأكيد المورد — عند المورد مهلة حتى الموعد النهائي للتأكيد أو الرفض.",
+      "awaitingSupplier": "أكّد الحجز أو ارفضه قبل الموعد النهائي."
     },
     "detail": {
-      "rfq": "RFQ",
-      "quote": "Quote",
-      "revision": "Revision",
-      "backToList": "← Back to bookings",
-      "lineItemsHeading": "Line items",
-      "totalsHeading": "Totals",
-      "termsHeading": "Terms",
-      "subtotal": "Subtotal",
-      "travelFee": "Travel fee",
-      "setupFee": "Setup fee",
-      "teardownFee": "Teardown fee",
-      "vat": "VAT ({pct}%)",
-      "total": "Total",
-      "depositPct": "Deposit",
-      "paymentSchedule": "Payment schedule",
-      "cancellationTerms": "Cancellation terms",
-      "inclusions": "Inclusions",
-      "exclusions": "Exclusions",
-      "notes": "Notes",
-      "sprint5Placeholder": "Awaiting confirmation actions — Sprint 5"
+      "rfq": "طلب السعر",
+      "quote": "العرض",
+      "revision": "النسخة",
+      "backToList": "← رجوع للحجوزات",
+      "lineItemsHeading": "بنود التسعير",
+      "totalsHeading": "المجاميع",
+      "termsHeading": "الشروط",
+      "subtotal": "المجموع الفرعي",
+      "travelFee": "رسوم التنقل",
+      "setupFee": "رسوم التجهيز",
+      "teardownFee": "رسوم التفكيك",
+      "vat": "ضريبة القيمة المضافة ({pct}%)",
+      "total": "الإجمالي",
+      "depositPct": "العربون",
+      "paymentSchedule": "جدول الدفعات",
+      "cancellationTerms": "شروط الإلغاء",
+      "inclusions": "ما يشمله العرض",
+      "exclusions": "ما لا يشمله العرض",
+      "notes": "ملاحظات",
+      "sprint5Placeholder": "إجراءات التأكيد — Sprint 5"
     }
   }
 }

@@ -41,6 +41,7 @@ export type ProfileRow = {
   full_name: string | null;
   phone: string | null;
   language: "en" | "ar";
+  terms_accepted_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -69,6 +70,7 @@ export type SupplierRow = {
   accent_color: string; // DB default '#1E7BD8' — always populated
   profile_sections_order: string[]; // DB default ['bio','packages','portfolio','reviews']
   works_with_segments: EventType[]; // DB default []
+  first_seen_approved_at: string | null;
   created_at: string;
   updated_at: string;
 };

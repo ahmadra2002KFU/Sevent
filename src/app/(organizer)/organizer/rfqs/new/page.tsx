@@ -29,6 +29,7 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertCircle,
   ArrowLeft,
@@ -59,8 +60,31 @@ import {
   ShortlistEditor,
   type ShortlistSupplier,
 } from "@/components/rfq/ShortlistEditor";
+import { cityNameFor } from "@/lib/domain/cities";
+import { segmentNameFor } from "@/lib/domain/segments";
 import type { RfqExtension, RfqExtensionKind } from "@/lib/domain/rfq";
 import type { MatchResult } from "@/lib/domain/matching/autoMatch";
+
+function fmtDateShort(iso: string, locale: "en" | "ar"): string {
+  try {
+    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+function categoryName(
+  c: { name_en: string; name_ar?: string | null } | null | undefined,
+  locale: "en" | "ar",
+): string {
+  if (!c) return "";
+  if (locale === "ar" && c.name_ar) return c.name_ar;
+  return c.name_en;
+}
 import {
   listCategoriesAction,
   listMyEventsAction,
@@ -456,17 +480,16 @@ export default function NewRfqWizardPage() {
 }
 
 function Header({ stepLabel }: { stepLabel: WizardStep }) {
+  const t = useTranslations("organizer.rfqWizard");
   return (
     <header className="flex flex-col gap-1">
       <p className="text-xs font-medium uppercase tracking-wide text-brand-cobalt-500">
-        Step {stepLabel} of 4
+        {t("stepLabel", { current: stepLabel, total: 4 })}
       </p>
       <h1 className="text-2xl font-semibold tracking-tight text-brand-navy-900 sm:text-3xl">
-        New RFQ
+        {t("title")}
       </h1>
-      <p className="text-sm text-muted-foreground">
-        Send a request for quote to a curated shortlist of suppliers.
-      </p>
+      <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
     </header>
   );
 }
@@ -478,17 +501,18 @@ function Stepper({
   current: WizardStep;
   onGoto: (s: WizardStep) => void;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
   const items: Array<{ step: WizardStep; label: string }> = [
-    { step: 1, label: "Event & category" },
-    { step: 2, label: "Requirements" },
-    { step: 3, label: "Shortlist" },
-    { step: 4, label: "Review & send" },
+    { step: 1, label: t("stepLabels.1") },
+    { step: 2, label: t("stepLabels.2") },
+    { step: 3, label: t("stepLabels.3") },
+    { step: 4, label: t("stepLabels.4") },
   ];
 
   return (
     <ol
       className="flex flex-wrap gap-2 rounded-xl border bg-card p-2"
-      aria-label="Wizard steps"
+      aria-label={t("stepperAriaLabel")}
     >
       {items.map(({ step, label }) => {
         const active = step === current;
@@ -546,6 +570,7 @@ function WizardFooter({
   gotoStep: (s: WizardStep) => void;
   advanceToMatches: () => void;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
   return (
     <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
       <div>
@@ -556,11 +581,11 @@ function WizardFooter({
             onClick={() => gotoStep((step - 1) as WizardStep)}
           >
             <ArrowLeft className="rtl:rotate-180" aria-hidden />
-            Back
+            {t("back")}
           </Button>
         ) : (
           <Button variant="outline" size="lg" asChild>
-            <Link href="/organizer/rfqs">Cancel</Link>
+            <Link href="/organizer/rfqs">{t("cancelStep")}</Link>
           </Button>
         )}
       </div>
@@ -571,7 +596,7 @@ function WizardFooter({
             disabled={!canLeaveStep1}
             onClick={() => gotoStep(2)}
           >
-            Next
+            {t("next")}
             <ArrowRight className="rtl:rotate-180" aria-hidden />
           </Button>
         ) : null}
@@ -584,11 +609,11 @@ function WizardFooter({
             {loadingMatches ? (
               <>
                 <Loader2 className="animate-spin" aria-hidden />
-                Matching…
+                {t("matching")}
               </>
             ) : (
               <>
-                Next
+                {t("next")}
                 <ArrowRight className="rtl:rotate-180" aria-hidden />
               </>
             )}
@@ -600,7 +625,7 @@ function WizardFooter({
             onClick={() => gotoStep(4)}
             disabled={shortlistSize < 1 || shortlistSize > 10}
           >
-            Next ({shortlistSize}/10)
+            {t("shortlistSizeLabel", { size: shortlistSize, max: 10 })}
             <ArrowRight className="rtl:rotate-180" aria-hidden />
           </Button>
         ) : null}
@@ -624,32 +649,34 @@ function Step1({
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
+  const locale = useLocale() as "en" | "ar";
   return (
     <Card>
       <CardContent className="flex flex-col gap-5 p-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
-            Event & category
+            {t("stepLabels.1")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Pick which event this is for and what you are sourcing.
+            {t("stepSubtitles.1")}
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label>Event</Label>
+          <Label>{t("pickEvent")}</Label>
           {events === null ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : events.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              You have no events yet.{" "}
+              {t("noEventsYet")}{" "}
               <Link
                 href="/organizer/events/new"
                 className="font-medium text-brand-cobalt-500 hover:underline"
               >
-                Create one
+                {t("createEventFirst")}
               </Link>{" "}
-              first.
+              {t("createEventFirstTail")}
             </p>
           ) : (
             <Select
@@ -659,14 +686,15 @@ function Step1({
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select an event" />
+                <SelectValue placeholder={t("pickEventNone")} />
               </SelectTrigger>
               <SelectContent>
                 {events.map((evt) => (
                   <SelectItem key={evt.id} value={evt.id}>
-                    {evt.event_type}
+                    {segmentNameFor(evt.event_type, locale)}
                     {evt.client_name ? ` · ${evt.client_name}` : ""} ·{" "}
-                    {evt.city} · {evt.starts_at.slice(0, 10)}
+                    {cityNameFor(evt.city, locale)} ·{" "}
+                    {fmtDateShort(evt.starts_at, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -676,7 +704,7 @@ function Step1({
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label>Category</Label>
+            <Label>{t("pickCategory")}</Label>
             <Select
               value={state.category_id ?? undefined}
               onValueChange={(v) =>
@@ -684,12 +712,12 @@ function Step1({
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={t("pickCategoryNone")} />
               </SelectTrigger>
               <SelectContent>
                 {parents.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name_en}
+                    {categoryName(p, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -697,7 +725,7 @@ function Step1({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Subcategory</Label>
+            <Label>{t("pickSubcategory")}</Label>
             <Select
               value={state.subcategory_id ?? undefined}
               disabled={!state.category_id}
@@ -724,12 +752,12 @@ function Step1({
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a subcategory" />
+                <SelectValue placeholder={t("pickSubcategoryNone")} />
               </SelectTrigger>
               <SelectContent>
                 {subcategoryOptions.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.name_en}
+                    {categoryName(c, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -750,17 +778,19 @@ function Step2({
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
+  const locale = useLocale() as "en" | "ar";
   return (
     <Card>
       <CardContent className="flex flex-col gap-5 p-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
-            Requirements
+            {t("stepLabels.2")}
           </h2>
           <p className="text-xs text-muted-foreground">
             {selectedSub
-              ? `${selectedSub.name_en} · form auto-selected by category`
-              : "Form auto-selected by category"}
+              ? `${categoryName(selectedSub, locale)} · ${t("autoSelectedForm")}`
+              : t("autoSelectedForm")}
           </p>
         </div>
         <RfqExtensionForm
@@ -794,29 +824,30 @@ function Step3({
   onRemoveManual: (id: string) => void;
   onSearchSuppliers: (q: string) => Promise<ShortlistSupplier[]>;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
   return (
     <Card>
       <CardContent className="flex flex-col gap-5 p-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
-            Shortlist
+            {t("stepLabels.3")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            We suggested a few — tweak the shortlist before sending.
+            {t("stepSubtitles.3")}
           </p>
         </div>
 
         {loading ? (
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" aria-hidden />
-            Running auto-match…
+            {t("runningAutoMatch")}
           </div>
         ) : matchingOffline ? (
           <Alert variant="default">
             <AlertCircle aria-hidden />
-            <AlertTitle>Auto-match offline</AlertTitle>
+            <AlertTitle>{t("autoMatchOfflineTitle")}</AlertTitle>
             <AlertDescription>
-              You can still build the shortlist manually below.
+              {t("autoMatchOfflineBody")}
             </AlertDescription>
           </Alert>
         ) : null}
@@ -859,6 +890,8 @@ function Step4({
   onSend: () => void;
   error: string | null;
 }) {
+  const t = useTranslations("organizer.rfqWizard");
+  const locale = useLocale() as "en" | "ar";
   const reqEntries = Object.entries(state.requirements).filter(
     ([k]) => k !== "kind",
   );
@@ -870,38 +903,38 @@ function Step4({
         <CardContent className="flex flex-col gap-5 p-6">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900">
-              Review & send
+              {t("stepLabels.4")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Final check. You can edit anything before sending.
+              {t("stepSubtitles.4")}
             </p>
           </div>
 
-          <ReviewSection title="Event">
+          <ReviewSection title={t("reviewEvent")}>
             {selectedEvent ? (
               <p className="text-sm">
-                {selectedEvent.event_type}
+                {segmentNameFor(selectedEvent.event_type, locale)}
                 {selectedEvent.client_name
                   ? ` · ${selectedEvent.client_name}`
                   : ""}
                 {" · "}
-                {selectedEvent.city}
+                {cityNameFor(selectedEvent.city, locale)}
                 {" · "}
-                {selectedEvent.starts_at.slice(0, 10)}
+                {fmtDateShort(selectedEvent.starts_at, locale)}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">—</p>
             )}
           </ReviewSection>
 
-          <ReviewSection title="Category">
+          <ReviewSection title={t("reviewCategory")}>
             <p className="text-sm">
-              {selectedParent?.name_en ?? "—"}
-              {selectedSub ? ` · ${selectedSub.name_en}` : ""}
+              {selectedParent ? categoryName(selectedParent, locale) : "—"}
+              {selectedSub ? ` · ${categoryName(selectedSub, locale)}` : ""}
             </p>
           </ReviewSection>
 
-          <ReviewSection title={`Requirements (${state.kind})`}>
+          <ReviewSection title={t("reviewRequirements", { kind: state.kind })}>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
               {reqEntries.map(([k, v]) => (
                 <div key={k} className="flex flex-col">
@@ -911,8 +944,8 @@ function Step4({
                       ? v.join(", ") || "—"
                       : typeof v === "boolean"
                         ? v
-                          ? "Yes"
-                          : "No"
+                          ? t("yes")
+                          : t("no")
                         : v === null || v === undefined || v === ""
                           ? "—"
                           : String(v)}
@@ -922,10 +955,12 @@ function Step4({
             </dl>
           </ReviewSection>
 
-          <ReviewSection title={`Shortlist (${shortlist.length})`}>
+          <ReviewSection
+            title={t("reviewShortlist", { count: shortlist.length })}
+          >
             {shortlist.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No suppliers selected.
+                {t("reviewNoSuppliers")}
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5 text-sm">
@@ -939,8 +974,8 @@ function Step4({
                       status={s.source === "auto_match" ? "quoted" : "pending"}
                       label={
                         s.source === "auto_match"
-                          ? "Auto match"
-                          : "Organizer picked"
+                          ? t("sourceAutoMatch")
+                          : t("sourcePicked")
                       }
                     />
                   </li>
@@ -950,7 +985,9 @@ function Step4({
           </ReviewSection>
 
           <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Response deadline</Label>
+            <Label className="text-sm font-medium">
+              {t("responseDeadlineLabel")}
+            </Label>
             <RadioGroup
               value={String(state.responseDeadlineHours)}
               onValueChange={(v) =>
@@ -978,14 +1015,18 @@ function Step4({
                   />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium">
-                      Within {h} hours
+                      {h === 24
+                        ? t("deadline24h")
+                        : h === 48
+                          ? t("deadline48h")
+                          : t("deadline72h")}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {h === 24
-                        ? "Tight window — best for urgent RFQs."
+                        ? t("deadline24hDesc")
                         : h === 48
-                          ? "Balanced default."
-                          : "Roomy — good for complex RFQs."}
+                          ? t("deadline48hDesc")
+                          : t("deadline72hDesc")}
                     </span>
                   </div>
                 </label>
@@ -996,7 +1037,7 @@ function Step4({
           {error ? (
             <Alert variant="destructive">
               <AlertCircle aria-hidden />
-              <AlertTitle>Could not send RFQ</AlertTitle>
+              <AlertTitle>{t("sendErrorTitle")}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
@@ -1010,12 +1051,12 @@ function Step4({
               {sending ? (
                 <>
                   <Loader2 className="animate-spin" aria-hidden />
-                  Sending…
+                  {t("sending")}
                 </>
               ) : (
                 <>
                   <Send aria-hidden />
-                  Send RFQ
+                  {t("sendRfq")}
                 </>
               )}
             </Button>

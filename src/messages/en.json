@@ -5,7 +5,9 @@
   },
   "nav": {
     "browse": "Browse",
+    "howItWorks": "How it works",
     "forSuppliers": "For suppliers",
+    "faq": "FAQ",
     "signIn": "Sign in",
     "signUp": "Sign up",
     "role": {
@@ -88,33 +90,265 @@
       "ctaSupplier": "I'm a supplier",
       "statLabel": "Pilot · Riyadh + Jeddah",
       "statValue": "Verified suppliers across every category you need.",
-      "sampleCategoriesFallback": "Launching soon"
+      "sampleCategoriesFallback": "Launching soon",
+      "meta1Value": "120+",
+      "meta1Label": "Verified suppliers",
+      "meta2Value": "8",
+      "meta2Label": "Event categories",
+      "meta3Value": "<24h",
+      "meta3Label": "Average quote turnaround"
+    },
+    "trust": {
+      "label": "Built for Saudi Arabia",
+      "gea": "GEA permit verified",
+      "mada": "Mada & Apple Pay",
+      "zatca": "ZATCA e-invoicing",
+      "sama": "SAMA escrow-ready"
     },
     "valueProp": {
       "eyebrow": "Why Sevent",
       "heading": "Built for Saudi events",
+      "lede": "A marketplace that treats suppliers and organizers as equals — with the trust, tools, and transparency event planning deserves.",
       "items": [
         {
           "title": "One request, many quotes",
-          "body": "Send a structured RFQ once. We match you with the right approved suppliers for your category, city, and date."
+          "body": "Send a structured RFQ once. We match you with the right approved suppliers for your category, city, and date.",
+          "link": "See the RFQ flow"
         },
         {
           "title": "Compare on more than price",
-          "body": "See line items, inclusions, travel fees, and verified reviews side-by-side so the right choice is obvious."
+          "body": "See line items, inclusions, travel fees, and verified reviews side-by-side so the right choice is obvious.",
+          "link": "See how we compare"
         },
         {
           "title": "A platform you can rely on",
-          "body": "Verified suppliers, click-to-agree digital contracts, and every booking tracked end-to-end."
+          "body": "Verified suppliers, click-to-agree digital contracts, and every booking tracked end-to-end.",
+          "link": "Read about trust"
         }
       ]
     },
+    "how": {
+      "eyebrow": "How it works",
+      "heading": "From first request to signed contract in days, not weeks.",
+      "lede": "Four stages, zero spreadsheets. Whether you are planning a 30-person corporate dinner or a 1,200-guest wedding, the workflow is the same.",
+      "steps": [
+        {
+          "title": "Post your brief",
+          "body": "Tell us your date, city, guest count, and budget. Takes about 3 minutes."
+        },
+        {
+          "title": "We invite the right suppliers",
+          "body": "Only GEA-verified vendors matching your category, capacity, and availability are contacted."
+        },
+        {
+          "title": "Compare real quotes",
+          "body": "Line items, inclusions, deposits, and cancellation terms — all in one view."
+        },
+        {
+          "title": "Book with confidence",
+          "body": "Sign a digital contract, pay the deposit, and track delivery milestones inside Sevent."
+        }
+      ]
+    },
+    "showcase": {
+      "eyebrow": "Compare quotes like a pro",
+      "heading": "Every quote, normalized into the same structure.",
+      "lede": "No more parsing PDFs from five different caterers. Sevent pulls every quote into the same shape so you can compare the things that actually matter.",
+      "cta": "See a sample comparison",
+      "bullets": [
+        {
+          "title": "Line-item transparency",
+          "body": "Setup, teardown, travel, and service fees are always itemized — no hidden surprises."
+        },
+        {
+          "title": "Verified reviews only",
+          "body": "Reviews come from confirmed bookings on Sevent, not anonymous review sites."
+        },
+        {
+          "title": "Budget guardrails",
+          "body": "Flag any quote that exceeds your stated budget range before you open it."
+        },
+        {
+          "title": "Bilingual by default",
+          "body": "Every quote and contract is issued in both Arabic and English."
+        }
+      ],
+      "mock": {
+        "rfqTitle": "Wedding · Riyadh · 450 guests",
+        "rfqSub": "Catering · RFQ sent to 6 suppliers",
+        "rfqStatus": "3 quotes in",
+        "verified": "Verified",
+        "bestTag": "Best match",
+        "q1Name": "Rayat Catering",
+        "q1Meta": "Riyadh · 4.9 ★ · 82 reviews",
+        "q1Price": "SAR 28,400",
+        "q1Unit": "for 450 guests",
+        "q2Name": "Najd Kitchens",
+        "q2Meta": "Riyadh · 4.7 ★ · 51 reviews",
+        "q2Price": "SAR 31,200",
+        "q2Unit": "for 450 guests",
+        "q3Name": "Bayt Mansaf",
+        "q3Meta": "Jeddah · 4.8 ★ · 34 reviews",
+        "q3Price": "SAR 34,750",
+        "q3Unit": "for 450 guests",
+        "quotesLeft": "3 more suppliers responding · due in 18h",
+        "compareAll": "Compare all"
+      }
+    },
     "categories": {
       "eyebrow": "Categories",
-      "heading": "Discover suppliers across every category",
-      "subtitle": "From venues and catering to photography and staffing — every supplier is verified before they go live.",
+      "heading": "Every supplier you need, all verified.",
+      "subtitle": "From venues and catering to photography and staffing — every supplier is approved before they go live on Sevent.",
       "browseAll": "Browse all categories",
       "supplierCount": "{count, plural, =0 {No suppliers yet} one {# verified supplier} other {# verified suppliers}}",
-      "viewLabel": "Explore"
+      "viewLabel": "Explore",
+      "suffix": "verified suppliers",
+      "fallback": [
+        {
+          "slug": "venues",
+          "name": "Venues",
+          "count": 32
+        },
+        {
+          "slug": "catering",
+          "name": "Catering",
+          "count": 47
+        },
+        {
+          "slug": "photography",
+          "name": "Photography",
+          "count": 28
+        },
+        {
+          "slug": "decor",
+          "name": "Decor & florals",
+          "count": 19
+        },
+        {
+          "slug": "entertainment",
+          "name": "Entertainment",
+          "count": 22
+        },
+        {
+          "slug": "av",
+          "name": "A/V & lighting",
+          "count": 14
+        },
+        {
+          "slug": "transportation",
+          "name": "Transportation",
+          "count": 11
+        },
+        {
+          "slug": "staffing",
+          "name": "Staffing",
+          "count": 16
+        }
+      ]
+    },
+    "supplierShowcase": {
+      "eyebrow": "For suppliers",
+      "heading": "Fill your calendar with the right events.",
+      "lede": "Stop chasing WhatsApp threads. Sevent matches you with organizers who meet your minimums — and handles the paperwork.",
+      "cta1": "Become a pilot supplier",
+      "cta2": "See supplier pricing",
+      "bullets": [
+        {
+          "title": "Qualified leads only",
+          "body": "Every RFQ is filtered to your category, capacity, and service area — no irrelevant spam."
+        },
+        {
+          "title": "Get paid on time",
+          "body": "Platform-mediated deposits and final payments. Your cash flow doesn't depend on a chase."
+        },
+        {
+          "title": "A profile that sells for you",
+          "body": "Portfolio, packages, reviews, and bilingual copy — all in one public page."
+        },
+        {
+          "title": "Lightweight operations",
+          "body": "Calendar, catalog, and quote builder replace a dozen spreadsheets."
+        }
+      ],
+      "dashboard": {
+        "path": "sevent.sa/supplier/dashboard",
+        "greet": "Salam, Rayat Catering",
+        "sub": "3 new RFQs this week",
+        "approved": "Approved",
+        "k1Label": "Open invites",
+        "k1Value": "12",
+        "k1Trend": "+30%",
+        "k2Label": "Response rate",
+        "k2Value": "68%",
+        "k2Trend": "+8%",
+        "k3Label": "Booked this quarter",
+        "k3Value": "SAR 184k",
+        "invites": "Latest RFQ invites",
+        "i1Event": "Wedding · Riyadh",
+        "i1Sub": "450 guests · June 14",
+        "i1Due": "Due in 18h",
+        "i2Event": "Corporate · Riyadh",
+        "i2Sub": "120 guests · May 03",
+        "i2Due": "Due in 2d",
+        "i3Event": "Engagement · Diriyah",
+        "i3Sub": "220 guests · April 22",
+        "i3Due": "Quoted",
+        "quoteCta": "Quote",
+        "viewCta": "View"
+      }
+    },
+    "testimonials": {
+      "eyebrow": "What pilot users say",
+      "heading": "Saudi planners and suppliers, about Sevent.",
+      "items": [
+        {
+          "quote": "I sent one RFQ for my daughter's wedding and had six full quotes back within a day. It would have taken two weeks of phone calls before.",
+          "name": "Reem Al-Otaibi",
+          "role": "Organizer, Riyadh"
+        },
+        {
+          "quote": "The calendar and quote builder replaced three spreadsheets and two WhatsApp groups. My team finally has time to actually cook.",
+          "name": "Khalid Al-Najjar",
+          "role": "Head Chef, Najd Kitchens"
+        },
+        {
+          "quote": "What sold me was the digital contract. No more PDFs bouncing around email — deposits land in escrow and we just cook.",
+          "name": "Hessa Al-Dosari",
+          "role": "Events Director, Rayat Catering"
+        }
+      ]
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "heading": "Everything you need to know.",
+      "lede": "Still have questions about how the pilot works? Our team responds to every message within a business day.",
+      "contact": "Talk to a human",
+      "items": [
+        {
+          "q": "Is Sevent live now?",
+          "a": "The pilot is open to organizers and suppliers across Riyadh and Jeddah. We expand to the Eastern Province and Makkah Region in the next phase."
+        },
+        {
+          "q": "What does it cost for organizers?",
+          "a": "Nothing. Posting RFQs, receiving quotes, and contracting through Sevent is free for organizers throughout the pilot."
+        },
+        {
+          "q": "How do you verify suppliers?",
+          "a": "Every supplier submits their commercial registration, GEA permit where applicable, VAT/ZATCA details, and a sample of past work. Our team reviews before any profile goes live."
+        },
+        {
+          "q": "How are payments handled?",
+          "a": "Deposits and final payments run through platform-mediated escrow. Funds release to suppliers against milestones defined in the signed digital contract."
+        },
+        {
+          "q": "Do you support Arabic?",
+          "a": "Yes. Every RFQ, quote, and contract is bilingual by default. Use the EN/ع switch at the top of the page to preview either."
+        },
+        {
+          "q": "Can I keep using my current suppliers?",
+          "a": "Absolutely. Invite them to Sevent and they'll be fast-tracked through verification. Your existing relationships just get better tools."
+        }
+      ]
     },
     "pilot": {
       "eyebrow": "Pilot partners",
@@ -299,6 +533,123 @@
         "cta": "Upload a company profile PDF (≤10 MB)",
         "errorType": "Company profile must be a PDF.",
         "errorSize": "Company profile must be 10 MB or smaller."
+      },
+      "pathPicker": {
+        "badge": "Before we start",
+        "title": "Tell us about your business",
+        "subtitle": "We'll tailor the journey to your business type — about 8 minutes on average.",
+        "freelancer": {
+          "title": "Freelancer or sole proprietor",
+          "description": "Working under your name or a simple trade name — we only need a national ID and IBAN certificate.",
+          "step1": "National ID",
+          "step2": "IBAN certificate",
+          "step3": "Short bio",
+          "eta": "≈ 5 minutes"
+        },
+        "company": {
+          "title": "Registered company",
+          "description": "You have an active commercial registration — we'll verify it automatically and show the verified badge on your profile.",
+          "step1": "Commercial registration",
+          "step2": "IBAN certificate",
+          "step3": "Company profile (optional)",
+          "eta": "≈ 8 minutes",
+          "tag": "Priority review"
+        },
+        "back": "Back",
+        "continue": "Continue"
+      },
+      "importWebsite": {
+        "title": "Got a website?",
+        "subtitle": "Paste the link and we'll prefill the form",
+        "placeholder": "https://",
+        "cta": "Import",
+        "comingSoon": "Coming soon — automatic import isn't enabled yet."
+      },
+      "wathq": {
+        "prefix": "Auto-verified via Wathq:",
+        "status": "Active"
+      },
+      "autosave": {
+        "saved": "Draft saved moments ago"
+      },
+      "previewRail": {
+        "heading": "Live preview · what organizers see",
+        "hintStep1": "A complete bio boosts organizer trust — complete profiles get 40% more RFP invitations.",
+        "hintStep2": "Specific categories attract higher-quality RFPs. 3–4 focused categories beats 10 generic ones.",
+        "hintStep3": "The IBAN certificate lets us pay out within 24 hours after each event.",
+        "placeholderName": "Your business name",
+        "placeholderBio": "Your short bio appears here…",
+        "placeholderCity": "City",
+        "noCategoriesHint": "Add categories in step 2",
+        "responseLabel": "Response",
+        "responseValue": "4h",
+        "bookingsLabel": "Bookings",
+        "bookingsValue": "—",
+        "ratingLabel": "Rating",
+        "ratingValue": "—"
+      },
+      "uploadChip": {
+        "optional": "(optional)",
+        "replace": "Replace",
+        "click": "Click to upload",
+        "orDrag": "or drag the file here",
+        "verified": "Verified"
+      },
+      "stepper": {
+        "step1": "Business info",
+        "step2": "Categories & segments",
+        "step3": "Verification & branding"
+      },
+      "resume": {
+        "title": "Pick up where you left off",
+        "body": "Step {step} of 3 · auto-saved a few minutes ago",
+        "cta": "Continue"
+      },
+      "categoryCloud": {
+        "heading": "Main categories",
+        "hint": "Pick up to {max} categories — fewer is sharper",
+        "searchPlaceholder": "Search for a category…",
+        "counter": "{picked} of {max}",
+        "addAria": "Add {name}",
+        "removeAria": "Remove {name}",
+        "noResults": "No matching categories"
+      },
+      "path": {
+        "eyebrow": "Before we begin",
+        "title": "Tell us about your business",
+        "sub": "We tailor onboarding to your business type — takes 8 minutes on average.",
+        "freelancer": {
+          "title": "Freelancer or sole proprietor",
+          "desc": "You work under your personal name or a simple trade name — we only need your national ID and IBAN certificate.",
+          "stepNationalId": "National ID",
+          "stepIban": "IBAN certificate",
+          "stepBio": "Short bio",
+          "eta": "5 minutes"
+        },
+        "company": {
+          "title": "Registered company",
+          "desc": "You have an active commercial registration — we verify it automatically and show the verified badge on your profile.",
+          "stepCr": "Commercial registration",
+          "stepIban": "IBAN certificate",
+          "stepProfile": "Company profile (optional)",
+          "eta": "8 minutes",
+          "tag": "Verified supplier badge"
+        },
+        "needsTitle": "What you'll need",
+        "etaPrefix": "Takes about",
+        "etaSuffix": "",
+        "cta": "Continue",
+        "back": "Back"
+      },
+      "wizard": {
+        "representativeNameLabel": "Representative name",
+        "representativeNamePlaceholder": "Your full name as shown on your ID",
+        "representativeNameHelp": "The person who communicates with organizers",
+        "maxCategoriesLabel": "{selected} of {max}",
+        "maxCategoriesReached": "You've reached the max of 6 categories",
+        "companyProfileHint": "PDF up to 8 MB — shown to organizers only after they accept your quote",
+        "bioCharCounter": "{count}/{max}",
+        "draftSavedSecondsAgo": "Auto-saved moments ago"
       }
     },
     "catalog": {
@@ -537,7 +888,64 @@
         "body": "Please review the admin's feedback and resubmit when ready.",
         "cta": "Edit submission"
       },
-      "statsLockedHint": "Unlocks after approval"
+      "statsLockedHint": "Unlocks after approval",
+      "pendingV2": {
+        "statusPill": "Status · under review",
+        "title": "We received your application",
+        "body": "Our verification team is reviewing your documents now. Reviews usually take up to 24 business hours. We'll email {email} the moment your profile is approved.",
+        "primaryCta": "Back to dashboard",
+        "primaryHref": "/supplier/dashboard",
+        "chatCta": "Talk to the verification team",
+        "chatHref": "mailto:support@sevent.sa",
+        "checklistTitle": "What's happening now",
+        "check": {
+          "wathqTitle": "Commercial registration check",
+          "wathqDone": "Matched in the Wathq database · Riyadh · active",
+          "identityTitle": "Identity match",
+          "identityDone": "Matched via Nafath",
+          "ibanTitle": "IBAN verification",
+          "ibanRunning": "Checking with your bank — usually 30 minutes",
+          "portfolioTitle": "Portfolio & services review",
+          "portfolioWaiting": "A specialist will review this",
+          "badgeTitle": "Issue verified-provider badge",
+          "badgeWaiting": "Once the checks above are complete"
+        },
+        "timelineTitle": "After approval",
+        "timeline": {
+          "approvalTitle": "Profile approved",
+          "approvalDesc": "Within 24 hours",
+          "firstRfqTitle": "First RFP invite",
+          "firstRfqDesc": "48 hours on average",
+          "firstBookingTitle": "First booking",
+          "firstBookingDesc": "Depends on your quote quality"
+        },
+        "sideCardTitle": "Flesh out your public profile to win more work",
+        "sideCardBody": "Add past work photos, project gallery, and ready packages — profiles with these usually double the RFP volume.",
+        "sideCardCta": "Start while you wait",
+        "sideCardHref": "/supplier/profile"
+      },
+      "celebration": {
+        "smallLabel": "Congrats, {name}",
+        "title": "Your profile is approved",
+        "body": "The verified-provider badge is now live on your public profile. There are RFPs waiting for you.",
+        "ctaPrimary": "Go to RFPs",
+        "ctaPrimaryHref": "/supplier/rfqs",
+        "ctaSecondary": "Preview my public profile",
+        "dismiss": "Dismiss"
+      },
+      "tour": {
+        "heading": "45-second tour",
+        "subtitle": "Get familiar with your core tools in a quick walkthrough.",
+        "item1Title": "How to write a winning quote",
+        "item1Desc": "3 tips from top suppliers",
+        "item1Href": "/supplier/catalog",
+        "item2Title": "Calendar & avoiding conflicts",
+        "item2Desc": "Take control of your availability",
+        "item2Href": "/supplier/calendar",
+        "item3Title": "Packages & pricing",
+        "item3Desc": "Price smart",
+        "item3Href": "/supplier/catalog"
+      }
     },
     "rfqInbox": {
       "title": "RFQ inbox",
@@ -682,6 +1090,106 @@
           "description": "Create your supplier profile before customizing it."
         }
       }
+    },
+    "pending": {
+      "statusPill": "Application status · Under review",
+      "title": "We've received your application",
+      "sub": "Our verification team is reviewing your documents. Review usually takes 24 business hours.",
+      "emailNotice": "We'll email {email} as soon as your profile is approved",
+      "checklistTitle": "What's happening now",
+      "checks": {
+        "wathq": {
+          "title": "Commercial registration check",
+          "descDone": "Verified in Wathq database · {city} · active",
+          "descRunning": "Matching against Wathq database",
+          "descWaiting": "Starts once you submit"
+        },
+        "identity": {
+          "title": "Identity verification",
+          "descDone": "Verified via Nafath",
+          "descRunning": "Verifying your identity",
+          "descWaiting": "After commercial registration check"
+        },
+        "iban": {
+          "title": "IBAN verification",
+          "descDone": "IBAN verified with your bank",
+          "descRunning": "Checking with your bank — usually 30 minutes",
+          "descWaiting": "Starts after identity verification"
+        },
+        "portfolio": {
+          "title": "Portfolio and services review",
+          "descDone": "Reviewed and approved by our team",
+          "descRunning": "Our team is reviewing now",
+          "descWaiting": "Will be reviewed by our team"
+        },
+        "badge": {
+          "title": "Verified supplier badge",
+          "descDone": "Badge is now on your public profile",
+          "descRunning": "Issuing your badge",
+          "descWaiting": "Once the steps above complete"
+        }
+      },
+      "stateDone": "Done",
+      "stateRunning": "In progress",
+      "stateWaiting": "Pending",
+      "timelineTitle": "What comes next",
+      "timeline": [
+        {
+          "title": "Profile approval",
+          "desc": "Within 24 hours"
+        },
+        {
+          "title": "First RFQ",
+          "desc": "Within 48 hours on average"
+        },
+        {
+          "title": "First booking",
+          "desc": "Depends on quote quality"
+        }
+      ],
+      "primaryCta": "Back to dashboard",
+      "chatCta": "Chat with verification team",
+      "sideCard": {
+        "title": "Complete your public profile to get more requests",
+        "body": "Add portfolio photos, project gallery, and ready-made packages — requests typically double once these are complete.",
+        "cta": "Start while you wait →"
+      }
+    },
+    "welcome": {
+      "congratsEyebrow": "Congratulations, {name}",
+      "congrats": "Congratulations! Your profile is approved",
+      "sub": "Your \"Verified supplier\" badge is now live on your public profile. {count} RFQs are waiting for you.",
+      "cta1": "Go to RFQs",
+      "cta2": "Preview my public profile",
+      "kpi": {
+        "rfqs": "RFQs",
+        "rfqsSub": "New",
+        "views": "Profile views",
+        "viewsSub": "Last 24 hours",
+        "responseTime": "Response time",
+        "responseTimeSub": "Average"
+      },
+      "matchingRfqsTitle": "RFQs matched to you",
+      "matchingRfqsViewAll": "View all",
+      "matchingRfqsMatch": "match",
+      "matchingRfqsSend": "Send a quote →",
+      "matchingRfqsEmpty": "We'll surface matching RFQs here as they come in",
+      "tourTitle": "Quick tour (45 seconds)",
+      "tourSub": "Learn the key features in a quick walkthrough.",
+      "tour": [
+        {
+          "title": "Writing quotes that win",
+          "desc": "3 tips from top suppliers"
+        },
+        {
+          "title": "Calendar scheduling and conflict prevention",
+          "desc": "Control your availability"
+        },
+        {
+          "title": "Managing packages and pricing",
+          "desc": "Set your prices smartly"
+        }
+      ]
     }
   },
   "admin": {
@@ -899,7 +1407,8 @@
       "rfqOf": "of",
       "budget": "Budget",
       "createdAt": "Created",
-      "guestsCount": "{count} guests"
+      "guestsCount": "{count} guests",
+      "invitesCount": "{count, plural, =0 {no invites} one {# invite} other {# invites}}"
     },
     "eventForm": {
       "title": "New event",
@@ -1119,7 +1628,18 @@
           "notesLabel": "Notes",
           "notesPlaceholder": "Describe what you need from this supplier — scope, must-haves, preferences."
         }
-      }
+      },
+      "loading": "Loading...",
+      "runningAutoMatch": "Running auto-match...",
+      "autoMatchOfflineTitle": "Auto-match offline",
+      "autoMatchOfflineBody": "You can still build the shortlist manually below.",
+      "yes": "Yes",
+      "no": "No",
+      "deadline24hDesc": "Tight window - best for urgent RFQs.",
+      "deadline48hDesc": "Balanced default.",
+      "deadline72hDesc": "Roomy - good for complex RFQs.",
+      "sendErrorTitle": "Could not send RFQ",
+      "stepperAriaLabel": "Wizard steps"
     },
     "shortlist": {
       "heading": "Suggested matches",
@@ -1323,7 +1843,88 @@
       "signIn": "Sign in",
       "errorFullName": "Enter your full name (at least 2 characters).",
       "errorEmail": "Enter a valid email address.",
-      "errorPassword": "Password must be at least 8 characters."
+      "errorPassword": "Password must be at least 8 characters.",
+      "valueHero": {
+        "headline": "Join Saudi Arabia's biggest event marketplace.",
+        "subtitle": "The platform connecting event organizers to trusted suppliers across the Kingdom. A few steps and you start receiving RFPs.",
+        "whyTitle": "Why Sevent?",
+        "whyTrendingTitle": "Real RFPs",
+        "whyTrendingDesc": "Organizers with real budgets across the Kingdom",
+        "whyShieldTitle": "Payment guarantee",
+        "whyShieldDesc": "Funds held in escrow until after the event",
+        "whyBadgeTitle": "Official verification",
+        "whyBadgeDesc": "Commercial registration auto-verified via Wathq",
+        "footnote": "Headquartered in Riyadh · live in 12 Saudi cities"
+      },
+      "google": {
+        "cta": "Continue with Google",
+        "orDivider": "or",
+        "unavailable": "Google sign-in isn't enabled yet — use email instead"
+      },
+      "supplier": {
+        "eyebrow": "Supplier account",
+        "title": "Create supplier account",
+        "sub": "Join the largest events marketplace in the Kingdom. A few steps and you start receiving RFQs.",
+        "emailLabel": "Work email",
+        "emailPlaceholder": "you@company.sa",
+        "phoneLabel": "Phone number",
+        "phoneCountryCode": "+966",
+        "phonePlaceholder": "5XXXXXXXX",
+        "passwordLabel": "Password",
+        "passwordHint": "At least 8 characters",
+        "cta": "Create account",
+        "terms": "By continuing, I agree to the Terms and Privacy Policy",
+        "termsLinkTerms": "Terms",
+        "termsLinkPrivacy": "Privacy Policy",
+        "alreadyHaveAccount": "Already have an account?",
+        "signIn": "Sign in",
+        "submitting": "Creating…",
+        "errorEmail": "Enter a valid email address.",
+        "errorPhone": "Invalid Saudi phone — must start with 5 and be 9 digits",
+        "errorPassword": "Password must be at least 8 characters.",
+        "errorTerms": "You must accept the Terms and Privacy Policy to continue",
+        "valueHero": {
+          "headline": "Join the largest events marketplace in the Kingdom.",
+          "whyTitle": "Why Sevent?",
+          "why": [
+            {
+              "title": "Real requests",
+              "desc": "Organizers with real budgets across Saudi Arabia"
+            },
+            {
+              "title": "Guaranteed payouts",
+              "desc": "Funds held in escrow until the event completes"
+            },
+            {
+              "title": "Verified status",
+              "desc": "Automatic CR verification via Wathq"
+            }
+          ],
+          "footnote": "Approved by the General Entertainment Authority · Operating in 12 Saudi cities"
+        }
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms and Conditions",
+    "draftBanner": "Draft version — under legal review",
+    "body": {
+      "p1": "Sevent is a marketplace connecting event organizers with verified suppliers across Saudi Arabia. By using our platform, you agree to act in good faith and follow the rules that protect both sides of every booking.",
+      "p2": "Suppliers must keep their business information accurate, respond to requests within the stated deadlines, and deliver services exactly as described in the accepted quote. Misrepresentation of capabilities or credentials is a material breach of these terms.",
+      "p3": "All payments flow through our escrow partner. Funds are released to the supplier only after the event is confirmed complete. Refunds and chargebacks follow the cancellation policy agreed in each booking.",
+      "p4": "Disputes are first raised through our support team, who will attempt to mediate within 14 business days. Unresolved matters may be escalated to binding arbitration at the agreed venue.",
+      "p5": "These terms are governed by the laws of the Kingdom of Saudi Arabia. Any court proceedings shall be brought before the competent courts of Riyadh."
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "draftBanner": "Draft version — under legal review",
+    "body": {
+      "p1": "We collect the information you provide when you register, submit documents, post content, or communicate with other users on Sevent. This includes your name, contact details, commercial registration, and any files you upload for verification.",
+      "p2": "Your data is used to verify your identity, match suppliers to organizer requests, process payments, and improve the service. We do not sell personal information to third parties.",
+      "p3": "We share booking-related information only with the parties directly involved in that booking — the organizer, the supplier, our verification team, and the payment processor. Limited aggregated analytics may be shared with partners to help us grow.",
+      "p4": "Verification documents and financial records are retained for the period required by Saudi commercial law. Account data is kept for the lifetime of your account plus six months after closure, unless a longer retention is legally required.",
+      "p5": "You can access, correct, or delete your personal data at any time from your account settings or by emailing our privacy team. We respond to all requests within 30 days."
     }
   },
   "booking": {
@@ -1346,6 +1947,9 @@
     "navLabel": "Bookings",
     "filterLabel": "Status",
     "filterAll": "All",
+    "downloadCompanyProfile": "Download company profile",
+    "downloadCompanyProfileError": "Could not generate download link",
+    "downloadCompanyProfileNotReady": "Company profile becomes available after quote acceptance",
     "table": {
       "supplier": "Supplier",
       "organizer": "Organizer",

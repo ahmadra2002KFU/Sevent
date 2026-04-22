@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
   CalendarDays,
@@ -22,7 +22,9 @@ import {
   StatusPill,
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
+import { cityNameFor } from "@/lib/domain/cities";
 import { formatHalalas } from "@/lib/domain/money";
+import { segmentNameFor } from "@/lib/domain/segments";
 import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -52,13 +54,18 @@ type EventRfq = {
   status: string;
   sent_at: string | null;
   created_at: string;
-  categories: { id: string; slug: string; name_en: string } | null;
+  categories: {
+    id: string;
+    slug: string;
+    name_en: string;
+    name_ar: string;
+  } | null;
   rfq_invites: Array<{ id: string; status: string }>;
 };
 
-function fmtDateTime(iso: string): string {
+function fmtDateTime(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat("en-SA", {
+    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -70,9 +77,9 @@ function fmtDateTime(iso: string): string {
   }
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat("en-SA", {
+    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -109,6 +116,7 @@ function toPillStatus(raw: string): StatusPillStatus {
 
 export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const locale = (await getLocale()) as "en" | "ar";
   const t = await getTranslations("organizer.events");
   const eventFormT = await getTranslations("organizer.eventForm");
   const rfqT = await getTranslations("organizer.rfqs");
@@ -142,7 +150,7 @@ export default async function EventDetailPage({ params }: PageProps) {
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at,
-       categories:categories!rfqs_subcategory_id_fkey ( id, slug, name_en ),
+       categories:categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar ),
        rfq_invites ( id, status )`,
     )
     .eq("event_id", id)
@@ -156,7 +164,7 @@ export default async function EventDetailPage({ params }: PageProps) {
       ? `${event.budget_range_min_halalas !== null ? formatHalalas(event.budget_range_min_halalas) : "—"} – ${event.budget_range_max_halalas !== null ? formatHalalas(event.budget_range_max_halalas) : "—"}`
       : null;
 
-  const title = `${eventFormT(`eventType.${event.event_type}` as never)}${
+  const title = `${segmentNameFor(event.event_type, locale)}${
     event.client_name ? ` · ${event.client_name}` : ""
   }`;
 
@@ -183,11 +191,11 @@ export default async function EventDetailPage({ params }: PageProps) {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Chip icon={MapPin}>{event.city}</Chip>
+        <Chip icon={MapPin}>{cityNameFor(event.city, locale)}</Chip>
         <Chip icon={CalendarDays}>
-          {fmtDate(event.starts_at)}
-          {fmtDate(event.starts_at) !== fmtDate(event.ends_at)
-            ? ` → ${fmtDate(event.ends_at)}`
+          {fmtDate(event.starts_at, locale)}
+          {fmtDate(event.starts_at, locale) !== fmtDate(event.ends_at, locale)
+            ? ` → ${fmtDate(event.ends_at, locale)}`
             : ""}
         </Chip>
         {event.guest_count ? (
@@ -207,10 +215,10 @@ export default async function EventDetailPage({ params }: PageProps) {
               {event.venue_address ?? "—"}
             </Detail>
             <Detail label={eventFormT("startsAtLabel")}>
-              {fmtDateTime(event.starts_at)}
+              {fmtDateTime(event.starts_at, locale)}
             </Detail>
             <Detail label={eventFormT("endsAtLabel")}>
-              {fmtDateTime(event.ends_at)}
+              {fmtDateTime(event.ends_at, locale)}
             </Detail>
             <Detail label={eventFormT("guestCountLabel")}>
               {event.guest_count ?? "—"}
@@ -261,17 +269,20 @@ export default async function EventDetailPage({ params }: PageProps) {
                   >
                     <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                       <span className="truncate font-medium text-brand-navy-900">
-                        {rfq.categories?.name_en ?? "RFQ"}
+                        {rfq.categories
+                          ? locale === "ar"
+                            ? rfq.categories.name_ar
+                            : rfq.categories.name_en
+                          : "RFQ"}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {rfq.sent_at
-                          ? `${fmtDateTime(rfq.sent_at)}`
-                          : `${t("createdAt")} ${fmtDateTime(rfq.created_at)}`}
+                          ? `${fmtDateTime(rfq.sent_at, locale)}`
+                          : `${t("createdAt")} ${fmtDateTime(rfq.created_at, locale)}`}
                         {" · "}
-                        {rfq.rfq_invites?.length ?? 0}{" "}
-                        {rfq.rfq_invites?.length === 1
-                          ? "invite"
-                          : "invites"}
+                        {t("invitesCount", {
+                          count: rfq.rfq_invites?.length ?? 0,
+                        })}
                       </span>
                     </div>
                     <StatusPill

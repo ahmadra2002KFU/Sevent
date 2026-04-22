@@ -104,6 +104,7 @@ export type CategoryOption = {
   parent_id: string | null;
   slug: string;
   name_en: string;
+  name_ar: string;
   sort_order: number;
 };
 
@@ -117,7 +118,7 @@ export async function listCategoriesAction(): Promise<CategoriesBundle> {
   // Categories are public-readable per Lane 0 migration — no role gate needed.
   const { data } = await supabase
     .from("categories")
-    .select("id, parent_id, slug, name_en, sort_order")
+    .select("id, parent_id, slug, name_en, name_ar, sort_order")
     .order("sort_order", { ascending: true });
 
   const rows = (data ?? []) as CategoryOption[];

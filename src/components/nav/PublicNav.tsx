@@ -4,6 +4,11 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
+/**
+ * Public surface top nav. Landing-section links are `/#anchor` hashes so they
+ * jump straight to the matching section heading id on `/`, and still behave
+ * (navigate home) when invoked from a nested public page like /categories.
+ */
 export async function PublicNav() {
   const nav = await getTranslations("nav");
   return (
@@ -19,9 +24,27 @@ export async function PublicNav() {
         <nav className="flex items-center gap-1 sm:gap-2">
           <Link
             href="/categories"
-            className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
+            className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
           >
             {nav("browse")}
+          </Link>
+          <Link
+            href="/#how-heading"
+            className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+          >
+            {nav("howItWorks")}
+          </Link>
+          <Link
+            href="/#supplier-showcase-heading"
+            className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+          >
+            {nav("forSuppliers")}
+          </Link>
+          <Link
+            href="/#faq-heading"
+            className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+          >
+            {nav("faq")}
           </Link>
           <LanguageSwitcher />
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
