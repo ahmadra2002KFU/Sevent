@@ -184,9 +184,34 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
     ratingLabel: t("previewRail.ratingLabel"),
   };
 
+  // Per-step heading + subtitle, rendered inside the wizard (client) so the
+  // copy flips as the user advances. The outer onboarding layout only owns
+  // the chrome; the page-level heading belongs here, not in `page.tsx`.
+  const stepHeading =
+    step === 1
+      ? t("stepper.step1")
+      : step === 2
+        ? t("stepper.step2")
+        : t("stepper.step3");
+  const stepSubtitle =
+    step === 1
+      ? t("step1Subtitle")
+      : step === 2
+        ? t("step2Subtitle")
+        : t("step3Subtitle");
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-brand-navy-900">
+            {stepHeading}
+          </h1>
+          <p className="text-[13.5px] leading-relaxed text-muted-foreground">
+            {stepSubtitle}
+          </p>
+        </header>
+
         <WizardStepper
           current={step}
           labels={[t("stepper.step1"), t("stepper.step2"), t("stepper.step3")]}
@@ -490,18 +515,6 @@ function Step1Form({
         }}
       />
 
-      {legalType === "company" && businessName.trim().length > 0 ? (
-        <WathqVerifyBanner
-          businessName={businessName}
-          city={cityNameFor(baseCity, locale === "ar" ? "ar" : "en") || ""}
-          activeSinceYear="2019"
-          labels={{
-            prefix: t("wathq.prefix"),
-            status: t("wathq.status"),
-          }}
-        />
-      ) : null}
-
       <Field
         label={t("wizard.representativeNameLabel")}
         helperKey="wizard.representativeNameHelp"
@@ -524,25 +537,6 @@ function Step1Form({
           placeholder={t("placeholder.businessName")}
         />
       </Field>
-
-      {legalType === "company" ? (
-        <Field
-          label={t("crNumberLabel")}
-          helperKey="helper.crNumber"
-          error={errors.cr_number?.message}
-        >
-          <Input {...register("cr_number")} />
-        </Field>
-      ) : null}
-      {legalType === "freelancer" ? (
-        <Field
-          label={t("nationalIdLabel")}
-          helperKey="helper.nationalId"
-          error={errors.national_id?.message}
-        >
-          <Input {...register("national_id")} />
-        </Field>
-      ) : null}
 
       <Controller
         control={control}
@@ -569,6 +563,37 @@ function Step1Form({
           />
         )}
       />
+
+      {legalType === "company" ? (
+        <Field
+          label={t("crNumberLabel")}
+          helperKey="helper.crNumber"
+          error={errors.cr_number?.message}
+        >
+          <Input {...register("cr_number")} />
+        </Field>
+      ) : null}
+      {legalType === "freelancer" ? (
+        <Field
+          label={t("nationalIdLabel")}
+          helperKey="helper.nationalId"
+          error={errors.national_id?.message}
+        >
+          <Input {...register("national_id")} />
+        </Field>
+      ) : null}
+
+      {legalType === "company" && businessName.trim().length > 0 ? (
+        <WathqVerifyBanner
+          businessName={businessName}
+          city={cityNameFor(baseCity, locale === "ar" ? "ar" : "en") || ""}
+          activeSinceYear="2019"
+          labels={{
+            prefix: t("wathq.prefix"),
+            status: t("wathq.status"),
+          }}
+        />
+      ) : null}
 
       <Field
         label={t("baseCityLabel")}
