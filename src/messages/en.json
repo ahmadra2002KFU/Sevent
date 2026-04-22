@@ -396,6 +396,9 @@
       "step1Heading": "Business information",
       "step2Heading": "Upload verification documents",
       "step3Heading": "Where you work",
+      "step1Subtitle": "These details will appear on your public profile — you can edit them later.",
+      "step2Subtitle": "Pick the specific categories you work in — tighter categories attract better-matched RFQs.",
+      "step3Subtitle": "We need these documents to issue your verified-supplier badge and send your payouts.",
       "stepOfTotal": "Step {current} of {total}",
       "progressLabel": "Application progress",
       "chooseFileHint": "Click to choose a PDF or image",
@@ -1796,7 +1799,8 @@
   },
   "auth": {
     "common": {
-      "backHome": "Back to Sevent"
+      "backHome": "Back to Sevent",
+      "saveAndExit": "Save and exit"
     },
     "signIn": {
       "title": "Sign in to Sevent",

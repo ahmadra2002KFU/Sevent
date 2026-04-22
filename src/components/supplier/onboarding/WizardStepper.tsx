@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Check } from "lucide-react";
 import { Fragment } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export type WizardStepperProps = {
@@ -10,11 +11,21 @@ export type WizardStepperProps = {
   labels: [string, string, string];
 };
 
+// Arabic-Indic digits for the step circles when the locale is ar. Mirrors
+// the mock's `AR.path.step` convention — Latin callers still see 1/2/3.
+const ARABIC_DIGITS: Record<1 | 2 | 3, string> = {
+  1: "١",
+  2: "٢",
+  3: "٣",
+};
+
 /**
  * 3-step horizontal connected stepper with spring transitions
  * on the active circle and color animation on connecting lines.
  */
 export function WizardStepper({ current, labels }: WizardStepperProps) {
+  const locale = useLocale();
+  const isArabic = locale === "ar";
   return (
     <div
       role="list"
@@ -62,7 +73,7 @@ export function WizardStepper({ current, labels }: WizardStepperProps) {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                     >
-                      {index}
+                      {isArabic ? ARABIC_DIGITS[index] : index}
                     </motion.span>
                   )}
                 </AnimatePresence>
