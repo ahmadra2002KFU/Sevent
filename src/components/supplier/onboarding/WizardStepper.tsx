@@ -81,6 +81,12 @@ export function WizardStepper({ current, labels }: WizardStepperProps) {
               <span
                 className={cn(
                   "text-[13.5px] transition-colors",
+                  // Labels disappear on very narrow screens — on xs/sm the
+                  // circles + connectors carry the progress info. Keeps the
+                  // stepper from overflowing and creating a horizontal
+                  // scrollbar on mobile, where the Arabic step titles are
+                  // long (e.g. "التوثيق والهوية البصرية").
+                  "hidden sm:inline",
                   active
                     ? "font-bold text-brand-navy-900"
                     : "font-medium text-neutral-600",
@@ -93,7 +99,7 @@ export function WizardStepper({ current, labels }: WizardStepperProps) {
             {i < labels.length - 1 ? (
               <motion.div
                 aria-hidden
-                className="mx-4 h-0.5 flex-1 rounded-full"
+                className="mx-2 h-0.5 flex-1 rounded-full sm:mx-4"
                 animate={{
                   backgroundColor: done
                     ? "rgb(30 154 91)"

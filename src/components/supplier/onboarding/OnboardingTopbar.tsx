@@ -29,25 +29,25 @@ export async function OnboardingTopbar() {
 
   return (
     <header className="border-b border-border bg-white">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-6">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <Link
           href="/"
           aria-label="Sevent home"
-          className="flex min-h-[44px] items-center"
+          className="flex min-h-[44px] shrink-0 items-center"
         >
-          <Logo variant="wordmark" className="h-6 w-auto" />
+          <Logo variant="wordmark" className="h-5 w-auto sm:h-6" />
         </Link>
 
         <div className="flex-1" />
 
         <Link
           href="/supplier/dashboard"
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="hidden whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
         >
           {tCommon("saveAndExit")}
         </Link>
 
-        <div className="mx-1 h-6 w-px bg-border" aria-hidden />
+        <div className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
 
         <LanguageSwitcher tone="light" />
 
