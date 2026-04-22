@@ -1,0 +1,24 @@
+{
+  "files.exclude": {
+    "**/.claude": true,
+    "**/.tmp": true,
+    "**/.next": true,
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/.claude": true,
+    "**/.tmp": true,
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/pnpm-lock.yaml": true,
+    "**/*.tsbuildinfo": true
+  },
+  "files.watcherExclude": {
+    "**/.claude/**": true,
+    "**/.tmp/**": true,
+    "**/.next/**": true,
+    "**/node_modules/**": true,
+    "**/supabase/.temp/**": true,
+    "**/supabase/.branches/**": true
+  }
+}
