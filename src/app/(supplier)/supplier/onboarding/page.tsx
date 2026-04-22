@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -28,6 +29,13 @@ export default async function SupplierOnboardingPage() {
     getTranslations("supplier.dashboard"),
     loadOnboardingBootstrap(),
   ]);
+
+  // The wizard hard-codes a `legal_type` fallback when none is set, which
+  // silently skips the path picker. Redirect instead so users always see the
+  // freelancer-vs-company choice before the wizard mounts.
+  if (!bootstrap.supplier || !bootstrap.supplier.legal_type) {
+    redirect("/supplier/onboarding/path");
+  }
 
   return (
     <section className="flex flex-col gap-6">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowUpRight,
@@ -264,21 +265,17 @@ export default async function SupplierDashboardPage() {
   const { data: supplier } = await admin
     .from("suppliers")
     .select(
-      "id, slug, verification_status, business_name, verified_at, first_seen_approved_at",
+      "id, slug, verification_status, business_name, verified_at, first_seen_approved_at, legal_type",
     )
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  if (!supplier) {
-    return (
-      <WelcomeState
-        title={t("title")}
-        subtitle={t("subtitle")}
-        heading={t("welcome.heading")}
-        body={t("welcome.body")}
-        cta={t("welcome.cta")}
-      />
-    );
+  // A freshly signed-up supplier has no `suppliers` row yet — the row is
+  // created when they submit the path picker (`/supplier/onboarding/path`).
+  // Same treatment when the row exists but `legal_type` is still null: the
+  // user bailed mid-picker, so send them back to finish it.
+  if (!supplier || !(supplier as { legal_type: string | null }).legal_type) {
+    redirect("/supplier/onboarding/path");
   }
 
   const supplierSummary = supplier as SupplierSummaryRow;
