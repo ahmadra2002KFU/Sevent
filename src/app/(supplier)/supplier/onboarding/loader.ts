@@ -1,6 +1,11 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 
 export type OnboardingBootstrap = {
+  /** Current profile full_name, used as the default representative name in Step 1. */
+  profileFullName: string | null;
   supplier: {
     id: string;
     business_name: string;
@@ -44,10 +49,22 @@ export async function loadOnboardingBootstrap(): Promise<OnboardingBootstrap> {
   } = await supabase.auth.getUser();
 
   let supplier: OnboardingBootstrap["supplier"] = null;
+  let profileFullName: string | null = null;
   const docs: OnboardingBootstrap["docs"] = [];
   const subcategoryIds: string[] = [];
 
   if (user) {
+    // Profile full_name fetched via service-role — @supabase/ssr + publishable
+    // key pattern documented in src/lib/supabase/server.ts returns empty rows
+    // for user-scoped SELECTs. Ownership is re-enforced by `.eq("id", user.id)`.
+    const admin = createSupabaseServiceRoleClient();
+    const { data: profileRow } = await admin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    profileFullName = (profileRow?.full_name as string | null) ?? null;
+
     const { data: supplierRow } = await supabase
       .from("suppliers")
       .select(
@@ -84,6 +101,7 @@ export async function loadOnboardingBootstrap(): Promise<OnboardingBootstrap> {
     .order("sort_order", { ascending: true });
 
   return {
+    profileFullName,
     supplier,
     docs,
     subcategoryIds,

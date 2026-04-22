@@ -82,6 +82,7 @@ export async function submitOnboardingStep1(
       );
 
     const parsed = OnboardingStep1.safeParse({
+      representative_name: formData.get("representative_name") ?? "",
       business_name: formData.get("business_name") ?? "",
       legal_type: formData.get("legal_type") ?? "",
       cr_number: (formData.get("cr_number") as string) || undefined,
@@ -102,6 +103,21 @@ export async function submitOnboardingStep1(
 
     const { admin, user, supplier } = await loadSupplierContext();
     const payload = parsed.data;
+
+    // Persist the representative's full name on the profile row. This mirrors
+    // the decision (see plan decision #3) to split "business_name" from the
+    // human's own name. Best-effort — failure here shouldn't block supplier
+    // step 1 from saving, but we still surface the error message.
+    const { error: profileErr } = await admin
+      .from("profiles")
+      .update({ full_name: payload.representative_name })
+      .eq("id", user.id);
+    if (profileErr) {
+      return {
+        ok: false,
+        message: `Could not save representative name: ${profileErr.message}`,
+      };
+    }
 
     if (!supplier) {
       const slug = await uniqueSupplierSlug(admin, payload.business_name);
