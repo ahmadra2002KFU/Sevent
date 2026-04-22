@@ -43,8 +43,10 @@ export default async function SignUpOrganizerPage() {
         }}
       />
 
-      {/* Right form column */}
-      <div className="flex flex-1 flex-col items-center justify-start px-6 py-12 lg:py-16">
+      {/* Right form column — `justify-center` centers the form card inside
+          the remaining space so on ultra-wide viewports the card doesn't
+          float with a wall of whitespace on one side. */}
+      <div className="flex flex-1 justify-center overflow-y-auto px-6 py-12 lg:py-16">
         <div className="w-full max-w-md">
           <Link
             href="/"

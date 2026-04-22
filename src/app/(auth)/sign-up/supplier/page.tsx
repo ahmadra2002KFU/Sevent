@@ -30,8 +30,11 @@ export default async function SignUpSupplierPage() {
         }}
       />
 
-      {/* Right form column — mockup `direction-a.jsx:70-114` */}
-      <div className="flex flex-1 flex-col items-start justify-start overflow-y-auto px-6 py-10 sm:px-10 lg:px-[72px] lg:py-20">
+      {/* Right form column — mockup `direction-a.jsx:70-114`.
+          `justify-center` centers the form inside the remaining space so on
+          ultra-wide screens the form doesn't hug the hero edge with a wall
+          of whitespace on the other side. */}
+      <div className="flex flex-1 justify-center overflow-y-auto px-6 py-10 sm:px-10 lg:py-20">
         <div className="w-full max-w-[420px]">
           <Link
             href="/"
