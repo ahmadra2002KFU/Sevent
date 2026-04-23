@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 const COOKIE_PREFIX = "sevent_celebrated_";
 const COOKIE_MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days
@@ -35,9 +35,11 @@ export async function dismissCelebrationAction(supplierId: string): Promise<void
  * the banner showing twice, which we already tolerate on cookie clears).
  */
 export async function markApprovedSeenAction(): Promise<{ ok: boolean }> {
-  const gate = await requireRole("supplier");
-  if (gate.status !== "ok") return { ok: false };
-  const { user, admin } = gate;
+  // Only an approved supplier with a row can have been shown the celebration
+  // branch; gate on `supplier.dashboard` which admits any supplier state —
+  // the `.eq("profile_id", user.id)` filter + .is(first_seen_approved_at, null)
+  // keeps the stamp correct if somehow called from a non-approved state.
+  const { user, admin } = await requireAccess("supplier.dashboard");
   await admin
     .from("suppliers")
     .update({ first_seen_approved_at: new Date().toISOString() })

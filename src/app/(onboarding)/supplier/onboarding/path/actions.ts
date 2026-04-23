@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { uniqueSupplierSlug } from "@/lib/onboarding/slug";
 
 const InputSchema = z.object({
@@ -23,13 +23,10 @@ export type SetLegalTypeResult = { ok: boolean; message?: string };
 export async function setLegalTypeAction(
   input: { legal_type: "freelancer" | "company" },
 ): Promise<SetLegalTypeResult> {
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") {
-    return { ok: false, message: "Not authenticated" };
-  }
-  if (gate.status === "forbidden") {
-    return { ok: false, message: "Only supplier accounts can complete onboarding" };
-  }
+  // Only `supplier.no_row` is allowed to set legal_type for the first time.
+  // An approved supplier who crafts a call here would be redirected away
+  // by requireAccess — prevents overwriting legal_type once committed.
+  const { user, admin } = await requireAccess("supplier.onboarding.path");
 
   const parsed = InputSchema.safeParse(input);
   if (!parsed.success) {
@@ -39,7 +36,6 @@ export async function setLegalTypeAction(
     };
   }
 
-  const { user, admin } = gate;
   const legalType = parsed.data.legal_type;
 
   const { data: existing, error: lookupErr } = await admin

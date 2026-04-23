@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, ReceiptText, Users } from "lucide-react";
 import {
   formatConfirmDeadline,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import {
@@ -115,21 +115,9 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
   const t = await getTranslations("booking");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") {
-    redirect(`/sign-in?next=/supplier/bookings/${id}`);
-  }
-  if (gate.status === "forbidden") redirect("/");
-  const { admin, user } = gate;
-
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!supplierRow) notFound();
-  const supplierId = (supplierRow as { id: string }).id;
+  const { decision, admin } = await requireAccess("supplier.bookings");
+  const supplierId = decision.supplierId;
+  if (!supplierId) notFound();
 
   const { data } = await admin
     .from("bookings")

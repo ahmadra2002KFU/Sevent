@@ -41,7 +41,7 @@ export function Logo({
         <text
           x="103"
           y="122"
-          fontFamily="Inter, 'Helvetica Neue', Arial, sans-serif"
+          fontFamily="Inter, Arial, sans-serif"
           fontWeight="900"
           fontStyle="italic"
           fontSize="140"
@@ -76,7 +76,7 @@ export function Logo({
       <text
         x="102"
         y="120"
-        fontFamily="Inter, 'Helvetica Neue', Arial, sans-serif"
+        fontFamily="Inter, Arial, sans-serif"
         fontWeight="900"
         fontStyle="italic"
         fontSize="140"
@@ -90,7 +90,7 @@ export function Logo({
       <text
         x="218"
         y="120"
-        fontFamily="Inter, 'Helvetica Neue', Arial, sans-serif"
+        fontFamily="Inter, Arial, sans-serif"
         fontWeight="900"
         fontStyle="italic"
         fontSize="140"

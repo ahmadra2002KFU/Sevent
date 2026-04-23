@@ -20,7 +20,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { sarToHalalas } from "@/lib/domain/money";
 import {
   buildRevisionSnapshot,
@@ -183,34 +183,29 @@ export async function sendQuoteAction(
   _prev: ActionState | undefined,
   formData: FormData,
 ): Promise<ActionState> {
-  // 1. Role gate — service-role admin handle used for every read + write below.
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") {
-    return { status: "error", message: "Please sign in to send a quote." };
+  // 1. Access gate — `supplier.rfqs.respond` requires supplier.approved.
+  // On non-approved states requireAccess redirects to the dashboard, so
+  // the mutation never runs. `decision.supplierId` is the caller's row.
+  const { decision, user, admin } = await requireAccess(
+    "supplier.rfqs.respond",
+  );
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
+    return { status: "error", message: "Supplier profile not found." };
   }
-  if (gate.status === "forbidden") {
-    return { status: "error", message: "Supplier role required." };
-  }
-
-  const { user, admin } = gate;
 
   // 2. Parse + validate.
   const parsed = readSubmission(formData);
   if ("error" in parsed) return { status: "error", message: parsed.error };
   const data = parsed;
 
-  // 3. Ownership check — supplier row must belong to the caller.
-  const { data: supplierRow, error: supplierErr } = await admin
-    .from("suppliers")
-    .select("id, profile_id")
-    .eq("id", data.supplier_id)
-    .maybeSingle();
-  if (supplierErr) {
-    return { status: "error", message: `Supplier lookup failed: ${supplierErr.message}` };
-  }
-  const supplier = supplierRow as { id: string; profile_id: string } | null;
-  if (!supplier || supplier.profile_id !== user.id) {
-    return { status: "error", message: "You are not allowed to quote for this supplier." };
+  // 3. Ownership check — the client-submitted supplier_id must match the
+  // caller's row; otherwise a crafted form could target a different supplier.
+  if (data.supplier_id !== supplierId) {
+    return {
+      status: "error",
+      message: "You are not allowed to quote for this supplier.",
+    };
   }
 
   // 4. Active invite check — (rfq_id, supplier_id) with status ∈ {invited, quoted}.

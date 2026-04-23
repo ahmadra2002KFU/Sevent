@@ -21,12 +21,8 @@ import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { EventFormInput } from "@/lib/domain/events";
 import { sarToHalalas } from "@/lib/domain/money";
-import {
-  createSupabaseServerClient,
-  createSupabaseServiceRoleClient,
-} from "@/lib/supabase/server";
-
-const ALLOWED_ROLES = ["organizer", "agency", "admin"] as const;
+import { requireAccess } from "@/lib/auth/access";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function zodMessage(err: ZodError): string {
   return err.issues
@@ -58,27 +54,8 @@ function isoFromLocal(raw: FormDataEntryValue | null): string {
 }
 
 export async function createEventAction(formData: FormData): Promise<void> {
+  const { user } = await requireAccess("organizer.events");
   const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    throw new Error("You must be signed in to create an event.");
-  }
-
-  const admin = await createSupabaseServiceRoleClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const role = (profile as { role: string } | null)?.role;
-  if (!role || !(ALLOWED_ROLES as readonly string[]).includes(role)) {
-    throw new Error("Organizer, agency, or admin role required to create events.");
-  }
 
   const raw = {
     event_type: formData.get("event_type"),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
@@ -25,7 +25,7 @@ import {
 import { cityNameFor } from "@/lib/domain/cities";
 import { formatHalalas } from "@/lib/domain/money";
 import { segmentNameFor } from "@/lib/domain/segments";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -121,9 +121,7 @@ export default async function EventDetailPage({ params }: PageProps) {
   const eventFormT = await getTranslations("organizer.eventForm");
   const rfqT = await getTranslations("organizer.rfqs");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect(`/sign-in?next=/organizer/events/${id}`);
-  const { user, admin } = auth;
+  const { user, admin } = await requireAccess("organizer.events");
 
   const { data: eventData } = await admin
     .from("events")

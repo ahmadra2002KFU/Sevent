@@ -22,7 +22,7 @@
  *    short enough that link leaks don't become long-lived exfiltration.
  */
 
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import type { ConfirmationStatus } from "@/lib/domain/booking";
 
 const ACCEPTED_CONFIRMATION_STATUSES: ConfirmationStatus[] = ["confirmed"];
@@ -30,10 +30,7 @@ const ACCEPTED_CONFIRMATION_STATUSES: ConfirmationStatus[] = ["confirmed"];
 export async function getCompanyProfileUrlAction(
   bookingId: string,
 ): Promise<{ url?: string; error?: string }> {
-  const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated") return { error: "unauthenticated" };
-  if (gate.status === "forbidden") return { error: "forbidden" };
-  const { user, admin } = gate;
+  const { user, admin } = await requireAccess("organizer.bookings");
 
   // 1. Verify this organizer owns the booking and it's in an accepted state.
   const { data: booking } = await admin

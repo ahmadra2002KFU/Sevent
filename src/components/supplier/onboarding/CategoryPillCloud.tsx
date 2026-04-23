@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Info, Plus, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Plus, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export type CategoryGroup = {
@@ -14,11 +14,9 @@ export type CategoryPillCloudLabels = {
   heading: string;
   hintMax: string;
   searchPlaceholder: string;
-  selectedCounter: (picked: number, max: number) => string;
+  selectedCounter?: (picked: number, max: number) => string;
   addAria: (name: string) => string;
   removeAria: (name: string) => string;
-  /** Toast/tooltip shown when the user tries to pick a category beyond `max`. */
-  maxReached?: string;
 };
 
 export type CategoryPillCloudProps = {
@@ -26,7 +24,10 @@ export type CategoryPillCloudProps = {
   selectedIds: string[];
   onToggle: (id: string) => void;
   onClear: (id: string) => void;
-  /** Max selectable. Defaults to 6. */
+  /**
+   * Max selectable. When omitted the picker is uncapped and pills never get
+   * disabled — the component just lets the user keep picking.
+   */
   max?: number;
   labels: CategoryPillCloudLabels;
 };
@@ -42,7 +43,7 @@ export function CategoryPillCloud({
   selectedIds,
   onToggle,
   onClear,
-  max = 6,
+  max,
   labels,
 }: CategoryPillCloudProps) {
   const [query, setQuery] = useState("");
@@ -75,54 +76,26 @@ export function CategoryPillCloud({
   }, [groups, query]);
 
   const picked = selectedIds.length;
-  const full = picked >= max;
-
-  // Ephemeral "you hit the cap" toast shown when a disabled pill is clicked.
-  // The pill itself stays `disabled`, but we still attach an onPointerDown
-  // handler to surface the message — pointer events fire on disabled buttons
-  // only via a wrapper, so we wrap the button in a span.
-  const [maxWarning, setMaxWarning] = useState(false);
-  const warnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    return () => {
-      if (warnTimer.current) clearTimeout(warnTimer.current);
-    };
-  }, []);
-  function flashMaxWarning() {
-    if (!labels.maxReached) return;
-    setMaxWarning(true);
-    if (warnTimer.current) clearTimeout(warnTimer.current);
-    warnTimer.current = setTimeout(() => setMaxWarning(false), 2800);
-  }
+  // Uncapped by default — pills stay selectable until explicit `max` is given.
+  const full = typeof max === "number" && picked >= max;
+  const counterText =
+    typeof max === "number" && labels.selectedCounter
+      ? labels.selectedCounter(picked, max)
+      : null;
 
   return (
     <div className="relative">
       <div className="mb-2.5 flex items-baseline justify-between gap-2">
         <label className="text-[13px] font-semibold text-brand-navy-900">
           {labels.heading}
-          <span className="ms-1 font-normal text-neutral-600">
-            · {labels.selectedCounter(picked, max)}
-          </span>
+          {counterText ? (
+            <span className="ms-1 font-normal text-neutral-600">
+              · {counterText}
+            </span>
+          ) : null}
         </label>
         <span className="text-[11.5px] text-neutral-600">{labels.hintMax}</span>
       </div>
-
-      <AnimatePresence>
-        {maxWarning && labels.maxReached ? (
-          <motion.div
-            role="status"
-            aria-live="polite"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
-            className="pointer-events-none absolute -top-1 end-0 z-10 inline-flex items-center gap-1.5 rounded-md bg-brand-navy-900 px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-brand-sm"
-          >
-            <Info className="size-[13px]" strokeWidth={2.2} aria-hidden />
-            {labels.maxReached}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       {/* Selected chips */}
       <div className="mb-3.5 flex min-h-[36px] flex-wrap gap-2">
@@ -190,12 +163,6 @@ export function CategoryPillCloud({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                        // Wrapper span so we can capture pointerdown when the
-                        // child button is disabled (disabled buttons swallow
-                        // events). Lets us flash the "max reached" toast.
-                        onPointerDownCapture={
-                          disabled ? flashMaxWarning : undefined
-                        }
                         className="inline-flex"
                       >
                         <motion.button

@@ -25,7 +25,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AlertTriangle } from "lucide-react";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import {
   composePrice,
   type PricingPackageInput,
@@ -114,24 +114,10 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
   const { id: inviteId } = await params;
   const t = await getTranslations("supplier.quote");
 
-  // 1. Gate — must be signed in as a supplier.
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") {
-    redirect(`/sign-in?next=/supplier/rfqs/${inviteId}/quote`);
-  }
-  if (gate.status === "forbidden") {
-    redirect("/supplier/onboarding");
-  }
-  const { user, admin } = gate;
-
-  // 2. Supplier row.
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-  if (!supplierRow) redirect("/supplier/onboarding");
-  const supplierId = (supplierRow as { id: string }).id;
+  // 1. Gate — only approved suppliers can respond to RFQs.
+  const { decision, admin } = await requireAccess("supplier.rfqs.respond");
+  const supplierId = decision.supplierId;
+  if (!supplierId) redirect("/supplier/onboarding");
 
   // 3. Invite + RFQ + event.
   const { data: inviteData } = await admin

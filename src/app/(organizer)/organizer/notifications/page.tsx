@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { readNotificationsForUser } from "@/lib/notifications/reader";
 import NotificationsInbox from "../../../_components/NotificationsInbox";
 import { markAllReadAction, markOneReadAction } from "./actions";
@@ -7,17 +6,11 @@ import { markAllReadAction, markOneReadAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function OrganizerNotificationsPage() {
-  const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated") {
-    redirect("/sign-in?next=/organizer/notifications");
-  }
-  if (gate.status === "forbidden") {
-    redirect("/");
-  }
+  const { user, admin } = await requireAccess("organizer.dashboard");
 
   const { recent } = await readNotificationsForUser({
-    admin: gate.admin,
-    user_id: gate.user.id,
+    admin,
+    user_id: user.id,
     limit: 50,
   });
 

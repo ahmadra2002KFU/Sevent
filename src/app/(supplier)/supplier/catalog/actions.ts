@@ -19,6 +19,7 @@ import {
   type PricingRuleType,
 } from "@/lib/domain/pricing/rules";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export type CatalogActionResult =
   | { ok: true }
@@ -28,24 +29,23 @@ const CATALOG_PATH = "/supplier/catalog";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-async function resolveSupplierId(
-  supabase: SupabaseServerClient,
-): Promise<{ supplierId: string } | { error: string }> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    return { error: "You must be signed in to manage the catalog." };
+/**
+ * Gate catalog mutations on `supplier.catalog` — only approved suppliers pass.
+ * `requireAccess` redirects pending / rejected / in_onboarding callers to
+ * their `bestDestination`, so the mutation never runs. `decision.supplierId`
+ * is stamped by the resolver when the supplier row exists.
+ */
+async function resolveSupplierId(): Promise<
+  { supplierId: string } | { error: string }
+> {
+  const { decision } = await requireAccess("supplier.catalog");
+  if (!decision.supplierId) {
+    // Defence-in-depth — resolver populates supplierId for any state that
+    // admits `supplier.catalog`. If we somehow land here without one, fail
+    // closed rather than write a row with a missing owner.
+    return { error: "Supplier row missing for approved state." };
   }
-  const { data, error } = await supabase
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-  if (error) return { error: `Supplier lookup failed: ${error.message}` };
-  if (!data) return { error: "Complete onboarding before adding packages." };
-  return { supplierId: data.id as string };
+  return { supplierId: decision.supplierId };
 }
 
 function zodIssues(err: ZodError): string[] {
@@ -88,7 +88,7 @@ export async function upsertPackageAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
   const supplierId = resolved.supplierId;
 
@@ -174,7 +174,7 @@ export async function togglePackageActiveAction(
 ): Promise<CatalogActionResult> {
   if (!packageId) return { ok: false, error: "Missing package id." };
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { error } = await supabase
@@ -192,7 +192,7 @@ export async function deletePackageAction(
 ): Promise<CatalogActionResult> {
   if (!packageId) return { ok: false, error: "Missing package id." };
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { error } = await supabase
@@ -270,7 +270,7 @@ export async function upsertPricingRuleAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
   const supplierId = resolved.supplierId;
 
@@ -323,7 +323,7 @@ export async function togglePricingRuleActiveAction(
 ): Promise<CatalogActionResult> {
   if (!ruleId) return { ok: false, error: "Missing rule id." };
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { error } = await supabase
@@ -341,7 +341,7 @@ export async function deletePricingRuleAction(
 ): Promise<CatalogActionResult> {
   if (!ruleId) return { ok: false, error: "Missing rule id." };
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { error } = await supabase

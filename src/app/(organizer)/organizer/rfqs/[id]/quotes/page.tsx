@@ -13,11 +13,11 @@
  */
 
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { QuotesTable, type QuoteRowData } from "./QuotesTable";
 
@@ -74,9 +74,7 @@ export default async function OrganizerQuotesComparisonPage({
 }: PageProps) {
   const { id } = await params;
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect(`/sign-in?next=/organizer/rfqs/${id}/quotes`);
-  const { user, admin } = auth;
+  const { user, admin } = await requireAccess("organizer.rfqs");
 
   const { data: rfqDataRaw } = await admin
     .from("rfqs")

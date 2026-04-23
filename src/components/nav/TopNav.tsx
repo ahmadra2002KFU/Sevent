@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
+import { resolveAccessForUser } from "@/lib/auth/access";
+import type { AccessFeature } from "@/lib/auth/featureMatrix";
 import { Logo } from "@/components/brand/Logo";
 import NotificationBell from "@/app/_components/NotificationBell";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -12,34 +17,107 @@ import type { NavIconKey } from "./navIcons";
 
 type Role = "organizer" | "supplier" | "admin";
 
-type NavItem = { href: string; labelKey: string; iconKey: NavIconKey };
+type NavItem = {
+  href: string;
+  labelKey: string;
+  iconKey: NavIconKey;
+  feature: AccessFeature;
+};
 
 /**
- * Role-scoped nav items. The trailing Notifications slot is served by the
- * standalone `<NotificationBell>` icon (badge + icon), not a labeled link, so
- * it's intentionally absent from this list. If a role needs a labeled
- * "Notifications" nav item in the future, add a matching `nav.*.notifications`
- * i18n key and re-introduce it here.
+ * Role-scoped nav items. Each item declares the AccessFeature it depends on;
+ * the runtime filters the list so a supplier who's `pending_review` sees only
+ * Dashboard + Onboarding, a `rejected` supplier sees the same (no catalog /
+ * bookings / rfqs / profile), and an `approved` supplier sees the full set.
+ *
+ * The trailing Notifications slot is served by the standalone
+ * `<NotificationBell>` icon (badge + icon), not a labeled link, so it's
+ * intentionally absent from this list.
  */
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   organizer: [
-    { href: "/organizer/dashboard", labelKey: "organizer.dashboard", iconKey: "dashboard" },
-    { href: "/organizer/events", labelKey: "organizer.events", iconKey: "events" },
-    { href: "/organizer/rfqs", labelKey: "organizer.rfqs", iconKey: "rfqs" },
-    { href: "/organizer/bookings", labelKey: "organizer.bookings", iconKey: "bookings" },
+    {
+      href: "/organizer/dashboard",
+      labelKey: "organizer.dashboard",
+      iconKey: "dashboard",
+      feature: "organizer.dashboard",
+    },
+    {
+      href: "/organizer/events",
+      labelKey: "organizer.events",
+      iconKey: "events",
+      feature: "organizer.events",
+    },
+    {
+      href: "/organizer/rfqs",
+      labelKey: "organizer.rfqs",
+      iconKey: "rfqs",
+      feature: "organizer.rfqs",
+    },
+    {
+      href: "/organizer/bookings",
+      labelKey: "organizer.bookings",
+      iconKey: "bookings",
+      feature: "organizer.bookings",
+    },
   ],
   supplier: [
-    { href: "/supplier/dashboard", labelKey: "supplier.dashboard", iconKey: "dashboard" },
-    { href: "/supplier/onboarding", labelKey: "supplier.onboarding", iconKey: "onboarding" },
-    { href: "/supplier/catalog", labelKey: "supplier.catalog", iconKey: "catalog" },
-    { href: "/supplier/calendar", labelKey: "supplier.calendar", iconKey: "calendar" },
-    { href: "/supplier/rfqs", labelKey: "supplier.rfqs", iconKey: "supplierRfqs" },
-    { href: "/supplier/bookings", labelKey: "supplier.bookings", iconKey: "bookings" },
-    { href: "/supplier/profile", labelKey: "supplier.profile", iconKey: "profile" },
+    {
+      href: "/supplier/dashboard",
+      labelKey: "supplier.dashboard",
+      iconKey: "dashboard",
+      feature: "supplier.dashboard",
+    },
+    {
+      href: "/supplier/onboarding",
+      labelKey: "supplier.onboarding",
+      iconKey: "onboarding",
+      feature: "supplier.onboarding.wizard",
+    },
+    {
+      href: "/supplier/catalog",
+      labelKey: "supplier.catalog",
+      iconKey: "catalog",
+      feature: "supplier.catalog",
+    },
+    {
+      href: "/supplier/calendar",
+      labelKey: "supplier.calendar",
+      iconKey: "calendar",
+      feature: "supplier.calendar",
+    },
+    {
+      href: "/supplier/rfqs",
+      labelKey: "supplier.rfqs",
+      iconKey: "supplierRfqs",
+      feature: "supplier.rfqs.view",
+    },
+    {
+      href: "/supplier/bookings",
+      labelKey: "supplier.bookings",
+      iconKey: "bookings",
+      feature: "supplier.bookings",
+    },
+    {
+      href: "/supplier/profile",
+      labelKey: "supplier.profile",
+      iconKey: "profile",
+      feature: "supplier.profile.customize",
+    },
   ],
   admin: [
-    { href: "/admin/dashboard", labelKey: "admin.dashboard", iconKey: "dashboard" },
-    { href: "/admin/verifications", labelKey: "admin.verifications", iconKey: "verifications" },
+    {
+      href: "/admin/dashboard",
+      labelKey: "admin.dashboard",
+      iconKey: "dashboard",
+      feature: "admin.console",
+    },
+    {
+      href: "/admin/verifications",
+      labelKey: "admin.verifications",
+      iconKey: "verifications",
+      feature: "admin.console",
+    },
   ],
 };
 
@@ -56,21 +134,40 @@ const ROLE_TONE: Record<Role, "light" | "dark"> = {
 };
 
 export async function TopNav({ role }: { role: Role }) {
-  const auth = await authenticateAndGetAdminClient();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const nav = await getTranslations("nav");
 
+  const decision = await resolveAccessForUser(user?.id ?? null);
+
   let displayName: string | null = null;
-  if (auth) {
-    const { data } = await auth.admin
+  let email: string | null = null;
+  if (user) {
+    email = user.email ?? null;
+    const admin = createSupabaseServiceRoleClient();
+    const { data } = await admin
       .from("profiles")
       .select("full_name")
-      .eq("id", auth.user.id)
+      .eq("id", user.id)
       .maybeSingle();
     displayName = (data as { full_name?: string } | null)?.full_name ?? null;
   }
 
   const tone = ROLE_TONE[role];
-  const items = NAV_BY_ROLE[role].map((item) => ({
+  // Filter nav items by the caller's feature set so a supplier in
+  // `pending_review` / `rejected` doesn't see clickable links to Catalog /
+  // Calendar / Bookings / RFQs / Profile. The featureless fallback keeps a
+  // Dashboard link visible so the user isn't stranded with no navigation.
+  const candidateItems = NAV_BY_ROLE[role];
+  const allowedItems = candidateItems.filter(
+    (item) => decision.features[item.feature],
+  );
+  const items = (allowedItems.length > 0
+    ? allowedItems
+    : candidateItems.slice(0, 1)
+  ).map((item) => ({
     href: item.href,
     label: nav(item.labelKey),
     iconKey: item.iconKey,
@@ -94,7 +191,7 @@ export async function TopNav({ role }: { role: Role }) {
             items={items}
           />
           <Link
-            href="/"
+            href={decision.bestDestination}
             className="flex min-h-[44px] min-w-0 items-center gap-3 rounded-md px-2"
             aria-label="Sevent home"
           >
@@ -127,9 +224,9 @@ export async function TopNav({ role }: { role: Role }) {
                 : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           />
-          {auth ? (
+          {user ? (
             <UserMenu
-              email={auth.user.email ?? ""}
+              email={email ?? ""}
               displayName={displayName}
               tone={tone}
             />

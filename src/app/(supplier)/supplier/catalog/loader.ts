@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import type {
   PackageRow,
   PricingRuleRow,
@@ -31,19 +32,16 @@ export type CatalogBootstrap =
   | { ok: false; error: string };
 
 export async function loadCatalogBootstrap(): Promise<CatalogBootstrap> {
+  // `requireAccess` redirects pending / rejected / in_onboarding callers to
+  // their bestDestination, so by the time we read the supplier row we are
+  // guaranteed state=approved.
+  const { decision, admin } = await requireAccess("supplier.catalog");
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    return { ok: false, error: "You must be signed in to manage the catalog." };
-  }
 
-  const { data: supplier, error: supplierErr } = await supabase
+  const { data: supplier, error: supplierErr } = await admin
     .from("suppliers")
     .select("id, business_name, slug, verification_status, is_published")
-    .eq("profile_id", user.id)
+    .eq("id", decision.supplierId ?? "")
     .maybeSingle();
   if (supplierErr) {
     return { ok: false, error: `Supplier lookup failed: ${supplierErr.message}` };
@@ -51,7 +49,7 @@ export async function loadCatalogBootstrap(): Promise<CatalogBootstrap> {
   if (!supplier) {
     return {
       ok: false,
-      error: "Complete supplier onboarding before adding packages.",
+      error: "Supplier row missing for approved state.",
     };
   }
 

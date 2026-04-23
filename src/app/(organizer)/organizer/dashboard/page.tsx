@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import {
   CalendarDays,
   FileText,
@@ -16,7 +15,7 @@ import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill, type StatusPillStatus } from "@/components/ui-ext/StatusPill";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -81,11 +80,7 @@ export default async function OrganizerDashboardPage() {
   const rfqT = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const gate = await requireRole(["organizer", "agency", "admin"]);
-  if (gate.status === "unauthenticated")
-    redirect("/sign-in?next=/organizer/dashboard");
-  if (gate.status === "forbidden") redirect("/");
-  const { user, admin } = gate;
+  const { user, admin } = await requireAccess("organizer.dashboard");
 
   const eventsCountRes = await admin
     .from("events")

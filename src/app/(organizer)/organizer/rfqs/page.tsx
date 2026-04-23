@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import { FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +17,7 @@ import {
   StatusPill,
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -96,9 +95,7 @@ export default async function OrganizerRfqsPage() {
   const t = await getTranslations("organizer.rfqs");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect("/sign-in?next=/organizer/rfqs");
-  const { user, admin } = auth;
+  const { user, admin } = await requireAccess("organizer.rfqs");
 
   const { data } = await admin
     .from("rfqs")

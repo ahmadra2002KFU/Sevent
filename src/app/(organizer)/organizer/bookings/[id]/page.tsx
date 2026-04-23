@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
@@ -35,7 +35,7 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
 
 export const dynamic = "force-dynamic";
@@ -136,12 +136,7 @@ export default async function OrganizerBookingDetailPage({
   const t = await getTranslations("booking");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated") {
-    redirect(`/sign-in?next=/organizer/bookings/${id}`);
-  }
-  if (gate.status === "forbidden") redirect("/");
-  const { admin, user } = gate;
+  const { admin, user } = await requireAccess("organizer.bookings");
 
   const { data } = await admin
     .from("bookings")

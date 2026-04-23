@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { Inbox, MapPin, Users } from "lucide-react";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -99,18 +98,9 @@ function mapInviteToStatusPill(status: InviteStatus) {
 export default async function SupplierRfqInboxPage() {
   const t = await getTranslations("supplier.rfqInbox");
 
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") redirect("/sign-in?next=/supplier/rfqs");
-  if (gate.status === "forbidden") redirect("/supplier/onboarding");
-  const { user, admin } = gate;
-
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!supplierRow) {
+  const { decision, admin } = await requireAccess("supplier.rfqs.view");
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
     return (
       <section className="flex flex-col gap-6">
         <PageHeader title={t("title")} description={t("subtitle")} />
@@ -118,8 +108,6 @@ export default async function SupplierRfqInboxPage() {
       </section>
     );
   }
-
-  const supplierId = (supplierRow as { id: string }).id;
 
   const { data: invitesData } = await admin
     .from("rfq_invites")

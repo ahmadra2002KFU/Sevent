@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import { ArrowUpRight, ClipboardList } from "lucide-react";
 import {
   formatConfirmDeadline,
@@ -8,7 +7,7 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
@@ -135,21 +134,11 @@ export default async function SupplierBookingsListPage({
 
   const t = await getTranslations("booking");
 
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") redirect("/sign-in?next=/supplier/bookings");
-  if (gate.status === "forbidden") redirect("/");
-  const { admin, user } = gate;
-
-  // Resolve supplier_id (suppliers.profile_id = user.id), then filter bookings
-  // by that supplier_id. Service-role bypasses RLS; these explicit filters ARE
-  // the security boundary.
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!supplierRow) {
+  // Only approved suppliers can see bookings; resolver redirects
+  // pending / rejected / in_onboarding callers and stamps supplierId.
+  const { decision, admin } = await requireAccess("supplier.bookings");
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
     return (
       <section className="flex flex-col gap-6">
         <PageHeader title={t("listTitle")} description={t("listIntro")} />
@@ -157,8 +146,6 @@ export default async function SupplierBookingsListPage({
       </section>
     );
   }
-
-  const supplierId = (supplierRow as { id: string }).id;
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;

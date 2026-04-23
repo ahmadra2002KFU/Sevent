@@ -1,20 +1,51 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Inter, Almarai } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { ZodLocaleBootstrap } from "./_components/ZodLocaleBootstrap";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "900"],
+const inter = localFont({
+  src: [
+    {
+      path: "./fonts/Inter-Variable.ttf",
+      weight: "100 900",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Inter-Italic-Variable.ttf",
+      weight: "100 900",
+      style: "italic",
+    },
+  ],
   variable: "--font-inter",
   display: "swap",
 });
 
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "800"],
+const almarai = localFont({
+  src: [
+    {
+      path: "./fonts/Almarai-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Almarai-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Almarai-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Almarai-ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
+  ],
   variable: "--font-arabic",
   display: "swap",
 });
@@ -34,17 +65,22 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
   const dir = locale === "ar" ? "rtl" : "ltr";
+  const localeFontClassName = locale === "ar" ? almarai.className : inter.className;
 
   return (
-    <html lang={locale} dir={dir} className={cn("h-full", "antialiased")}>
-      <body
-        className={cn(
-          "min-h-full flex flex-col font-sans",
-          inter.variable,
-          almarai.variable,
-        )}
-      >
+    <html
+      lang={locale}
+      dir={dir}
+      className={cn(
+        "h-full",
+        "antialiased",
+        inter.variable,
+        almarai.variable,
+      )}
+    >
+      <body className={cn("min-h-full flex flex-col", localeFontClassName)}>
         <NextIntlClientProvider messages={messages}>
+          <ZodLocaleBootstrap />
           {children}
         </NextIntlClientProvider>
       </body>

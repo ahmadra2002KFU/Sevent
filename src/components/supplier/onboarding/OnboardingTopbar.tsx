@@ -31,7 +31,7 @@ export async function OnboardingTopbar() {
     <header className="border-b border-border bg-white">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <Link
-          href="/"
+          href="/supplier/onboarding"
           aria-label="Sevent home"
           className="flex min-h-[44px] shrink-0 items-center"
         >

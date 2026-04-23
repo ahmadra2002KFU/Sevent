@@ -6,8 +6,8 @@
  * Shape (step 0 now lives at its own route /supplier/onboarding/path):
  *   Step 1 — business info: representative_name, business_name, bio (char counter +
  *            focus ring + autosave), base_city, service_area, languages.
- *           Top banners: ImportWebsiteCard (always) + WathqVerifyBanner (company + name).
- *   Step 2 — CategoryPillCloud (hard-capped at 6) + segments.
+ *           Top banners: ImportWebsiteCard (always).
+ *   Step 2 — CategoryPillCloud (uncapped) + segments.
  *   Step 3 — UploadChip per document (logo / IBAN / company profile).
  *
  * Every FormLabel gets a sibling <HelperText> whose key is
@@ -25,7 +25,6 @@ import { Check, Sparkles, X } from "lucide-react";
 import {
   LANGUAGES,
   LOGO_MAX_BYTES,
-  MAX_CATEGORIES,
   OnboardingStep1 as OnboardingStep1Schema,
   PDF_MAX_BYTES,
 } from "@/lib/domain/onboarding";
@@ -49,7 +48,6 @@ import { SegmentsPicker } from "@/components/supplier/SegmentsPicker";
 import { cityNameFor } from "@/lib/domain/cities";
 import { WizardStepper } from "@/components/supplier/onboarding/WizardStepper";
 import { ProfilePreview } from "@/components/supplier/onboarding/ProfilePreview";
-import { WathqVerifyBanner } from "@/components/supplier/onboarding/WathqVerifyBanner";
 import { ImportWebsiteCard } from "@/components/supplier/onboarding/ImportWebsiteCard";
 import { AutoSaveIndicator } from "@/components/supplier/onboarding/AutoSaveIndicator";
 import { CategoryPillCloud } from "@/components/supplier/onboarding/CategoryPillCloud";
@@ -441,7 +439,6 @@ function Step1Form({
   }) => void;
 }) {
   const t = useTranslations("supplier.onboarding");
-  const locale = useLocale();
   const {
     register,
     handleSubmit,
@@ -599,18 +596,6 @@ function Step1Form({
         >
           <Input {...register("national_id")} />
         </Field>
-      ) : null}
-
-      {legalType === "company" && businessName.trim().length > 0 ? (
-        <WathqVerifyBanner
-          businessName={businessName}
-          city={cityNameFor(baseCity, locale === "ar" ? "ar" : "en") || ""}
-          activeSinceYear="2019"
-          labels={{
-            prefix: t("wathq.prefix"),
-            status: t("wathq.status"),
-          }}
-        />
       ) : null}
 
       <Field
@@ -861,7 +846,6 @@ function Step2Form({
     if (selectedIds.includes(id)) {
       onSelectedIdsChange(selectedIds.filter((v) => v !== id));
     } else {
-      if (selectedIds.length >= MAX_CATEGORIES) return;
       onSelectedIdsChange([...selectedIds, id]);
     }
   }
@@ -893,16 +877,14 @@ function Step2Form({
         selectedIds={selectedIds}
         onToggle={toggleCategory}
         onClear={removeSub}
-        max={MAX_CATEGORIES}
         labels={{
           heading: t("categoryCloud.heading"),
-          hintMax: t("categoryCloud.hint", { max: MAX_CATEGORIES }),
+          hintMax: t("step2.subcategoriesHint"),
           searchPlaceholder: t("categoryCloud.searchPlaceholder"),
           selectedCounter: (picked, max) =>
             t("wizard.maxCategoriesLabel", { selected: picked, max }),
           addAria: (name) => t("categoryCloud.addAria", { name }),
           removeAria: (name) => t("categoryCloud.removeAria", { name }),
-          maxReached: t("wizard.maxCategoriesReached"),
         }}
       />
 

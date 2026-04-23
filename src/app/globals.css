@@ -36,13 +36,13 @@
   --color-semantic-info-500: #1e7bd8;
   --color-semantic-info-100: #dcebfb;
 
-  /* Typography — Inter loaded by next/font as --font-inter */
+  /* Typography — Inter loaded from local font assets as --font-inter */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* RTL / Arabic locale swaps the sans stack to Almarai (loaded by next/font).
+/* RTL / Arabic locale swaps the sans stack to Almarai (loaded from local assets).
    Almarai is the soft-rounded corporate face used across KSA enterprise sites;
    neutral voice, comfortable at body sizes. */
 :root:lang(ar),

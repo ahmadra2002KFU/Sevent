@@ -6,12 +6,18 @@ import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
+import { resolveAccessForUser } from "@/lib/auth/access";
+import { sanitizeNextParam } from "@/lib/auth/nextParam";
 
+// The `agency` role existed here historically but no sign-up surface has ever
+// exposed it — agencies are onboarded out-of-band. Keeping it in the enum let
+// a caller craft a form post that created agency accounts with no admin
+// oversight, so it's intentionally dropped.
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   fullName: z.string().min(2).max(120),
-  role: z.enum(["organizer", "supplier", "agency"]),
+  role: z.enum(["organizer", "supplier"]),
   language: z.enum(["en", "ar"]).default("en"),
 });
 
@@ -155,27 +161,18 @@ export async function signInAction(
   if (error) return { ok: false, error: error.message };
 
   const { data } = await supabase.auth.getUser();
-  const userId = data.user?.id;
-  let target = parsed.data.next ?? "/";
-  if (!parsed.data.next && userId) {
-    // Service-role lookup: @supabase/ssr + sb_publishable_* keys don't forward
-    // the user JWT to PostgREST here, so the RLS-scoped profile read returns
-    // null and admins were being routed to /organizer/dashboard.
-    const admin = createSupabaseServiceRoleClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-    const role = (profile as { role: string } | null)?.role ?? "organizer";
-    const byRole: Record<string, string> = {
-      organizer: "/organizer/dashboard",
-      supplier: "/supplier/dashboard",
-      admin: "/admin/dashboard",
-      agency: "/organizer/dashboard",
-    };
-    target = byRole[role] ?? "/";
-  }
+  const userId = data.user?.id ?? null;
+
+  // Single authorization source of truth — the resolver reads role +
+  // supplier state and returns the correct landing URL + allowed prefixes.
+  // `next` is sanitized against the decision's `allowedRoutePrefixes` so
+  // a crafted URL can't redirect a supplier into /admin/* or off-origin.
+  const decision = await resolveAccessForUser(userId);
+  const safeNext = sanitizeNextParam(
+    parsed.data.next ?? null,
+    decision.allowedRoutePrefixes,
+  );
+  const target = safeNext ?? decision.bestDestination;
 
   redirect(target);
 }

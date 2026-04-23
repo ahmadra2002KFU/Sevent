@@ -173,6 +173,19 @@ export function taxonomyNameFor(slug: string, locale: "en" | "ar"): string {
   return locale === "ar" ? hit.child.name_ar : hit.child.name_en;
 }
 
+// Pick the correct localized label from a DB `categories` row (parent or
+// child). Falls back to `name_en` when `name_ar` is null, and to an empty
+// string when the row itself is null/undefined — safe to call in JSX on
+// optional joins without a precondition check.
+export function categoryName(
+  row: { name_en: string; name_ar?: string | null } | null | undefined,
+  locale: "en" | "ar",
+): string {
+  if (!row) return "";
+  if (locale === "ar" && row.name_ar) return row.name_ar;
+  return row.name_en;
+}
+
 // Curated accent palette for supplier profile color picker. Each color has
 // been eyeballed for ≥4.5:1 contrast against white text and a neutral-700
 // body. Keep the list in sync with the DB `check` constraint at the app

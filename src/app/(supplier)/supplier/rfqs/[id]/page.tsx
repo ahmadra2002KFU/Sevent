@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowUpRight, ClipboardList, FileText, MapPin } from "lucide-react";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
@@ -217,18 +217,9 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
   const t = await getTranslations("supplier.rfqInbox");
 
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") redirect(`/sign-in?next=/supplier/rfqs/${id}`);
-  if (gate.status === "forbidden") redirect("/supplier/onboarding");
-  const { user, admin } = gate;
-
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!supplierRow) notFound();
+  const { decision, admin } = await requireAccess("supplier.rfqs.view");
+  const supplierId = decision.supplierId;
+  if (!supplierId) notFound();
 
   const { data: inviteData } = await admin
     .from("rfq_invites")
@@ -249,9 +240,8 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   if (!inviteData) notFound();
   const invite = inviteData as unknown as DetailRow;
 
-  // Belt-and-suspenders — RLS should already scope this, but make the server
-  // action flow fail closed when any UI fetches a sibling invite by id.
-  const supplierId = (supplierRow as { id: string }).id;
+  // Belt-and-suspenders — RLS should already scope this, but fail closed if
+  // any UI fetches a sibling invite by id.
   if (invite.supplier_id !== supplierId) notFound();
 
   const rfq = invite.rfqs;

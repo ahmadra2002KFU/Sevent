@@ -30,7 +30,7 @@ import type {
   SupplierDocStatus,
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -64,6 +64,7 @@ type SupplierSummaryRow = {
   business_name: string | null;
   verified_at: string | null;
   first_seen_approved_at: string | null;
+  verification_notes: string | null;
 };
 
 const CELEBRATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -211,69 +212,31 @@ function normalizeRecentInvites(rows: RecentInviteQueryRow[]): RecentInviteRow[]
   });
 }
 
-function WelcomeState({
-  title,
-  subtitle,
-  heading,
-  body,
-  cta,
-}: {
-  title: string;
-  subtitle: string;
-  heading: string;
-  body: string;
-  cta: string;
-}) {
-  return (
-    <section className="flex flex-col gap-8">
-      <PageHeader title={title} description={subtitle} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{heading}</CardTitle>
-          <CardDescription>{body}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild size="lg">
-            <Link href="/supplier/onboarding">{cta}</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
 export default async function SupplierDashboardPage() {
   const t = await getTranslations("supplier.dashboard");
   const rfqInboxT = await getTranslations("supplier.rfqInbox");
   const locale = await getLocale();
   const dateLocale = locale === "ar" ? "ar-SA" : "en-SA";
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) {
-    return (
-      <WelcomeState
-        title={t("title")}
-        subtitle={t("subtitle")}
-        heading={t("welcome.heading")}
-        body={t("welcome.body")}
-        cta={t("welcome.cta")}
-      />
-    );
-  }
-  const { user, admin } = auth;
+  // Access gate: the resolver has already classified this caller as
+  // `supplier.in_onboarding | pending_review | approved | rejected | suspended`
+  // (middleware redirects `supplier.no_row` to the path picker, so we never
+  // arrive here without a row). `requireAccess` also handles the
+  // unauthenticated case by redirecting to /sign-in.
+  const { user, admin } = await requireAccess("supplier.dashboard");
 
   const { data: supplier } = await admin
     .from("suppliers")
     .select(
-      "id, slug, verification_status, business_name, verified_at, first_seen_approved_at, legal_type",
+      "id, slug, verification_status, business_name, verified_at, first_seen_approved_at, verification_notes, legal_type",
     )
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  // A freshly signed-up supplier has no `suppliers` row yet — the row is
-  // created when they submit the path picker (`/supplier/onboarding/path`).
-  // Same treatment when the row exists but `legal_type` is still null: the
-  // user bailed mid-picker, so send them back to finish it.
+  // Defense-in-depth fallback: resolver said the caller is a supplier with
+  // (at minimum) an onboarding row, so this should not happen. If it does
+  // (race between onboarding row creation + dashboard render) bounce back to
+  // the path picker instead of rendering a broken page.
   if (!supplier || !(supplier as { legal_type: string | null }).legal_type) {
     redirect("/supplier/onboarding/path");
   }
@@ -334,6 +297,7 @@ export default async function SupplierDashboardPage() {
         <PendingReviewChecklist
           email={user.email ?? ""}
           verificationStatus={supplierSummary.verification_status}
+          verificationNotes={supplierSummary.verification_notes}
         />
       </section>
     );

@@ -20,7 +20,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { createNotification } from "@/lib/notifications/inApp";
 import type { ActionState } from "./action-state";
 
@@ -79,13 +79,7 @@ export async function acceptQuoteAction(
   formData: FormData,
 ): Promise<ActionState> {
   // 1. Gate.
-  const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated") {
-    return { status: "error", message: "Not authenticated." };
-  }
-  if (gate.status === "forbidden") {
-    return { status: "error", message: "Organizer role required." };
-  }
+  const gate = await requireAccess("organizer.rfqs");
 
   // 2. Parse inputs.
   const parse = acceptSchema.safeParse({

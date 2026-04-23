@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { UserCog } from "lucide-react";
@@ -47,19 +46,19 @@ function coerceSectionsOrder(raw: unknown): string[] {
 }
 
 export default async function SupplierProfileCustomizePage() {
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated")
-    redirect("/sign-in?next=/supplier/profile");
-  if (gate.status === "forbidden") redirect("/supplier/onboarding");
-
-  const { user, admin } = gate;
+  const { decision, admin } = await requireAccess(
+    "supplier.profile.customize",
+  );
+  const supplierId = decision.supplierId;
   const t = await getTranslations("supplier.profile.customizer");
 
-  const { data: supplier } = await admin
-    .from("suppliers")
-    .select("accent_color, profile_sections_order")
-    .eq("profile_id", user.id)
-    .maybeSingle();
+  const { data: supplier } = supplierId
+    ? await admin
+        .from("suppliers")
+        .select("accent_color, profile_sections_order")
+        .eq("id", supplierId)
+        .maybeSingle()
+    : { data: null };
 
   if (!supplier) {
     return (

@@ -14,8 +14,8 @@ import { MARKET_SEGMENT_SLUGS } from "@/lib/domain/segments";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
-  requireRole,
 } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { supplierScopedPath } from "@/lib/supabase/storage";
 import { uniqueSupplierSlug } from "@/lib/onboarding/slug";
 import type { SupplierDocType } from "@/lib/supabase/types";
@@ -39,12 +39,7 @@ async function loadSupplierContext() {
   // through the service-role admin client. Storage uploads run on the
   // user-scoped client so `owner = auth.uid()` is set and bucket policies
   // keep gating correctly.
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") throw new Error("Not authenticated");
-  if (gate.status === "forbidden") {
-    throw new Error("Only supplier accounts can complete onboarding");
-  }
-  const { user, admin } = gate;
+  const { user, admin } = await requireAccess("supplier.onboarding.wizard");
 
   const supabase = await createSupabaseServerClient();
 
@@ -222,20 +217,13 @@ export async function submitOnboardingStep2(
       };
     }
 
-    const { error: deleteErr } = await admin
-      .from("supplier_categories")
-      .delete()
-      .eq("supplier_id", supplier.id);
-    if (deleteErr) {
-      return { ok: false, message: `Could not reset subcategory links: ${deleteErr.message}` };
+    const { error: rpcErr } = await admin.rpc("replace_supplier_categories", {
+      p_supplier_id: supplier.id,
+      p_subcategory_ids: payload.subcategory_ids,
+    });
+    if (rpcErr) {
+      return { ok: false, message: `Saving subcategories failed: ${rpcErr.message}` };
     }
-
-    const links = payload.subcategory_ids.map((id) => ({
-      supplier_id: supplier.id,
-      subcategory_id: id,
-    }));
-    const { error: linkErr } = await admin.from("supplier_categories").insert(links);
-    if (linkErr) return { ok: false, message: `Saving subcategories failed: ${linkErr.message}` };
 
     revalidatePath("/supplier/onboarding");
     return { ok: true, supplierId: supplier.id };

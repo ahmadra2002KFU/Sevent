@@ -1,42 +1,116 @@
 "use client";
 
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { useLocale } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { setLocaleAction } from "./locale-actions";
 
+type Locale = "en" | "ar";
+type Tone = "light" | "dark";
+
 type LanguageSwitcherProps = {
-  tone?: "light" | "dark";
+  tone?: Tone;
+  className?: string;
 };
 
+const OPTIONS: ReadonlyArray<{
+  code: Locale;
+  label: string;
+  aria: string;
+  fontFamily?: string;
+}> = [
+  { code: "en", label: "EN", aria: "Switch to English" },
+  {
+    code: "ar",
+    label: "ع",
+    aria: "التبديل إلى العربية",
+    fontFamily: "var(--font-arabic)",
+  },
+];
+
 /**
- * One-click locale toggle matching the landing design: the button label shows
- * the *other* locale (click "EN" when in Arabic to switch, "ع" when in
- * English), because there are only two locales. Keeps the nav compact and
- * removes the dropdown affordance from the Direction A hero pattern.
+ * Pill-style locale toggle with a sliding indicator. Locked to dir="ltr" so
+ * EN is always on the left and ع on the right regardless of the page
+ * direction — standard pattern for locale switchers, avoids the indicator
+ * swapping sides across a language change. Uses useOptimistic so the
+ * indicator slides the moment the user clicks, before the server action's
+ * revalidatePath completes.
  */
-export function LanguageSwitcher({ tone = "light" }: LanguageSwitcherProps) {
-  const current = useLocale();
-  const [pending, startTransition] = useTransition();
-  const nextLocale = current === "ar" ? "en" : "ar";
-  const label = nextLocale === "ar" ? "ع" : "EN";
-  const ariaLabel =
-    nextLocale === "ar" ? "التبديل إلى العربية" : "Switch to English";
+export function LanguageSwitcher({
+  tone = "light",
+  className,
+}: LanguageSwitcherProps) {
+  const current = useLocale() as Locale;
+  const [isPending, startTransition] = useTransition();
+  const [active, setActive] = useOptimistic<Locale>(current);
+
+  const dark = tone === "dark";
+
+  const handleSwitch = (next: Locale) => {
+    if (next === active) return;
+    startTransition(async () => {
+      setActive(next);
+      await setLocaleAction(next);
+    });
+  };
 
   return (
-    <Button
-      variant={tone === "dark" ? "ghost" : "outline"}
-      size="sm"
-      disabled={pending}
-      onClick={() => startTransition(() => setLocaleAction(nextLocale))}
-      aria-label={ariaLabel}
-      className={
-        tone === "dark"
-          ? "min-h-[44px] min-w-[44px] gap-1.5 border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
-          : "min-h-[44px] min-w-[44px] gap-1.5"
-      }
+    <div
+      dir="ltr"
+      role="radiogroup"
+      aria-label="Language"
+      className={cn(
+        "relative inline-flex h-11 w-[96px] shrink-0 items-center rounded-full p-1",
+        "border text-xs font-semibold select-none",
+        "transition-colors duration-200",
+        dark
+          ? "border-white/25 bg-white/5"
+          : "border-border bg-muted/60",
+        isPending && "opacity-90",
+        className,
+      )}
     >
-      <span className="text-sm font-semibold">{label}</span>
-    </Button>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full",
+          "shadow-sm will-change-transform",
+          "transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          dark ? "bg-white" : "bg-foreground",
+        )}
+        style={{
+          transform: active === "ar" ? "translateX(100%)" : "translateX(0%)",
+        }}
+      />
+      {OPTIONS.map(({ code, label, aria, fontFamily }) => {
+        const isActive = active === code;
+        return (
+          <button
+            key={code}
+            type="button"
+            role="radio"
+            aria-checked={isActive}
+            aria-label={aria}
+            onClick={() => handleSwitch(code)}
+            className={cn(
+              "relative z-10 flex h-full flex-1 items-center justify-center rounded-full",
+              "outline-none transition-colors duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isActive
+                ? dark
+                  ? "text-slate-900"
+                  : "text-background"
+                : dark
+                  ? "text-white/70 hover:text-white"
+                  : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="leading-none" style={fontFamily ? { fontFamily } : undefined}>
+              {label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { ACCENT_HEX_VALUES } from "@/lib/domain/taxonomy";
 
 const SECTION_KEYS = ["bio", "packages", "portfolio", "reviews"] as const;
@@ -66,14 +66,16 @@ export async function updateProfileCustomizationAction(
   _prev: UpdateProfileCustomizationState | undefined,
   formData: FormData,
 ): Promise<UpdateProfileCustomizationState> {
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") {
-    return { ok: false, code: "unauthenticated" };
+  // Gate: only approved suppliers can edit their public profile. Resolver
+  // redirects non-approved callers (rejected / pending / in_onboarding) to
+  // bestDestination, so the mutation never runs.
+  const { decision, admin } = await requireAccess(
+    "supplier.profile.customize",
+  );
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
+    return { ok: false, code: "no_supplier" };
   }
-  if (gate.status === "forbidden") {
-    return { ok: false, code: "forbidden" };
-  }
-  const { user, admin } = gate;
 
   const parsed = PayloadSchema.safeParse({
     accent_color: formData.get("accent_color"),
@@ -95,13 +97,12 @@ export async function updateProfileCustomizationAction(
 
   const { accent_color, section_order } = parsed.data;
 
-  // Resolve the supplier row first so we can (1) enforce ownership under the
-  // service-role client and (2) revalidate the public profile route with the
-  // actual slug once the update lands.
+  // Fetch the supplier slug so we can revalidate the public profile route
+  // once the update lands.
   const { data: supplier, error: supplierErr } = await admin
     .from("suppliers")
     .select("id, slug")
-    .eq("profile_id", user.id)
+    .eq("id", supplierId)
     .maybeSingle();
 
   if (supplierErr) {

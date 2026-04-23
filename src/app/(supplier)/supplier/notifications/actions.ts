@@ -8,23 +8,24 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 const idSchema = z.string().uuid();
 
 export async function markOneReadAction(formData: FormData): Promise<void> {
-  const gate = await requireRole("supplier");
-  if (gate.status !== "ok") return;
+  // Notifications are tied to the supplier's dashboard surface — any state
+  // that admits `supplier.dashboard` should be able to mark them read.
+  const { user, admin } = await requireAccess("supplier.dashboard");
 
   const parsed = idSchema.safeParse(formData.get("notification_id"));
   if (!parsed.success) return;
 
   const now = new Date().toISOString();
-  const { error } = await gate.admin
+  const { error } = await admin
     .from("notifications")
     .update({ read_at: now })
     .eq("id", parsed.data)
-    .eq("user_id", gate.user.id)
+    .eq("user_id", user.id)
     .is("read_at", null);
 
   if (error) {
@@ -37,14 +38,13 @@ export async function markOneReadAction(formData: FormData): Promise<void> {
 }
 
 export async function markAllReadAction(): Promise<void> {
-  const gate = await requireRole("supplier");
-  if (gate.status !== "ok") return;
+  const { user, admin } = await requireAccess("supplier.dashboard");
 
   const now = new Date().toISOString();
-  const { error } = await gate.admin
+  const { error } = await admin
     .from("notifications")
     .update({ read_at: now })
-    .eq("user_id", gate.user.id)
+    .eq("user_id", user.id)
     .is("read_at", null);
 
   if (error) {

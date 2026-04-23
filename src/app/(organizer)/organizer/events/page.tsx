@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import { CalendarPlus, CalendarDays, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -58,9 +57,7 @@ export default async function OrganizerEventsPage() {
   const t = await getTranslations("organizer.events");
   const eventFormT = await getTranslations("organizer.eventForm");
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth) redirect("/sign-in?next=/organizer/events");
-  const { user, admin } = auth;
+  const { user, admin } = await requireAccess("organizer.events");
 
   const { data } = await admin
     .from("events")

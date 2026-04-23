@@ -10,6 +10,7 @@
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { format, parseISO } from "date-fns";
 import { CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
 import { ManualBlockInput } from "@/lib/domain/availability";
@@ -40,6 +41,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 
 type FormValues = {
@@ -88,18 +100,9 @@ function toLocalInput(iso: string): string {
   );
 }
 
-/**
- * Converts the datetime-local input value back to a UTC ISO string, which
- * Postgres `timestamptz` happily accepts. The browser supplies the value in
- * local time (no zone); `new Date(...)` interprets it as local, so toISOString
- * produces the correct UTC instant.
- */
-function toIso(local: string): string {
-  if (!local) return local;
-  return new Date(local).toISOString();
-}
-
 export function BlockList({ blocks, labels, initialError }: Props) {
+  const t = useTranslations("supplier.calendar");
+  const tCommon = useTranslations("common");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(
@@ -144,10 +147,12 @@ export function BlockList({ blocks, labels, initialError }: Props) {
     setServerError(null);
   };
 
+  // Pass the datetime-local strings straight through — the Zod schema
+  // transform normalises them to full UTC ISO on the server side.
   const onSubmit = handleSubmit((values) => {
     const payload = {
-      starts_at: toIso(values.starts_at),
-      ends_at: toIso(values.ends_at),
+      starts_at: values.starts_at,
+      ends_at: values.ends_at,
       notes: values.notes?.trim() ? values.notes.trim() : undefined,
     };
     startTransition(async () => {
@@ -163,14 +168,25 @@ export function BlockList({ blocks, labels, initialError }: Props) {
   });
 
   const onDelete = (id: string) => {
-    if (typeof window !== "undefined" && !window.confirm(labels.confirmDelete)) {
-      return;
-    }
     setServerError(null);
     startTransition(async () => {
       const result = await deleteManualBlockAction(id);
       if (!result.ok) setServerError(result.error);
     });
+  };
+
+  /**
+   * Translates validation error keys produced by the availability schema
+   * (e.g. `invalid_datetime_format`) into localised strings. Falls back to
+   * the raw message if the key is not registered under `errors.*`.
+   */
+  const mapError = (msg: string | undefined): string => {
+    if (!msg) return "";
+    try {
+      return t(`errors.${msg}` as never);
+    } catch {
+      return msg;
+    }
   };
 
   return (
@@ -216,17 +232,38 @@ export function BlockList({ blocks, labels, initialError }: Props) {
                       >
                         <Pencil />
                       </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={isPending}
-                        onClick={() => onDelete(b.id)}
-                        className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
-                        aria-label={labels.delete}
-                      >
-                        <Trash2 />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={isPending}
+                            className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                            aria-label={labels.delete}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {tCommon("confirmDialogTitle")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {labels.confirmDelete}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              {tCommon("confirmCancel")}
+                            </AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(b.id)}>
+                              {tCommon("confirmConfirm")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   ) : null}
                 </li>
@@ -256,7 +293,7 @@ export function BlockList({ blocks, labels, initialError }: Props) {
                 />
                 {errors.starts_at ? (
                   <span className="text-xs text-semantic-danger-500">
-                    {errors.starts_at.message}
+                    {mapError(errors.starts_at.message)}
                   </span>
                 ) : null}
               </div>
@@ -270,7 +307,7 @@ export function BlockList({ blocks, labels, initialError }: Props) {
                 />
                 {errors.ends_at ? (
                   <span className="text-xs text-semantic-danger-500">
-                    {errors.ends_at.message}
+                    {mapError(errors.ends_at.message)}
                   </span>
                 ) : null}
               </div>

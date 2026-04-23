@@ -29,34 +29,16 @@ import {
 } from "@/lib/domain/matching/autoMatch";
 import { fetchAutoMatchCandidates } from "@/lib/domain/matching/query";
 import { parseRfqExtension, RfqFormInput, type RfqExtensionKind } from "@/lib/domain/rfq";
+import { requireAccess } from "@/lib/auth/access";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
 
-const ALLOWED_ROLES = ["organizer", "agency", "admin"] as const;
-
-type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
-
-async function requireOrganizerRole(
-  supabase: SupabaseServerClient,
-): Promise<{ userId: string } | { error: string }> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) return { error: "You must be signed in." };
-
-  const admin = await createSupabaseServiceRoleClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const role = (profile as { role: string } | null)?.role;
-  if (!role || !(ALLOWED_ROLES as readonly string[]).includes(role)) {
-    return { error: "Organizer, agency, or admin role required." };
-  }
+async function requireOrganizerRole(): Promise<
+  { userId: string } | { error: string }
+> {
+  const { user } = await requireAccess("organizer.rfqs");
   return { userId: user.id };
 }
 
@@ -76,7 +58,7 @@ export type OrganizerEventSummary = {
 
 export async function listMyEventsAction(): Promise<OrganizerEventSummary[]> {
   const supabase = await createSupabaseServerClient();
-  const gate = await requireOrganizerRole(supabase);
+  const gate = await requireOrganizerRole();
   if ("error" in gate) return [];
 
   const { data } = await supabase
@@ -149,7 +131,7 @@ export async function previewAutoMatchAction(
   if (!parsed.success) return { ok: false, error: "invalid_input" };
 
   const supabase = await createSupabaseServerClient();
-  const gate = await requireOrganizerRole(supabase);
+  const gate = await requireOrganizerRole();
   if ("error" in gate) return { ok: false, error: "forbidden" };
 
   // RLS scopes `events` to the caller's rows (and admins). If this returns no
@@ -220,7 +202,7 @@ export async function searchApprovedSuppliersAction(
   if (!parsed.success) return [];
 
   const supabase = await createSupabaseServerClient();
-  const gate = await requireOrganizerRole(supabase);
+  const gate = await requireOrganizerRole();
   if ("error" in gate) return [];
 
   // ILIKE pattern — escape `%` and `_` conservatively.
@@ -301,8 +283,7 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     };
   }
 
-  const supabase = await createSupabaseServerClient();
-  const gate = await requireOrganizerRole(supabase);
+  const gate = await requireOrganizerRole();
   if ("error" in gate) return { ok: false, error: gate.error };
 
   // Re-parse the requirements payload with the discriminated-union schema.

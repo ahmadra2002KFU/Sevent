@@ -10,7 +10,7 @@
  */
 
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft, ClockAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ import {
   StatusPill,
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
-import { authenticateAndGetAdminClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot, QuoteLineItem } from "@/lib/domain/quote";
 
@@ -126,10 +126,7 @@ export default async function OrganizerQuoteDetailPage({
 }: PageProps) {
   const { id, quoteId } = await params;
 
-  const auth = await authenticateAndGetAdminClient();
-  if (!auth)
-    redirect(`/sign-in?next=/organizer/rfqs/${id}/quotes/${quoteId}`);
-  const { user, admin } = auth;
+  const { user, admin } = await requireAccess("organizer.rfqs");
 
   const { data: quoteRaw } = await admin
     .from("quotes")

@@ -22,14 +22,6 @@ export type LegalType = (typeof LEGAL_TYPES)[number];
 export const LANGUAGES = ["ar", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
-/**
- * Hard cap for the supplier category picker in Step 2. Mirrored on:
- *  - `CategoryPillCloud` (prop default + visual disabled state)
- *  - `OnboardingStep2` Zod schema (`subcategory_ids.max(MAX_CATEGORIES)`)
- *  - UI copy `supplier.onboarding.wizard.maxCategoriesReached`
- */
-export const MAX_CATEGORIES = 6;
-
 export const DOC_TYPES = [
   "cr",
   "vat",
@@ -110,8 +102,7 @@ export type OnboardingStep1 = z.infer<typeof OnboardingStep1>;
 export const OnboardingStep2 = z.object({
   subcategory_ids: z
     .array(z.string().uuid())
-    .min(1, "Pick at least one service")
-    .max(MAX_CATEGORIES, `Pick at most ${MAX_CATEGORIES} categories`),
+    .min(1, "Pick at least one service"),
   works_with_segments: z
     .array(z.enum(SEGMENT_TUPLE))
     .min(1, "Pick at least one market segment"),

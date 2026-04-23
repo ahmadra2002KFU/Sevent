@@ -15,33 +15,23 @@ import {
   friendlyAvailabilityError,
 } from "@/lib/domain/availability";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import type { AvailabilityBlockRow } from "@/lib/supabase/types";
 
 const CALENDAR_PATH = "/supplier/calendar";
 
 export type CalendarActionResult = { ok: true } | { ok: false; error: string };
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
-
-async function resolveSupplierId(
-  supabase: SupabaseServerClient,
-): Promise<{ supplierId: string } | { error: string }> {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) {
-    return { error: "You must be signed in to manage availability." };
+async function resolveSupplierId(): Promise<
+  { supplierId: string } | { error: string }
+> {
+  // Gate mutation on `supplier.calendar` — approved suppliers only. Non-
+  // approved states redirect to bestDestination inside requireAccess.
+  const { decision } = await requireAccess("supplier.calendar");
+  if (!decision.supplierId) {
+    return { error: "Supplier row missing for approved state." };
   }
-  const { data: supplier, error: supplierError } = await supabase
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", userData.user.id)
-    .maybeSingle();
-  if (supplierError) {
-    return { error: friendlyAvailabilityError(supplierError.message) };
-  }
-  if (!supplier) {
-    return { error: "No supplier profile found for this account." };
-  }
-  return { supplierId: supplier.id as string };
+  return { supplierId: decision.supplierId };
 }
 
 function parseRawInput(raw: unknown): CalendarActionResult | ManualBlockInput {
@@ -62,7 +52,7 @@ export async function createManualBlockAction(
   if ("ok" in parsed) return parsed;
 
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { error } = await supabase.from("availability_blocks").insert({
@@ -92,7 +82,7 @@ export async function updateManualBlockAction(
   if ("ok" in parsed) return parsed;
 
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   // Double-guard: even though RLS restricts to owner-supplier rows, we also
@@ -129,7 +119,7 @@ export async function deleteManualBlockAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   const { data, error } = await supabase
@@ -166,7 +156,7 @@ export async function loadCalendarData(rangeStart: Date, rangeEnd: Date): Promis
   | { ok: false; error: string }
 > {
   const supabase = await createSupabaseServerClient();
-  const resolved = await resolveSupplierId(supabase);
+  const resolved = await resolveSupplierId();
   if ("error" in resolved) return { ok: false, error: resolved.error };
 
   // Pull every block that overlaps the visible month window, regardless of

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import { CalendarCheck, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,7 +30,7 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
@@ -150,11 +149,7 @@ export default async function OrganizerBookingsListPage({
 
   const t = await getTranslations("booking");
 
-  const gate = await requireRole("organizer");
-  if (gate.status === "unauthenticated")
-    redirect("/sign-in?next=/organizer/bookings");
-  if (gate.status === "forbidden") redirect("/");
-  const { admin, user } = gate;
+  const { admin, user } = await requireAccess("organizer.bookings");
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;

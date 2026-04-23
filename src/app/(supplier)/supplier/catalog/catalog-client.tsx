@@ -35,6 +35,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -83,6 +94,7 @@ export function CatalogClient({
   subcategories,
 }: Props) {
   const t = useTranslations("supplier.catalog");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
   const [pkgEditor, setPkgEditor] = useState<PackageEditor>({ kind: "closed" });
   const [ruleEditor, setRuleEditor] = useState<RuleEditor>({ kind: "closed" });
@@ -233,27 +245,45 @@ export function CatalogClient({
                             >
                               <Pencil />
                             </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={isPending}
-                              onClick={() => {
-                                if (
-                                  typeof window !== "undefined" &&
-                                  !window.confirm(t("confirmDeletePackage"))
-                                )
-                                  return;
-                                startTransition(async () => {
-                                  const r = await deletePackageAction(p.id);
-                                  handleResult(r, t("deletedPackage"));
-                                });
-                              }}
-                              className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
-                              aria-label={t("delete")}
-                            >
-                              <Trash2 />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={isPending}
+                                  className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                                  aria-label={t("delete")}
+                                >
+                                  <Trash2 />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    {t("delete")}
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t("confirmDeletePackage")}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>
+                                    {tCommon("cancel")}
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      startTransition(async () => {
+                                        const r = await deletePackageAction(p.id);
+                                        handleResult(r, t("deletedPackage"));
+                                      })
+                                    }
+                                  >
+                                    {tCommon("confirm")}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -325,17 +355,12 @@ export function CatalogClient({
                 handleResult(result, t("savedRule"));
               })
             }
-            onDelete={(r) => {
-              if (
-                typeof window !== "undefined" &&
-                !window.confirm(t("confirmDeleteRule"))
-              )
-                return;
+            onDelete={(r) =>
               startTransition(async () => {
                 const result = await deletePricingRuleAction(r.id);
                 handleResult(result, t("deletedRule"));
-              });
-            }}
+              })
+            }
             isPending={isPending}
           />
 
@@ -358,17 +383,12 @@ export function CatalogClient({
                     handleResult(result, t("savedRule"));
                   })
                 }
-                onDelete={(r) => {
-                  if (
-                    typeof window !== "undefined" &&
-                    !window.confirm(t("confirmDeleteRule"))
-                  )
-                    return;
+                onDelete={(r) =>
                   startTransition(async () => {
                     const result = await deletePricingRuleAction(r.id);
                     handleResult(result, t("deletedRule"));
-                  });
-                }}
+                  })
+                }
                 isPending={isPending}
               />
             );
@@ -423,10 +443,16 @@ function RuleGroupView({
   packageById: Map<string, PackageRow>;
   onEdit: (r: PricingRuleRow) => void;
   onToggle: (r: PricingRuleRow, next: boolean) => void;
+  /**
+   * Invoked AFTER the user confirms in the AlertDialog — callers no longer
+   * gate this with their own window.confirm(). The component owns the
+   * confirmation UI.
+   */
   onDelete: (r: PricingRuleRow) => void;
   isPending: boolean;
 }) {
   const t = useTranslations("supplier.catalog");
+  const tCommon = useTranslations("common");
   if (rules.length === 0) return null;
   return (
     <section
@@ -490,17 +516,36 @@ function RuleGroupView({
                 >
                   <Pencil />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={isPending}
-                  onClick={() => onDelete(r)}
-                  className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
-                  aria-label={t("delete")}
-                >
-                  <Trash2 />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={isPending}
+                      className="text-semantic-danger-500 hover:bg-semantic-danger-100/40"
+                      aria-label={t("delete")}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t("delete")}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t("confirmDeleteRule")}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>
+                        {tCommon("cancel")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(r)}>
+                        {tCommon("confirm")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </li>
           );

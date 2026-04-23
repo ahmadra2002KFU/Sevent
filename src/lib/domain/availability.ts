@@ -6,9 +6,23 @@
 
 import { z } from "zod";
 
+// Accepts `YYYY-MM-DDTHH:mm` (datetime-local short form),
+// `YYYY-MM-DDTHH:mm:ss(.fff)`, or full ISO strings with a timezone suffix.
+const LOCAL_DT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?$/;
 const isoDateTime = z
   .string()
-  .refine((v) => !Number.isNaN(Date.parse(v)), { message: "invalid ISO date/time" });
+  .regex(LOCAL_DT, { message: "invalid_datetime_format" })
+  .transform((v, ctx) => {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "invalid_datetime_value",
+      });
+      return z.NEVER;
+    }
+    return d.toISOString();
+  });
 
 export const ManualBlockInput = z
   .object({
@@ -19,7 +33,7 @@ export const ManualBlockInput = z
   })
   .refine((v) => Date.parse(v.ends_at) > Date.parse(v.starts_at), {
     path: ["ends_at"],
-    message: "End must be after start",
+    message: "ends_before_starts",
   });
 export type ManualBlockInput = z.infer<typeof ManualBlockInput>;
 

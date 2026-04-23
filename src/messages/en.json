@@ -568,10 +568,6 @@
         "cta": "Import",
         "comingSoon": "Coming soon — automatic import isn't enabled yet."
       },
-      "wathq": {
-        "prefix": "Auto-verified via Wathq:",
-        "status": "Active"
-      },
       "autosave": {
         "saved": "Draft saved moments ago"
       },
@@ -602,6 +598,9 @@
         "step1": "Business info",
         "step2": "Categories & segments",
         "step3": "Verification & branding"
+      },
+      "step2": {
+        "subcategoriesHint": "Pick as many as apply"
       },
       "resume": {
         "title": "Pick up where you left off",
@@ -649,7 +648,6 @@
         "representativeNamePlaceholder": "Your full name as shown on your ID",
         "representativeNameHelp": "The person who communicates with organizers",
         "maxCategoriesLabel": "{selected} of {max}",
-        "maxCategoriesReached": "You've reached the max of 6 categories",
         "companyProfileHint": "PDF up to 8 MB — shown to organizers only after they accept your quote",
         "bioCharCounter": "{count}/{max}",
         "draftSavedSecondsAgo": "Auto-saved moments ago"
@@ -1099,43 +1097,6 @@
       "title": "We've received your application",
       "sub": "Our verification team is reviewing your documents. Review usually takes 24 business hours.",
       "emailNotice": "We'll email {email} as soon as your profile is approved",
-      "checklistTitle": "What's happening now",
-      "checks": {
-        "wathq": {
-          "title": "Commercial registration check",
-          "descDone": "Verified in Wathq database · {city} · active",
-          "descRunning": "Matching against Wathq database",
-          "descWaiting": "Starts once you submit"
-        },
-        "identity": {
-          "title": "Identity verification",
-          "descDone": "Verified via Nafath",
-          "descRunning": "Verifying your identity",
-          "descWaiting": "After commercial registration check"
-        },
-        "iban": {
-          "title": "IBAN verification",
-          "descDone": "IBAN verified with your bank",
-          "descRunning": "Checking with your bank — usually 30 minutes",
-          "descWaiting": "Starts after identity verification"
-        },
-        "portfolio": {
-          "title": "Portfolio and services review",
-          "descDone": "Reviewed and approved by our team",
-          "descRunning": "Our team is reviewing now",
-          "descWaiting": "Will be reviewed by our team"
-        },
-        "badge": {
-          "title": "Verified supplier badge",
-          "descDone": "Badge is now on your public profile",
-          "descRunning": "Issuing your badge",
-          "descWaiting": "Once the steps above complete"
-        }
-      },
-      "stateDone": "Done",
-      "stateRunning": "In progress",
-      "stateWaiting": "Pending",
-      "timelineTitle": "What comes next",
       "timeline": [
         {
           "title": "Profile approval",
@@ -1151,12 +1112,14 @@
         }
       ],
       "primaryCta": "Back to dashboard",
-      "chatCta": "Chat with verification team",
-      "sideCard": {
-        "title": "Complete your public profile to get more requests",
-        "body": "Add portfolio photos, project gallery, and ready-made packages — requests typically double once these are complete.",
-        "cta": "Start while you wait →"
-      }
+      "chatCta": "Chat with verification team"
+    },
+    "rejected": {
+      "statusPill": "Application status · Needs updates",
+      "title": "Your application needs updates",
+      "body": "Review the notes below and re-submit after fixing the listed items.",
+      "notesHeading": "Reviewer notes",
+      "ctaPrimary": "Edit application"
     },
     "welcome": {
       "congratsEyebrow": "Congratulations, {name}",

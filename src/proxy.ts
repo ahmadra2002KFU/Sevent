@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { resolveAccessForUser } from "@/lib/auth/access";
+import { isRouteAllowed } from "@/lib/auth/featureMatrix";
 
 const ROLE_PREFIXES = ["/organizer", "/supplier", "/admin"] as const;
 type ProtectedPrefix = (typeof ROLE_PREFIXES)[number];
@@ -13,6 +14,20 @@ function findProtectedPrefix(pathname: string): ProtectedPrefix | null {
   );
 }
 
+/**
+ * Request-scoped authorization gate.
+ *
+ * Delegates to `resolveAccessForUser` for a single source of truth —
+ * role + onboarding + verification state collapse into one `AccessDecision`
+ * that the middleware, sign-in action, layouts, pages, and actions all read
+ * from the same file. Previously this function re-implemented a thinner
+ * role-only gate which was trivially skippable (agency redirect loop, no
+ * supplier state check, trusted `next` query param downstream).
+ *
+ * Public routes (not matching any `ROLE_PREFIXES`) short-circuit after
+ * session refresh — we don't pay the extra profile/supplier query cost
+ * when the request doesn't need an access decision.
+ */
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
@@ -22,43 +37,18 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (!user) {
+  const decision = await resolveAccessForUser(user?.id ?? null);
+
+  if (decision.state === "unauthenticated") {
     const signInUrl = new URL("/sign-in", request.url);
     signInUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
-  // Role gating. We authenticated `user` above through the cookie-bound SSR
-  // client's auth.getUser(); here we read their role via the service-role
-  // client because @supabase/ssr + new sb_publishable_* keys don't forward
-  // the user JWT to PostgREST reliably in all contexts, causing RLS-scoped
-  // reads to silently return null (same gap we hit in server actions).
-  const admin = createSupabaseServiceRoleClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const expectedRole = protectedPrefix.slice(1); // "/organizer" -> "organizer"
-  const actualRole = (profile as { role: string } | null)?.role;
-
-  // If the profile row is missing (race window between auth.users insert and
-  // the on-signup trigger) send them home rather than admitting them to a
-  // section they may not belong in.
-  if (!actualRole) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (actualRole !== expectedRole && actualRole !== "admin") {
-    const homeByRole: Record<string, string> = {
-      organizer: "/organizer/dashboard",
-      supplier: "/supplier/dashboard",
-      admin: "/admin/dashboard",
-      agency: "/organizer/dashboard",
-    };
-    const redirectTo = homeByRole[actualRole] ?? "/";
-    return NextResponse.redirect(new URL(redirectTo, request.url));
+  if (!isRouteAllowed(pathname, decision.allowedRoutePrefixes)) {
+    return NextResponse.redirect(
+      new URL(decision.bestDestination, request.url),
+    );
   }
 
   return response;

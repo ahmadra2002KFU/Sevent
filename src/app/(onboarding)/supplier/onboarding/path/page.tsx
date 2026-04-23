@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { PathClient, type PathClientLabels } from "./PathClient";
 
 export const dynamic = "force-dynamic";
@@ -9,25 +8,14 @@ export const dynamic = "force-dynamic";
  * Screen 2 — path picker. Sits between sign-up and the 3-step wizard so the
  * first wizard step already knows whether to ask for CR vs National ID.
  *
- * Gate:
- *   - unauthenticated / wrong role  → `/sign-in`
- *   - supplier row already has `legal_type` → `/supplier/onboarding` (wizard)
+ * Gate: `supplier.onboarding.path` is only admitted for `supplier.no_row`;
+ * any supplier who already has a row (legal_type present → in_onboarding /
+ * pending_review / approved / rejected) gets redirected to their
+ * bestDestination by requireAccess. This prevents an approved supplier from
+ * re-picking their path and overwriting legal_type.
  */
 export default async function SupplierOnboardingPathPage() {
-  const gate = await requireRole("supplier");
-  if (gate.status === "unauthenticated") redirect("/sign-in");
-  if (gate.status === "forbidden") redirect("/sign-in");
-
-  const { user, admin } = gate;
-  const { data: supplier } = await admin
-    .from("suppliers")
-    .select("legal_type")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (supplier?.legal_type) {
-    redirect("/supplier/onboarding");
-  }
+  await requireAccess("supplier.onboarding.path");
 
   const t = await getTranslations("supplier.onboarding.path");
   const tResume = await getTranslations("supplier.onboarding.resume");

@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import {
-  createSupabaseServerClient,
-  createSupabaseServiceRoleClient,
-} from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 const DeclineInput = z.object({
   invite_id: z.string().uuid(),
@@ -25,40 +22,13 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
     throw new Error("Invalid decline submission");
   }
 
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("Not authenticated");
-  }
-
-  // Confirm the caller is a supplier and resolve their supplier row. RLS on
-  // rfq_invites enforces that the UPDATE only touches rows owned by this
-  // supplier, but we guard early in application code for clearer errors.
-  const admin = await createSupabaseServiceRoleClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || (profile as { role: string }).role !== "supplier") {
-    throw new Error("Supplier role required");
-  }
-
-  const { data: supplierRow } = await admin
-    .from("suppliers")
-    .select("id")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!supplierRow) {
+  // Gate: only approved suppliers can respond to RFQs. Resolver stamps
+  // `decision.supplierId` for any state that admits rfqs.respond.
+  const { decision, admin } = await requireAccess("supplier.rfqs.respond");
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
     throw new Error("Supplier profile not found");
   }
-
-  const supplierId = (supplierRow as { id: string }).id;
 
   // Route the UPDATE through the service-role client. The RLS policies on
   // rfq_invites (organizer-write via events, supplier-self-update) trigger the

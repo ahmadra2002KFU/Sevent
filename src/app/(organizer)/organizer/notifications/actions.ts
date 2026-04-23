@@ -16,7 +16,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireRole } from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 
 const idSchema = z.string().uuid();
 
@@ -28,18 +28,17 @@ const idSchema = z.string().uuid();
  * still-unread row is itself the error state.
  */
 export async function markOneReadAction(formData: FormData): Promise<void> {
-  const gate = await requireRole("organizer");
-  if (gate.status !== "ok") return;
+  const { user, admin } = await requireAccess("organizer.dashboard");
 
   const parsed = idSchema.safeParse(formData.get("notification_id"));
   if (!parsed.success) return;
 
   const now = new Date().toISOString();
-  const { error } = await gate.admin
+  const { error } = await admin
     .from("notifications")
     .update({ read_at: now })
     .eq("id", parsed.data)
-    .eq("user_id", gate.user.id) // ownership filter — service-role bypasses RLS
+    .eq("user_id", user.id) // ownership filter — service-role bypasses RLS
     .is("read_at", null);
 
   if (error) {
@@ -52,14 +51,13 @@ export async function markOneReadAction(formData: FormData): Promise<void> {
 }
 
 export async function markAllReadAction(): Promise<void> {
-  const gate = await requireRole("organizer");
-  if (gate.status !== "ok") return;
+  const { user, admin } = await requireAccess("organizer.dashboard");
 
   const now = new Date().toISOString();
-  const { error } = await gate.admin
+  const { error } = await admin
     .from("notifications")
     .update({ read_at: now })
-    .eq("user_id", gate.user.id)
+    .eq("user_id", user.id)
     .is("read_at", null);
 
   if (error) {
