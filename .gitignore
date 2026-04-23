@@ -53,3 +53,9 @@ next-env.d.ts
 
 # Scratch / throwaway files
 .tmp/
+.tmp-*
+
+# Local admin/dev one-off scripts (not part of the app build)
+/approve.ts
+/set-supplier-state.ts
+/update-supplier.ts
