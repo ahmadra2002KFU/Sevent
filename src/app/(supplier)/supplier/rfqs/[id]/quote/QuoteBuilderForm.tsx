@@ -18,7 +18,7 @@
  * / success / error UX without fighting RHF for form control.
  */
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -124,6 +124,8 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
     control,
     register,
     watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -132,6 +134,49 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "line_items" });
+
+  // Auto-recompute per-line total on qty/unit-price change in free-form mode.
+  // The field stays editable, so the supplier can override; the override
+  // survives until they touch qty/price again.
+  useEffect(() => {
+    const syncLine = (line: FormValues["line_items"][number] | undefined, idx: number) => {
+      if (!line) return;
+      const qty = Number(line.qty ?? 0);
+      const price = Number(line.unit_price_sar ?? 0);
+      if (!Number.isFinite(qty) || !Number.isFinite(price) || qty < 0 || price < 0) return;
+      const computed = (qty * price).toFixed(2);
+      const current = Number(line.total_sar || 0);
+      if (!Number.isFinite(current) || current !== Number(computed)) {
+        setValue(`line_items.${idx}.total_sar`, computed, { shouldValidate: false });
+      }
+    };
+    // Seed current values once so an already-filled row without a total
+    // (e.g. after a page refresh in free-form mode) displays the sum.
+    const initial = getValues();
+    if (initial.source === "free_form") {
+      (initial.line_items ?? []).forEach((line, idx) => {
+        if (!line.total_sar || line.total_sar.length === 0) syncLine(line, idx);
+      });
+    }
+    const subscription = watch((value, info) => {
+      if (!info.name) return;
+      if (value.source !== "free_form") return;
+      if (info.name === "source") {
+        (value.line_items ?? []).forEach((line, idx) =>
+          syncLine(line as FormValues["line_items"][number] | undefined, idx),
+        );
+        return;
+      }
+      const match = /^line_items\.(\d+)\.(qty|unit_price_sar)$/.exec(info.name);
+      if (!match) return;
+      const idx = Number(match[1]);
+      syncLine(
+        value.line_items?.[idx] as FormValues["line_items"][number] | undefined,
+        idx,
+      );
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue, getValues]);
 
   const values = watch();
   const source = values.source as QuoteSource;
@@ -156,6 +201,20 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   });
   const inclusionsPayload = splitLines(values.inclusions_text ?? "");
   const exclusionsPayload = splitLines(values.exclusions_text ?? "");
+
+  // Preview total — reflects the user's current edits (line totals + setup +
+  // teardown). In engine/mixed mode the server re-derives travel fee + VAT
+  // on send, so this is a client-side approximation, not the final amount.
+  const liveSubtotalHalalas = lineItemsPayload.reduce(
+    (sum, li) => sum + (Number.isFinite(li.total_halalas) ? li.total_halalas : 0),
+    0,
+  );
+  const liveSetupHalalas = tryHalalas(values.setup_fee_sar);
+  const liveTeardownHalalas = tryHalalas(values.teardown_fee_sar);
+  const liveTotalHalalas = Math.max(
+    0,
+    Math.round(liveSubtotalHalalas + liveSetupHalalas + liveTeardownHalalas),
+  );
 
   return (
     <form action={formAction} className="flex flex-col gap-6" noValidate>
@@ -283,7 +342,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                         >
                           {UNITS.map((u) => (
                             <option key={u} value={u}>
-                              {u}
+                              {t(`units.${u}`)}
                             </option>
                           ))}
                         </select>
@@ -385,14 +444,14 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
           </LabeledField>
           <LabeledField
             label={t("inclusions")}
-            hint="One per line."
+            hint={t("onePerLine")}
             error={errors.inclusions_text?.message}
           >
             <Textarea rows={3} {...register("inclusions_text")} />
           </LabeledField>
           <LabeledField
             label={t("exclusions")}
-            hint="One per line."
+            hint={t("onePerLine")}
             error={errors.exclusions_text?.message}
           >
             <Textarea rows={3} {...register("exclusions_text")} />
@@ -407,18 +466,16 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
         </div>
       </section>
 
-      {/* Totals summary */}
+      {/* Totals summary — live from current form state, not the stale snapshot. */}
       <section className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
         <div className="flex items-center justify-between">
           <span className="font-medium text-foreground">{t("total")}</span>
           <span className="text-lg font-semibold text-brand-navy-900">
-            {formatHalalas(props.initialSnapshot.total_halalas)}
+            {formatHalalas(liveTotalHalalas)}
           </span>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {isEngineMode
-            ? "The server recomputes totals from your rules on send."
-            : "Free-form total is the sum of your line items plus addons."}
+          {isEngineMode ? t("totalHintEngine") : t("totalHintFreeForm")}
         </p>
       </section>
 

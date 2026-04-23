@@ -17,6 +17,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useLocale } from "next-intl";
 import { AlertTriangle, Check, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { formatHalalas } from "@/lib/domain/money";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { acceptQuoteAction } from "./actions";
 import { initialActionState, type ActionState } from "./action-state";
 
@@ -49,21 +51,6 @@ type Props = {
   rfqId: string;
   rows: QuoteRowData[];
 };
-
-function fmt(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 function AcceptSubmit() {
   const { pending } = useFormStatus();
@@ -84,7 +71,15 @@ function AcceptSubmit() {
   );
 }
 
-function QuoteRow({ rfqId, row }: { rfqId: string; row: QuoteRowData }) {
+function QuoteRow({
+  rfqId,
+  row,
+  locale,
+}: {
+  rfqId: string;
+  row: QuoteRowData;
+  locale: SupportedLocale;
+}) {
   const [state, action] = useActionState<ActionState, FormData>(
     acceptQuoteAction,
     initialActionState,
@@ -118,10 +113,10 @@ function QuoteRow({ rfqId, row }: { rfqId: string; row: QuoteRowData }) {
           {formatHalalas(row.total_halalas)}
         </TableCell>
         <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
-          {fmt(row.expires_at)}
+          {fmtDateTime(row.expires_at, locale) || "—"}
         </TableCell>
         <TableCell className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
-          {fmt(row.submitted_at)}
+          {fmtDateTime(row.submitted_at, locale) || "—"}
         </TableCell>
         <TableCell className="px-4 py-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -156,6 +151,8 @@ function QuoteRow({ rfqId, row }: { rfqId: string; row: QuoteRowData }) {
 }
 
 export function QuotesTable({ rfqId, rows }: Props) {
+  const locale = useLocale() as SupportedLocale;
+
   if (rows.length === 0) {
     return (
       <Card className="p-8 text-center">
@@ -186,7 +183,12 @@ export function QuotesTable({ rfqId, rows }: Props) {
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <QuoteRow key={row.quote_id} rfqId={rfqId} row={row} />
+            <QuoteRow
+              key={row.quote_id}
+              rfqId={rfqId}
+              row={row}
+              locale={locale}
+            />
           ))}
         </TableBody>
       </Table>

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft, FileCheck } from "lucide-react";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,8 +49,8 @@ type RfqDetail = {
     ends_at: string;
     guest_count: number | null;
   } | null;
-  parent: { id: string; name_en: string } | null;
-  sub: { id: string; name_en: string } | null;
+  parent: { id: string; name_en: string; name_ar: string | null } | null;
+  sub: { id: string; name_en: string; name_ar: string | null } | null;
 };
 
 type InviteDetail = {
@@ -65,19 +69,8 @@ type InviteDetail = {
   } | null;
 };
 
-function fmt(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
+function fmt(iso: string | null | undefined, locale: SupportedLocale): string {
+  return fmtDateTime(iso ?? null, locale) || "—";
 }
 
 function toPillStatus(raw: string): StatusPillStatus {
@@ -148,8 +141,8 @@ function PrettyRequirements({ req }: { req: unknown }) {
 
 export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.rfqs");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -158,8 +151,8 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
     .select(
       `id, status, sent_at, created_at, requirements_jsonb,
        events ( id, event_type, client_name, city, starts_at, ends_at, guest_count, organizer_id ),
-       parent:categories!rfqs_category_id_fkey ( id, name_en ),
-       sub:categories!rfqs_subcategory_id_fkey ( id, name_en )`,
+       parent:categories!rfqs_category_id_fkey ( id, name_en, name_ar ),
+       sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar )`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -201,9 +194,9 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
     .eq("rfq_id", id)
     .eq("status", "sent");
 
-  const title = `${rfq.parent?.name_en ?? "RFQ"}${
-    rfq.sub ? ` · ${rfq.sub.name_en}` : ""
-  }`;
+  const parentLabel = categoryName(rfq.parent, locale);
+  const subLabel = categoryName(rfq.sub, locale);
+  const title = `${parentLabel || "RFQ"}${subLabel ? ` · ${subLabel}` : ""}`;
 
   return (
     <section className="flex flex-col gap-6">
@@ -224,9 +217,9 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
         title={title}
         description={
           rfq.events
-            ? `${eventFormT(`eventType.${rfq.events.event_type}` as never)}${
+            ? `${segmentNameFor(rfq.events.event_type, locale)}${
                 rfq.events.client_name ? ` · ${rfq.events.client_name}` : ""
-              } · ${rfq.events.city} · ${fmt(rfq.events.starts_at)}`
+              } · ${cityNameFor(rfq.events.city, locale)} · ${fmt(rfq.events.starts_at, locale)}`
             : t("detailEyebrow")
         }
         actions={
@@ -303,7 +296,9 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
                           {inv.suppliers?.business_name ?? "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {inv.suppliers?.base_city ?? ""}
+                          {inv.suppliers?.base_city
+                            ? cityNameFor(inv.suppliers.base_city, locale)
+                            : ""}
                         </span>
                       </div>
                     </TableCell>
@@ -317,13 +312,13 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
                       />
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                      {fmt(inv.sent_at)}
+                      {fmt(inv.sent_at, locale)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                      {fmt(inv.response_due_at)}
+                      {fmt(inv.response_due_at, locale)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                      {fmt(inv.responded_at)}
+                      {fmt(inv.responded_at, locale)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm">
                       {inv.decline_reason_code ?? "—"}

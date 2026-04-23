@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   CalendarDays,
   FileText,
@@ -9,6 +9,10 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { fmtDate, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
@@ -25,7 +29,7 @@ type DashboardRfq = {
   sent_at: string | null;
   created_at: string;
   events: { id: string; city: string } | null;
-  sub: { id: string; name_en: string } | null;
+  sub: { id: string; name_en: string; name_ar: string | null } | null;
   rfq_invites: Array<{ id: string }>;
 };
 
@@ -37,18 +41,6 @@ type UpcomingEvent = {
   starts_at: string;
   ends_at: string;
 };
-
-function fmtDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 function toPillStatus(raw: string): StatusPillStatus {
   const allowed: StatusPillStatus[] = [
@@ -76,9 +68,9 @@ function toPillStatus(raw: string): StatusPillStatus {
 }
 
 export default async function OrganizerDashboardPage() {
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.dashboard");
   const rfqT = await getTranslations("organizer.rfqs");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { user, admin } = await requireAccess("organizer.dashboard");
 
@@ -110,7 +102,7 @@ export default async function OrganizerDashboardPage() {
     .select(
       `id, status, sent_at, created_at,
        events!inner ( id, city, organizer_id ),
-       sub:categories!rfqs_subcategory_id_fkey ( id, name_en ),
+       sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar ),
        rfq_invites ( id )`,
     )
     .eq("events.organizer_id", user.id)
@@ -219,15 +211,17 @@ export default async function OrganizerDashboardPage() {
                       >
                         <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                           <span className="truncate font-medium text-brand-navy-900">
-                            {r.sub?.name_en ?? "RFQ"}
+                            {categoryName(r.sub, locale) || "RFQ"}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {r.events?.city ? `${r.events.city} · ` : ""}
+                            {r.events?.city
+                              ? `${cityNameFor(r.events.city, locale)} · `
+                              : ""}
                             {t("invitesCount", {
                               count: r.rfq_invites?.length ?? 0,
                             })}
                             {" · "}
-                            {fmtDate(r.sent_at ?? r.created_at)}
+                            {fmtDate(r.sent_at ?? r.created_at, locale)}
                           </span>
                         </div>
                         <StatusPill
@@ -267,11 +261,11 @@ export default async function OrganizerDashboardPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-brand-navy-900">
-                              {eventFormT(`eventType.${e.event_type}` as never)}
+                              {segmentNameFor(e.event_type, locale)}
                               {e.client_name ? ` · ${e.client_name}` : ""}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {e.city} · {fmtDate(e.starts_at)}
+                              {cityNameFor(e.city, locale)} · {fmtDate(e.starts_at, locale)}
                             </p>
                           </div>
                           <ArrowRight

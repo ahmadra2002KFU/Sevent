@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ImageOff, PackageOpen, Star } from "lucide-react";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
@@ -11,6 +11,8 @@ import {
   getPublicSupplierBySlug,
   type PublicSupplierProfile,
 } from "@/lib/domain/supplierProfile";
+import { cityNameFor } from "@/lib/domain/cities";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -32,7 +34,8 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PublicSupplierProfilePage({ params }: PageProps) {
   const { slug } = await params;
-  const [t, tCats, brand, supplier] = await Promise.all([
+  const [locale, t, tCats, brand, supplier] = await Promise.all([
+    getLocale() as Promise<SupportedLocale>,
     getTranslations("public.supplier"),
     getTranslations("public.categories"),
     getTranslations("brand"),
@@ -42,8 +45,19 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
   if (!supplier) notFound();
 
   const firstCat = supplier.subcategories[0];
+  const isAr = locale === "ar";
+  const firstCatParent = firstCat
+    ? isAr
+      ? firstCat.parent_name_ar ?? firstCat.parent_name_en
+      : firstCat.parent_name_en
+    : null;
+  const firstCatName = firstCat
+    ? isAr
+      ? firstCat.name_ar ?? firstCat.name_en
+      : firstCat.name_en
+    : null;
   const breadcrumbCategoryLabel =
-    firstCat?.parent_name_en ?? firstCat?.name_en ?? tCats("title");
+    firstCatParent ?? firstCatName ?? tCats("title");
 
   const heroImageUrl = supplier.media[0]?.public_url ?? null;
 
@@ -69,12 +83,15 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
       <SupplierProfileHero
         businessName={supplier.business_name}
         bio={supplier.bio}
-        baseCity={supplier.base_city}
-        serviceAreaCities={supplier.service_area_cities}
+        baseCity={cityNameFor(supplier.base_city, locale)}
+        serviceAreaCities={supplier.service_area_cities.map((c) =>
+          cityNameFor(c, locale),
+        )}
         languages={supplier.languages}
         heroImageUrl={heroImageUrl}
         logoUrl={supplier.logo_url}
         subcategories={supplier.subcategories}
+        locale={locale}
         verifiedLabel={t("verifiedBadge")}
         baseCityLabel={t("baseCityLabel")}
         serviceAreaLabel={t("serviceAreaLabel")}

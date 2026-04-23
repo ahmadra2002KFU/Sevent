@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { CalendarPlus, CalendarDays, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { fmtDate, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
 import {
   Table,
   TableBody,
@@ -28,17 +31,12 @@ type EventListRow = {
   rfqs: Array<{ id: string }>;
 };
 
-function formatDateRange(starts: string, ends: string): string {
+function formatDateRange(
+  starts: string,
+  ends: string,
+  locale: SupportedLocale,
+): string {
   try {
-    const startFormatter = new Intl.DateTimeFormat("en-SA", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-    const endFormatter = new Intl.DateTimeFormat("en-SA", {
-      month: "short",
-      day: "numeric",
-    });
     const s = new Date(starts);
     const e = new Date(ends);
     const sameDay =
@@ -46,16 +44,16 @@ function formatDateRange(starts: string, ends: string): string {
       s.getMonth() === e.getMonth() &&
       s.getDate() === e.getDate();
     return sameDay
-      ? startFormatter.format(s)
-      : `${endFormatter.format(s)} → ${startFormatter.format(e)}`;
+      ? fmtDate(starts, locale)
+      : `${fmtDate(starts, locale)} → ${fmtDate(ends, locale)}`;
   } catch {
     return starts;
   }
 }
 
 export default async function OrganizerEventsPage() {
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.events");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { user, admin } = await requireAccess("organizer.events");
 
@@ -119,7 +117,7 @@ export default async function OrganizerEventsPage() {
                       className="flex flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                     >
                       <span className="font-medium text-brand-navy-900 group-hover:text-brand-cobalt-500">
-                        {eventFormT(`eventType.${row.event_type}` as never)}
+                        {segmentNameFor(row.event_type, locale)}
                       </span>
                       {row.client_name ? (
                         <span className="text-xs text-muted-foreground">
@@ -134,11 +132,11 @@ export default async function OrganizerEventsPage() {
                         className="size-3.5 text-muted-foreground"
                         aria-hidden
                       />
-                      {row.city}
+                      {cityNameFor(row.city, locale)}
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm">
-                    {formatDateRange(row.starts_at, row.ends_at)}
+                    {formatDateRange(row.starts_at, row.ends_at, locale)}
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     {row.guest_count ? (

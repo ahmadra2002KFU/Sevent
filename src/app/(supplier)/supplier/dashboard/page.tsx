@@ -43,6 +43,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +90,7 @@ type RecentInviteRow = {
     } | null;
     category: {
       name_en: string;
+      name_ar: string | null;
     } | null;
   } | null;
 };
@@ -102,26 +106,13 @@ type RecentInviteQueryRow = {
     }>;
     categories: Array<{
       name_en: string;
+      name_ar: string | null;
     }>;
   }>;
 };
 
 function buildThirtyDayCutoffIso(): string {
   return new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
-}
-
-function formatDateTime(iso: string, locale: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
 }
 
 function formatPercentage(value: number | null, emptyValue: string): string {
@@ -215,8 +206,7 @@ function normalizeRecentInvites(rows: RecentInviteQueryRow[]): RecentInviteRow[]
 export default async function SupplierDashboardPage() {
   const t = await getTranslations("supplier.dashboard");
   const rfqInboxT = await getTranslations("supplier.rfqInbox");
-  const locale = await getLocale();
-  const dateLocale = locale === "ar" ? "ar-SA" : "en-SA";
+  const locale = (await getLocale()) as SupportedLocale;
 
   // Access gate: the resolver has already classified this caller as
   // `supplier.in_onboarding | pending_review | approved | rejected | suspended`
@@ -350,7 +340,7 @@ export default async function SupplierDashboardPage() {
         `id, status, response_due_at,
          rfqs (
            events ( city, starts_at ),
-           categories!rfqs_subcategory_id_fkey ( name_en )
+           categories!rfqs_subcategory_id_fkey ( name_en, name_ar )
          )`,
       )
       .eq("supplier_id", supplierSummary.id)
@@ -572,16 +562,15 @@ export default async function SupplierDashboardPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground">
-                          {invite.rfq?.category?.name_en ?? "RFQ"}
+                          {categoryName(invite.rfq?.category, locale) || "RFQ"}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {invite.rfq?.event?.city ?? "—"}
+                          {invite.rfq?.event?.city
+                            ? cityNameFor(invite.rfq.event.city, locale)
+                            : "—"}
                           {" · "}
                           {invite.rfq?.event?.starts_at
-                            ? formatDateTime(
-                                invite.rfq.event.starts_at,
-                                dateLocale,
-                              )
+                            ? fmtDateTime(invite.rfq.event.starts_at, locale)
                             : "—"}
                           {invite.status === "invited" ? (
                             <>

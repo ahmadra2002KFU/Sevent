@@ -2,6 +2,7 @@ import Image from "next/image";
 import { MapPin, Languages, Globe2 } from "lucide-react";
 import { VerifiedBadge } from "@/components/public/VerifiedBadge";
 import { Badge } from "@/components/ui/badge";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 
 type SupplierProfileHeroProps = {
   businessName: string;
@@ -14,8 +15,11 @@ type SupplierProfileHeroProps = {
   subcategories: Array<{
     id: string;
     name_en: string;
+    name_ar: string | null;
     parent_name_en: string | null;
+    parent_name_ar: string | null;
   }>;
+  locale: SupportedLocale;
   verifiedLabel: string;
   baseCityLabel: string;
   serviceAreaLabel: string;
@@ -49,12 +53,14 @@ export function SupplierProfileHero({
   heroImageUrl,
   logoUrl = null,
   subcategories,
+  locale,
   verifiedLabel,
   baseCityLabel,
   serviceAreaLabel,
   languagesLabel,
 }: SupplierProfileHeroProps) {
   const initials = getInitials(businessName);
+  const isAr = locale === "ar";
   return (
     <section className="flex flex-col">
       {/* Banner */}
@@ -164,16 +170,22 @@ export function SupplierProfileHero({
 
             {subcategories.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {subcategories.map((s) => (
-                  <Badge
-                    key={s.id}
-                    variant="secondary"
-                    className="bg-neutral-100 font-medium text-brand-navy-900"
-                  >
-                    {s.parent_name_en ? `${s.parent_name_en} · ` : ""}
-                    {s.name_en}
-                  </Badge>
-                ))}
+                {subcategories.map((s) => {
+                  const parent = isAr
+                    ? s.parent_name_ar ?? s.parent_name_en
+                    : s.parent_name_en;
+                  const name = isAr ? s.name_ar ?? s.name_en : s.name_en;
+                  return (
+                    <Badge
+                      key={s.id}
+                      variant="secondary"
+                      className="bg-neutral-100 font-medium text-brand-navy-900"
+                    >
+                      {parent ? `${parent} · ` : ""}
+                      {name}
+                    </Badge>
+                  );
+                })}
               </div>
             ) : null}
           </div>

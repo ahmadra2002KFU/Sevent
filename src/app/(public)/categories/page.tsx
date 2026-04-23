@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PackageSearch } from "lucide-react";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
@@ -6,6 +6,8 @@ import { CategoryTile } from "@/components/public/CategoryTile";
 import { getCategoryIcon } from "@/components/public/categoryIcons";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
 import { listTopLevelCategories } from "@/lib/domain/publicBrowse";
+import { categoryName } from "@/lib/domain/taxonomy";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,8 @@ export async function generateMetadata() {
 }
 
 export default async function CategoriesPage() {
-  const [t, tLanding, brand, categories] = await Promise.all([
+  const [locale, t, tLanding, brand, categories] = await Promise.all([
+    getLocale() as Promise<SupportedLocale>,
     getTranslations("public.categories"),
     getTranslations("landing"),
     getTranslations("brand"),
@@ -48,7 +51,7 @@ export default async function CategoriesPage() {
             <CategoryTile
               key={c.id}
               href={`/categories/${c.slug}`}
-              name={c.name_en}
+              name={categoryName(c, locale) || c.name_en}
               supplierCount={c.supplier_count}
               supplierCountLabel={tLanding("categories.supplierCount", {
                 count: c.supplier_count,

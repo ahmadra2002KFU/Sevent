@@ -8,6 +8,9 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
 import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -82,20 +85,6 @@ function statusPillFor(
   }
 }
 
-function formatEventDateTime(iso: string, locale: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
 function deadlineText(
   t: (key: string, values?: Record<string, string | number>) => string,
   deadlineIso: string | null,
@@ -111,9 +100,8 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function SupplierBookingDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const locale = await getLocale();
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("booking");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { decision, admin } = await requireAccess("supplier.bookings");
   const supplierId = decision.supplierId;
@@ -141,8 +129,9 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
   const organizerName = row.profiles?.full_name ?? "—";
 
   const deadlineFormatted = row.confirm_deadline
-    ? formatEventDateTime(row.confirm_deadline, locale)
+    ? fmtDateTime(row.confirm_deadline, locale)
     : null;
+  const cityLabel = event?.city ? cityNameFor(event.city, locale) : null;
   const deadlineResult = formatConfirmDeadline(row.confirm_deadline);
 
   return (
@@ -156,7 +145,7 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
 
       <PageHeader
         title={t("detailTitle")}
-        description={`${organizerName}${event?.city ? ` · ${event.city}` : ""}`}
+        description={`${organizerName}${cityLabel ? ` · ${cityLabel}` : ""}`}
         actions={statusPillFor(t, row.confirmation_status)}
       />
 
@@ -194,9 +183,7 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
           <CardHeader>
             <CardDescription>{t("detailEvent")}</CardDescription>
             <CardTitle>
-              {event
-                ? eventFormT(`eventType.${event.event_type}` as never)
-                : "—"}
+              {event ? segmentNameFor(event.event_type, locale) : "—"}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
@@ -204,9 +191,9 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
               <p className="text-foreground">{event.client_name}</p>
             ) : null}
             <p>
-              {event?.city ?? "—"}
+              {cityLabel ?? "—"}
               {event?.starts_at
-                ? ` · ${formatEventDateTime(event.starts_at, locale)}`
+                ? ` · ${fmtDateTime(event.starts_at, locale)}`
                 : ""}
             </p>
             {event?.guest_count ? (

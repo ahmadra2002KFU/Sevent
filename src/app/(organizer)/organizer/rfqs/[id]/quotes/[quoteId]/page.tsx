@@ -11,6 +11,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { ArrowLeft, ClockAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
 import { formatHalalas } from "@/lib/domain/money";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import type { QuoteSnapshot, QuoteLineItem } from "@/lib/domain/quote";
 
 export const dynamic = "force-dynamic";
@@ -65,19 +67,12 @@ type QuoteRow = {
   } | null;
 };
 
-function fmt(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
+function fmt(
+  iso: string | null | undefined,
+  locale: SupportedLocale,
+): string {
+  const formatted = fmtDateTime(iso ?? null, locale);
+  return formatted || "—";
 }
 
 function unitLabel(unit: QuoteLineItem["unit"]): string {
@@ -125,6 +120,7 @@ export default async function OrganizerQuoteDetailPage({
   params,
 }: PageProps) {
   const { id, quoteId } = await params;
+  const locale = (await getLocale()) as SupportedLocale;
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -196,7 +192,7 @@ export default async function OrganizerQuoteDetailPage({
         title={quote.suppliers?.business_name ?? "Quote snapshot"}
         description={`${
           quote.suppliers?.base_city ? `${quote.suppliers.base_city} · ` : ""
-        }Revision v${revision.version} · Submitted ${fmt(quote.sent_at)}`}
+        }Revision v${revision.version} · Submitted ${fmt(quote.sent_at, locale)}`}
         actions={
           <StatusPill
             status={toPillStatus(quote.status)}
@@ -209,7 +205,7 @@ export default async function OrganizerQuoteDetailPage({
         <Alert>
           <ClockAlert aria-hidden />
           <AlertDescription>
-            Valid until <strong>{fmt(snap.expires_at)}</strong>
+            Valid until <strong>{fmt(snap.expires_at, locale)}</strong>
           </AlertDescription>
         </Alert>
       ) : null}

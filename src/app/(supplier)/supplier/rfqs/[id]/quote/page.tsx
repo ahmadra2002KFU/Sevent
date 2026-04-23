@@ -22,10 +22,13 @@
  */
 
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AlertTriangle } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import {
   composePrice,
   type PricingPackageInput,
@@ -66,7 +69,12 @@ type InviteRow = {
       guest_count: number | null;
       venue_location: unknown | null;
     } | null;
-    categories: { id: string; slug: string; name_en: string } | null;
+    categories: {
+      id: string;
+      slug: string;
+      name_en: string;
+      name_ar: string | null;
+    } | null;
   } | null;
 };
 
@@ -112,6 +120,7 @@ const TERMINAL_STATUSES = new Set(["accepted", "rejected", "expired", "withdrawn
 
 export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
   const { id: inviteId } = await params;
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.quote");
 
   // 1. Gate — only approved suppliers can respond to RFQs.
@@ -127,7 +136,7 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
        rfqs (
          id, event_id, subcategory_id,
          events ( id, organizer_id, city, starts_at, ends_at, guest_count, venue_location ),
-         categories!rfqs_subcategory_id_fkey ( id, slug, name_en )
+         categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar )
        )`,
     )
     .eq("id", inviteId)
@@ -274,9 +283,13 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
     <section className="flex flex-col gap-6">
       <PageHeader
         title={t("title")}
-        description={`${rfq.categories?.name_en ?? "RFQ"} · ${event.city} · ${formatIso(
-          event.starts_at,
-        )} → ${formatIso(event.ends_at)}`}
+        description={`${categoryName(rfq.categories, locale) || "RFQ"} · ${cityNameFor(
+          event.city,
+          locale,
+        )} · ${fmtDateTime(event.starts_at, locale)} → ${fmtDateTime(
+          event.ends_at,
+          locale,
+        )}`}
       />
 
       <p className="-mt-2 text-sm text-muted-foreground">{t("intro")}</p>
@@ -375,16 +388,3 @@ function parseSnapshot(value: unknown): QuoteSnapshot | null {
   return v as QuoteSnapshot;
 }
 
-function formatIso(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}

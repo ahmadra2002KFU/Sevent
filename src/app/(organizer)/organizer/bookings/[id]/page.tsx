@@ -35,6 +35,9 @@ import {
 } from "@/lib/domain/booking";
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
 import { requireAccess } from "@/lib/auth/access";
 import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
 
@@ -98,20 +101,6 @@ function statusLabel(
   }
 }
 
-function formatEventDateTime(iso: string, locale: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
 function deadlineText(
   t: (
     key: string,
@@ -132,9 +121,8 @@ export default async function OrganizerBookingDetailPage({
   params,
 }: PageProps) {
   const { id } = await params;
-  const locale = await getLocale();
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("booking");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { admin, user } = await requireAccess("organizer.bookings");
 
@@ -188,7 +176,11 @@ export default async function OrganizerBookingDetailPage({
   }
 
   const deadlineAbs = row.confirm_deadline
-    ? formatEventDateTime(row.confirm_deadline, locale)
+    ? fmtDateTime(row.confirm_deadline, locale)
+    : null;
+  const eventCityLabel = event?.city ? cityNameFor(event.city, locale) : null;
+  const supplierCityLabel = supplier?.base_city
+    ? cityNameFor(supplier.base_city, locale)
     : null;
 
   return (
@@ -203,7 +195,7 @@ export default async function OrganizerBookingDetailPage({
       <PageHeader
         title={t("detailTitle")}
         description={`${supplier?.business_name ?? "—"}${
-          event?.city ? ` · ${event.city}` : ""
+          eventCityLabel ? ` · ${eventCityLabel}` : ""
         }`}
         actions={
           <StatusPill
@@ -249,13 +241,13 @@ export default async function OrganizerBookingDetailPage({
             <p className="text-base font-semibold text-brand-navy-900">
               {supplier?.business_name ?? "—"}
             </p>
-            {supplier?.base_city ? (
+            {supplierCityLabel ? (
               <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <MapPin
                   className="size-3.5 text-brand-cobalt-500"
                   aria-hidden
                 />
-                {supplier.base_city}
+                {supplierCityLabel}
               </p>
             ) : null}
             {hasCompanyProfile ? (
@@ -280,9 +272,7 @@ export default async function OrganizerBookingDetailPage({
           </CardHeader>
           <CardContent className="flex flex-col gap-1 px-4 pb-5">
             <p className="text-base font-semibold text-brand-navy-900">
-              {event
-                ? eventFormT(`eventType.${event.event_type}` as never)
-                : "—"}
+              {event ? segmentNameFor(event.event_type, locale) : "—"}
             </p>
             {event?.client_name ? (
               <p className="text-sm text-foreground">{event.client_name}</p>
@@ -290,11 +280,11 @@ export default async function OrganizerBookingDetailPage({
             {event ? (
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-3" aria-hidden /> {event.city}
+                  <MapPin className="size-3" aria-hidden /> {eventCityLabel ?? event.city}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <CalendarDays className="size-3" aria-hidden />
-                  {formatEventDateTime(event.starts_at, locale)}
+                  {fmtDateTime(event.starts_at, locale)}
                 </span>
                 {event.guest_count ? (
                   <span className="inline-flex items-center gap-1">

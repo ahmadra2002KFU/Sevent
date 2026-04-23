@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { Inbox, MapPin, Users } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -35,6 +38,7 @@ type InviteRow = {
       id: string;
       slug: string;
       name_en: string;
+      name_ar: string | null;
     } | null;
   } | null;
 };
@@ -57,20 +61,6 @@ function countdownTone(responseDueAt: string): "warning" | "danger" | "info" {
   if (hours < 4) return "danger";
   if (hours < 12) return "warning";
   return "info";
-}
-
-function formatEventDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
 }
 
 function formatSentRelative(iso: string): string {
@@ -96,7 +86,9 @@ function mapInviteToStatusPill(status: InviteStatus) {
 }
 
 export default async function SupplierRfqInboxPage() {
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
+  const formatEventDate = (iso: string): string => fmtDateTime(iso, locale);
 
   const { decision, admin } = await requireAccess("supplier.rfqs.view");
   const supplierId = decision.supplierId;
@@ -116,7 +108,7 @@ export default async function SupplierRfqInboxPage() {
        rfqs (
          id, subcategory_id,
          events ( id, city, starts_at, ends_at, guest_count ),
-         categories!rfqs_subcategory_id_fkey ( id, slug, name_en )
+         categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar )
        )`,
     )
     .eq("supplier_id", supplierId)
@@ -162,14 +154,14 @@ export default async function SupplierRfqInboxPage() {
                       <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-base font-semibold text-brand-navy-900">
-                            {subcategory?.name_en ?? "RFQ"}
+                            {categoryName(subcategory, locale) || "RFQ"}
                           </h3>
                           <StatusPill status="invited" label={t("status.invited")} />
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <MapPin className="size-3.5" aria-hidden />
-                            {event?.city ?? "—"}
+                            {event?.city ? cityNameFor(event.city, locale) : "—"}
                           </span>
                           {event?.starts_at ? (
                             <span>{formatEventDate(event.starts_at)}</span>
@@ -236,8 +228,8 @@ export default async function SupplierRfqInboxPage() {
                         href={`/supplier/rfqs/${invite.id}`}
                         className="font-medium text-foreground hover:underline"
                       >
-                        {subcategory?.name_en ?? "RFQ"}
-                        {event?.city ? ` · ${event.city}` : ""}
+                        {categoryName(subcategory, locale) || "RFQ"}
+                        {event?.city ? ` · ${cityNameFor(event.city, locale)}` : ""}
                       </Link>
                       {event?.starts_at ? (
                         <span className="text-xs text-muted-foreground">

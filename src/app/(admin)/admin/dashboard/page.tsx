@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   AlertTriangle,
   ArrowRight,
@@ -45,6 +45,14 @@ import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import type { StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
+import {
+  fmtDate as fmtDateHelper,
+  fmtDateTime as fmtDateTimeHelper,
+  type SupportedLocale,
+} from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -66,8 +74,8 @@ type AdminRfqRow = {
     event_type: string;
     starts_at: string;
   } | null;
-  cat: { id: string; name_en: string } | null;
-  sub: { id: string; name_en: string } | null;
+  cat: { id: string; name_en: string; name_ar: string | null } | null;
+  sub: { id: string; name_en: string; name_ar: string | null } | null;
 };
 
 type AdminNotificationRow = {
@@ -133,34 +141,6 @@ function pickNumber(
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-function fmtDateTime(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
 // Map the raw rfq.status strings onto the shared StatusPill status union.
 // Anything unknown falls through to "pending" (neutral tone).
 function rfqStatusPill(status: string): StatusPillStatus {
@@ -179,9 +159,14 @@ function rfqStatusPill(status: string): StatusPillStatus {
 }
 
 export default async function AdminDashboardPage() {
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("admin.dashboard");
-  const eventFormT = await getTranslations("organizer.eventForm");
   const rfqT = await getTranslations("organizer.rfqs");
+
+  const fmtDate = (iso: string | null): string =>
+    fmtDateHelper(iso, locale) || "—";
+  const fmtDateTime = (iso: string | null): string =>
+    fmtDateTimeHelper(iso, locale) || "—";
 
   // 1) Re-assert admin role using the user-scoped client.
   const supabase = await createSupabaseServerClient();
@@ -240,8 +225,8 @@ export default async function AdminDashboardPage() {
     .select(
       `id, status, sent_at, created_at,
        events ( id, city, event_type, starts_at ),
-       cat:categories!rfqs_category_id_fkey ( id, name_en ),
-       sub:categories!rfqs_subcategory_id_fkey ( id, name_en )`,
+       cat:categories!rfqs_category_id_fkey ( id, name_en, name_ar ),
+       sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar )`,
     )
     .order("sent_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
@@ -463,7 +448,7 @@ export default async function AdminDashboardPage() {
                         {s.business_name}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {s.base_city}
+                        {cityNameFor(s.base_city, locale)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {fmtDate(s.created_at)}
@@ -581,11 +566,13 @@ export default async function AdminDashboardPage() {
                 {rfqs.map((r) => {
                   const invites = inviteCountByRfq.get(r.id) ?? 0;
                   const eventType = r.events?.event_type
-                    ? eventFormT(`eventType.${r.events.event_type}` as never)
+                    ? segmentNameFor(r.events.event_type, locale)
                     : "—";
-                  const city = r.events?.city ?? "—";
-                  const category = r.cat?.name_en ?? "—";
-                  const subcategory = r.sub?.name_en ?? "—";
+                  const city = r.events?.city
+                    ? cityNameFor(r.events.city, locale)
+                    : "—";
+                  const category = categoryName(r.cat, locale) || "—";
+                  const subcategory = categoryName(r.sub, locale) || "—";
                   return (
                     <TableRow key={r.id}>
                       <TableCell>

@@ -21,6 +21,7 @@ export type MatchingRfq = {
   id: string;
   orgInitials: string;
   orgLabel: string;
+  /** Pre-localized city label — caller resolves the slug via `cityNameFor`. */
   city: string;
   dateLabel: string;
   budgetLabel: string;

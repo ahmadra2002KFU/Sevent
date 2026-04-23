@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { FileText, Sparkles } from "lucide-react";
+import { fmtDate, type SupportedLocale } from "@/lib/domain/formatDate";
+import { segmentNameFor } from "@/lib/domain/segments";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -33,27 +37,24 @@ type RfqRow = {
     starts_at: string;
     city: string;
   } | null;
-  parent: { id: string; slug: string; name_en: string } | null;
-  sub: { id: string; slug: string; name_en: string } | null;
+  parent: {
+    id: string;
+    slug: string;
+    name_en: string;
+    name_ar: string | null;
+  } | null;
+  sub: {
+    id: string;
+    slug: string;
+    name_en: string;
+    name_ar: string | null;
+  } | null;
   rfq_invites: Array<{
     id: string;
     response_due_at: string;
     status: string;
   }>;
 };
-
-function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 function toPillStatus(raw: string): StatusPillStatus {
   const allowed: StatusPillStatus[] = [
@@ -92,8 +93,8 @@ function responseRate(
 }
 
 export default async function OrganizerRfqsPage() {
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.rfqs");
-  const eventFormT = await getTranslations("organizer.eventForm");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -102,14 +103,17 @@ export default async function OrganizerRfqsPage() {
     .select(
       `id, status, sent_at, created_at,
        events!inner ( id, event_type, client_name, starts_at, city, organizer_id ),
-       parent:categories!rfqs_category_id_fkey ( id, slug, name_en ),
-       sub:categories!rfqs_subcategory_id_fkey ( id, slug, name_en ),
+       parent:categories!rfqs_category_id_fkey ( id, slug, name_en, name_ar ),
+       sub:categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar ),
        rfq_invites ( id, response_due_at, status )`,
     )
     .eq("events.organizer_id", user.id)
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as RfqRow[];
+
+  const fmt = (iso: string | null | undefined): string =>
+    fmtDate(iso ?? null, locale) || "—";
 
   return (
     <section className="flex flex-col gap-6">
@@ -163,10 +167,10 @@ export default async function OrganizerRfqsPage() {
                         className="flex flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
                       >
                         <span className="font-medium text-brand-navy-900 group-hover:text-brand-cobalt-500">
-                          {row.sub?.name_en ?? "—"}
+                          {categoryName(row.sub, locale) || "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {row.parent?.name_en ?? ""}
+                          {categoryName(row.parent, locale)}
                         </span>
                       </Link>
                     </TableCell>
@@ -174,21 +178,21 @@ export default async function OrganizerRfqsPage() {
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">
                           {row.events
-                            ? eventFormT(
-                                `eventType.${row.events.event_type}` as never,
-                              )
+                            ? segmentNameFor(row.events.event_type, locale)
                             : "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {row.events?.city ?? ""}
+                          {row.events?.city
+                            ? cityNameFor(row.events.city, locale)
+                            : ""}
                           {row.events?.starts_at
-                            ? ` · ${fmtDate(row.events.starts_at)}`
+                            ? ` · ${fmt(row.events.starts_at)}`
                             : ""}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                      {fmtDate(row.sent_at ?? row.created_at)}
+                      {fmt(row.sent_at ?? row.created_at)}
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <span className="inline-flex items-center rounded-full bg-brand-cobalt-100 px-2.5 py-0.5 text-xs font-medium text-brand-cobalt-500">

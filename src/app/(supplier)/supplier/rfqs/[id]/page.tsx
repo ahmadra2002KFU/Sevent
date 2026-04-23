@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowUpRight, ClipboardList, FileText, MapPin } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { formatHalalas } from "@/lib/domain/money";
+import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
+import { categoryName } from "@/lib/domain/taxonomy";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -52,6 +55,7 @@ type DetailRow = {
       id: string;
       slug: string;
       name_en: string;
+      name_ar: string | null;
     } | null;
   } | null;
 };
@@ -78,20 +82,6 @@ const TERMINAL_QUOTE_STATUSES = new Set<QuoteRow["status"]>([
   "withdrawn",
 ]);
 
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 function formatBudget(
   min: number | null | undefined,
@@ -215,7 +205,11 @@ function RequirementsBlock({
 
 export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
+
+  const formatDate = (iso: string | null | undefined): string =>
+    fmtDateTime(iso ?? null, locale) || "—";
 
   const { decision, admin } = await requireAccess("supplier.rfqs.view");
   const supplierId = decision.supplierId;
@@ -231,7 +225,7 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
            id, city, venue_address, starts_at, ends_at, guest_count,
            budget_range_min_halalas, budget_range_max_halalas, notes
          ),
-         categories!rfqs_subcategory_id_fkey ( id, slug, name_en )
+         categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar )
        )`,
     )
     .eq("id", id)
@@ -247,6 +241,8 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   const rfq = invite.rfqs;
   const event = rfq?.events ?? null;
   const subcategory = rfq?.categories ?? null;
+  const subcategoryLabel = categoryName(subcategory, locale);
+  const cityLabel = event?.city ? cityNameFor(event.city, locale) : "";
 
   // Load the supplier's quote on this RFQ (if any) — mirrors the quote
   // builder's loader. Any non-null quote means the supplier has responded
@@ -298,10 +294,10 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
   return (
     <section className="flex flex-col gap-6">
       <PageHeader
-        title={subcategory?.name_en ?? t("detailTitle")}
+        title={subcategoryLabel || t("detailTitle")}
         description={
           event?.starts_at
-            ? `${event.city ?? ""} · ${formatDate(event.starts_at)}`
+            ? `${cityLabel} · ${formatDate(event.starts_at)}`
             : t("detailSubtitle")
         }
         actions={headerActions}
@@ -314,7 +310,7 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="pt-4">
           <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label={t("cityLabel")} value={event?.city ?? "—"} />
+            <Field label={t("cityLabel")} value={cityLabel || "—"} />
             <Field
               label={t("venueAddressLabel")}
               value={event?.venue_address ?? "—"}
