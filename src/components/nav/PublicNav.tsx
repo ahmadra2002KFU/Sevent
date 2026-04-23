@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { SignUpMenu } from "./SignUpMenu";
 
 /**
  * Public surface top nav. Landing-section links are `/#anchor` hashes so they
@@ -50,9 +51,13 @@ export async function PublicNav() {
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
             <Link href="/sign-in">{nav("signIn")}</Link>
           </Button>
-          <Button asChild size="sm">
-            <Link href="/sign-up">{nav("signUp")}</Link>
-          </Button>
+          <SignUpMenu
+            triggerLabel={nav("signUp")}
+            organizerLabel={nav("signUpAsOrganizer")}
+            supplierLabel={nav("signUpAsSupplier")}
+            organizerHint={nav("signUpAsOrganizerHint")}
+            supplierHint={nav("signUpAsSupplierHint")}
+          />
         </nav>
       </div>
     </header>

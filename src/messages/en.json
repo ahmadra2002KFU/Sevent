@@ -10,6 +10,10 @@
     "faq": "FAQ",
     "signIn": "Sign in",
     "signUp": "Sign up",
+    "signUpAsOrganizer": "I'm planning an event",
+    "signUpAsOrganizerHint": "Find and book suppliers for your event",
+    "signUpAsSupplier": "I'm a supplier",
+    "signUpAsSupplierHint": "Offer your services to organizers",
     "role": {
       "organizer": "Organizer",
       "supplier": "Supplier",

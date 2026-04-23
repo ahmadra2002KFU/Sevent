@@ -10,6 +10,10 @@
     "faq": "الأسئلة الشائعة",
     "signIn": "تسجيل الدخول",
     "signUp": "إنشاء حساب",
+    "signUpAsOrganizer": "أخطّط لفعالية",
+    "signUpAsOrganizerHint": "ابحث عن مورّدين واحجزهم لفعاليتك",
+    "signUpAsSupplier": "أنا مورّد",
+    "signUpAsSupplierHint": "قدّم خدماتك للمنظّمين",
     "role": {
       "organizer": "منظّم",
       "supplier": "مورّد",
