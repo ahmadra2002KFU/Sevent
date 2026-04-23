@@ -16,9 +16,15 @@ export const dynamic = "force-dynamic";
  * `supplier.no_row` user is redirected by requireAccess to the path picker.
  */
 export default async function SupplierOnboardingPage() {
-  await requireAccess("supplier.onboarding.wizard");
+  const { admin, decision, user } = await requireAccess(
+    "supplier.onboarding.wizard",
+  );
 
-  const bootstrap = await loadOnboardingBootstrap();
+  const bootstrap = await loadOnboardingBootstrap({
+    admin,
+    supplierId: decision.supplierId,
+    userId: user.id,
+  });
 
   // Defence-in-depth: the resolver already redirects `supplier.no_row` users
   // away from the wizard, so this fallback only fires on a race window
