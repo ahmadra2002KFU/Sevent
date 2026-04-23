@@ -6,7 +6,6 @@ import { Building2, ChevronRight, User } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { PathCard } from "@/components/supplier/onboarding/PathCard";
-import { ResumeCard } from "@/components/supplier/onboarding/ResumeCard";
 import { setLegalTypeAction } from "./actions";
 
 export type PathClientLabels = {
@@ -18,11 +17,6 @@ export type PathClientLabels = {
   etaSuffix: string;
   cta: string;
   back: string;
-  resume: {
-    title: string;
-    body: string;
-    cta: string;
-  };
   freelancer: {
     title: string;
     desc: string;
@@ -56,21 +50,12 @@ export function PathClient({ labels }: { labels: PathClientLabels }) {
         setError(result.message ?? "Something went wrong");
         return;
       }
-      router.push("/supplier/onboarding");
-      router.refresh();
+      router.replace("/supplier/onboarding");
     });
   }
 
   return (
     <div className="mx-auto w-full max-w-[880px] px-4 pt-8 md:pt-10">
-      <ResumeCard
-        percent={8}
-        step={1}
-        totalSteps={3}
-        labels={labels.resume}
-        onResume={handleContinue}
-      />
-
       <div className="pb-8 pt-5 text-center">
         <div className="inline-block rounded-full bg-brand-cobalt-100 px-3 py-[5px] text-[12px] font-bold text-brand-cobalt-500">
           {labels.eyebrow}

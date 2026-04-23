@@ -18,7 +18,6 @@ export default async function SupplierOnboardingPathPage() {
   await requireAccess("supplier.onboarding.path");
 
   const t = await getTranslations("supplier.onboarding.path");
-  const tResume = await getTranslations("supplier.onboarding.resume");
 
   const labels: PathClientLabels = {
     eyebrow: t("eyebrow"),
@@ -29,11 +28,6 @@ export default async function SupplierOnboardingPathPage() {
     etaSuffix: t("etaSuffix"),
     cta: t("cta"),
     back: t("back"),
-    resume: {
-      title: tResume("title"),
-      body: tResume("body", { step: 1, total: 3 }),
-      cta: tResume("cta"),
-    },
     freelancer: {
       title: t("freelancer.title"),
       desc: t("freelancer.desc"),
