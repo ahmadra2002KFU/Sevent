@@ -33,6 +33,7 @@ export type PublicBrowseSubcategoryWithSuppliers = {
   id: string;
   slug: string;
   name_en: string;
+  name_ar: string | null;
   suppliers: PublicBrowseSupplier[];
 };
 
@@ -135,13 +136,18 @@ export async function listTopLevelCategories(): Promise<PublicBrowseCategory[]> 
  */
 export async function getParentCategoryBySlug(
   slug: string,
-): Promise<{ id: string; slug: string; name_en: string } | null> {
+): Promise<{
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ar: string | null;
+} | null> {
   if (!slug || typeof slug !== "string") return null;
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("categories")
-    .select("id, slug, name_en")
+    .select("id, slug, name_en, name_ar")
     .eq("slug", slug)
     .is("parent_id", null)
     .maybeSingle();
@@ -151,6 +157,7 @@ export async function getParentCategoryBySlug(
     id: data.id as string,
     slug: data.slug as string,
     name_en: data.name_en as string,
+    name_ar: (data as { name_ar?: string | null }).name_ar ?? null,
   };
 }
 
@@ -170,7 +177,7 @@ export async function listSubcategoriesWithSuppliers(
 
   const { data: subRows, error: subErr } = await supabase
     .from("categories")
-    .select("id, slug, name_en, sort_order")
+    .select("id, slug, name_en, name_ar, sort_order")
     .eq("parent_id", parentId)
     .order("sort_order", { ascending: true });
 
@@ -267,6 +274,7 @@ export async function listSubcategoriesWithSuppliers(
       id,
       slug: row.slug as string,
       name_en: row.name_en as string,
+      name_ar: (row as { name_ar?: string | null }).name_ar ?? null,
       suppliers: suppliers.map((sup) => ({
         id: sup.id,
         slug: sup.slug,

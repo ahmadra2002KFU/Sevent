@@ -1032,6 +1032,13 @@
       "unit": "Unit",
       "unitPrice": "Unit price (SAR)",
       "total": "Total",
+      "units": {
+        "event": "event",
+        "hour": "hour",
+        "day": "day",
+        "person": "person",
+        "unit": "unit"
+      },
       "addonsHeading": "Add-ons",
       "setupFee": "Setup fee (SAR)",
       "teardownFee": "Teardown fee (SAR)",
@@ -1042,8 +1049,11 @@
       "cancellationTerms": "Cancellation terms",
       "inclusions": "Inclusions",
       "exclusions": "Exclusions",
+      "onePerLine": "One per line.",
       "notes": "Notes",
       "expiresAt": "Quote valid until",
+      "totalHintFreeForm": "Free-form total is the sum of your line items plus add-ons.",
+      "totalHintEngine": "The server recomputes totals from your rules on send.",
       "sendDraft": "Send quote",
       "sending": "Sending…",
       "saveDraft": "Save draft",
@@ -1406,15 +1416,6 @@
         "budgetNonNegative": "Budget values cannot be negative.",
         "budgetMaxLessThanMin": "Maximum budget must be greater than or equal to the minimum.",
         "notesTooLong": "Notes are too long (2000 character max)."
-      },
-      "eventType": {
-        "wedding": "Wedding",
-        "corporate": "Corporate",
-        "government": "Government",
-        "exhibition": "Exhibition",
-        "birthday": "Birthday",
-        "private": "Private",
-        "other": "Other"
       },
       "city": {
         "Riyadh": "Riyadh",

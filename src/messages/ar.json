@@ -1032,6 +1032,13 @@
       "unit": "الوحدة",
       "unitPrice": "سعر الوحدة (SAR)",
       "total": "الإجمالي",
+      "units": {
+        "event": "فعالية",
+        "hour": "ساعة",
+        "day": "يوم",
+        "person": "شخص",
+        "unit": "وحدة"
+      },
       "addonsHeading": "إضافات",
       "setupFee": "رسوم التجهيز (SAR)",
       "teardownFee": "رسوم التفكيك (SAR)",
@@ -1042,8 +1049,11 @@
       "cancellationTerms": "شروط الإلغاء",
       "inclusions": "ما يشمله العرض",
       "exclusions": "ما لا يشمله العرض",
+      "onePerLine": "عنصر واحد في كل سطر.",
       "notes": "ملاحظات",
       "expiresAt": "صلاحية العرض حتى",
+      "totalHintFreeForm": "الإجمالي هو مجموع بنود التسعير مع الإضافات.",
+      "totalHintEngine": "يُعاد احتساب الإجمالي من قواعدك عند الإرسال.",
       "sendDraft": "إرسال العرض",
       "sending": "جاري الإرسال…",
       "saveDraft": "حفظ كمسودة",
@@ -1406,15 +1416,6 @@
         "budgetNonNegative": "قيم الميزانية لا يمكن تكون بالسالب.",
         "budgetMaxLessThanMin": "الحد الأعلى للميزانية لازم يكون أكبر من أو يساوي الحد الأدنى.",
         "notesTooLong": "الملاحظات طويلة زيادة (الحد الأقصى 2000 حرف)."
-      },
-      "eventType": {
-        "wedding": "زواج",
-        "corporate": "فعالية شركات",
-        "government": "فعالية حكومية",
-        "exhibition": "معرض",
-        "birthday": "عيد ميلاد",
-        "private": "خاصة",
-        "other": "أخرى"
       },
       "city": {
         "Riyadh": "الرياض",

@@ -57,6 +57,7 @@ export type PublicSupplierSubcategory = {
   name_en: string;
   name_ar: string | null;
   parent_name_en: string | null;
+  parent_name_ar: string | null;
 };
 
 export type PublicSupplierCompanyProfileDoc = {
@@ -198,14 +199,23 @@ export async function getPublicSupplierBySlug(
         .filter((v): v is string => typeof v === "string"),
     ),
   );
-  let parentNameById = new Map<string, string>();
+  let parentNameById = new Map<
+    string,
+    { name_en: string; name_ar: string | null }
+  >();
   if (parentIds.length > 0) {
     const { data: parents } = await supabase
       .from("categories")
-      .select("id, name_en")
+      .select("id, name_en, name_ar")
       .in("id", parentIds);
     parentNameById = new Map(
-      (parents ?? []).map((p) => [p.id as string, p.name_en as string]),
+      (parents ?? []).map((p) => [
+        p.id as string,
+        {
+          name_en: p.name_en as string,
+          name_ar: (p as { name_ar?: string | null }).name_ar ?? null,
+        },
+      ]),
     );
   }
 
@@ -213,14 +223,14 @@ export async function getPublicSupplierBySlug(
     .filter((r) => r.categories)
     .map((r) => {
       const c = r.categories!;
+      const parentNames = c.parent_id ? parentNameById.get(c.parent_id) : null;
       return {
         id: c.id,
         slug: c.slug,
         name_en: c.name_en,
         name_ar: c.name_ar,
-        parent_name_en: c.parent_id
-          ? parentNameById.get(c.parent_id) ?? null
-          : null,
+        parent_name_en: parentNames?.name_en ?? null,
+        parent_name_ar: parentNames?.name_ar ?? null,
       };
     });
 
