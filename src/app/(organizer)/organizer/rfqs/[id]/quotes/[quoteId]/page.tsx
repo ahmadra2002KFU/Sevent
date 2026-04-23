@@ -11,8 +11,12 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
-import { ArrowLeft, ClockAlert } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ArrowLeft, ClockAlert, FileText } from "lucide-react";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrl,
+} from "@/lib/supabase/storage";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,7 +169,7 @@ export default async function OrganizerQuoteDetailPage({
 
   const { data: revisionRaw } = await admin
     .from("quote_revisions")
-    .select("id, version, snapshot_jsonb, created_at")
+    .select("id, version, snapshot_jsonb, technical_proposal_path, created_at")
     .eq("id", quote.current_revision_id)
     .maybeSingle();
 
@@ -173,11 +177,30 @@ export default async function OrganizerQuoteDetailPage({
     id: string;
     version: number;
     snapshot_jsonb: unknown;
+    technical_proposal_path: string | null;
     created_at: string;
   } | null;
   if (!revision) notFound();
 
   const snap = revision.snapshot_jsonb as QuoteSnapshot;
+
+  // Tech proposal (optional). Signed URL via service-role client — the
+  // organizer has no direct storage RLS grant on `supplier-docs`, but they're
+  // gated on this page by the quote's (rfq_id, organizer_id) check above so
+  // minting a 1-hour URL is safe.
+  const tTech = await getTranslations("organizer.quote.technicalProposal");
+  let techProposalUrl: string | null = null;
+  if (revision.technical_proposal_path) {
+    try {
+      techProposalUrl = await createSignedDownloadUrl(
+        admin,
+        STORAGE_BUCKETS.docs,
+        revision.technical_proposal_path,
+      );
+    } catch {
+      techProposalUrl = null;
+    }
+  }
 
   return (
     <section className="flex flex-col gap-6">
@@ -208,6 +231,36 @@ export default async function OrganizerQuoteDetailPage({
             Valid until <strong>{fmt(snap.expires_at, locale)}</strong>
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {techProposalUrl ? (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-4 p-4">
+            <div className="flex items-center gap-3">
+              <FileText
+                className="size-5 text-brand-cobalt-500"
+                aria-hidden
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  {tTech("title")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {tTech("subtitle")}
+                </span>
+              </div>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <a
+                href={techProposalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {tTech("downloadCta")}
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
 
       <Card>

@@ -143,6 +143,27 @@ export default async function OrganizerQuotesComparisonPage({
     }
   }
 
+  // Invite source per supplier — tells the organizer whether a quote came
+  // from the auto-match shortlist, an organizer pick, or a self-applied
+  // marketplace browser.
+  const sourceBySupplier = new Map<
+    string,
+    "auto_match" | "organizer_picked" | "self_applied"
+  >();
+  if (supplierIds.length > 0) {
+    const { data: inviteSourceRows } = await admin
+      .from("rfq_invites")
+      .select("supplier_id, source")
+      .eq("rfq_id", id)
+      .in("supplier_id", supplierIds);
+    for (const row of (inviteSourceRows ?? []) as Array<{
+      supplier_id: string;
+      source: "auto_match" | "organizer_picked" | "self_applied";
+    }>) {
+      sourceBySupplier.set(row.supplier_id, row.source);
+    }
+  }
+
   const rows: QuoteRowData[] = quotes.map((q) => {
     const snap = extractSnapshot(q.quote_revisions);
     return {
@@ -154,6 +175,7 @@ export default async function OrganizerQuotesComparisonPage({
       expires_at: snap?.expires_at ?? null,
       submitted_at: q.sent_at,
       has_conflict: conflictMap.get(q.supplier_id) === true,
+      invite_source: sourceBySupplier.get(q.supplier_id) ?? null,
     };
   });
 

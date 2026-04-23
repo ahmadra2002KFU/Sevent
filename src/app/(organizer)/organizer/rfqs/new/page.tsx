@@ -117,6 +117,7 @@ type WizardState = {
   removedMatches: Set<string>;
   manualAdds: ShortlistSupplier[];
   responseDeadlineHours: 24 | 48 | 72;
+  publishToMarketplace: boolean;
   matchingOffline: boolean;
 };
 
@@ -135,6 +136,7 @@ type WizardAction =
   | { type: "addManual"; supplier: ShortlistSupplier }
   | { type: "removeManual"; supplier_id: string }
   | { type: "setDeadline"; hours: 24 | 48 | 72 }
+  | { type: "setPublish"; value: boolean }
   | { type: "goto"; step: WizardStep };
 
 function reducer(state: WizardState, action: WizardAction): WizardState {
@@ -198,6 +200,8 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
       };
     case "setDeadline":
       return { ...state, responseDeadlineHours: action.hours };
+    case "setPublish":
+      return { ...state, publishToMarketplace: action.value };
     case "goto":
       return { ...state, step: action.step };
     default:
@@ -217,6 +221,7 @@ const INITIAL_STATE: WizardState = {
   removedMatches: new Set<string>(),
   manualAdds: [],
   responseDeadlineHours: 24,
+  publishToMarketplace: true,
   matchingOffline: false,
 };
 
@@ -346,8 +351,8 @@ export default function NewRfqWizardPage() {
       !state.event_id ||
       !state.category_id ||
       !state.subcategory_id ||
-      shortlistSize < 1 ||
-      shortlistSize > 10
+      shortlistSize > 10 ||
+      (shortlistSize < 1 && !state.publishToMarketplace)
     )
       return;
 
@@ -372,6 +377,7 @@ export default function NewRfqWizardPage() {
         subcategory_id: state.subcategory_id,
         requirements: state.requirements,
         response_deadline_hours: state.responseDeadlineHours,
+        publish_to_marketplace: state.publishToMarketplace,
         shortlist,
       });
       if (result.ok) {
@@ -386,6 +392,7 @@ export default function NewRfqWizardPage() {
     state.subcategory_id,
     state.requirements,
     state.responseDeadlineHours,
+    state.publishToMarketplace,
     state.manualAdds,
     autoMatchVisible,
     shortlistSize,
@@ -428,6 +435,10 @@ export default function NewRfqWizardPage() {
             matchingOffline={state.matchingOffline}
             matches={autoMatchVisible}
             manualAdds={state.manualAdds}
+            publishToMarketplace={state.publishToMarketplace}
+            onPublishChange={(v) =>
+              dispatch({ type: "setPublish", value: v })
+            }
             onRemoveMatch={(id) =>
               dispatch({ type: "removeMatch", supplier_id: id })
             }
@@ -472,6 +483,7 @@ export default function NewRfqWizardPage() {
         canLeaveStep1={canLeaveStep1}
         loadingMatches={loadingMatches}
         shortlistSize={shortlistSize}
+        publishToMarketplace={state.publishToMarketplace}
         gotoStep={gotoStep}
         advanceToMatches={advanceToMatches}
       />
@@ -560,6 +572,7 @@ function WizardFooter({
   canLeaveStep1,
   loadingMatches,
   shortlistSize,
+  publishToMarketplace,
   gotoStep,
   advanceToMatches,
 }: {
@@ -567,6 +580,7 @@ function WizardFooter({
   canLeaveStep1: boolean;
   loadingMatches: boolean;
   shortlistSize: number;
+  publishToMarketplace: boolean;
   gotoStep: (s: WizardStep) => void;
   advanceToMatches: () => void;
 }) {
@@ -623,9 +637,17 @@ function WizardFooter({
           <Button
             size="lg"
             onClick={() => gotoStep(4)}
-            disabled={shortlistSize < 1 || shortlistSize > 10}
+            disabled={
+              shortlistSize > 10 ||
+              (shortlistSize < 1 && !publishToMarketplace)
+            }
           >
-            {t("shortlistSizeLabel", { size: shortlistSize, max: 10 })}
+            {publishToMarketplace && shortlistSize === 0
+              ? t("nextMarketplaceOnly")
+              : t("shortlistSizeLabel", {
+                  size: shortlistSize,
+                  max: 10,
+                })}
             <ArrowRight className="rtl:rotate-180" aria-hidden />
           </Button>
         ) : null}
@@ -810,6 +832,8 @@ function Step3({
   matchingOffline,
   matches,
   manualAdds,
+  publishToMarketplace,
+  onPublishChange,
   onRemoveMatch,
   onAddManual,
   onRemoveManual,
@@ -819,6 +843,8 @@ function Step3({
   matchingOffline: boolean;
   matches: MatchResult[];
   manualAdds: ShortlistSupplier[];
+  publishToMarketplace: boolean;
+  onPublishChange: (value: boolean) => void;
   onRemoveMatch: (id: string) => void;
   onAddManual: (s: ShortlistSupplier) => void;
   onRemoveManual: (id: string) => void;
@@ -836,6 +862,32 @@ function Step3({
             {t("stepSubtitles.3")}
           </p>
         </div>
+
+        {/* Marketplace toggle lives on the shortlist step because it's an
+            alternative sourcing mechanism: publishing lets approved suppliers
+            self-apply, so organizers don't have to hand-pick a shortlist. */}
+        <label
+          className={cn(
+            "flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4 transition-colors",
+            publishToMarketplace &&
+              "border-brand-cobalt-500 bg-brand-cobalt-100/40",
+          )}
+        >
+          <input
+            type="checkbox"
+            className="mt-1 size-4 accent-brand-cobalt-500"
+            checked={publishToMarketplace}
+            onChange={(e) => onPublishChange(e.currentTarget.checked)}
+          />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">
+              {t("publishToMarketplaceLabel")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {t("publishToMarketplaceHint")}
+            </span>
+          </div>
+        </label>
 
         {loading ? (
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
@@ -895,7 +947,11 @@ function Step4({
   const reqEntries = Object.entries(state.requirements).filter(
     ([k]) => k !== "kind",
   );
-  const canSend = shortlist.length >= 1 && shortlist.length <= 10;
+  // Shortlist can be empty when the RFQ is published — marketplace suppliers
+  // take the place of a hand-picked list. Keep the upper bound either way.
+  const canSend =
+    shortlist.length <= 10 &&
+    (shortlist.length >= 1 || state.publishToMarketplace);
 
   return (
     <div className="flex flex-col gap-6">
@@ -960,7 +1016,9 @@ function Step4({
           >
             {shortlist.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t("reviewNoSuppliers")}
+                {state.publishToMarketplace
+                  ? t("reviewShortlistEmptyMarketplace")
+                  : t("reviewNoSuppliers")}
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5 text-sm">
@@ -982,6 +1040,28 @@ function Step4({
                 ))}
               </ul>
             )}
+          </ReviewSection>
+
+          <ReviewSection title={t("reviewMarketplace")}>
+            <div className="flex items-center gap-2 text-sm">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  state.publishToMarketplace
+                    ? "bg-semantic-success-100 text-semantic-success-500"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {state.publishToMarketplace
+                  ? t("marketplacePublished")
+                  : t("marketplacePrivate")}
+              </span>
+              <span className="text-muted-foreground">
+                {state.publishToMarketplace
+                  ? t("marketplacePublishedHint")
+                  : t("marketplacePrivateHint")}
+              </span>
+            </div>
           </ReviewSection>
 
           <div className="flex flex-col gap-3">

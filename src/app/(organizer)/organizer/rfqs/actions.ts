@@ -264,7 +264,22 @@ const SendRfqInput = RfqFormInput.extend({
   requirements: z
     .object({ kind: z.enum(["venues", "catering", "photography", "generic"]) })
     .passthrough(),
-  shortlist: z.array(ShortlistEntry).min(1).max(10),
+  // Shortlist can be empty when `publish_to_marketplace` is true — suppliers
+  // discover the RFQ themselves via the marketplace. The refinement below
+  // enforces "shortlist OR marketplace must reach someone".
+  shortlist: z.array(ShortlistEntry).min(0).max(10),
+  // Defaults to true (user chose "ON by default, organizer opts out"); if the
+  // caller omits it entirely we publish the new RFQ to the marketplace.
+  publish_to_marketplace: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+  if (data.shortlist.length === 0 && !data.publish_to_marketplace) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["shortlist"],
+      message:
+        "Add at least one supplier, or enable 'Publish to marketplace' to let suppliers self-apply.",
+    });
+  }
 });
 
 export type SendRfqResult =
@@ -343,6 +358,24 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
   const rfqId = (row as { out_rfq_id?: string } | null)?.out_rfq_id;
   if (!rfqId) {
     return { ok: false, error: "RFQ creation returned no id." };
+  }
+
+  // Marketplace publish flag — the DB default is true so we only need to
+  // UPDATE when the organizer explicitly unticked the toggle. Keeps the RPC
+  // signature (which doesn't know about the new column) untouched.
+  if (!parsed.data.publish_to_marketplace) {
+    const { error: publishErr } = await admin
+      .from("rfqs")
+      .update({ is_published_to_marketplace: false })
+      .eq("id", rfqId);
+    if (publishErr) {
+      // Non-fatal: the RFQ was created and invites were fanned out. We just
+      // couldn't mark it private. Log so operators can backfill if needed.
+      console.warn("[sendRfqAction] failed to unset is_published_to_marketplace", {
+        rfq_id: rfqId,
+        message: publishErr.message,
+      });
+    }
   }
 
   revalidatePath("/organizer/rfqs");

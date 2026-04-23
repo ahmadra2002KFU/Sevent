@@ -57,13 +57,15 @@ export async function fetchAutoMatchCandidates(
   // Step 2. Load those suppliers with the approval + publish + city filters.
   // ---------------------------------------------------------------------------
   const city = ctx.event.city;
-  // PostgREST .or clause: same-city OR service-area contains-city.
-  const cityFilter = `base_city.eq.${city},service_area_cities.cs.{${city}}`;
+  // PostgREST .or clause: same-city OR service-area contains-city OR
+  // supplier declares nationwide service. The `serves_all_ksa` branch lets a
+  // supplier cover every KSA city without enumerating them in the 15-pick list.
+  const cityFilter = `base_city.eq.${city},service_area_cities.cs.{${city}},serves_all_ksa.eq.true`;
 
   const suppliersRes = await supabase
     .from("suppliers")
     .select(
-      "id, business_name, slug, base_city, service_area_cities, concurrent_event_limit, verification_status, is_published",
+      "id, business_name, slug, base_city, service_area_cities, serves_all_ksa, concurrent_event_limit, verification_status, is_published",
     )
     .in("id", supplierIds)
     .eq("verification_status", "approved")
@@ -77,6 +79,7 @@ export async function fetchAutoMatchCandidates(
     slug: string;
     base_city: string;
     service_area_cities: string[] | null;
+    serves_all_ksa: boolean | null;
     concurrent_event_limit: number;
     verification_status: string;
     is_published: boolean;
@@ -211,6 +214,7 @@ export async function fetchAutoMatchCandidates(
       slug: s.slug,
       base_city: s.base_city,
       service_area_cities: s.service_area_cities ?? [],
+      serves_all_ksa: Boolean(s.serves_all_ksa),
       concurrent_event_limit: s.concurrent_event_limit,
       active_overlaps: activeOverlaps,
       packages: supplierPackages,

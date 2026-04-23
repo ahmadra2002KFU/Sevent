@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AlertTriangle, Check, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export type QuoteRowData = {
   expires_at: string | null;
   submitted_at: string | null;
   has_conflict: boolean;
+  invite_source: "auto_match" | "organizer_picked" | "self_applied" | null;
 };
 
 type Props = {
@@ -84,6 +85,16 @@ function QuoteRow({
     acceptQuoteAction,
     initialActionState,
   );
+  const t = useTranslations("organizer.quote.sourceBadge");
+
+  const sourceLabel =
+    row.invite_source === "self_applied"
+      ? t("self_applied")
+      : row.invite_source === "organizer_picked"
+        ? t("organizer_picked")
+        : row.invite_source === "auto_match"
+          ? t("auto_match")
+          : null;
 
   return (
     <>
@@ -96,6 +107,17 @@ function QuoteRow({
             {row.supplier_base_city ? (
               <span className="text-xs text-muted-foreground">
                 {row.supplier_base_city}
+              </span>
+            ) : null}
+            {sourceLabel ? (
+              <span
+                className={
+                  row.invite_source === "self_applied"
+                    ? "mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-accent-gold-100 px-2.5 py-0.5 text-xs font-medium text-accent-gold-500"
+                    : "mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-brand-cobalt-100 px-2.5 py-0.5 text-xs font-medium text-brand-cobalt-500"
+                }
+              >
+                {sourceLabel}
               </span>
             ) : null}
             {row.has_conflict ? (

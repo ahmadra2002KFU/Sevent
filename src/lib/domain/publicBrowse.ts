@@ -194,6 +194,7 @@ export async function listSubcategoriesWithSuppliers(
     business_name: string;
     base_city: string;
     service_area_cities: string[] | null;
+    serves_all_ksa: boolean | null;
     verification_status: string;
     is_published: boolean;
   };
@@ -206,7 +207,7 @@ export async function listSubcategoriesWithSuppliers(
   const { data: scRows } = await supabase
     .from("supplier_categories")
     .select(
-      "subcategory_id, supplier_id, suppliers:supplier_id ( id, slug, business_name, base_city, service_area_cities, verification_status, is_published )",
+      "subcategory_id, supplier_id, suppliers:supplier_id ( id, slug, business_name, base_city, service_area_cities, serves_all_ksa, verification_status, is_published )",
     )
     .in("subcategory_id", subcategoryIds);
 
@@ -214,6 +215,7 @@ export async function listSubcategoriesWithSuppliers(
 
   const matchesCity = (sup: SupplierRow): boolean => {
     if (!city) return true;
+    if (sup.serves_all_ksa) return true;
     if (sup.base_city === city) return true;
     const area = sup.service_area_cities ?? [];
     return Array.isArray(area) && area.includes(city);

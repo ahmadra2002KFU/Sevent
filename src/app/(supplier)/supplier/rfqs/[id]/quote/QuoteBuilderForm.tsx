@@ -18,12 +18,12 @@
  * / success / error UX without fighting RHF for form control.
  */
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { Trash2 } from "lucide-react";
+import { FileText, Trash2, Upload } from "lucide-react";
 import { formatHalalas, halalasToSar, sarToHalalas } from "@/lib/domain/money";
 import type {
   QuoteLineItemKind,
@@ -111,11 +111,22 @@ export type QuoteBuilderFormProps = {
 // Component
 // ---------------------------------------------------------------------------
 
+// Technical-proposal upload cap mirrors the onboarding PDF cap (10 MB).
+const TECHNICAL_PROPOSAL_MAX_BYTES = 10 * 1024 * 1024;
+
 export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   const t = useTranslations("supplier.quote");
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     sendQuoteAction,
     initialActionState,
+  );
+
+  // Tech file is picked via a real <input type="file"> inside the form; React
+  // state powers the UI feedback (file name / remove button) and the server
+  // reads the file directly from FormData on submit.
+  const [technicalFile, setTechnicalFile] = useState<File | null>(null);
+  const [technicalFileError, setTechnicalFileError] = useState<string | null>(
+    null,
   );
 
   const defaults = buildDefaults(props.initialSnapshot);
@@ -477,6 +488,77 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
         <p className="mt-1 text-xs text-muted-foreground">
           {isEngineMode ? t("totalHintEngine") : t("totalHintFreeForm")}
         </p>
+      </section>
+
+      {/* Technical proposal (optional) */}
+      <section className="flex flex-col gap-2">
+        <span className="text-sm font-medium">
+          {t("technicalProposal.label")}
+        </span>
+        <p className="text-xs text-muted-foreground">
+          {t("technicalProposal.hint")}
+        </p>
+        <label
+          className={
+            "group flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm transition-colors hover:border-brand-cobalt-500/60 hover:bg-brand-cobalt-100/20"
+          }
+        >
+          <input
+            type="file"
+            name="technical_proposal_file"
+            accept="application/pdf"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (!file) {
+                setTechnicalFile(null);
+                setTechnicalFileError(null);
+                return;
+              }
+              if (file.type && file.type !== "application/pdf") {
+                setTechnicalFileError(t("technicalProposal.errorType"));
+                e.target.value = "";
+                return;
+              }
+              if (file.size > TECHNICAL_PROPOSAL_MAX_BYTES) {
+                setTechnicalFileError(t("technicalProposal.errorSize"));
+                e.target.value = "";
+                return;
+              }
+              setTechnicalFileError(null);
+              setTechnicalFile(file);
+            }}
+          />
+          {technicalFile ? (
+            <>
+              <FileText
+                className="size-5 shrink-0 text-brand-cobalt-500"
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-foreground">
+                {technicalFile.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("technicalProposal.replace")}
+              </span>
+            </>
+          ) : (
+            <>
+              <Upload
+                className="size-5 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 text-muted-foreground">
+                {t("technicalProposal.cta")}
+              </span>
+            </>
+          )}
+        </label>
+        {technicalFileError ? (
+          <span className="text-xs text-semantic-danger-500">
+            {technicalFileError}
+          </span>
+        ) : null}
       </section>
 
       {/* Submit */}

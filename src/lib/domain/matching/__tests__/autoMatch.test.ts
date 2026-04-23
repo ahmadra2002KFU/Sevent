@@ -30,6 +30,7 @@ function baseCandidate(
     slug: "default-supplier",
     base_city: "Riyadh",
     service_area_cities: [],
+    serves_all_ksa: false,
     concurrent_event_limit: 1,
     active_overlaps: 0,
     packages: [
@@ -103,6 +104,25 @@ describe("computeAutoMatch — travel dimension", () => {
     expect(result[0].supplier_id).toBe("sup-same-city");
     expect(result[1].supplier_id).toBe("sup-service");
     expect(result[0].breakdown.travel).toBeGreaterThan(result[1].breakdown.travel);
+  });
+
+  it("scores serves_all_ksa at the service-area tier (0.5)", () => {
+    const allKsa = baseCandidate({
+      supplier_id: "sup-nationwide",
+      base_city: "Dammam",
+      service_area_cities: [],
+      serves_all_ksa: true,
+    });
+    const sameCity = baseCandidate({
+      supplier_id: "sup-local",
+      base_city: "Riyadh",
+      service_area_cities: [],
+    });
+    const result = computeAutoMatch(CTX, [allKsa, sameCity]);
+    const nationwide = result.find((r) => r.supplier_id === "sup-nationwide")!;
+    const local = result.find((r) => r.supplier_id === "sup-local")!;
+    expect(nationwide.breakdown.travel).toBe(0.5);
+    expect(local.breakdown.travel).toBe(1);
   });
 });
 

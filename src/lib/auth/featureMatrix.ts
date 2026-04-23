@@ -30,6 +30,8 @@ export type SupplierFeature =
   | "supplier.bookings"
   | "supplier.rfqs.view"
   | "supplier.rfqs.respond"
+  | "supplier.opportunities.browse"
+  | "supplier.opportunities.apply"
   | "supplier.profile.customize";
 
 export type OrganizerFeature =
@@ -58,6 +60,11 @@ const SUPPLIER_APPROVED_FEATURES: FeatureSet = {
   "supplier.bookings": true,
   "supplier.rfqs.view": true,
   "supplier.rfqs.respond": true,
+  // Marketplace is approved-only per the plan decision ("approved + published"
+  // suppliers can browse + apply); the is_published check is enforced by RLS +
+  // the browse loader.
+  "supplier.opportunities.browse": true,
+  "supplier.opportunities.apply": true,
   "supplier.profile.customize": true,
 };
 

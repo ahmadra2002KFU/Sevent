@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { cn } from "@/lib/utils";
+import { DirectionProvider } from "./_components/DirectionProvider";
 import { ZodLocaleBootstrap } from "./_components/ZodLocaleBootstrap";
 import "./globals.css";
 
@@ -80,8 +81,10 @@ export default async function RootLayout({
     >
       <body className={cn("min-h-full flex flex-col", localeFontClassName)}>
         <NextIntlClientProvider messages={messages}>
-          <ZodLocaleBootstrap />
-          {children}
+          <DirectionProvider dir={dir}>
+            <ZodLocaleBootstrap />
+            {children}
+          </DirectionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

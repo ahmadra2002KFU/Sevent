@@ -46,7 +46,7 @@ async function loadSupplierContext() {
   const { data: supplier, error: supplierErr } = await admin
     .from("suppliers")
     .select(
-      "id, profile_id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, languages, capacity, concurrent_event_limit, is_published, verification_status, logo_path, works_with_segments",
+      "id, profile_id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, is_published, verification_status, logo_path, works_with_segments",
     )
     .eq("profile_id", user.id)
     .maybeSingle();
@@ -76,6 +76,8 @@ export async function submitOnboardingStep1(
         (LANGUAGES as readonly string[]).includes(v),
       );
 
+    const servesAllKsa = formData.get("serves_all_ksa") === "true";
+
     const parsed = OnboardingStep1.safeParse({
       representative_name: formData.get("representative_name") ?? "",
       business_name: formData.get("business_name") ?? "",
@@ -84,7 +86,11 @@ export async function submitOnboardingStep1(
       national_id: (formData.get("national_id") as string) || undefined,
       bio: (formData.get("bio") as string) || undefined,
       base_city: formData.get("base_city") ?? "",
-      service_area_cities: serviceArea,
+      serves_all_ksa: servesAllKsa,
+      // Picker's selections are ignored when the all-KSA flag is on — the Zod
+      // refinement would otherwise flag "cities must be empty" and reject the
+      // whole submit.
+      service_area_cities: servesAllKsa ? [] : serviceArea,
       languages: languages.length > 0 ? languages : ["ar"],
     });
     if (!parsed.success) {
@@ -127,6 +133,7 @@ export async function submitOnboardingStep1(
           national_id: payload.national_id ?? null,
           bio: payload.bio ?? null,
           base_city: payload.base_city,
+          serves_all_ksa: payload.serves_all_ksa,
           service_area_cities: payload.service_area_cities,
           languages: payload.languages,
           verification_status: "pending",
@@ -146,6 +153,7 @@ export async function submitOnboardingStep1(
       national_id: payload.national_id ?? null,
       bio: payload.bio ?? null,
       base_city: payload.base_city,
+      serves_all_ksa: payload.serves_all_ksa,
       service_area_cities: payload.service_area_cities,
       languages: payload.languages,
     };
@@ -269,6 +277,9 @@ export async function submitOnboardingStep3(
     const logoRaw = formData.get("logo_file");
     const ibanRaw = formData.get("iban_file");
     const profileRaw = formData.get("company_profile_file");
+    const crRaw = formData.get("cr_file");
+    const nationalAddressRaw = formData.get("national_address_file");
+    const vatRaw = formData.get("vat_file");
 
     const logoFile =
       logoRaw instanceof Blob && logoRaw.size > 0 ? (logoRaw as File) : undefined;
@@ -276,11 +287,23 @@ export async function submitOnboardingStep3(
       ibanRaw instanceof Blob && ibanRaw.size > 0 ? (ibanRaw as File) : undefined;
     const profileFile =
       profileRaw instanceof Blob && profileRaw.size > 0 ? (profileRaw as File) : undefined;
+    const crFile =
+      crRaw instanceof Blob && crRaw.size > 0 ? (crRaw as File) : undefined;
+    const nationalAddressFile =
+      nationalAddressRaw instanceof Blob && nationalAddressRaw.size > 0
+        ? (nationalAddressRaw as File)
+        : undefined;
+    const vatFile =
+      vatRaw instanceof Blob && vatRaw.size > 0 ? (vatRaw as File) : undefined;
 
     const parsed = OnboardingStep3.safeParse({
       logo_file: logoFile,
       iban_file: ibanFile,
       company_profile_file: profileFile,
+      legal_type: supplier.legal_type,
+      cr_file: crFile,
+      national_address_file: nationalAddressFile,
+      vat_file: vatFile,
     });
     if (!parsed.success) {
       return {
@@ -319,6 +342,28 @@ export async function submitOnboardingStep3(
         return { ok: false, message: "Company profile must be a PDF" };
       }
     }
+
+    // Company-only docs (enforced for legal_type='company' by Zod above).
+    // These are undefined for freelancers/foreign and we skip the checks.
+    const checkCompanyPdf = (
+      file: File | undefined,
+      label: string,
+    ): string | null => {
+      if (!file) return null;
+      if (file.size > PDF_MAX_BYTES) return `${label} must be 10 MB or smaller`;
+      if (file.type && file.type !== "application/pdf")
+        return `${label} must be a PDF`;
+      return null;
+    };
+    const crErr = checkCompanyPdf(crFile, "Commercial registration certificate");
+    if (crErr) return { ok: false, message: crErr };
+    const naErr = checkCompanyPdf(
+      nationalAddressFile,
+      "National address certificate",
+    );
+    if (naErr) return { ok: false, message: naErr };
+    const vatErr = checkCompanyPdf(vatFile, "Tax / VAT certificate");
+    if (vatErr) return { ok: false, message: vatErr };
 
     // ---- 1. Logo upload ----------------------------------------------------
     let logoPath: string | null = supplier.logo_path ?? null;
@@ -387,7 +432,67 @@ export async function submitOnboardingStep3(
       uploaded.push({ bucket: DOCS_BUCKET, path: companyProfilePath });
     }
 
-    // ---- 4. DB writes ------------------------------------------------------
+    // ---- 4. Company PDF bundle (CR / national address / tax) ---------------
+    // Small helper closures keep the upload/rollback shape identical to the
+    // existing IBAN/company_profile handling. Service-role writes keep the RLS
+    // exemption the other uploads rely on; path is locked to `{supplier.id}/…`.
+    const uploadCompanyDoc = async (
+      file: File,
+      prefix: string,
+      label: string,
+    ): Promise<{ ok: true; path: string } | { ok: false; message: string }> => {
+      const path = supplierScopedPath(
+        supplier.id,
+        "docs",
+        `${prefix}-${crypto.randomUUID()}.pdf`,
+      );
+      const buf = Buffer.from(await file.arrayBuffer());
+      const { error: upErr } = await admin.storage
+        .from(DOCS_BUCKET)
+        .upload(path, buf, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+      if (upErr) {
+        return { ok: false, message: `${label} upload failed: ${upErr.message}` };
+      }
+      uploaded.push({ bucket: DOCS_BUCKET, path });
+      return { ok: true, path };
+    };
+
+    let crPath: string | null = null;
+    let naPath: string | null = null;
+    let vatPath: string | null = null;
+    if (crFile) {
+      const r = await uploadCompanyDoc(crFile, "cr-certificate", "CR certificate");
+      if (!r.ok) {
+        await rollback(admin, uploaded);
+        return { ok: false, message: r.message };
+      }
+      crPath = r.path;
+    }
+    if (nationalAddressFile) {
+      const r = await uploadCompanyDoc(
+        nationalAddressFile,
+        "national-address",
+        "National address certificate",
+      );
+      if (!r.ok) {
+        await rollback(admin, uploaded);
+        return { ok: false, message: r.message };
+      }
+      naPath = r.path;
+    }
+    if (vatFile) {
+      const r = await uploadCompanyDoc(vatFile, "vat-certificate", "Tax certificate");
+      if (!r.ok) {
+        await rollback(admin, uploaded);
+        return { ok: false, message: r.message };
+      }
+      vatPath = r.path;
+    }
+
+    // ---- 5. DB writes ------------------------------------------------------
     const docRows: Array<{
       supplier_id: string;
       doc_type: SupplierDocType;
@@ -406,6 +511,30 @@ export async function submitOnboardingStep3(
         supplier_id: supplier.id,
         doc_type: "company_profile",
         file_path: companyProfilePath,
+        notes: null,
+      });
+    }
+    if (crPath) {
+      docRows.push({
+        supplier_id: supplier.id,
+        doc_type: "cr",
+        file_path: crPath,
+        notes: null,
+      });
+    }
+    if (naPath) {
+      docRows.push({
+        supplier_id: supplier.id,
+        doc_type: "national_address",
+        file_path: naPath,
+        notes: null,
+      });
+    }
+    if (vatPath) {
+      docRows.push({
+        supplier_id: supplier.id,
+        doc_type: "vat",
+        file_path: vatPath,
         notes: null,
       });
     }

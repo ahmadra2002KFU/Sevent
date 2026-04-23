@@ -10,6 +10,7 @@ import {
   FileText,
   IdCard,
   Landmark,
+  MapPin,
   ReceiptText,
   ShieldCheck,
   type LucideIcon,
@@ -123,6 +124,7 @@ const KNOWN_DOC_TYPES: ReadonlyArray<SupplierDocType> = [
   "certification",
   "iban_certificate",
   "company_profile",
+  "national_address",
   "other",
 ];
 
@@ -140,6 +142,7 @@ const DOC_TYPE_ICONS: Record<SupplierDocType, LucideIcon> = {
   certification: Award,
   iban_certificate: Landmark,
   company_profile: FileText,
+  national_address: MapPin,
   other: FileText,
 };
 

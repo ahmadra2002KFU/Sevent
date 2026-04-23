@@ -93,6 +93,12 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       feature: "supplier.rfqs.view",
     },
     {
+      href: "/supplier/opportunities",
+      labelKey: "supplier.opportunities",
+      iconKey: "opportunities",
+      feature: "supplier.opportunities.browse",
+    },
+    {
       href: "/supplier/bookings",
       labelKey: "supplier.bookings",
       iconKey: "bookings",

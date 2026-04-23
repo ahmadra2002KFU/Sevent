@@ -22,6 +22,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAccess } from "@/lib/auth/access";
 import { sarToHalalas } from "@/lib/domain/money";
+import { STORAGE_BUCKETS, supplierScopedPath } from "@/lib/supabase/storage";
 import {
   buildRevisionSnapshot,
   QUOTE_ENGINE_VERSION,
@@ -179,6 +180,8 @@ function mapRpcError(code: string | null | undefined, message: string): string {
 // Main action
 // ---------------------------------------------------------------------------
 
+const TECHNICAL_PROPOSAL_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
 export async function sendQuoteAction(
   _prev: ActionState | undefined,
   formData: FormData,
@@ -198,6 +201,26 @@ export async function sendQuoteAction(
   const parsed = readSubmission(formData);
   if ("error" in parsed) return { status: "error", message: parsed.error };
   const data = parsed;
+
+  // Optional technical-proposal PDF (ملف فني). Extracted here so we can
+  // fail-fast on bad uploads before we hit the pricing engine or the RPC.
+  const techRaw = formData.get("technical_proposal_file");
+  const technicalFile =
+    techRaw instanceof Blob && techRaw.size > 0 ? (techRaw as File) : null;
+  if (technicalFile) {
+    if (technicalFile.size > TECHNICAL_PROPOSAL_MAX_BYTES) {
+      return {
+        status: "error",
+        message: "Technical proposal must be 10 MB or smaller.",
+      };
+    }
+    if (technicalFile.type && technicalFile.type !== "application/pdf") {
+      return {
+        status: "error",
+        message: "Technical proposal must be a PDF.",
+      };
+    }
+  }
 
   // 3. Ownership check — the client-submitted supplier_id must match the
   // caller's row; otherwise a crafted form could target a different supplier.
@@ -418,6 +441,45 @@ export async function sendQuoteAction(
       status: "error",
       message: "Supabase RPC returned no row — quote was not saved.",
     };
+  }
+
+  // 10a. Technical proposal upload (optional). Runs AFTER the RPC so we know
+  //      the revision_id to attach the file to. On upload failure we don't
+  //      delete the revision — the pricing snapshot is the primary artifact;
+  //      the tech file is supplementary. On column-UPDATE failure we best-effort
+  //      delete the orphan blob so the bucket doesn't accumulate garbage.
+  if (technicalFile) {
+    const path = supplierScopedPath(
+      data.supplier_id,
+      "quote-attachments",
+      `technical-proposal-${crypto.randomUUID()}.pdf`,
+    );
+    const buf = Buffer.from(await technicalFile.arrayBuffer());
+    const { error: upErr } = await admin.storage
+      .from(STORAGE_BUCKETS.docs)
+      .upload(path, buf, {
+        contentType: "application/pdf",
+        upsert: false,
+      });
+    if (upErr) {
+      console.warn("[sendQuoteAction] technical proposal upload failed", {
+        quote_id: row.quote_id,
+        revision_id: row.revision_id,
+        message: upErr.message,
+      });
+    } else {
+      const { error: patchErr } = await admin
+        .from("quote_revisions")
+        .update({ technical_proposal_path: path })
+        .eq("id", row.revision_id);
+      if (patchErr) {
+        console.warn("[sendQuoteAction] failed to attach technical proposal path", {
+          revision_id: row.revision_id,
+          message: patchErr.message,
+        });
+        await admin.storage.from(STORAGE_BUCKETS.docs).remove([path]);
+      }
+    }
   }
 
   // 10. Side writes the RPC doesn't cover. Failure here leaves the revision

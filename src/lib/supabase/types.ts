@@ -18,6 +18,7 @@ export type SupplierDocType =
   | "certification"
   | "iban_certificate"
   | "company_profile"
+  | "national_address"
   | "other";
 
 export type SupplierDocStatus = "pending" | "approved" | "rejected";
@@ -61,6 +62,7 @@ export type SupplierRow = {
   base_city: string;
   base_location: unknown | null; // PostGIS geography; serialize via PostGIS helpers
   service_area_cities: string[];
+  serves_all_ksa: boolean;
   languages: string[];
   capacity: number | null;
   concurrent_event_limit: number;
@@ -179,7 +181,10 @@ export type RfqStatus =
   | "booked"
   | "cancelled";
 
-export type RfqInviteSource = "auto_match" | "organizer_picked";
+export type RfqInviteSource =
+  | "auto_match"
+  | "organizer_picked"
+  | "self_applied";
 
 export type RfqInviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
 
@@ -228,6 +233,7 @@ export type RfqRow = {
   sent_at: string | null;
   cancelled_at: string | null;
   cancelled_by: string | null;
+  is_published_to_marketplace: boolean;
   created_at: string;
   updated_at: string;
 };

@@ -41,6 +41,7 @@ export type AutoMatchCandidate = {
   slug: string;
   base_city: string;
   service_area_cities: string[];
+  serves_all_ksa: boolean;
   concurrent_event_limit: number;
   active_overlaps: number;
   packages: Array<{
@@ -108,10 +109,14 @@ function scoreCapability(candidate: AutoMatchCandidate, guestCount: number | nul
   return 0.5;
 }
 
-/** Travel score — same city > service-area only > out-of-area. */
+/** Travel score — same city > service-area / all-KSA > out-of-area. */
 function scoreTravel(candidate: AutoMatchCandidate, eventCity: string): number {
   if (candidate.base_city === eventCity) return 1;
   if (candidate.service_area_cities.includes(eventCity)) return 0.5;
+  // Nationwide suppliers sit at the service-area tier — they cover the city
+  // but aren't based there, so they shouldn't outrank a supplier who
+  // explicitly listed this city in their service area.
+  if (candidate.serves_all_ksa) return 0.5;
   return 0;
 }
 

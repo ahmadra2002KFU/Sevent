@@ -87,6 +87,7 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
         serviceAreaCities={supplier.service_area_cities.map((c) =>
           cityNameFor(c, locale),
         )}
+        servesAllKsa={supplier.serves_all_ksa}
         languages={supplier.languages}
         heroImageUrl={heroImageUrl}
         logoUrl={supplier.logo_url}
@@ -95,6 +96,7 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
         verifiedLabel={t("verifiedBadge")}
         baseCityLabel={t("baseCityLabel")}
         serviceAreaLabel={t("serviceAreaLabel")}
+        servesAllKsaLabel={t("servesAllKsaLabel")}
         languagesLabel={t("languagesLabel")}
       />
 

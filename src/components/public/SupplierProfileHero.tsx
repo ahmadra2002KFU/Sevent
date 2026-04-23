@@ -9,6 +9,7 @@ type SupplierProfileHeroProps = {
   bio: string | null;
   baseCity: string;
   serviceAreaCities: string[];
+  servesAllKsa: boolean;
   languages: string[];
   heroImageUrl: string | null;
   logoUrl?: string | null;
@@ -23,6 +24,7 @@ type SupplierProfileHeroProps = {
   verifiedLabel: string;
   baseCityLabel: string;
   serviceAreaLabel: string;
+  servesAllKsaLabel: string;
   languagesLabel: string;
 };
 
@@ -49,6 +51,7 @@ export function SupplierProfileHero({
   bio,
   baseCity,
   serviceAreaCities,
+  servesAllKsa,
   languages,
   heroImageUrl,
   logoUrl = null,
@@ -57,6 +60,7 @@ export function SupplierProfileHero({
   verifiedLabel,
   baseCityLabel,
   serviceAreaLabel,
+  servesAllKsaLabel,
   languagesLabel,
 }: SupplierProfileHeroProps) {
   const initials = getInitials(businessName);
@@ -139,7 +143,14 @@ export function SupplierProfileHero({
                       <MapPin className="size-3.5" aria-hidden />
                       {baseCityLabel}: <span className="font-medium text-foreground">{baseCity}</span>
                     </span>
-                    {serviceAreaCities.length > 0 ? (
+                    {servesAllKsa ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Globe2 className="size-3.5" aria-hidden />
+                        <span className="font-medium text-foreground">
+                          {servesAllKsaLabel}
+                        </span>
+                      </span>
+                    ) : serviceAreaCities.length > 0 ? (
                       <span className="inline-flex items-center gap-1.5">
                         <Globe2 className="size-3.5" aria-hidden />
                         {serviceAreaLabel}:{" "}

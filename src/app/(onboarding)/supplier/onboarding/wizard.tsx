@@ -287,8 +287,14 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
                         fd.append("national_id", values.national_id);
                       if (values.bio) fd.append("bio", values.bio);
                       fd.append("base_city", values.base_city);
-                      for (const city of values.service_area_cities) {
-                        fd.append("service_area_cities", city);
+                      fd.append(
+                        "serves_all_ksa",
+                        values.serves_all_ksa ? "true" : "false",
+                      );
+                      if (!values.serves_all_ksa) {
+                        for (const city of values.service_area_cities) {
+                          fd.append("service_area_cities", city);
+                        }
                       }
                       for (const lang of values.languages)
                         fd.append("languages", lang);
@@ -325,6 +331,7 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
                   <Step3Form
                     pending={isPending}
                     disabled={!supplierId}
+                    legalType={pathValue}
                     onLogoPreviewChange={setLogoPreviewUrl}
                     onBack={() => goToStep(2)}
                     onSubmit={(fd) => {
@@ -415,6 +422,7 @@ type Step1Values = {
   national_id?: string;
   bio?: string;
   base_city: string;
+  serves_all_ksa: boolean;
   service_area_cities: string[];
   languages: Array<(typeof LANGUAGES)[number]>;
 };
@@ -460,6 +468,7 @@ function Step1Form({
       national_id: initial?.national_id ?? "",
       bio: initial?.bio ?? "",
       base_city: initial?.base_city ?? "",
+      serves_all_ksa: Boolean(initial?.serves_all_ksa ?? false),
       service_area_cities: (initial?.service_area_cities ?? []) as string[],
       languages: ((initial?.languages as Step1Values["languages"]) ?? ["ar"]).filter(
         (l) => (LANGUAGES as readonly string[]).includes(l),
@@ -472,6 +481,7 @@ function Step1Form({
   const businessName = watch("business_name") ?? "";
   const bio = watch("bio") ?? "";
   const serviceAreas = watch("service_area_cities") ?? [];
+  const servesAllKsa = watch("serves_all_ksa") ?? false;
   const languagesSelected = watch("languages") ?? [];
 
   // Lift watched values to the parent so the preview rail sees them live.
@@ -620,16 +630,43 @@ function Step1Form({
       <Field label={t("serviceAreaLabel")} helperKey="helper.serviceArea">
         <Controller
           control={control}
-          name="service_area_cities"
+          name="serves_all_ksa"
           render={({ field }) => (
-            <ServiceAreaPicker
-              excludeSlug={baseCity}
-              value={field.value ?? []}
-              onChange={field.onChange}
+            <ServesAllKsaToggle
+              checked={Boolean(field.value)}
+              onChange={(next) => {
+                field.onChange(next);
+                if (next) {
+                  // Flip ON → wipe any city picks so the refinement passes and
+                  // the picker UI starts fresh if they toggle back off.
+                  setValue("service_area_cities", [], {
+                    shouldDirty: true,
+                    shouldValidate: false,
+                  });
+                }
+              }}
+              labels={{
+                label: t("servesAllKsa.label"),
+                hint: t("servesAllKsa.hint"),
+                chip: t("servesAllKsa.chip"),
+              }}
             />
           )}
         />
-        {serviceAreas.length > 15 ? (
+        {servesAllKsa ? null : (
+          <Controller
+            control={control}
+            name="service_area_cities"
+            render={({ field }) => (
+              <ServiceAreaPicker
+                excludeSlug={baseCity}
+                value={field.value ?? []}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        )}
+        {!servesAllKsa && serviceAreas.length > 15 ? (
           <p className="text-xs text-semantic-danger-500">
             {t("serviceAreaTooMany")}
           </p>
@@ -933,17 +970,22 @@ type Step3Values = {
   logo?: File;
   iban?: File;
   companyProfile?: File;
+  cr?: File;
+  nationalAddress?: File;
+  vat?: File;
 };
 
 function Step3Form({
   pending,
   disabled,
+  legalType,
   onBack,
   onSubmit,
   onLogoPreviewChange,
 }: {
   pending: boolean;
   disabled: boolean;
+  legalType: PathValue;
   onBack: () => void;
   onSubmit: (fd: FormData) => void;
   onLogoPreviewChange: (url: string | null) => void;
@@ -993,11 +1035,27 @@ function Step3Form({
     return null;
   }
 
+  const isCompany = legalType === "company";
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!values.iban) {
       setError(t("iban.required"));
       return;
+    }
+    if (isCompany) {
+      if (!values.cr) {
+        setError(t("crCert.required"));
+        return;
+      }
+      if (!values.nationalAddress) {
+        setError(t("nationalAddress.required"));
+        return;
+      }
+      if (!values.vat) {
+        setError(t("vatCert.required"));
+        return;
+      }
     }
     setError(null);
     const fd = new FormData();
@@ -1005,6 +1063,10 @@ function Step3Form({
     fd.append("iban_file", values.iban);
     if (values.companyProfile)
       fd.append("company_profile_file", values.companyProfile);
+    if (values.cr) fd.append("cr_file", values.cr);
+    if (values.nationalAddress)
+      fd.append("national_address_file", values.nationalAddress);
+    if (values.vat) fd.append("vat_file", values.vat);
     onSubmit(fd);
   }
 
@@ -1065,6 +1127,76 @@ function Step3Form({
         }
         labels={chipLabels}
       />
+
+      {isCompany ? (
+        <div className="flex flex-col gap-6 rounded-xl border border-brand-cobalt-500/20 bg-brand-cobalt-100/20 p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-brand-navy-900">
+              {t("companyDocs.heading")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {t("companyDocs.subheading")}
+            </span>
+          </div>
+
+          <UploadChip
+            label={t("crCert.label")}
+            hint={t("crCert.cta")}
+            accept="application/pdf"
+            kind="pdf"
+            file={values.cr ?? null}
+            status={values.cr ? "verified" : "idle"}
+            onPick={(f) =>
+              pickFile("cr", f ?? undefined, (file) =>
+                validatePdf(
+                  file,
+                  t("crCert.errorType"),
+                  t("crCert.errorSize"),
+                ),
+              )
+            }
+            labels={chipLabels}
+          />
+
+          <UploadChip
+            label={t("nationalAddress.label")}
+            hint={t("nationalAddress.cta")}
+            accept="application/pdf"
+            kind="pdf"
+            file={values.nationalAddress ?? null}
+            status={values.nationalAddress ? "verified" : "idle"}
+            onPick={(f) =>
+              pickFile("nationalAddress", f ?? undefined, (file) =>
+                validatePdf(
+                  file,
+                  t("nationalAddress.errorType"),
+                  t("nationalAddress.errorSize"),
+                ),
+              )
+            }
+            labels={chipLabels}
+          />
+
+          <UploadChip
+            label={t("vatCert.label")}
+            hint={t("vatCert.cta")}
+            accept="application/pdf"
+            kind="pdf"
+            file={values.vat ?? null}
+            status={values.vat ? "verified" : "idle"}
+            onPick={(f) =>
+              pickFile("vat", f ?? undefined, (file) =>
+                validatePdf(
+                  file,
+                  t("vatCert.errorType"),
+                  t("vatCert.errorSize"),
+                ),
+              )
+            }
+            labels={chipLabels}
+          />
+        </div>
+      ) : null}
 
       {/* Security disclosure: "your documents are safe". */}
       <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-[12.5px] leading-relaxed text-neutral-600">
@@ -1142,5 +1274,72 @@ function Field({
         <span className="text-xs text-semantic-danger-500">{error}</span>
       ) : null}
     </Label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ServesAllKsaToggle — switch that flips the service-area field into a single
+// "Serves all KSA" declaration. Supersedes individual city picks; the Zod
+// refinement in OnboardingStep1 enforces that the two can't coexist.
+// ---------------------------------------------------------------------------
+
+function ServesAllKsaToggle({
+  checked,
+  onChange,
+  labels,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  labels: { label: string; hint: string; chip: string };
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "group flex items-center gap-3 rounded-xl border p-3 text-start transition-colors",
+          checked
+            ? "border-brand-cobalt-500/60 bg-brand-cobalt-100/40"
+            : "border-neutral-200 bg-neutral-50 hover:border-brand-cobalt-500/40",
+        )}
+      >
+        <span
+          className={cn(
+            "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+            checked ? "bg-brand-cobalt-500" : "bg-neutral-300",
+          )}
+        >
+          <span
+            className={cn(
+              "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
+              checked ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5",
+            )}
+          />
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-sm font-medium text-foreground">
+            {labels.label}
+          </span>
+          <span className="text-xs text-muted-foreground">{labels.hint}</span>
+        </span>
+      </button>
+      <AnimatePresence initial={false}>
+        {checked ? (
+          <motion.div
+            key="all-ksa-chip"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-xs text-brand-navy-900"
+          >
+            <Check className="size-3.5" aria-hidden />
+            {labels.chip}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }

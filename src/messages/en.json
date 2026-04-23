@@ -27,6 +27,7 @@
       "catalog": "Catalog",
       "calendar": "Calendar",
       "rfqs": "RFQs",
+      "opportunities": "Opportunities",
       "bookings": "Bookings",
       "profile": "Customize profile"
     },
@@ -436,7 +437,8 @@
         "certification": "Professional certification",
         "other": "Other",
         "iban_certificate": "IBAN certificate",
-        "company_profile": "Company profile"
+        "company_profile": "Company profile",
+        "national_address": "National address certificate"
       },
       "addAnother": "Add another document",
       "remove": "Remove",
@@ -465,6 +467,11 @@
       },
       "serviceAreaLabel": "Service area cities",
       "serviceAreaHint": "Comma-separated list, e.g. Riyadh, Jeddah, Dammam.",
+      "servesAllKsa": {
+        "label": "Serve all cities of Saudi Arabia",
+        "hint": "Turn this on if you operate anywhere in KSA. The 15-city picker will be hidden.",
+        "chip": "Available across all KSA"
+      },
       "languagesLabel": "Languages you can work in",
       "language": {
         "ar": "Arabic",
@@ -536,6 +543,31 @@
         "cta": "Upload a company profile PDF (≤10 MB)",
         "errorType": "Company profile must be a PDF.",
         "errorSize": "Company profile must be 10 MB or smaller."
+      },
+      "companyDocs": {
+        "heading": "Company verification documents",
+        "subheading": "Registered companies must upload commercial registration, national address, and tax certificates."
+      },
+      "crCert": {
+        "label": "Commercial registration (required)",
+        "cta": "Upload your CR certificate (PDF, ≤10 MB)",
+        "required": "Commercial registration certificate is required.",
+        "errorType": "CR certificate must be a PDF.",
+        "errorSize": "CR certificate must be 10 MB or smaller."
+      },
+      "nationalAddress": {
+        "label": "National address (required)",
+        "cta": "Upload the company's national address certificate (PDF, ≤10 MB)",
+        "required": "National address certificate is required.",
+        "errorType": "National address certificate must be a PDF.",
+        "errorSize": "National address certificate must be 10 MB or smaller."
+      },
+      "vatCert": {
+        "label": "Tax / VAT certificate (required)",
+        "cta": "Upload your tax certificate (PDF, ≤10 MB)",
+        "required": "Tax certificate is required.",
+        "errorType": "Tax certificate must be a PDF.",
+        "errorSize": "Tax certificate must be 10 MB or smaller."
       },
       "pathPicker": {
         "badge": "Before we start",
@@ -1062,7 +1094,54 @@
       "revisionSentAt": "Sent {sentAt}",
       "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
       "noPackagesTitle": "No active packages in this subcategory",
-      "noPackagesBody": "You can still submit a free-form quote below — the rule engine needs at least one package to compose a draft."
+      "noPackagesBody": "You can still submit a free-form quote below — the rule engine needs at least one package to compose a draft.",
+      "technicalProposal": {
+        "label": "Technical proposal (optional)",
+        "hint": "Attach a PDF describing your technical approach, past projects, or equipment — the organizer will see it alongside your pricing.",
+        "cta": "Upload a technical proposal PDF (≤10 MB)",
+        "replace": "Replace",
+        "errorType": "Technical proposal must be a PDF.",
+        "errorSize": "Technical proposal must be 10 MB or smaller."
+      }
+    },
+    "opportunities": {
+      "title": "Marketplace opportunities",
+      "subtitle": "Browse published RFQs and apply to the ones that fit you. Applying submits a full quote — the organizer sees it alongside invited suppliers' quotes.",
+      "applyCta": "View & apply",
+      "backToList": "Back to opportunities",
+      "guestsLabel": "Guests",
+      "budgetLabel": "Budget",
+      "budgetNotDisclosed": "Not disclosed",
+      "postedLabel": "Posted",
+      "dueLabel": "Responses due",
+      "filters": {
+        "city": "City",
+        "anyCity": "Any city",
+        "segment": "Event type",
+        "anySegment": "Any type",
+        "startsFrom": "Event from",
+        "startsTo": "Event to",
+        "budgetMin": "Min budget (halalas)",
+        "budgetMax": "Max budget (halalas)",
+        "apply": "Filter",
+        "clear": "Clear"
+      },
+      "empty": {
+        "title": "No open opportunities match your filters",
+        "subtitle": "Try widening the date or budget window, or check back later — organizers publish new RFQs every day."
+      },
+      "detail": {
+        "fallbackTitle": "Opportunity",
+        "cityLabel": "City",
+        "startsAtLabel": "Event window",
+        "guestsLabel": "Guests",
+        "budgetLabel": "Budget",
+        "notDisclosed": "Not disclosed",
+        "requirements": "Organizer's requirements",
+        "noRequirements": "No extra requirements — the organizer didn't add specifics.",
+        "dueAt": "Responses due by {date}",
+        "applyCta": "Apply and submit a quote"
+      }
     },
     "profile": {
       "customizer": {
@@ -1514,6 +1593,15 @@
       "deadline24h": "Within 24 hours",
       "deadline48h": "Within 48 hours",
       "deadline72h": "Within 72 hours",
+      "publishToMarketplaceLabel": "Publish to the supplier marketplace",
+      "publishToMarketplaceHint": "Approved suppliers browsing the marketplace can self-apply to this RFQ. The event's budget range will be visible to applicants. Uncheck to keep this RFQ invite-only — in that case you'll need to add at least one supplier to the shortlist below.",
+      "nextMarketplaceOnly": "Continue with marketplace-only",
+      "reviewMarketplace": "Marketplace",
+      "marketplacePublished": "Published",
+      "marketplacePrivate": "Invite-only",
+      "marketplacePublishedHint": "Approved suppliers can discover this RFQ and self-apply.",
+      "marketplacePrivateHint": "Only the shortlisted suppliers above will see this RFQ.",
+      "reviewShortlistEmptyMarketplace": "No hand-picked suppliers — relying on marketplace self-apply for discovery.",
       "sending": "Sending…",
       "sendRfq": "Send RFQ",
       "cancelStep": "Cancel",
@@ -1689,7 +1777,17 @@
       "paymentSchedule": "Payment schedule",
       "backToCompare": "Back to compare",
       "revisionLabel": "Revision v{version} · Submitted {submittedAt}",
-      "missingRevision": "This quote is missing a revision — ask the supplier to re-send."
+      "missingRevision": "This quote is missing a revision — ask the supplier to re-send.",
+      "technicalProposal": {
+        "title": "Technical proposal",
+        "subtitle": "PDF attached by the supplier alongside this quote",
+        "downloadCta": "Download PDF"
+      },
+      "sourceBadge": {
+        "auto_match": "Auto-matched",
+        "organizer_picked": "You picked",
+        "self_applied": "Marketplace"
+      }
     },
     "common": {
       "back": "Back",
@@ -1737,6 +1835,7 @@
       "baseCityLabel": "Based in",
       "serviceArea": "Serves {cities}",
       "serviceAreaLabel": "Serves",
+      "servesAllKsaLabel": "Serves all KSA",
       "languages": "Languages: {list}",
       "languagesLabel": "Languages",
       "backToHome": "← Back to Sevent",

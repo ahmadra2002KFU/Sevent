@@ -73,6 +73,7 @@ export type PublicSupplierProfile = {
   bio: string | null;
   base_city: string;
   service_area_cities: string[];
+  serves_all_ksa: boolean;
   languages: string[];
   verification_status: "approved";
   is_published: true;
@@ -112,7 +113,7 @@ export async function getPublicSupplierBySlug(
   const { data: supplier, error: supplierErr } = await supabase
     .from("suppliers")
     .select(
-      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order",
+      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, serves_all_ksa, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -303,6 +304,9 @@ export async function getPublicSupplierBySlug(
     bio: (supplier.bio as string | null) ?? null,
     base_city: supplier.base_city as string,
     service_area_cities: (supplier.service_area_cities as string[]) ?? [],
+    serves_all_ksa: Boolean(
+      (supplier as { serves_all_ksa?: boolean | null }).serves_all_ksa,
+    ),
     languages: (supplier.languages as string[]) ?? [],
     verification_status: "approved",
     is_published: true,

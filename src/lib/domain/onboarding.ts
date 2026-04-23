@@ -30,6 +30,7 @@ export const DOC_TYPES = [
   "certification",
   "iban_certificate",
   "company_profile",
+  "national_address",
   "other",
 ] as const;
 export type DocType = (typeof DOC_TYPES)[number];
@@ -71,6 +72,7 @@ export const OnboardingStep1 = z
     national_id: z.string().trim().optional(),
     bio: z.string().trim().max(2000).optional(),
     base_city: z.enum(CITY_TUPLE),
+    serves_all_ksa: z.boolean().default(false),
     service_area_cities: z
       .array(z.enum(CITY_TUPLE))
       .max(15, "Select at most 15 service-area cities")
@@ -90,6 +92,16 @@ export const OnboardingStep1 = z
         code: z.ZodIssueCode.custom,
         path: ["national_id"],
         message: "National ID is required for freelancers",
+      });
+    }
+    // Serves-all-KSA supersedes the city picker. Enforce mutual exclusivity so
+    // "I serve every city plus Riyadh" can't sneak in through a stale client.
+    if (data.serves_all_ksa && data.service_area_cities.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["service_area_cities"],
+        message:
+          "Clear the city list before enabling 'serves all KSA'",
       });
     }
   });
@@ -116,11 +128,43 @@ export type OnboardingStep2 = z.infer<typeof OnboardingStep2>;
 export const LOGO_MAX_BYTES = 1 * 1024 * 1024; // 1 MB
 export const PDF_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
-export const OnboardingStep3 = z.object({
-  logo_file: FileLike.optional(),
-  iban_file: FileLike,
-  company_profile_file: FileLike.optional(),
-});
+export const OnboardingStep3 = z
+  .object({
+    logo_file: FileLike.optional(),
+    iban_file: FileLike,
+    company_profile_file: FileLike.optional(),
+    // Company-only docs. Enforced below via superRefine so freelancers can
+    // still submit step 3 without them.
+    legal_type: z.enum(LEGAL_TYPES).optional(),
+    cr_file: FileLike.optional(),
+    national_address_file: FileLike.optional(),
+    vat_file: FileLike.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.legal_type === "company") {
+      if (!data.cr_file) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cr_file"],
+          message: "Commercial registration certificate (PDF) is required",
+        });
+      }
+      if (!data.national_address_file) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["national_address_file"],
+          message: "National address certificate (PDF) is required",
+        });
+      }
+      if (!data.vat_file) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["vat_file"],
+          message: "Tax / VAT certificate (PDF) is required",
+        });
+      }
+    }
+  });
 export type OnboardingStep3 = z.infer<typeof OnboardingStep3>;
 
 // -----------------------------------------------------------------------------
