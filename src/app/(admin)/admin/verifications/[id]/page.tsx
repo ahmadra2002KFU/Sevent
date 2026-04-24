@@ -209,6 +209,18 @@ export default async function AdminVerificationDetailPage({
     .order("created_at", { ascending: true });
   const docs: SupplierDoc[] = (docRows as SupplierDoc[] | null) ?? [];
 
+  // Sign-up email — pulled from auth.users via service-role, since profiles
+  // doesn't store email. Failing this lookup must not break the page.
+  let signupEmail: string | null = null;
+  try {
+    const { data: authUser } = await admin.auth.admin.getUserById(
+      supplier.profile_id,
+    );
+    signupEmail = authUser?.user?.email ?? null;
+  } catch {
+    signupEmail = null;
+  }
+
   // Logo preview — optional. If signing fails we silently render the fallback
   // initial avatar so the page never breaks on a stale/missing logo object.
   let logoSignedUrl: string | null = null;
@@ -296,6 +308,21 @@ export default async function AdminVerificationDetailPage({
             </CardHeader>
             <CardContent className="pb-4">
               <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+                <DetailRow
+                  label={t("detail.email")}
+                  value={
+                    signupEmail ? (
+                      <a
+                        href={`mailto:${signupEmail}`}
+                        className="break-all text-brand-cobalt-500 underline-offset-2 hover:underline"
+                      >
+                        {signupEmail}
+                      </a>
+                    ) : (
+                      t("detail.emailUnavailable")
+                    )
+                  }
+                />
                 <DetailRow
                   label={t("list.col.legalType")}
                   value={legalTypeLabel(supplier.legal_type, t)}

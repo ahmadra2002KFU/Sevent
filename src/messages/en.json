@@ -1388,6 +1388,8 @@
         "none": "No segments selected"
       },
       "detail": {
+        "email": "Sign-up email",
+        "emailUnavailable": "Not available",
         "crNumber": "CR number",
         "nationalId": "National ID",
         "baseCity": "Base city",
