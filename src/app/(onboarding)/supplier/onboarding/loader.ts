@@ -1,6 +1,6 @@
 import {
+  createSupabaseServerClient,
   createSupabaseServiceRoleClient,
-  getCurrentUser,
 } from "@/lib/supabase/server";
 
 type AdminClient = ReturnType<typeof createSupabaseServiceRoleClient>;
@@ -57,7 +57,11 @@ export async function loadOnboardingBootstrap(
   const admin = options.admin ?? createSupabaseServiceRoleClient();
   let userId = options.userId ?? null;
   if (!userId) {
-    userId = (await getCurrentUser())?.id ?? null;
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
   }
 
   let supplier: OnboardingBootstrap["supplier"] = null;
