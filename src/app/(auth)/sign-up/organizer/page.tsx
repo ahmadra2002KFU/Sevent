@@ -90,9 +90,6 @@ export default async function SignUpOrganizerPage() {
                   errorFullName: t("errorFullName"),
                   errorEmail: t("errorEmail"),
                   errorPassword: t("errorPassword"),
-                  googleCta: t("google.cta"),
-                  googleOrDivider: t("google.orDivider"),
-                  googleUnavailable: t("google.unavailable"),
                 }}
               />
 
