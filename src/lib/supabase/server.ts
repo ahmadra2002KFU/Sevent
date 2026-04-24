@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -29,6 +30,17 @@ export async function createSupabaseServerClient() {
   });
 }
 
+export type CurrentUser = { id: string; email: string | null };
+
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return { id: user.id, email: user.email ?? null };
+});
+
 /**
  * Authenticate the current request and return both the user and a service-role
  * Supabase handle for RLS-free reads scoped by the page logic.
@@ -48,11 +60,10 @@ export async function authenticateAndGetAdminClient(): Promise<
   | { user: { id: string; email: string | null }; admin: ReturnType<typeof createSupabaseServiceRoleClient> }
   | null
 > {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
   return {
-    user: { id: user.id, email: user.email ?? null },
+    user,
     admin: createSupabaseServiceRoleClient(),
   };
 }
@@ -96,10 +107,7 @@ export type RoleGateResult =
 export async function requireRole(
   allowed: AppRole | AppRole[],
 ): Promise<RoleGateResult> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { status: "unauthenticated" };
 
   const admin = createSupabaseServiceRoleClient();
@@ -117,7 +125,7 @@ export async function requireRole(
 
   return {
     status: "ok",
-    user: { id: user.id, email: user.email ?? null },
+    user,
     admin,
     role: role as AppRole,
   };

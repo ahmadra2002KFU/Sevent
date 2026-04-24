@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
-  createSupabaseServerClient,
   createSupabaseServiceRoleClient,
+  getCurrentUser,
 } from "@/lib/supabase/server";
 import { resolveAccessForUser } from "@/lib/auth/access";
 import type { AccessFeature } from "@/lib/auth/featureMatrix";
@@ -140,11 +140,10 @@ const ROLE_TONE: Record<Role, "light" | "dark"> = {
 };
 
 export async function TopNav({ role }: { role: Role }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const nav = await getTranslations("nav");
+  const [user, nav] = await Promise.all([
+    getCurrentUser(),
+    getTranslations("nav"),
+  ]);
 
   const decision = await resolveAccessForUser(user?.id ?? null);
 

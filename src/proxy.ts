@@ -4,6 +4,7 @@ import { resolveAccessForUser } from "@/lib/auth/access";
 import { isRouteAllowed } from "@/lib/auth/featureMatrix";
 
 const ROLE_PREFIXES = ["/organizer", "/supplier", "/admin"] as const;
+const PAGE_GATED_PREFIXES = ["/supplier/onboarding"] as const;
 type ProtectedPrefix = (typeof ROLE_PREFIXES)[number];
 
 function findProtectedPrefix(pathname: string): ProtectedPrefix | null {
@@ -11,6 +12,12 @@ function findProtectedPrefix(pathname: string): ProtectedPrefix | null {
     ROLE_PREFIXES.find(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
     ) ?? null
+  );
+}
+
+function isPageGatedRoute(pathname: string): boolean {
+  return PAGE_GATED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
@@ -24,26 +31,31 @@ function findProtectedPrefix(pathname: string): ProtectedPrefix | null {
  * role-only gate which was trivially skippable (agency redirect loop, no
  * supplier state check, trusted `next` query param downstream).
  *
- * Public routes (not matching any `ROLE_PREFIXES`) short-circuit after
- * session refresh — we don't pay the extra profile/supplier query cost
- * when the request doesn't need an access decision.
+ * Public routes short-circuit before session refresh. Onboarding routes are
+ * page-gated, so the proxy only refreshes/authenticates the session there and
+ * lets the route call `requireAccess` before it loads supplier data.
  */
 export async function proxy(request: NextRequest) {
-  const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
   const protectedPrefix = findProtectedPrefix(pathname);
 
   if (!protectedPrefix) {
-    return response;
+    return NextResponse.next();
   }
 
-  const decision = await resolveAccessForUser(user?.id ?? null);
+  const { response, user } = await updateSession(request);
 
-  if (decision.state === "unauthenticated") {
+  if (!user) {
     const signInUrl = new URL("/sign-in", request.url);
     signInUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(signInUrl);
   }
+
+  if (isPageGatedRoute(pathname)) {
+    return response;
+  }
+
+  const decision = await resolveAccessForUser(user.id);
 
   if (!isRouteAllowed(pathname, decision.allowedRoutePrefixes)) {
     return NextResponse.redirect(
@@ -55,7 +67,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/organizer/:path*", "/supplier/:path*", "/admin/:path*"],
 };

@@ -2,8 +2,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { NextRequest, NextResponse } from "next/server";
 import {
-  createSupabaseServerClient,
   createSupabaseServiceRoleClient,
+  getCurrentUser,
   type AppRole,
 } from "@/lib/supabase/server";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -177,26 +177,24 @@ export type RequireAccessOk = {
 export async function requireAccess(
   feature: AccessFeature,
 ): Promise<RequireAccessOk> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/sign-in");
   }
 
-  const admin = createSupabaseServiceRoleClient();
-  const decision = await resolveAccessForUser(user.id, { admin });
+  const decision = await resolveAccessForUser(user.id);
 
   if (!decision.features[feature]) {
     redirect(decision.bestDestination);
   }
 
+  const admin = createSupabaseServiceRoleClient();
+
   return {
     decision,
     userId: user.id,
-    user: { id: user.id, email: user.email ?? null },
+    user,
     admin,
   };
 }
