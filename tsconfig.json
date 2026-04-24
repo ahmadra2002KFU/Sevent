@@ -30,5 +30,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "approve.ts",
+    "set-supplier-state.ts",
+    "update-supplier.ts"
+  ]
 }
