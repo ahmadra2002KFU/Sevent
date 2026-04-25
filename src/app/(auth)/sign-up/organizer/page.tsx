@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "@/components/brand/Logo";
@@ -75,6 +75,14 @@ export default async function SignUpOrganizerPage() {
             </CardHeader>
 
             <CardContent className="flex flex-col gap-5">
+              <div
+                role="note"
+                className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-relaxed text-amber-900"
+              >
+                <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>{t("autoConfirmNotice")}</span>
+              </div>
+
               <SignUpForm
                 role="organizer"
                 labels={{

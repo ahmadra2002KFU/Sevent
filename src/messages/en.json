@@ -1917,6 +1917,7 @@
       "errorFullName": "Enter your full name (at least 2 characters).",
       "errorEmail": "Enter a valid email address.",
       "errorPassword": "Password must be at least 8 characters.",
+      "autoConfirmNotice": "Heads up: your email is auto-confirmed for now — no verification email will be sent. Real email verification arrives once the production auth service is connected.",
       "valueHero": {
         "headline": "Join Saudi Arabia's biggest event marketplace.",
         "subtitle": "The platform connecting event organizers to trusted suppliers across the Kingdom. A few steps and you start receiving RFPs.",
@@ -1956,6 +1957,7 @@
         "errorPhone": "Invalid Saudi phone — must start with 5 and be 9 digits",
         "errorPassword": "Password must be at least 8 characters.",
         "errorTerms": "You must accept the Terms and Privacy Policy to continue",
+        "autoConfirmNotice": "Heads up: your email is auto-confirmed for now — no verification email will be sent. Real email verification arrives once the production auth service is connected.",
         "valueHero": {
           "headline": "Join the largest events marketplace in the Kingdom.",
           "whyTitle": "Why Sevent?",
