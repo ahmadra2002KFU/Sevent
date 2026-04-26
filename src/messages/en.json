@@ -2231,6 +2231,17 @@
       "exclusions": "Exclusions",
       "notes": "Notes",
       "sprint5Placeholder": "Awaiting confirmation actions — Sprint 5"
+    },
+    "actions": {
+      "confirm": "Confirm booking",
+      "confirming": "Confirming…",
+      "decline": "Decline",
+      "declineDialogTitle": "Decline this booking?",
+      "declineDialogBody": "The organizer will be notified and the calendar block on your side will be released. They can pick another supplier without re-creating the RFQ.",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Tell the organizer why you can't take this booking…",
+      "cancel": "Cancel",
+      "declineConfirm": "Decline booking"
     }
   }
 }

@@ -2231,6 +2231,17 @@
       "exclusions": "ما لا يشمله العرض",
       "notes": "ملاحظات",
       "sprint5Placeholder": "إجراءات التأكيد — Sprint 5"
+    },
+    "actions": {
+      "confirm": "تأكيد الحجز",
+      "confirming": "جارٍ التأكيد…",
+      "decline": "رفض",
+      "declineDialogTitle": "رفض هذا الحجز؟",
+      "declineDialogBody": "سيتم إشعار المنظّم وسيُحرَّر الحجز من تقويمك. يستطيع المنظّم اختيار مورّد آخر دون إعادة إنشاء الطلب.",
+      "reasonLabel": "السبب (اختياري)",
+      "reasonPlaceholder": "أخبر المنظّم لماذا لا يمكنك أخذ هذا الحجز…",
+      "cancel": "إلغاء",
+      "declineConfirm": "رفض الحجز"
     }
   }
 }

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { BookingActions } from "./BookingActions";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -163,9 +164,9 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
               <span className="font-medium text-foreground">
                 {deadlineText(t, row.confirm_deadline)}
               </span>
-              <span className="mt-1 inline-flex w-fit rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                {t("detail.sprint5Placeholder")}
-              </span>
+              {deadlineResult.kind === "expired" ? null : (
+                <BookingActions bookingId={row.id} />
+              )}
             </div>
           </AlertDescription>
         </Alert>

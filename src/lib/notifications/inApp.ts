@@ -22,7 +22,9 @@ export type NotificationKind =
   | "quote.proposal_requested"
   | "quote.proposal_fulfilled"
   | "booking.created"
-  | "booking.awaiting_supplier";
+  | "booking.awaiting_supplier"
+  | "booking.confirmed"
+  | "booking.cancelled";
 
 export type CreateNotificationParams = {
   /** Supabase client with INSERT rights on `public.notifications` (service role). */
