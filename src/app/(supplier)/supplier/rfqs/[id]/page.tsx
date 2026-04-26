@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowUpRight, ClipboardList, FileText, MapPin } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, ClipboardList, FileText, MapPin } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatHalalas } from "@/lib/domain/money";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -26,6 +27,7 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type DetailRow = {
@@ -203,8 +205,13 @@ function RequirementsBlock({
   );
 }
 
-export default async function SupplierRfqDetailPage({ params }: PageProps) {
+export default async function SupplierRfqDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = await params;
+  const sp = await searchParams;
+  const showQuoteSentBanner = sp.quoteSent === "1";
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
 
@@ -302,6 +309,13 @@ export default async function SupplierRfqDetailPage({ params }: PageProps) {
         }
         actions={headerActions}
       />
+
+      {showQuoteSentBanner ? (
+        <Alert>
+          <CheckCircle2 aria-hidden />
+          <AlertDescription>{t("quoteSentBanner")}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b">

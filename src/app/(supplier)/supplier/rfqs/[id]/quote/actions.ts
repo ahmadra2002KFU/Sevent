@@ -18,6 +18,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAccess } from "@/lib/auth/access";
@@ -528,12 +529,16 @@ export async function sendQuoteAction(
     },
   });
 
-  // 12. Revalidate both sides of the sent-quote UX.
+  // 12. Revalidate both sides of the sent-quote UX, then redirect the supplier
+  //     to the RFQ detail page so they land on a confirmation view (the saved
+  //     quote snapshot + the now-`quoted` invite status) instead of staring at
+  //     the editor with a tiny banner. `redirect()` throws a Next.js control
+  //     signal — it must be the final statement in the success path.
   revalidatePath(`/supplier/rfqs/${data.invite_id}`);
   revalidatePath(`/supplier/rfqs/${data.invite_id}/quote`);
   revalidatePath(`/organizer/rfqs/${data.rfq_id}/quotes`);
 
-  return { status: "success", message: "Quote sent." };
+  redirect(`/supplier/rfqs/${data.invite_id}?quoteSent=1`);
 }
 
 // ---------------------------------------------------------------------------

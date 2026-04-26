@@ -995,6 +995,7 @@
       "pastHeading": "النشاط السابق ({count})",
       "detailTitle": "تفاصيل طلب التسعير",
       "detailSubtitle": "الملخص الكامل من المنظم — راجعه قبل إرسال العرض.",
+      "quoteSentBanner": "تم إرسال عرضك للمنظم. سيظهر له في لوحة العروض الخاصة به.",
       "eventCardHeading": "ملخص الفعالية",
       "requirementsHeading": "المتطلبات",
       "respondHeading": "رد على هذه الدعوة",

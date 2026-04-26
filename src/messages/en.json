@@ -995,6 +995,7 @@
       "pastHeading": "Past activity ({count})",
       "detailTitle": "RFQ details",
       "detailSubtitle": "Full brief from the organizer — review before sending a quote.",
+      "quoteSentBanner": "Your quote was sent to the organizer. They'll see it in their pricing dashboard.",
       "eventCardHeading": "Event snapshot",
       "requirementsHeading": "Requirements",
       "respondHeading": "Respond to this invite",
