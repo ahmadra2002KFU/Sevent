@@ -1377,7 +1377,9 @@
         "gea_permit": "GEA permit",
         "certification": "Certification",
         "iban_certificate": "IBAN certificate",
-        "company_profile": "Company profile"
+        "company_profile": "Company profile",
+        "national_address": "National address certificate",
+        "other": "Other"
       },
       "logo": {
         "heading": "Supplier logo",

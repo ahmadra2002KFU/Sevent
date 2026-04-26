@@ -1377,7 +1377,9 @@
         "gea_permit": "تصريح الهيئة العامة للترفيه",
         "certification": "شهادة",
         "iban_certificate": "شهادة الآيبان",
-        "company_profile": "ملف الشركة"
+        "company_profile": "ملف الشركة",
+        "national_address": "شهادة العنوان الوطني",
+        "other": "أخرى"
       },
       "logo": {
         "heading": "شعار المورد",

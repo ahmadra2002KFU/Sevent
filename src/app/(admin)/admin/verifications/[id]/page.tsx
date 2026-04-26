@@ -16,10 +16,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
-import {
-  STORAGE_BUCKETS,
-  createSignedPreviewUrl,
-} from "@/lib/supabase/storage";
 import type {
   EventType,
   SupplierDocStatus,
@@ -221,43 +217,15 @@ export default async function AdminVerificationDetailPage({
     signupEmail = null;
   }
 
-  // Logo preview — optional. If signing fails we silently render the fallback
-  // initial avatar so the page never breaks on a stale/missing logo object.
-  let logoSignedUrl: string | null = null;
-  if (supplier.logo_path) {
-    try {
-      logoSignedUrl = await createSignedPreviewUrl(
-        admin,
-        STORAGE_BUCKETS.logos,
-        supplier.logo_path,
-      );
-    } catch {
-      logoSignedUrl = null;
-    }
-  }
+  // Logo + doc previews are served via dedicated route handlers that re-sign
+  // on every request (./logo and ./doc/[docId]/preview), so URLs can't go
+  // stale between page render and admin click.
+  const logoUrl = supplier.logo_path
+    ? `/admin/verifications/${supplier.id}/logo`
+    : null;
 
   const businessInitial =
     supplier.business_name.trim().charAt(0).toUpperCase() || "?";
-
-  // Mint signed preview URLs server-side. Use service-role here so the admin
-  // never has to depend on a per-object storage policy lookup beyond the
-  // `is_admin()` SELECT policy on `supplier-docs` (we already verified role
-  // above). Failing to sign one URL must not break the page.
-  const signedDocs = await Promise.all(
-    docs.map(async (d) => {
-      try {
-        const url = await createSignedPreviewUrl(
-          admin,
-          STORAGE_BUCKETS.docs,
-          d.file_path,
-        );
-        return { ...d, signedUrl: url, signError: null as string | null };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return { ...d, signedUrl: null, signError: message };
-      }
-    }),
-  );
 
   return (
     <section className="flex flex-col gap-6">
@@ -270,7 +238,7 @@ export default async function AdminVerificationDetailPage({
         </Button>
         <div className="flex items-start gap-4">
           <SupplierLogo
-            signedUrl={logoSignedUrl}
+            logoUrl={logoUrl}
             businessInitial={businessInitial}
             missingLabel={t("logo.missing")}
             headingLabel={t("logo.heading")}
@@ -450,8 +418,9 @@ export default async function AdminVerificationDetailPage({
                 <EmptyState icon={FileText} title={t("noDocs")} />
               ) : (
                 <ul className="flex flex-col divide-y divide-border">
-                  {signedDocs.map((d) => {
+                  {docs.map((d) => {
                     const DocIcon = docTypeIcon(d.doc_type);
+                    const previewHref = `/admin/verifications/${supplier.id}/doc/${d.id}/preview`;
                     return (
                     <li key={d.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -472,24 +441,16 @@ export default async function AdminVerificationDetailPage({
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        {d.signedUrl ? (
-                          <Button asChild variant="outline" size="xs">
-                            <a
-                              href={d.signedUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {t("openPreview")}
-                              <ExternalLink aria-hidden />
-                            </a>
-                          </Button>
-                        ) : d.signError ? (
-                          <span className="text-semantic-danger-500">
-                            {t("previewUnavailable")}: {d.signError}
-                          </span>
-                        ) : (
-                          <span>{t("previewUnavailable")}</span>
-                        )}
+                        <Button asChild variant="outline" size="xs">
+                          <a
+                            href={previewHref}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t("openPreview")}
+                            <ExternalLink aria-hidden />
+                          </a>
+                        </Button>
                         {d.reviewed_at ? (
                           <span>
                             · {t("reviewed")} {fmtDate(d.reviewed_at)}
@@ -535,23 +496,23 @@ export default async function AdminVerificationDetailPage({
 }
 
 function SupplierLogo({
-  signedUrl,
+  logoUrl,
   businessInitial,
   missingLabel,
   headingLabel,
 }: {
-  signedUrl: string | null;
+  logoUrl: string | null;
   businessInitial: string;
   missingLabel: string;
   headingLabel: string;
 }) {
   // Fixed square, 96px — inside the 80-120px band the spec asks for.
   const size = "size-24"; // 6rem = 96px
-  if (signedUrl) {
+  if (logoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={signedUrl}
+        src={logoUrl}
         alt={headingLabel}
         width={96}
         height={96}
