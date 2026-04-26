@@ -65,6 +65,16 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // Server Actions default to a 1 MB FormData cap. Supplier onboarding
+    // submits a logo + multiple verification PDFs in one action, and quote
+    // builders attach a 10 MB technical-proposal PDF — both blow past 1 MB.
+    // 25 MB leaves headroom for the tech-proposal cap plus a logo and a
+    // couple of doc PDFs without forcing the user to re-upload.
+    serverActions: {
+      bodySizeLimit: "25mb",
+    },
+  },
   webpack(config) {
     if (process.platform === "win32") {
       config.cache = { type: "memory" };
