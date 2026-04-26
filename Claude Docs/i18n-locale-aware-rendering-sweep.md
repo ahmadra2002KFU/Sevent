@@ -237,6 +237,6 @@ The pass is done when all of the following hold:
 ## 9. Related documents
 
 - `Claude Docs/plan.md` — current sprint plan.
-- `Claude Docs/taxonomy-legacy.md` — snapshot of the old event-type enum that the dead lookup was built against.
+- `Claude Docs/specs/taxonomy-legacy.md` — snapshot of the old event-type enum that the dead lookup was built against.
 - `src/messages/__tests__/translation-coverage.test.ts` — guardrail test added in the previous session; this sweep keeps it green.
 - Session transcript: `C:/Users/Ahmad/.claude/projects/D--Mufeed-Sevent-Code/46ab9333-eb30-4ab9-bd7d-3e84986e5812.jsonl` (analysis + prior mechanical fixes to `/organizer/events/[id]` and `/organizer/rfqs/new`).

@@ -125,5 +125,5 @@ Before writing any Sprint 4 code:
 1. `pnpm db:start` (Docker Desktop must be running) and confirm the four ports in §2 are listening.
 2. `pnpm db:reset && export NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… && pnpm seed`.
 3. Walk the smoke path: landing → `/categories` → sign in as `organizer1` → create an event → send an RFQ → sign in as `supplier-5` → see the invite → decline it. All green means Sprint 1+2+3 are intact on the current HEAD.
-4. Re-read the Sprint 4 section of `Claude Docs/sprints.md` and all of `Claude Docs/pricing-examples.md` before touching code.
+4. Re-read the Sprint 4 section of `Claude Docs/plans/sprints.md` and all of `Claude Docs/pricing-examples.md` before touching code.
 5. Start Sprint 4 with the Vitest pricing-engine test matrix — spec first, engine second. The 13 deterministic cases in `pricing-examples.md` are the acceptance bar.

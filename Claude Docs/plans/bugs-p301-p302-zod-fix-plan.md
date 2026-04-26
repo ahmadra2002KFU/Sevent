@@ -196,7 +196,7 @@ Confirmed by running the schema in Node (`zod@4.3.6`):
   message: 'Invalid option: expected one of "riyadh"|"jeddah"' }
 ```
 
-These exactly match the strings quoted in `Claude Docs/supplier-onboarding-ux-report.md:25`.
+These exactly match the strings quoted in `Claude Docs/features/supplier-onboarding/ux-report.md:25`.
 
 ### 3.2 Audit table
 

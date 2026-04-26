@@ -182,4 +182,4 @@ Files likely to be modified once the open questions are answered:
 
 ---
 
-**Report file:** `D:/Mufeed/Sevent/Code/Claude Docs/pending-review-fix-plan.md`
+**Report file:** `D:/Mufeed/Sevent/Code/Claude Docs/plans/pending-review-fix-plan.md`

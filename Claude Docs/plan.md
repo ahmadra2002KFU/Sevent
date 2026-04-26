@@ -102,6 +102,6 @@ Tap + escrow, ZATCA, Wathq API, Nafath, Arabic/RTL, gender-segregation, SMS/What
 
 ## Source docs
 
-- Research: `../Docs/{Claude-research.md, chatgpt-report.md, Gemini-Research.txt}`
-- Q&A: [`qa-log.md`](./qa-log.md)
-- Sprints: [`sprints.md`](./sprints.md)
+- Research: `research/{claude-research.md, chatgpt-report.md, gemini-research.txt}`
+- Q&A: [`sessions/qa-log.md`](./sessions/qa-log.md)
+- Sprints: [`plans/sprints.md`](./plans/sprints.md)

@@ -3,7 +3,7 @@
 **Reader:** AI agent performing end-to-end verification.
 **Target:** `D:/Mufeed/Sevent/Code` (this repo).
 **Date authored:** 2026-04-22.
-**Scope:** verify the access-control refactor described in `Claude Docs/access-control-analysis.md` — 10 findings from CRITICAL to LOW across middleware, sign-in, supplier surfaces, organizer surfaces, and onboarding.
+**Scope:** verify the access-control refactor described in `Claude Docs/specs/access-control/analysis.md` — 10 findings from CRITICAL to LOW across middleware, sign-in, supplier surfaces, organizer surfaces, and onboarding.
 
 You are the second agent. The first agent wrote the code + applied migrations. Your job is to run the app and confirm the fixes actually work end-to-end. No code changes unless a bug is found — then stop and report.
 
@@ -388,7 +388,7 @@ Non-access-control things that could have broken from the refactor. Use an **app
 
 ### 6.1 Write your report to
 
-`Claude Docs/access-control-test-results.md`
+`Claude Docs/specs/access-control/test-results.md`
 
 ### 6.2 Format
 

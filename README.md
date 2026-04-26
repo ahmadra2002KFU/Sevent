@@ -2,7 +2,7 @@
 
 The Saudi event marketplace — Next.js 16 + self-hosted Supabase.
 
-Plans, sprints, and business research live in `Claude Docs/` and `Docs/`.
+Plans, sprints, deliverables, and business research live in `Claude Docs/` — see [`Claude Docs/README.md`](./Claude%20Docs/README.md) for the full layout.
 
 ## Prerequisites
 
@@ -79,15 +79,23 @@ supabase/
 ├─ migrations/        — SQL schema (Sprint 1 task S1-4)
 └─ seed.sql           — seed data (Sprint 1 task S1-5)
 
-Claude Docs/
-├─ plan.md            — authoritative Sevent plan (v2, Codex-reviewed)
-├─ sprints.md         — 6-sprint breakdown with dates
-├─ qa-log.md          — planning Q&A record
-├─ state-machines.md  — booking / dispute / review flows (S1-6)
-├─ pricing-examples.md — deterministic pricing test cases (S1-6)
-└─ runbook.md         — deploy / backup / restore / cron health (Sprint 6)
-
-Docs/                 — upstream business research (Claude, ChatGPT, Gemini)
+Claude Docs/                          — see Claude Docs/README.md for the full index
+├─ plan.md                            — authoritative Sevent plan (v2, Codex-reviewed)
+├─ runbook.md                         — deploy / backup / restore / cron health
+├─ state-machines.md                  — booking / dispute / review flows
+├─ pricing-examples.md                — deterministic pricing test cases
+├─ stress-seed-riyadh-100.md          — stress-seed dataset notes
+├─ i18n-locale-aware-rendering-sweep.md — i18n sweep findings
+├─ mockup-source/                     — original JSX design mockups (referenced from src/)
+├─ deliverables/   — weekly reports, replies, decks (anything sent to humans)
+├─ sessions/       — chronological session logs, progress, Q&A
+├─ plans/          — sprints, fix-plans, roadmap
+├─ specs/          — design tokens, taxonomy, access-control, workflows
+├─ features/       — feature-specific docs (supplier-onboarding, …)
+├─ runbooks/       — operational runbooks (deployment, e2e walkthroughs)
+├─ scripts/        — node scripts that build deliverables (.docx / .pptx)
+├─ mockups/        — extracted mockups (HTML/JSX)
+└─ research/       — upstream business research (Claude, ChatGPT, Gemini)
 ```
 
 ## Production deployment
