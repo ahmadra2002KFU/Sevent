@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { endOfMonth, startOfMonth } from "date-fns";
+import { ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { loadCalendarData } from "./actions";
 import { MonthGrid } from "./month-grid";
@@ -38,9 +41,21 @@ export default async function SupplierCalendarPage({
 
   const result = await loadCalendarData(monthStart, monthEnd);
 
+  // Calendar is no longer in the top nav — it's reached via a button on the
+  // bookings page. Surface a return link here so the user is never stranded.
+  const backToBookings = (
+    <Button asChild variant="link" size="sm" className="w-fit px-0">
+      <Link href="/supplier/bookings">
+        <ArrowLeft aria-hidden />
+        {t("backToBookings")}
+      </Link>
+    </Button>
+  );
+
   if (!result.ok) {
     return (
       <section className="flex flex-col gap-6">
+        {backToBookings}
         <PageHeader title={t("title")} />
         <Alert variant="destructive">
           <AlertTitle>{t("errorHeading")}</AlertTitle>
@@ -52,6 +67,7 @@ export default async function SupplierCalendarPage({
 
   return (
     <section className="flex flex-col gap-6">
+      {backToBookings}
       <PageHeader title={t("title")} description={t("subtitle")} />
 
       <MonthGrid

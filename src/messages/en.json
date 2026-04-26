@@ -822,6 +822,7 @@
     "calendar": {
       "title": "Availability",
       "subtitle": "Read-only month view of every block on your calendar. Use the form below to add, edit, or remove manual blocks.",
+      "backToBookings": "Back to bookings",
       "errorHeading": "Unable to load calendar",
       "newBlock": "Add block",
       "noBlocks": "No manual blocks yet.",
@@ -2059,6 +2060,7 @@
   "booking": {
     "listTitle": "Bookings",
     "listIntro": "Every quote you accept creates a booking. The supplier must confirm within the deadline or the slot is released.",
+    "viewCalendar": "View on calendar",
     "statusAwaitingSupplier": "Awaiting supplier",
     "statusConfirmed": "Confirmed",
     "statusCancelled": "Cancelled",

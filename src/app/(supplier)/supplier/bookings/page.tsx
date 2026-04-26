@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowUpRight, ClipboardList } from "lucide-react";
+import { ArrowUpRight, Calendar as CalendarIcon, ClipboardList } from "lucide-react";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -134,6 +134,18 @@ export default async function SupplierBookingsListPage({
 
   const t = await getTranslations("booking");
 
+  // Calendar lives behind a button on this page now (it was dropped from the
+  // top nav so the supplier inbox stays the primary entry point). Both
+  // render branches share the same header action.
+  const calendarAction = (
+    <Button asChild variant="outline" size="sm">
+      <Link href="/supplier/calendar">
+        <CalendarIcon aria-hidden />
+        {t("viewCalendar")}
+      </Link>
+    </Button>
+  );
+
   // Only approved suppliers can see bookings; resolver redirects
   // pending / rejected / in_onboarding callers and stamps supplierId.
   const { decision, admin } = await requireAccess("supplier.bookings");
@@ -141,7 +153,11 @@ export default async function SupplierBookingsListPage({
   if (!supplierId) {
     return (
       <section className="flex flex-col gap-6">
-        <PageHeader title={t("listTitle")} description={t("listIntro")} />
+        <PageHeader
+          title={t("listTitle")}
+          description={t("listIntro")}
+          actions={calendarAction}
+        />
         <EmptyState icon={ClipboardList} title={t("noBookings")} />
       </section>
     );
@@ -174,7 +190,11 @@ export default async function SupplierBookingsListPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader title={t("listTitle")} description={t("listIntro")} />
+      <PageHeader
+        title={t("listTitle")}
+        description={t("listIntro")}
+        actions={calendarAction}
+      />
 
       <form
         method="get"

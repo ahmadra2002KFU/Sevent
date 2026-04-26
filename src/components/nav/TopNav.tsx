@@ -81,12 +81,6 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       feature: "supplier.catalog",
     },
     {
-      href: "/supplier/calendar",
-      labelKey: "supplier.calendar",
-      iconKey: "calendar",
-      feature: "supplier.calendar",
-    },
-    {
       href: "/supplier/rfqs",
       labelKey: "supplier.rfqs",
       iconKey: "supplierRfqs",
