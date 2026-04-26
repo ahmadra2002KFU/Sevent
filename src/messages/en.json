@@ -386,7 +386,9 @@
         "sent": "A new quote was sent",
         "revised": "A quote was revised",
         "accepted": "Your quote was accepted",
-        "rejected": "Your quote was rejected"
+        "rejected": "Your quote was rejected",
+        "proposal_requested": "Organizer requested a technical proposal",
+        "proposal_fulfilled": "Technical proposal received from supplier"
       },
       "booking": {
         "created": "A booking was created",
@@ -1055,6 +1057,25 @@
         "withdrawn": "Withdrawn"
       },
       "expired": "Expired"
+    },
+    "rfp": {
+      "bannerTitle": "Organizer requested a technical proposal",
+      "bannerBodyDefault": "The organizer has asked you to share a technical proposal PDF for this RFQ.",
+      "uploadCta": "Upload proposal",
+      "uploading": "Uploading…",
+      "alreadyFulfilled": "Technical proposal sent on {date}.",
+      "proposalSentBanner": "Your technical proposal was sent to the organizer.",
+      "uploadPageTitle": "Upload technical proposal",
+      "uploadPageDescription": "Send a PDF proposal in response to the organizer's request. They'll see it next to your quote.",
+      "backToRfq": "Back to RFQ",
+      "requestCardTitle": "Request from organizer",
+      "requestCardSubtitle": "Sent {date}",
+      "fileLabel": "Proposal PDF",
+      "fileHint": "PDF only, up to 10 MB.",
+      "pending": "Awaiting your proposal",
+      "inboxBadge": "{count, plural, one {1 proposal request} other {{count} proposal requests}}",
+      "inboxSectionHeading": "Action required — proposal requests",
+      "requestedRelative": "Requested {time}"
     },
     "quote": {
       "title": "Quote builder",
@@ -1849,6 +1870,95 @@
         "auto_match": "Auto-matched",
         "organizer_picked": "You picked",
         "self_applied": "Marketplace"
+      },
+      "compare": {
+        "pageTitle": "Compare quotes",
+        "pageDescription": "Side-by-side view of every quote on this RFQ. Sort, filter, expand line items, request a technical proposal, or accept the best fit.",
+        "backToRfq": "Back to RFQ",
+        "criterion": "Criterion",
+        "verified": "Verified",
+        "dateConflict": "Date conflict",
+        "dateConflictTooltip": "This supplier already has a block overlapping your event window. Accepting will fail.",
+        "inviteSource": "Invite source",
+        "total": "Total",
+        "subtotal": "Subtotal",
+        "setupFee": "Setup fee",
+        "travelFee": "Travel fee",
+        "teardownFee": "Teardown fee",
+        "vat": "VAT ({pct}%)",
+        "vatRow": "VAT amount",
+        "deposit": "Deposit",
+        "paymentSchedule": "Payment schedule",
+        "cancellation": "Cancellation",
+        "inclusions": "Inclusions",
+        "exclusions": "Exclusions",
+        "lineItems": "Line items",
+        "techProposal": "Technical proposal",
+        "rfpStatus": "Proposal request",
+        "expires": "Expires",
+        "submitted": "Submitted",
+        "actions": "Actions",
+        "viewSnapshot": "View snapshot",
+        "acceptCta": "Accept",
+        "accepting": "Accepting…",
+        "openPdf": "Open PDF",
+        "attached": "Attached",
+        "expand": "Expand",
+        "collapse": "Collapse",
+        "itemsCount": "{count, plural, one {1 item} other {{count} items}}",
+        "empty": "No quotes have arrived yet.",
+        "emptyAfterFilter": "No quotes match the current filters.",
+        "clearFilters": "Clear filters",
+        "cancelRfpSuccess": "Proposal request cancelled.",
+        "requestRfpSuccess": "Proposal request sent.",
+        "sortLabel": "Sort by",
+        "sort": {
+          "submittedDesc": "Newest first",
+          "submittedAsc": "Oldest first",
+          "totalAsc": "Total (low → high)",
+          "totalDesc": "Total (high → low)",
+          "depositAsc": "Deposit (low → high)",
+          "depositDesc": "Deposit (high → low)",
+          "expiresAsc": "Expires soonest",
+          "expiresDesc": "Expires latest"
+        },
+        "filter": {
+          "hasTechProposal": "Has technical proposal",
+          "noConflict": "No date conflict",
+          "sourceSelf": "Self-applied",
+          "sourceAuto": "Auto-matched",
+          "sourceOrganizer": "Organizer-picked"
+        },
+        "export": {
+          "csv": "Export CSV",
+          "pdf": "Print / save as PDF"
+        },
+        "rfp": {
+          "pending": "Awaiting supplier",
+          "fulfilled": "Fulfilled"
+        },
+        "printTitle": "Quote comparison",
+        "printMeta": "{city} · {starts} – {ends}"
+      },
+      "rfp": {
+        "requestCta": "Request for proposal",
+        "cancelCta": "Cancel request",
+        "viewProposal": "View proposal",
+        "pending": "Awaiting supplier",
+        "fulfilled": "Fulfilled",
+        "messageLabel": "Message to supplier (optional)",
+        "messagePlaceholder": "Anything specific you'd like covered in the technical proposal?",
+        "errors": {
+          "alreadyPending": "A proposal request is already pending for this supplier.",
+          "notOrganizer": "You are not the organizer of this RFQ."
+        },
+        "detailPendingTitle": "Proposal request pending",
+        "detailPendingSubtitle": "Sent {date}. Awaiting supplier response.",
+        "detailFulfilledTitle": "Technical proposal received",
+        "detailFulfilledSubtitle": "Uploaded by supplier on {date}",
+        "detailCancelledTitle": "Proposal request cancelled",
+        "detailCancelledSubtitle": "Cancelled {date}",
+        "manageOnGrid": "Manage on comparison"
       }
     },
     "common": {

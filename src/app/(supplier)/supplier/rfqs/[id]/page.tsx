@@ -1,14 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowUpRight, CheckCircle2, ClipboardList, FileText, MapPin } from "lucide-react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Hourglass,
+  MapPin,
+} from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatHalalas } from "@/lib/domain/money";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
-import type { QuoteSnapshot } from "@/lib/domain/quote";
+import {
+  parseQuoteSnapshot,
+  pickActiveRfpRequest,
+  type QuoteProposalRequest,
+} from "@/lib/domain/quote";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import {
@@ -212,8 +223,10 @@ export default async function SupplierRfqDetailPage({
   const { id } = await params;
   const sp = await searchParams;
   const showQuoteSentBanner = sp.quoteSent === "1";
+  const showProposalSentBanner = sp.proposalSent === "1";
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
+  const tRfp = await getTranslations("supplier.rfp");
 
   const formatDate = (iso: string | null | undefined): string =>
     fmtDateTime(iso ?? null, locale) || "—";
@@ -276,10 +289,31 @@ export default async function SupplierRfqDetailPage({
   }
 
   const snapshot = latestRevision
-    ? (latestRevision.snapshot_jsonb as QuoteSnapshot | null)
+    ? parseQuoteSnapshot(latestRevision.snapshot_jsonb)
     : null;
+  const snapshotCorrupt = latestRevision !== null && snapshot === null;
+  if (snapshotCorrupt && quote) {
+    console.warn("[supplier.rfqDetail] dropped quote with invalid snapshot", {
+      quote_id: quote.id,
+    });
+  }
   const quoteIsTerminal = quote ? TERMINAL_QUOTE_STATUSES.has(quote.status) : false;
   const hasActiveQuote = quote !== null && !quoteIsTerminal;
+
+  // Active proposal request for this quote (organizer-initiated RFP).
+  let activeRfp: QuoteProposalRequest | null = null;
+  if (quote?.id) {
+    const { data: rfpRows } = await admin
+      .from("quote_proposal_requests")
+      .select(
+        "id, quote_id, requested_by, requested_at, message, response_file_path, responded_at, status, cancelled_at",
+      )
+      .eq("quote_id", quote.id)
+      .order("requested_at", { ascending: false });
+    activeRfp = pickActiveRfpRequest(
+      (rfpRows ?? []) as QuoteProposalRequest[],
+    );
+  }
 
   const headerActions = (
     <div className="flex flex-wrap items-center gap-2">
@@ -314,6 +348,44 @@ export default async function SupplierRfqDetailPage({
         <Alert>
           <CheckCircle2 aria-hidden />
           <AlertDescription>{t("quoteSentBanner")}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {showProposalSentBanner ? (
+        <Alert>
+          <CheckCircle2 aria-hidden />
+          <AlertDescription>{tRfp("proposalSentBanner")}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {activeRfp && activeRfp.status === "pending" ? (
+        <Alert>
+          <Hourglass aria-hidden />
+          <AlertTitle>{tRfp("bannerTitle")}</AlertTitle>
+          <AlertDescription>
+            <span className="block">
+              {activeRfp.message
+                ? activeRfp.message
+                : tRfp("bannerBodyDefault")}
+            </span>
+            <Button asChild size="sm" className="mt-3 w-fit">
+              <Link href={`/supplier/rfqs/${invite.id}/proposal-upload`}>
+                <FileText aria-hidden />
+                {tRfp("uploadCta")}
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {activeRfp && activeRfp.status === "fulfilled" ? (
+        <Alert>
+          <CheckCircle2 aria-hidden />
+          <AlertDescription>
+            {tRfp("alreadyFulfilled", {
+              date: formatDate(activeRfp.responded_at),
+            })}
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -362,6 +434,15 @@ export default async function SupplierRfqDetailPage({
           <RequirementsBlock requirements={rfq?.requirements_jsonb} t={t} />
         </CardContent>
       </Card>
+
+      {snapshotCorrupt ? (
+        <Alert variant="destructive">
+          <FileText aria-hidden />
+          <AlertDescription>
+            This quote&apos;s data is corrupt — ask the supplier to re-send.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {hasActiveQuote && quote && snapshot ? (
         <Card>

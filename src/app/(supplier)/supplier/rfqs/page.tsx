@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
-import { Inbox, MapPin, Users } from "lucide-react";
+import { FileText, Hourglass, Inbox, MapPin, Users } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -85,9 +85,22 @@ function mapInviteToStatusPill(status: InviteStatus) {
   }
 }
 
+type PendingRfpRequest = {
+  request_id: string;
+  quote_id: string;
+  rfq_id: string;
+  invite_id: string;
+  requested_at: string;
+  message: string | null;
+  category_label: string;
+  city_label: string;
+  event_starts_at: string | null;
+};
+
 export default async function SupplierRfqInboxPage() {
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
+  const tRfp = await getTranslations("supplier.rfp");
   const formatEventDate = (iso: string): string => fmtDateTime(iso, locale);
 
   const { decision, admin } = await requireAccess("supplier.rfqs.view");
@@ -122,18 +135,137 @@ export default async function SupplierRfqInboxPage() {
   const invited = rawInvites.filter((row) => row.status === "invited");
   const past = rawInvites.filter((row) => row.status !== "invited");
 
+  // Pending RFP requests for this supplier. We surface them as their own
+  // "Action required" section above open invites — without this, a supplier
+  // who has already quoted has to dig through past activity to discover that
+  // the organizer asked for a technical proposal.
+  const inviteByRfq = new Map<string, InviteRow>();
+  for (const inv of rawInvites) {
+    if (inv.rfqs?.id) inviteByRfq.set(inv.rfqs.id, inv);
+  }
+
+  const { data: pendingRfpRows } = await admin
+    .from("quote_proposal_requests")
+    .select(
+      `id, quote_id, requested_at, message,
+       quotes!inner ( id, rfq_id, supplier_id )`,
+    )
+    .eq("status", "pending")
+    .eq("quotes.supplier_id", supplierId)
+    .order("requested_at", { ascending: false });
+
+  type RfpJoinRow = {
+    id: string;
+    quote_id: string;
+    requested_at: string;
+    message: string | null;
+    quotes:
+      | { id: string; rfq_id: string; supplier_id: string }
+      | { id: string; rfq_id: string; supplier_id: string }[];
+  };
+  const actionRequired: PendingRfpRequest[] = [];
+  for (const row of (pendingRfpRows ?? []) as unknown as RfpJoinRow[]) {
+    const q = Array.isArray(row.quotes) ? row.quotes[0] : row.quotes;
+    if (!q) continue;
+    const invite = inviteByRfq.get(q.rfq_id);
+    if (!invite) continue;
+    actionRequired.push({
+      request_id: row.id,
+      quote_id: q.id,
+      rfq_id: q.rfq_id,
+      invite_id: invite.id,
+      requested_at: row.requested_at,
+      message: row.message,
+      category_label: categoryName(invite.rfqs?.categories ?? null, locale) || "RFQ",
+      city_label: invite.rfqs?.events?.city
+        ? cityNameFor(invite.rfqs.events.city, locale)
+        : "—",
+      event_starts_at: invite.rfqs?.events?.starts_at ?? null,
+    });
+  }
+
   return (
     <section className="flex flex-col gap-8">
       <PageHeader
         title={t("title")}
         description={t("subtitle")}
         actions={
-          <Badge variant="outline" className="gap-1.5">
-            <Inbox className="size-3.5" aria-hidden />
-            {t("openCount", { count: invited.length })}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            {actionRequired.length > 0 ? (
+              <Badge
+                variant="outline"
+                className="gap-1.5 border-semantic-warning-500/50 bg-semantic-warning-100 text-semantic-warning-500"
+              >
+                <Hourglass className="size-3.5" aria-hidden />
+                {tRfp("inboxBadge", { count: actionRequired.length })}
+              </Badge>
+            ) : null}
+            <Badge variant="outline" className="gap-1.5">
+              <Inbox className="size-3.5" aria-hidden />
+              {t("openCount", { count: invited.length })}
+            </Badge>
+          </div>
         }
       />
+
+      {actionRequired.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-semantic-warning-500">
+            <Hourglass className="size-4" aria-hidden />
+            {tRfp("inboxSectionHeading")}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {actionRequired.map((item) => (
+              <li key={item.request_id}>
+                <Card className="border-semantic-warning-500/40 bg-semantic-warning-100/30">
+                  <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-semibold text-brand-navy-900">
+                          {item.category_label}
+                        </h3>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-semantic-warning-500 px-2 py-0.5 text-xs font-medium text-white">
+                          <Hourglass className="size-3" aria-hidden />
+                          {tRfp("pending")}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="size-3.5" aria-hidden />
+                          {item.city_label}
+                        </span>
+                        {item.event_starts_at ? (
+                          <span>{formatEventDate(item.event_starts_at)}</span>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-foreground">
+                        {item.message
+                          ? item.message
+                          : tRfp("bannerBodyDefault")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {tRfp("requestedRelative", {
+                          time: formatSentRelative(item.requested_at),
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0">
+                      <Button asChild>
+                        <Link
+                          href={`/supplier/rfqs/${item.invite_id}/proposal-upload`}
+                        >
+                          <FileText aria-hidden />
+                          {tRfp("uploadCta")}
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {invited.length === 0 ? (
         <EmptyState icon={Inbox} title={t("empty")} />

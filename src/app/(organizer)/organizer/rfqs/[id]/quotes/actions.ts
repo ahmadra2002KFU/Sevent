@@ -22,7 +22,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
 import { createNotification } from "@/lib/notifications/inApp";
-import type { ActionState } from "./action-state";
+import type { ActionState, RfpRequestActionState } from "./action-state";
 
 const acceptSchema = z.object({
   quote_id: z.string().uuid(),
@@ -273,4 +273,279 @@ export async function acceptQuoteAction(
   revalidatePath("/supplier/bookings");
 
   redirect(`/organizer/bookings/${booking_id}`);
+}
+
+// ===========================================================================
+// Proposal-request flow (organizer-initiated RFP).
+// See migration 20260504080000_quote_proposal_requests.sql.
+// ===========================================================================
+
+const requestProposalSchema = z.object({
+  quote_id: z.string().uuid(),
+  rfq_id: z.string().uuid(),
+  message: z
+    .string()
+    .max(1024, "Message must be 1024 characters or fewer.")
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim() : null)),
+});
+
+const cancelProposalSchema = z.object({
+  request_id: z.string().uuid(),
+  rfq_id: z.string().uuid(),
+});
+
+/**
+ * Server action — organizer asks a supplier for a technical proposal.
+ *
+ * Idempotent under the unique partial index on (quote_id) where status =
+ * 'pending'. Re-clicking the button while a request is open returns a
+ * descriptive error instead of duplicating the row.
+ */
+export async function requestProposalAction(
+  _prev: RfpRequestActionState | undefined,
+  formData: FormData,
+): Promise<RfpRequestActionState> {
+  const gate = await requireAccess("organizer.rfqs");
+
+  const parse = requestProposalSchema.safeParse({
+    quote_id: formData.get("quote_id"),
+    rfq_id: formData.get("rfq_id"),
+    message: formData.get("message") ?? undefined,
+  });
+  if (!parse.success) {
+    return { status: "error", message: "Invalid request." };
+  }
+  const { quote_id, rfq_id, message } = parse.data;
+
+  // Defense-in-depth ownership check. RLS would also gate this, but the
+  // service-role client bypasses RLS — so we re-prove the caller owns the
+  // RFQ before mutating.
+  const { data: ownership } = await gate.admin
+    .from("quotes")
+    .select(
+      `id, supplier_id, rfq_id,
+       suppliers ( profile_id ),
+       rfqs ( id, events ( organizer_id ) )`,
+    )
+    .eq("id", quote_id)
+    .eq("rfq_id", rfq_id)
+    .maybeSingle();
+
+  type OwnershipRow = {
+    id: string;
+    supplier_id: string;
+    suppliers:
+      | { profile_id: string | null }
+      | { profile_id: string | null }[]
+      | null;
+    rfqs:
+      | {
+          events:
+            | { organizer_id: string | null }
+            | { organizer_id: string | null }[]
+            | null;
+        }
+      | {
+          events:
+            | { organizer_id: string | null }
+            | { organizer_id: string | null }[]
+            | null;
+        }[]
+      | null;
+  };
+  const row = ownership as unknown as OwnershipRow | null;
+  if (!row) {
+    return { status: "error", message: "Quote not found." };
+  }
+  const rfqsJoin = Array.isArray(row.rfqs) ? row.rfqs[0] ?? null : row.rfqs;
+  const eventsJoin = Array.isArray(rfqsJoin?.events)
+    ? rfqsJoin?.events[0] ?? null
+    : rfqsJoin?.events ?? null;
+  const organizerId = eventsJoin?.organizer_id ?? null;
+  if (organizerId !== gate.user.id) {
+    return {
+      status: "error",
+      message: "You are not the organizer of this RFQ.",
+    };
+  }
+
+  // Insert the row. If a pending request already exists, the unique partial
+  // index trips with code 23505.
+  const { error: insertErr } = await gate.admin
+    .from("quote_proposal_requests")
+    .insert({
+      quote_id,
+      requested_by: gate.user.id,
+      message,
+      status: "pending",
+    });
+
+  if (insertErr) {
+    if ((insertErr as { code?: string }).code === "23505") {
+      return {
+        status: "error",
+        message: "A proposal request is already pending for this supplier.",
+      };
+    }
+    console.error("[requestProposalAction] insert failed", insertErr);
+    return {
+      status: "error",
+      message: "We couldn't send the request. Please try again.",
+    };
+  }
+
+  // Best-effort notification to supplier. Find profile id off the join.
+  const supplierProfileId = Array.isArray(row.suppliers)
+    ? row.suppliers[0]?.profile_id ?? null
+    : row.suppliers?.profile_id ?? null;
+  if (supplierProfileId) {
+    // Look up the supplier's invite id so the inbox can deep-link directly
+    // to /supplier/rfqs/{invite_id} (the supplier-side route is keyed by
+    // invite, not rfq). If the lookup fails or returns nothing the inbox
+    // gracefully falls back to /supplier/rfqs.
+    let inviteId: string | null = null;
+    try {
+      const { data: invite } = await gate.admin
+        .from("rfq_invites")
+        .select("id")
+        .eq("rfq_id", rfq_id)
+        .eq("supplier_id", row.supplier_id)
+        .limit(1)
+        .maybeSingle();
+      inviteId = (invite as { id?: string } | null)?.id ?? null;
+    } catch (e) {
+      console.error("[requestProposalAction] invite lookup failed", e);
+    }
+
+    try {
+      await createNotification({
+        supabase: gate.admin,
+        user_id: supplierProfileId,
+        kind: "quote.proposal_requested",
+        payload: {
+          quote_id,
+          rfq_id,
+          message,
+          ...(inviteId ? { invite_id: inviteId } : {}),
+        },
+      });
+    } catch (e) {
+      console.error("[requestProposalAction] notify failed", e);
+    }
+  }
+
+  revalidatePath(`/organizer/rfqs/${rfq_id}/quotes`);
+  revalidatePath(`/organizer/rfqs/${rfq_id}/quotes/${quote_id}`);
+  // Supplier-side path is keyed by invite id, not quote id — revalidate the
+  // tag-like prefix so the supplier inbox refresh on next visit picks up the
+  // new request even though we don't know their invite id here.
+  revalidatePath("/supplier/rfqs", "layout");
+
+  return {
+    status: "success",
+    message: "Proposal request sent to the supplier.",
+  };
+}
+
+/**
+ * Server action — organizer cancels their own pending proposal request.
+ * Only flips status pending → cancelled. RLS + the with-check policy keep us
+ * honest if the service-role check ever drifts.
+ */
+export async function cancelProposalRequestAction(
+  _prev: RfpRequestActionState | undefined,
+  formData: FormData,
+): Promise<RfpRequestActionState> {
+  const gate = await requireAccess("organizer.rfqs");
+
+  const parse = cancelProposalSchema.safeParse({
+    request_id: formData.get("request_id"),
+    rfq_id: formData.get("rfq_id"),
+  });
+  if (!parse.success) {
+    return { status: "error", message: "Invalid request." };
+  }
+  const { request_id, rfq_id } = parse.data;
+
+  // Verify the request belongs to a quote on an RFQ this organizer owns.
+  const { data: reqRow } = await gate.admin
+    .from("quote_proposal_requests")
+    .select(
+      `id, quote_id, status,
+       quotes!inner ( id, rfqs!inner ( id, events!inner ( organizer_id ) ) )`,
+    )
+    .eq("id", request_id)
+    .maybeSingle();
+
+  type ReqOwnership = {
+    id: string;
+    quote_id: string;
+    status: "pending" | "fulfilled" | "cancelled";
+    quotes:
+      | {
+          rfqs:
+            | { events: { organizer_id: string } | { organizer_id: string }[] }
+            | { events: { organizer_id: string } | { organizer_id: string }[] }[];
+        }
+      | {
+          rfqs:
+            | { events: { organizer_id: string } | { organizer_id: string }[] }
+            | { events: { organizer_id: string } | { organizer_id: string }[] }[];
+        }[];
+  };
+  const r = reqRow as unknown as ReqOwnership | null;
+  if (!r) {
+    return { status: "error", message: "Request not found." };
+  }
+  if (r.status !== "pending") {
+    return {
+      status: "error",
+      message: "This request is no longer pending.",
+    };
+  }
+  const quotesNode = Array.isArray(r.quotes) ? r.quotes[0] : r.quotes;
+  const rfqsNode = Array.isArray(quotesNode?.rfqs)
+    ? quotesNode?.rfqs[0]
+    : quotesNode?.rfqs;
+  const eventsNode = Array.isArray(rfqsNode?.events)
+    ? rfqsNode?.events[0]
+    : rfqsNode?.events;
+  const organizerId = eventsNode?.organizer_id ?? null;
+  if (organizerId !== gate.user.id) {
+    return {
+      status: "error",
+      message: "You are not the organizer of this RFQ.",
+    };
+  }
+
+  // `.select("id")` so a 0-row UPDATE (e.g. another organizer tab cancelled or
+  // the supplier fulfilled it between our read and write) doesn't read as
+  // success and emit a misleading toast.
+  const { data: updRows, error: updErr } = await gate.admin
+    .from("quote_proposal_requests")
+    .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+    .eq("id", request_id)
+    .eq("status", "pending")
+    .select("id");
+
+  if (updErr) {
+    console.error("[cancelProposalRequestAction] update failed", updErr);
+    return {
+      status: "error",
+      message: "We couldn't cancel the request. Please try again.",
+    };
+  }
+  if (!updRows || updRows.length !== 1) {
+    return {
+      status: "error",
+      message: "This request is no longer pending. Please refresh.",
+    };
+  }
+
+  revalidatePath(`/organizer/rfqs/${rfq_id}/quotes`);
+  revalidatePath(`/organizer/rfqs/${rfq_id}/quotes/${r.quote_id}`);
+  revalidatePath("/supplier/rfqs", "layout");
+
+  return { status: "success", message: "Proposal request cancelled." };
 }

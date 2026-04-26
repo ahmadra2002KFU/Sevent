@@ -19,6 +19,8 @@ export type NotificationKind =
   | "quote.revised"
   | "quote.accepted"
   | "quote.rejected"
+  | "quote.proposal_requested"
+  | "quote.proposal_fulfilled"
   | "booking.created"
   | "booking.awaiting_supplier";
 

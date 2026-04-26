@@ -386,7 +386,9 @@
         "sent": "تم إرسال عرض سعر جديد",
         "revised": "تم تحديث عرض سعر",
         "accepted": "تم قبول عرض سعرك",
-        "rejected": "تم رفض عرض سعرك"
+        "rejected": "تم رفض عرض سعرك",
+        "proposal_requested": "طلب المنظّم ملفًا فنيًا",
+        "proposal_fulfilled": "تم استلام الملف الفني من المورّد"
       },
       "booking": {
         "created": "تم إنشاء حجز",
@@ -1055,6 +1057,25 @@
         "withdrawn": "مسحوب"
       },
       "expired": "منتهي"
+    },
+    "rfp": {
+      "bannerTitle": "المنظّم يطلب ملفًا فنيًا",
+      "bannerBodyDefault": "طلب منك المنظّم مشاركة ملف PDF فني خاص بهذا الطلب.",
+      "uploadCta": "رفع الملف الفني",
+      "uploading": "جارٍ الرفع…",
+      "alreadyFulfilled": "تم إرسال الملف الفني في {date}.",
+      "proposalSentBanner": "تم إرسال ملفك الفني للمنظّم.",
+      "uploadPageTitle": "رفع الملف الفني",
+      "uploadPageDescription": "أرسل ملف PDF ردًا على طلب المنظّم. سيظهر له بجانب عرض السعر الخاص بك.",
+      "backToRfq": "العودة للطلب",
+      "requestCardTitle": "طلب من المنظّم",
+      "requestCardSubtitle": "أُرسل في {date}",
+      "fileLabel": "ملف PDF",
+      "fileHint": "PDF فقط، حتى 10 ميجابايت.",
+      "pending": "بانتظار ملفك الفني",
+      "inboxBadge": "{count, plural, zero {لا طلبات} one {طلب ملف فني} two {طلبا ملف فني} few {{count} طلبات ملف فني} many {{count} طلبًا للملف الفني} other {{count} طلبات ملف فني}}",
+      "inboxSectionHeading": "إجراء مطلوب — طلبات ملف فني",
+      "requestedRelative": "طُلب {time}"
     },
     "quote": {
       "title": "منشئ عرض السعر",
@@ -1849,6 +1870,95 @@
         "auto_match": "مطابقة تلقائية",
         "organizer_picked": "اخترته",
         "self_applied": "من السوق"
+      },
+      "compare": {
+        "pageTitle": "مقارنة العروض",
+        "pageDescription": "عرض جنبًا إلى جنب لكل العروض المقدمة على هذا الطلب. رتّب، صفِّ، وسّع البنود، اطلب ملفًا فنيًا، أو اقبل الأنسب.",
+        "backToRfq": "العودة للطلب",
+        "criterion": "البند",
+        "verified": "موثّق",
+        "dateConflict": "تعارض في التاريخ",
+        "dateConflictTooltip": "لدى هذا المورّد حجز يتعارض مع نافذة فعاليتك. القبول سيفشل.",
+        "inviteSource": "مصدر الدعوة",
+        "total": "الإجمالي",
+        "subtotal": "المجموع الفرعي",
+        "setupFee": "رسوم التركيب",
+        "travelFee": "رسوم التنقل",
+        "teardownFee": "رسوم التفكيك",
+        "vat": "ضريبة القيمة المضافة ({pct}%)",
+        "vatRow": "ضريبة القيمة المضافة",
+        "deposit": "الدفعة المقدمة",
+        "paymentSchedule": "جدول الدفع",
+        "cancellation": "شروط الإلغاء",
+        "inclusions": "ما يشمله",
+        "exclusions": "ما لا يشمله",
+        "lineItems": "بنود التسعير",
+        "techProposal": "الملف الفني",
+        "rfpStatus": "طلب الملف الفني",
+        "expires": "ينتهي في",
+        "submitted": "أُرسل في",
+        "actions": "الإجراءات",
+        "viewSnapshot": "عرض التفاصيل",
+        "acceptCta": "قبول",
+        "accepting": "جارٍ القبول…",
+        "openPdf": "فتح PDF",
+        "attached": "مرفق",
+        "expand": "توسيع",
+        "collapse": "طي",
+        "itemsCount": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {{count} عناصر} many {{count} عنصرًا} other {{count} عناصر}}",
+        "empty": "لم تصل أي عروض بعد.",
+        "emptyAfterFilter": "لا توجد عروض تطابق التصفية الحالية.",
+        "clearFilters": "إعادة ضبط الفلاتر",
+        "cancelRfpSuccess": "تم إلغاء طلب الملف الفني.",
+        "requestRfpSuccess": "تم إرسال طلب الملف الفني.",
+        "sortLabel": "ترتيب حسب",
+        "sort": {
+          "submittedDesc": "الأحدث أولاً",
+          "submittedAsc": "الأقدم أولاً",
+          "totalAsc": "الإجمالي (تصاعدي)",
+          "totalDesc": "الإجمالي (تنازلي)",
+          "depositAsc": "الدفعة المقدمة (تصاعدي)",
+          "depositDesc": "الدفعة المقدمة (تنازلي)",
+          "expiresAsc": "ينتهي قريبًا",
+          "expiresDesc": "ينتهي لاحقًا"
+        },
+        "filter": {
+          "hasTechProposal": "يحتوي على ملف فني",
+          "noConflict": "بدون تعارض في التاريخ",
+          "sourceSelf": "تقدّم بنفسه",
+          "sourceAuto": "مطابقة تلقائية",
+          "sourceOrganizer": "اختيار المنظّم"
+        },
+        "export": {
+          "csv": "تصدير CSV",
+          "pdf": "طباعة / حفظ PDF"
+        },
+        "rfp": {
+          "pending": "بانتظار المورّد",
+          "fulfilled": "تم الإرسال"
+        },
+        "printTitle": "مقارنة العروض",
+        "printMeta": "{city} · {starts} – {ends}"
+      },
+      "rfp": {
+        "requestCta": "طلب ملف فني",
+        "cancelCta": "إلغاء الطلب",
+        "viewProposal": "عرض الملف",
+        "pending": "بانتظار المورّد",
+        "fulfilled": "تم الاستلام",
+        "messageLabel": "رسالة للمورّد (اختيارية)",
+        "messagePlaceholder": "هل هناك جانب فنّي محدد ترغب أن يغطيه المورّد في الملف؟",
+        "errors": {
+          "alreadyPending": "هناك طلب ملف فني قيد المعالجة بالفعل لهذا المورّد.",
+          "notOrganizer": "أنت لست منظّم هذا الطلب."
+        },
+        "detailPendingTitle": "طلب ملف فني قيد الانتظار",
+        "detailPendingSubtitle": "أُرسل في {date}. بانتظار رد المورّد.",
+        "detailFulfilledTitle": "تم استلام الملف الفني",
+        "detailFulfilledSubtitle": "رفعه المورّد في {date}",
+        "detailCancelledTitle": "تم إلغاء طلب الملف الفني",
+        "detailCancelledSubtitle": "أُلغي في {date}",
+        "manageOnGrid": "الإدارة في صفحة المقارنة"
       }
     },
     "common": {

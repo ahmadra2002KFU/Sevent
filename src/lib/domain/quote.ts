@@ -12,6 +12,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { z } from "zod";
 
 export const QUOTE_ENGINE_VERSION = "1.0.0" as const;
 
@@ -123,6 +124,70 @@ export function sha256Hex(value: unknown): string {
   return createHash("sha256").update(serialized, "utf8").digest("hex");
 }
 
+// =============================================================================
+// Snapshot Zod schema — defensively validates `quote_revisions.snapshot_jsonb`
+// at read time. The shape mirrors `QuoteSnapshot` above; `.passthrough()` on
+// each object lets future fields land without breaking older callers (matches
+// the `requirements_jsonb` pattern in `actions.ts`).
+// =============================================================================
+
+const QuoteLineItemSchema = z
+  .object({
+    kind: z.enum([
+      "package",
+      "qty_discount",
+      "date_surcharge",
+      "distance_fee",
+      "duration_multiplier",
+      "free_form",
+    ]),
+    label: z.string(),
+    qty: z.number(),
+    unit: z.enum(["event", "hour", "day", "person", "unit"]),
+    unit_price_halalas: z.number().int(),
+    total_halalas: z.number().int(),
+    meta: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+      .optional(),
+  })
+  .passthrough();
+
+export const QuoteSnapshotSchema = z
+  .object({
+    engine_version: z.literal(QUOTE_ENGINE_VERSION),
+    currency: z.literal("SAR"),
+    source: z.enum(["rule_engine", "free_form", "mixed"]),
+    line_items: z.array(QuoteLineItemSchema),
+    subtotal_halalas: z.number().int(),
+    travel_fee_halalas: z.number().int(),
+    setup_fee_halalas: z.number().int(),
+    teardown_fee_halalas: z.number().int(),
+    vat_rate_pct: z.number(),
+    vat_amount_halalas: z.number().int(),
+    total_halalas: z.number().int(),
+    deposit_pct: z.number(),
+    payment_schedule: z.string(),
+    cancellation_terms: z.string(),
+    inclusions: z.array(z.string()),
+    exclusions: z.array(z.string()),
+    notes: z.string().nullable(),
+    expires_at: z.string().nullable(),
+    inputs_digest: z.string(),
+  })
+  .passthrough();
+
+/**
+ * Parse a value that should be a `QuoteSnapshot`. Returns `null` instead of
+ * throwing so callers can silently skip / surface a UI-level error rather
+ * than crashing the whole render. Mirrors the existing missing-revision
+ * skip pattern in `loader.ts`.
+ */
+export function parseQuoteSnapshot(value: unknown): QuoteSnapshot | null {
+  const result = QuoteSnapshotSchema.safeParse(value);
+  if (!result.success) return null;
+  return result.data as QuoteSnapshot;
+}
+
 export type BuildRevisionSnapshotInput = Omit<QuoteSnapshot, "inputs_digest"> & {
   inputs: {
     event_id: string;
@@ -180,4 +245,45 @@ export function buildRevisionSnapshot(input: BuildRevisionSnapshotInput): {
 
   const content_hash = sha256Hex(snapshot);
   return { snapshot, content_hash };
+}
+
+// =============================================================================
+// Proposal-request (organizer-initiated RFP) types — backs the "Request for
+// proposal" button on the comparison grid. See migration
+// 20260504080000_quote_proposal_requests.sql.
+// =============================================================================
+
+export type RfpStatus = "none" | "pending" | "fulfilled" | "cancelled";
+
+export type QuoteProposalRequest = {
+  id: string;
+  quote_id: string;
+  requested_by: string;
+  requested_at: string;
+  message: string | null;
+  response_file_path: string | null;
+  responded_at: string | null;
+  status: "pending" | "fulfilled" | "cancelled";
+  cancelled_at: string | null;
+};
+
+/**
+ * Pick the request that should drive the cell UI. We sort by `requested_at`
+ * descending and prefer a still-pending request if one exists, otherwise the
+ * most recent terminal one. Callers can pass an empty array.
+ */
+export function pickActiveRfpRequest(
+  rows: QuoteProposalRequest[],
+): QuoteProposalRequest | null {
+  if (rows.length === 0) return null;
+  const sorted = [...rows].sort((a, b) =>
+    a.requested_at < b.requested_at ? 1 : -1,
+  );
+  const pending = sorted.find((r) => r.status === "pending");
+  return pending ?? sorted[0]!;
+}
+
+export function rfpStatus(req: QuoteProposalRequest | null): RfpStatus {
+  if (!req) return "none";
+  return req.status;
 }

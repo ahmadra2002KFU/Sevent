@@ -12,11 +12,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, ClockAlert, FileText } from "lucide-react";
+import { ArrowLeft, ClockAlert, FileText, Hourglass } from "lucide-react";
 import {
   STORAGE_BUCKETS,
   createSignedDownloadUrl,
 } from "@/lib/supabase/storage";
+import {
+  parseQuoteSnapshot,
+  pickActiveRfpRequest,
+  type QuoteProposalRequest,
+} from "@/lib/domain/quote";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +46,7 @@ import {
 import { requireAccess } from "@/lib/auth/access";
 import { formatHalalas } from "@/lib/domain/money";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
-import type { QuoteSnapshot, QuoteLineItem } from "@/lib/domain/quote";
+import type { QuoteLineItem } from "@/lib/domain/quote";
 
 export const dynamic = "force-dynamic";
 
@@ -182,13 +187,30 @@ export default async function OrganizerQuoteDetailPage({
   } | null;
   if (!revision) notFound();
 
-  const snap = revision.snapshot_jsonb as QuoteSnapshot;
+  const snap = parseQuoteSnapshot(revision.snapshot_jsonb);
+  if (!snap) {
+    console.warn("[organizer.quoteDetail] dropped quote with invalid snapshot", {
+      quote_id: quoteId,
+    });
+    return (
+      <section className="flex flex-col gap-6">
+        <PageHeader title="Quote snapshot" />
+        <Alert variant="destructive">
+          <ClockAlert aria-hidden />
+          <AlertDescription>
+            This quote&apos;s data is corrupt — ask the supplier to re-send.
+          </AlertDescription>
+        </Alert>
+      </section>
+    );
+  }
 
   // Tech proposal (optional). Signed URL via service-role client — the
   // organizer has no direct storage RLS grant on `supplier-docs`, but they're
   // gated on this page by the quote's (rfq_id, organizer_id) check above so
   // minting a 1-hour URL is safe.
   const tTech = await getTranslations("organizer.quote.technicalProposal");
+  const tRfp = await getTranslations("organizer.quote.rfp");
   let techProposalUrl: string | null = null;
   if (revision.technical_proposal_path) {
     try {
@@ -199,6 +221,35 @@ export default async function OrganizerQuoteDetailPage({
       );
     } catch {
       techProposalUrl = null;
+    }
+  }
+
+  // Latest proposal request (organizer-initiated RFP). Show its status
+  // read-only here; the cancel/re-request UX lives on the comparison grid.
+  const { data: rfpRows } = await admin
+    .from("quote_proposal_requests")
+    .select(
+      "id, quote_id, requested_by, requested_at, message, response_file_path, responded_at, status, cancelled_at",
+    )
+    .eq("quote_id", quoteId)
+    .order("requested_at", { ascending: false });
+  const activeRfp = pickActiveRfpRequest(
+    (rfpRows ?? []) as QuoteProposalRequest[],
+  );
+  let rfpResponseUrl: string | null = null;
+  if (
+    activeRfp &&
+    activeRfp.status === "fulfilled" &&
+    activeRfp.response_file_path
+  ) {
+    try {
+      rfpResponseUrl = await createSignedDownloadUrl(
+        admin,
+        STORAGE_BUCKETS.docs,
+        activeRfp.response_file_path,
+      );
+    } catch {
+      rfpResponseUrl = null;
     }
   }
 
@@ -259,6 +310,65 @@ export default async function OrganizerQuoteDetailPage({
                 {tTech("downloadCta")}
               </a>
             </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeRfp ? (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-4 p-4">
+            <div className="flex items-center gap-3">
+              {activeRfp.status === "pending" ? (
+                <Hourglass
+                  className="size-5 text-semantic-warning-500"
+                  aria-hidden
+                />
+              ) : (
+                <FileText
+                  className="size-5 text-brand-cobalt-500"
+                  aria-hidden
+                />
+              )}
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  {activeRfp.status === "pending"
+                    ? tRfp("detailPendingTitle")
+                    : activeRfp.status === "fulfilled"
+                      ? tRfp("detailFulfilledTitle")
+                      : tRfp("detailCancelledTitle")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {activeRfp.status === "pending"
+                    ? tRfp("detailPendingSubtitle", {
+                        date: fmt(activeRfp.requested_at, locale),
+                      })
+                    : activeRfp.status === "fulfilled"
+                      ? tRfp("detailFulfilledSubtitle", {
+                          date: fmt(activeRfp.responded_at, locale),
+                        })
+                      : tRfp("detailCancelledSubtitle", {
+                          date: fmt(activeRfp.cancelled_at, locale),
+                        })}
+                </span>
+              </div>
+            </div>
+            {activeRfp.status === "fulfilled" && rfpResponseUrl ? (
+              <Button asChild size="sm" variant="outline">
+                <a
+                  href={rfpResponseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {tRfp("viewProposal")}
+                </a>
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="ghost">
+                <Link href={`/organizer/rfqs/${id}/quotes`}>
+                  {tRfp("manageOnGrid")}
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : null}

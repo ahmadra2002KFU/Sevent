@@ -7,7 +7,9 @@ import {
   CalendarCheck,
   CheckCircle2,
   FileCheck,
+  FileText,
   FileX,
+  Hourglass,
   Info,
   MailWarning,
   MessageSquare,
@@ -99,6 +101,25 @@ export function linkForNotification(
         return { href: `/supplier/rfqs/${rfqId}`, label: "view" };
       }
       return null;
+    case "quote.proposal_requested":
+      // Supplier-side route is keyed by invite id, not rfq id. The writer
+      // (`requestProposalAction`) looks up the supplier's invite and embeds it
+      // in the payload so this link resolves; if it's absent (older rows or a
+      // failed lookup), degrade to the supplier RFQ inbox.
+      if (role === "supplier") {
+        if (inviteId)
+          return { href: `/supplier/rfqs/${inviteId}`, label: "view" };
+        return { href: "/supplier/rfqs", label: "view" };
+      }
+      return null;
+    case "quote.proposal_fulfilled":
+      if (role === "organizer" && rfqId && quoteId) {
+        return {
+          href: `/organizer/rfqs/${rfqId}/quotes/${quoteId}`,
+          label: "view",
+        };
+      }
+      return null;
     case "booking.created":
       if (role === "organizer" && bookingId) {
         return { href: `/organizer/bookings/${bookingId}`, label: "view" };
@@ -170,6 +191,10 @@ function iconForKind(kind: string): { icon: LucideIcon; tone: Tone } {
     case "quote.sent":
     case "quote.revised":
       return { icon: MessageSquare, tone: "info" };
+    case "quote.proposal_requested":
+      return { icon: Hourglass, tone: "warning" };
+    case "quote.proposal_fulfilled":
+      return { icon: FileText, tone: "info" };
     case "quote.accepted":
       return { icon: CheckCircle2, tone: "success" };
     case "quote.rejected":
@@ -261,6 +286,8 @@ export default async function NotificationsInbox({
     "quote.revised",
     "quote.accepted",
     "quote.rejected",
+    "quote.proposal_requested",
+    "quote.proposal_fulfilled",
     "booking.created",
     "booking.awaiting_supplier",
   ] as const;

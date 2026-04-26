@@ -143,6 +143,7 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.rfqs");
+  const tSource = await getTranslations("organizer.quote.sourceBadge");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -303,7 +304,11 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm">
-                      {t(`source.${inv.source}` as never) ?? inv.source}
+                      {inv.source === "auto_match" ||
+                      inv.source === "organizer_picked" ||
+                      inv.source === "self_applied"
+                        ? tSource(inv.source)
+                        : inv.source}
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <StatusPill
