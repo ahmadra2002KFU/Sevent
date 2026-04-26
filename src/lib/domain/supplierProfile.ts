@@ -17,7 +17,6 @@ import {
 import {
   STORAGE_BUCKETS,
   createSignedDownloadUrl,
-  publicPortfolioUrl,
 } from "@/lib/supabase/storage";
 import { DEFAULT_ACCENT_HEX } from "@/lib/domain/taxonomy";
 
@@ -41,6 +40,7 @@ export type PublicSupplierPackage = {
 
 export type PublicSupplierMedia = {
   id: string;
+  kind: "photo" | "document";
   title: string | null;
   sort_order: number;
   public_url: string;
@@ -144,7 +144,7 @@ export async function getPublicSupplierBySlug(
       .from("supplier_media")
       .select("id, file_path, title, sort_order, kind")
       .eq("supplier_id", supplierId)
-      .eq("kind", "photo")
+      .in("kind", ["photo", "document"])
       .order("sort_order", { ascending: true }),
     supabase
       .from("supplier_categories")
@@ -176,12 +176,22 @@ export async function getPublicSupplierBySlug(
     }),
   );
 
-  const media: PublicSupplierMedia[] = (mediaRes.data ?? []).map((row) => ({
-    id: row.id as string,
-    title: (row.title as string | null) ?? null,
-    sort_order: Number(row.sort_order ?? 0),
-    public_url: publicPortfolioUrl(supabase, row.file_path as string),
-  }));
+  // Bucket is private; mint short-lived signed URLs so RLS gating on
+  // published+approved suppliers is preserved. 1h TTL matches the existing
+  // download helper and is well within how long a viewer stays on the page.
+  const media: PublicSupplierMedia[] = await Promise.all(
+    (mediaRes.data ?? []).map(async (row) => ({
+      id: row.id as string,
+      kind: (row.kind as string) === "document" ? "document" : "photo",
+      title: (row.title as string | null) ?? null,
+      sort_order: Number(row.sort_order ?? 0),
+      public_url: await createSignedDownloadUrl(
+        supabase,
+        STORAGE_BUCKETS.portfolio,
+        row.file_path as string,
+      ),
+    })),
+  );
 
   // Fetch the parent category names in a second hop so we can show the parent
   // label above the subcategory slug. Keeps the typing simple and avoids

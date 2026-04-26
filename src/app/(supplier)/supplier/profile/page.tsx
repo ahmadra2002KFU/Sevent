@@ -7,7 +7,12 @@ import {
   ACCENT_HEX_VALUES,
   DEFAULT_ACCENT_HEX,
 } from "@/lib/domain/taxonomy";
-import { ProfileCustomizer } from "./ProfileCustomizer";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrl,
+} from "@/lib/supabase/storage";
+import { ProfilePageTabs } from "./ProfilePageTabs";
+import type { PortfolioItem } from "../portfolio/PortfolioManager";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +65,7 @@ export default async function SupplierProfileCustomizePage() {
         .maybeSingle()
     : { data: null };
 
-  if (!supplier) {
+  if (!supplier || !supplierId) {
     return (
       <section className="flex flex-col gap-6">
         <PageHeader title={t("title")} description={t("description")} />
@@ -78,14 +83,45 @@ export default async function SupplierProfileCustomizePage() {
     profile_sections_order: string[] | null;
   };
 
+  const { data: mediaRows } = await admin
+    .from("supplier_media")
+    .select("id, kind, file_path, title, sort_order")
+    .eq("supplier_id", supplierId)
+    .in("kind", ["photo", "document"])
+    .order("sort_order", { ascending: true });
+
+  const portfolioItems: PortfolioItem[] = await Promise.all(
+    (
+      (mediaRows as Array<{
+        id: string;
+        kind: string;
+        file_path: string;
+        title: string | null;
+        sort_order: number;
+      }> | null) ?? []
+    ).map(async (row) => ({
+      id: row.id,
+      kind: row.kind === "document" ? "document" : "photo",
+      public_url: await createSignedDownloadUrl(
+        admin,
+        STORAGE_BUCKETS.portfolio,
+        row.file_path,
+      ),
+      file_path: row.file_path,
+      title: row.title,
+      sort_order: Number(row.sort_order ?? 0),
+    })),
+  );
+
   return (
     <section className="flex flex-col gap-6">
       <PageHeader title={t("title")} description={t("description")} />
-      <ProfileCustomizer
+      <ProfilePageTabs
         initialAccentColor={coerceAccentColor(supplierRow.accent_color)}
         initialSectionOrder={coerceSectionsOrder(
           supplierRow.profile_sections_order,
         )}
+        initialPortfolioItems={portfolioItems}
       />
     </section>
   );

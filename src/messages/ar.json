@@ -33,7 +33,7 @@
       "rfqs": "طلبات العروض",
       "opportunities": "الفرص",
       "bookings": "الحجوزات",
-      "profile": "تخصيص الملف"
+      "profile": "ملفي"
     },
     "admin": {
       "dashboard": "نظرة عامة",
@@ -1148,6 +1148,10 @@
       }
     },
     "profile": {
+      "tabs": {
+        "customize": "التخصيص",
+        "portfolio": "أعمالي السابقة"
+      },
       "customizer": {
         "title": "تخصيص ملفك",
         "description": "اختر لونًا مميزًا ورتّب الأقسام التي تظهر في ملفك العام.",
@@ -1183,6 +1187,54 @@
           "title": "أكمل التسجيل أولًا",
           "description": "أنشئ ملف المورّد قبل تخصيصه."
         }
+      }
+    },
+    "portfolio": {
+      "title": "أعمالي السابقة",
+      "description": "اعرض أعمالك السابقة على المنظّمين. ارفع صورًا وملفات PDF، واسحب لإعادة الترتيب.",
+      "upload": {
+        "heading": "رفع عناصر جديدة",
+        "helper": "صور حتى {imageMb} م.ب (PNG, JPG, WebP) وملفات PDF حتى {pdfMb} م.ب. حتى {max} ملفات في كل عملية رفع.",
+        "cta": "أفلت الملفات هنا",
+        "types": "PNG · JPG · WebP · PDF",
+        "browse": "اختر ملفات",
+        "uploading": "جارٍ الرفع…"
+      },
+      "list": {
+        "heading": "أعمالك",
+        "helper": "اسحب المقبض لإعادة ترتيب العناصر كما تظهر في ملفك العام."
+      },
+      "empty": {
+        "title": "لا توجد عناصر بعد",
+        "description": "أضف بعض الصور أو ملف PDF لعرض أعمالك السابقة."
+      },
+      "info": {
+        "uploaded": "{count, plural, zero {تم رفع # عنصر} one {تم رفع عنصر واحد} two {تم رفع عنصرين} few {تم رفع # عناصر} many {تم رفع # عنصرًا} other {تم رفع # عنصر}}"
+      },
+      "validation": {
+        "empty": "اختر ملفًا واحدًا على الأقل.",
+        "tooMany": "ارفع {max} ملفات كحد أقصى في كل مرة.",
+        "totalCap": "الحد الأقصى للأعمال هو {max} عنصرًا.",
+        "tooLarge": "{name} أكبر من الحد المسموح.",
+        "unsupportedType": "{name} ليس نوع ملف مدعومًا."
+      },
+      "item": {
+        "dragHandle": "اسحب لإعادة الترتيب",
+        "titlePlaceholder": "وصف اختياري (مثال: زفاف في العُلا)",
+        "saveTitle": "حفظ",
+        "saving": "جارٍ الحفظ…",
+        "saved": "تم الحفظ",
+        "delete": "حذف",
+        "confirmDelete": "هل تريد حذف هذا العنصر؟ لا يمكن التراجع.",
+        "openPdf": "فتح ملف PDF",
+        "openImage": "فتح الصورة",
+        "documentTag": "PDF"
+      },
+      "errors": {
+        "uploadFailed": "فشل الرفع: {message}",
+        "deleteFailed": "فشل الحذف: {message}",
+        "reorderFailed": "فشل إعادة الترتيب: {message}",
+        "titleFailed": "تعذّر حفظ الوصف: {message}"
       }
     },
     "pending": {

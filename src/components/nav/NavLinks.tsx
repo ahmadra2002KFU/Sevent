@@ -55,7 +55,7 @@ export function NavLinks({ items, tone }: NavLinksProps) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "inline-flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-md px-3 py-2 font-medium transition-colors",
+                "inline-flex min-h-[44px] min-w-[44px] items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 font-medium transition-colors",
                 tone === "dark"
                   ? active
                     ? "bg-white/15 text-white"

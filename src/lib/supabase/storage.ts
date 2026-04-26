@@ -72,9 +72,3 @@ export async function createSignedDownloadUrl(
   return data.signedUrl;
 }
 
-export function publicPortfolioUrl(
-  client: SupabaseClient,
-  path: string,
-): string {
-  return client.storage.from(STORAGE_BUCKETS.portfolio).getPublicUrl(path).data.publicUrl;
-}

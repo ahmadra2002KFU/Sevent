@@ -23,7 +23,7 @@ export type SupplierDocType =
 
 export type SupplierDocStatus = "pending" | "approved" | "rejected";
 
-export type SupplierMediaKind = "photo" | "video";
+export type SupplierMediaKind = "photo" | "video" | "document";
 
 export type PackageUnit = "event" | "hour" | "day" | "person" | "unit";
 

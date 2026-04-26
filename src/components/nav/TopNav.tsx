@@ -188,7 +188,7 @@ export async function TopNav({ role }: { role: Role }) {
       )}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <MobileNavSheet
             tone={tone}
             triggerLabel={nav("menu.open")}
@@ -197,7 +197,7 @@ export async function TopNav({ role }: { role: Role }) {
           />
           <Link
             href={decision.bestDestination}
-            className="flex min-h-[44px] min-w-0 items-center gap-3 rounded-md px-2"
+            className="flex min-h-[44px] shrink-0 items-center gap-3 rounded-md px-2"
             aria-label="Sevent home"
           >
             <Logo
@@ -207,7 +207,7 @@ export async function TopNav({ role }: { role: Role }) {
             />
             <span
               className={cn(
-                "truncate text-sm font-semibold tracking-tight hidden sm:inline",
+                "truncate text-sm font-semibold tracking-tight hidden xl:inline",
                 tone === "dark" ? "text-white/90" : "text-brand-navy-900",
               )}
             >

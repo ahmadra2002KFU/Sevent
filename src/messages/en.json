@@ -33,7 +33,7 @@
       "rfqs": "RFQs",
       "opportunities": "Opportunities",
       "bookings": "Bookings",
-      "profile": "Customize profile"
+      "profile": "Profile"
     },
     "admin": {
       "dashboard": "Overview",
@@ -1148,6 +1148,10 @@
       }
     },
     "profile": {
+      "tabs": {
+        "customize": "Customize",
+        "portfolio": "Portfolio"
+      },
       "customizer": {
         "title": "Customize your profile",
         "description": "Pick an accent color and order the sections shown on your public profile.",
@@ -1183,6 +1187,54 @@
           "title": "Finish onboarding first",
           "description": "Create your supplier profile before customizing it."
         }
+      }
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "description": "Showcase previous work to organizers. Upload photos and PDFs; drag to reorder.",
+      "upload": {
+        "heading": "Upload new items",
+        "helper": "Images up to {imageMb} MB (PNG, JPG, WebP) and PDFs up to {pdfMb} MB. Up to {max} files per upload.",
+        "cta": "Drop files here",
+        "types": "PNG · JPG · WebP · PDF",
+        "browse": "Choose files",
+        "uploading": "Uploading…"
+      },
+      "list": {
+        "heading": "Your portfolio",
+        "helper": "Drag the handle to reorder items as they appear on your public profile."
+      },
+      "empty": {
+        "title": "No items yet",
+        "description": "Add a few photos or a PDF case study to bring your profile to life."
+      },
+      "info": {
+        "uploaded": "{count, plural, one {# item uploaded} other {# items uploaded}}"
+      },
+      "validation": {
+        "empty": "Pick at least one file.",
+        "tooMany": "Upload at most {max} files at once.",
+        "totalCap": "Portfolio is capped at {max} items.",
+        "tooLarge": "{name} is too large.",
+        "unsupportedType": "{name} is not a supported file type."
+      },
+      "item": {
+        "dragHandle": "Drag to reorder",
+        "titlePlaceholder": "Optional caption (e.g. wedding at AlUla)",
+        "saveTitle": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "delete": "Delete",
+        "confirmDelete": "Delete this item? This cannot be undone.",
+        "openPdf": "Open PDF",
+        "openImage": "Open image",
+        "documentTag": "PDF"
+      },
+      "errors": {
+        "uploadFailed": "Upload failed: {message}",
+        "deleteFailed": "Delete failed: {message}",
+        "reorderFailed": "Reorder failed: {message}",
+        "titleFailed": "Could not save title: {message}"
       }
     },
     "pending": {

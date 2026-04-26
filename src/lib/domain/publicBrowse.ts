@@ -11,7 +11,10 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { publicPortfolioUrl } from "@/lib/supabase/storage";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrl,
+} from "@/lib/supabase/storage";
 
 export type PublicBrowseCategory = {
   id: string;
@@ -259,14 +262,22 @@ export async function listSubcategoriesWithSuppliers(
       .eq("kind", "photo")
       .order("sort_order", { ascending: true });
 
+    const seen = new Set<string>();
+    const firstByPath: Array<{ sid: string; path: string }> = [];
     for (const row of mediaRows ?? []) {
       const sid = row.supplier_id as string;
-      if (firstPhotoBySupplier.has(sid)) continue;
-      firstPhotoBySupplier.set(
-        sid,
-        publicPortfolioUrl(supabase, row.file_path as string),
-      );
+      if (seen.has(sid)) continue;
+      seen.add(sid);
+      firstByPath.push({ sid, path: row.file_path as string });
     }
+    const signedUrls = await Promise.all(
+      firstByPath.map(({ path }) =>
+        createSignedDownloadUrl(supabase, STORAGE_BUCKETS.portfolio, path),
+      ),
+    );
+    firstByPath.forEach(({ sid }, i) => {
+      firstPhotoBySupplier.set(sid, signedUrls[i]);
+    });
   }
 
   return subRows.map((row) => {

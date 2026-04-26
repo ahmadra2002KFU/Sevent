@@ -203,6 +203,7 @@ function PortfolioSection({
         <GalleryGrid
           items={supplier.media.map((m) => ({
             id: m.id,
+            kind: m.kind,
             public_url: m.public_url,
             title: m.title,
           }))}
