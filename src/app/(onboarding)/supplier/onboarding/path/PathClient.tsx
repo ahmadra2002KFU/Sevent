@@ -50,7 +50,8 @@ export function PathClient({ labels }: { labels: PathClientLabels }) {
         setError(result.message ?? "Something went wrong");
         return;
       }
-      router.replace("/supplier/onboarding");
+      // Wizard now lives as the Settings tab on /supplier/profile.
+      router.replace("/supplier/profile?tab=settings");
     });
   }
 

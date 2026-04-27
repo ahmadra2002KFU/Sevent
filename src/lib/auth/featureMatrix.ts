@@ -32,6 +32,11 @@ export type SupplierFeature =
   | "supplier.rfqs.respond"
   | "supplier.opportunities.browse"
   | "supplier.opportunities.apply"
+  // Profile page is the unified hub since the onboarding wizard moved there
+  // as a "Settings" tab. profile.access admits any supplier with a row
+  // (in_onboarding / pending_review / approved / rejected); the customize
+  // and portfolio tabs gate themselves on `profile.customize` (approved).
+  | "supplier.profile.access"
   | "supplier.profile.customize";
 
 export type OrganizerFeature =
@@ -65,6 +70,7 @@ const SUPPLIER_APPROVED_FEATURES: FeatureSet = {
   // the browse loader.
   "supplier.opportunities.browse": true,
   "supplier.opportunities.apply": true,
+  "supplier.profile.access": true,
   "supplier.profile.customize": true,
 };
 
@@ -118,19 +124,30 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     },
   },
   "supplier.in_onboarding": {
-    bestDestination: "/supplier/onboarding",
-    allowedRoutePrefixes: ["/supplier/dashboard", "/supplier/onboarding"],
+    // Wizard now lives as the Settings tab on /supplier/profile.
+    bestDestination: "/supplier/profile?tab=settings",
+    allowedRoutePrefixes: [
+      "/supplier/dashboard",
+      "/supplier/onboarding",
+      "/supplier/profile",
+    ],
     features: {
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
+      "supplier.profile.access": true,
     },
   },
   "supplier.pending_review": {
     bestDestination: "/supplier/dashboard",
-    allowedRoutePrefixes: ["/supplier/dashboard", "/supplier/onboarding"],
+    allowedRoutePrefixes: [
+      "/supplier/dashboard",
+      "/supplier/onboarding",
+      "/supplier/profile",
+    ],
     features: {
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
+      "supplier.profile.access": true,
     },
   },
   "supplier.approved": {
@@ -140,10 +157,15 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
   },
   "supplier.rejected": {
     bestDestination: "/supplier/dashboard",
-    allowedRoutePrefixes: ["/supplier/dashboard", "/supplier/onboarding"],
+    allowedRoutePrefixes: [
+      "/supplier/dashboard",
+      "/supplier/onboarding",
+      "/supplier/profile",
+    ],
     features: {
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
+      "supplier.profile.access": true,
     },
   },
   "supplier.suspended": {

@@ -2,37 +2,49 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Lock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileCustomizer } from "./ProfileCustomizer";
 import { PortfolioManager, type PortfolioItem } from "../portfolio/PortfolioManager";
+import { OnboardingWizard } from "@/app/(onboarding)/supplier/onboarding/wizard";
+import type { OnboardingBootstrap } from "@/app/(onboarding)/supplier/onboarding/loader";
 
 type ProfilePageTabsProps = {
+  isApproved: boolean;
   initialAccentColor: string;
   initialSectionOrder: string[];
   initialPortfolioItems: PortfolioItem[];
   initialBio: string | null;
+  bootstrap: OnboardingBootstrap;
 };
 
-const TAB_KEYS = ["customize", "portfolio"] as const;
+const TAB_KEYS = ["customize", "portfolio", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function isTabKey(value: string | null): value is TabKey {
-  return value === "customize" || value === "portfolio";
+  return value === "customize" || value === "portfolio" || value === "settings";
 }
 
 /**
- * Wraps the two profile-edit surfaces (customizer + portfolio) in a tab pane.
+ * Wraps the three profile-edit surfaces (customizer + portfolio + settings/wizard)
+ * in a tab pane.
  *
- * The active tab is URL-driven via `?tab=` so deep links work — in particular,
- * the per-row "Edit" button on the portfolio row of the customizer just links
- * to `?tab=portfolio` and lands the user on the same page's portfolio editor.
- * No separate /supplier/portfolio route exists; this is the only edit surface.
+ * - Approved suppliers see all three tabs; default = customize.
+ * - Unapproved suppliers (in_onboarding / pending_review / rejected) see all
+ *   three tabs but customize + portfolio are visually disabled and unclickable
+ *   with a tooltip explaining approval is required. Default = settings, since
+ *   that's the only actionable surface for them.
+ *
+ * Active tab is URL-driven via `?tab=` so deep links + per-row Edit buttons
+ * (e.g. portfolio Edit → ?tab=portfolio) work without a full nav.
  */
 export function ProfilePageTabs({
+  isApproved,
   initialAccentColor,
   initialSectionOrder,
   initialPortfolioItems,
   initialBio,
+  bootstrap,
 }: ProfilePageTabsProps) {
   const t = useTranslations("supplier.profile.tabs");
   const router = useRouter();
@@ -40,12 +52,22 @@ export function ProfilePageTabs({
   const searchParams = useSearchParams();
 
   const tabParam = searchParams.get("tab");
-  const activeTab: TabKey = isTabKey(tabParam) ? tabParam : "customize";
+  const requestedTab: TabKey = isTabKey(tabParam) ? tabParam : "customize";
+
+  // Approved suppliers default to customize; unapproved default to settings
+  // (the only tab that's actionable for them). If an unapproved user lands
+  // on ?tab=customize or ?tab=portfolio (e.g., from a stale link), bounce
+  // the local state to settings — they can't operate those tabs anyway.
+  const defaultTab: TabKey = isApproved ? "customize" : "settings";
+  const activeTab: TabKey =
+    !isApproved && requestedTab !== "settings" ? defaultTab : requestedTab;
 
   function handleChange(value: string) {
     if (!isTabKey(value)) return;
+    // Belt-and-braces: ignore attempts to navigate to disabled tabs.
+    if (!isApproved && value !== "settings") return;
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "customize") {
+    if (value === defaultTab) {
       params.delete("tab");
     } else {
       params.set("tab", value);
@@ -54,6 +76,8 @@ export function ProfilePageTabs({
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
+  const lockedTooltip = t("disabledHint");
+
   return (
     <Tabs
       value={activeTab}
@@ -61,18 +85,48 @@ export function ProfilePageTabs({
       className="w-full gap-4"
     >
       <TabsList className="self-start">
-        <TabsTrigger value="customize">{t("customize")}</TabsTrigger>
-        <TabsTrigger value="portfolio">{t("portfolio")}</TabsTrigger>
+        <TabsTrigger
+          value="customize"
+          disabled={!isApproved}
+          title={!isApproved ? lockedTooltip : undefined}
+          aria-label={
+            !isApproved ? `${t("customize")} — ${lockedTooltip}` : undefined
+          }
+          className={!isApproved ? "gap-1.5" : undefined}
+        >
+          {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
+          {t("customize")}
+        </TabsTrigger>
+        <TabsTrigger
+          value="portfolio"
+          disabled={!isApproved}
+          title={!isApproved ? lockedTooltip : undefined}
+          aria-label={
+            !isApproved ? `${t("portfolio")} — ${lockedTooltip}` : undefined
+          }
+          className={!isApproved ? "gap-1.5" : undefined}
+        >
+          {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
+          {t("portfolio")}
+        </TabsTrigger>
+        <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
       </TabsList>
-      <TabsContent value="customize">
-        <ProfileCustomizer
-          initialAccentColor={initialAccentColor}
-          initialSectionOrder={initialSectionOrder}
-          initialBio={initialBio}
-        />
-      </TabsContent>
-      <TabsContent value="portfolio">
-        <PortfolioManager initialItems={initialPortfolioItems} />
+      {isApproved ? (
+        <>
+          <TabsContent value="customize">
+            <ProfileCustomizer
+              initialAccentColor={initialAccentColor}
+              initialSectionOrder={initialSectionOrder}
+              initialBio={initialBio}
+            />
+          </TabsContent>
+          <TabsContent value="portfolio">
+            <PortfolioManager initialItems={initialPortfolioItems} />
+          </TabsContent>
+        </>
+      ) : null}
+      <TabsContent value="settings">
+        <OnboardingWizard bootstrap={bootstrap} />
       </TabsContent>
     </Tabs>
   );

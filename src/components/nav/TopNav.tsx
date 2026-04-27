@@ -27,8 +27,10 @@ type NavItem = {
 /**
  * Role-scoped nav items. Each item declares the AccessFeature it depends on;
  * the runtime filters the list so a supplier who's `pending_review` sees only
- * Dashboard + Onboarding, a `rejected` supplier sees the same (no catalog /
- * bookings / rfqs / profile), and an `approved` supplier sees the full set.
+ * Dashboard + Profile (no catalog / bookings / rfqs), a `rejected` supplier
+ * sees the same, and an `approved` supplier sees the full set. The onboarding
+ * wizard is no longer a top-level nav entry — it lives as the "Settings" tab
+ * inside Profile.
  *
  * The trailing Notifications slot is served by the standalone
  * `<NotificationBell>` icon (badge + icon), not a labeled link, so it's
@@ -69,12 +71,6 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       feature: "supplier.dashboard",
     },
     {
-      href: "/supplier/onboarding",
-      labelKey: "supplier.onboarding",
-      iconKey: "onboarding",
-      feature: "supplier.onboarding.wizard",
-    },
-    {
       href: "/supplier/catalog",
       labelKey: "supplier.catalog",
       iconKey: "catalog",
@@ -98,11 +94,14 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       iconKey: "bookings",
       feature: "supplier.bookings",
     },
+    // Profile is the unified hub: customize / portfolio / settings (wizard).
+    // Visible to any supplier with a row — even unapproved — so the
+    // "Onboarding" entry above is no longer needed.
     {
       href: "/supplier/profile",
       labelKey: "supplier.profile",
       iconKey: "profile",
-      feature: "supplier.profile.customize",
+      feature: "supplier.profile.access",
     },
   ],
   admin: [

@@ -1178,11 +1178,15 @@
     "profile": {
       "tabs": {
         "customize": "Customize",
-        "portfolio": "Portfolio"
+        "portfolio": "Portfolio",
+        "settings": "Settings",
+        "disabledHint": "Available once your account is approved."
       },
       "customizer": {
         "title": "Customize your profile",
+        "titlePending": "Your business profile",
         "description": "Pick an accent color and order the sections shown on your public profile.",
+        "descriptionPending": "Complete your business details below. Once you're approved, you'll be able to customize your public profile and upload portfolio work.",
         "preview": "Preview public profile",
         "actions": {
           "edit": "Edit"
