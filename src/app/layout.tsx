@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 import { DirectionProvider } from "./_components/DirectionProvider";
 import { ZodLocaleBootstrap } from "./_components/ZodLocaleBootstrap";
 import "./globals.css";
@@ -86,6 +87,7 @@ export default async function RootLayout({
             {children}
           </DirectionProvider>
         </NextIntlClientProvider>
+        <Toaster dir={dir} richColors closeButton />
       </body>
     </html>
   );

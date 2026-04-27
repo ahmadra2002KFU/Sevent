@@ -45,9 +45,20 @@ export type OrganizerFeature =
   | "organizer.rfqs"
   | "organizer.bookings";
 
-export type AdminFeature = "admin.console";
+export type AdminFeature =
+  | "admin.console"
+  | "feedback.admin.read"
+  | "feedback.admin.write";
 
-export type AccessFeature = SupplierFeature | OrganizerFeature | AdminFeature;
+// Cross-role features available to any signed-in user. Today this is just the
+// in-app feedback widget; keep this union small so the matrix stays readable.
+export type SharedFeature = "feedback.submit";
+
+export type AccessFeature =
+  | SupplierFeature
+  | OrganizerFeature
+  | AdminFeature
+  | SharedFeature;
 
 type FeatureSet = Partial<Record<AccessFeature, boolean>>;
 
@@ -57,7 +68,15 @@ type StateConfig = {
   features: FeatureSet;
 };
 
+// Cross-role features any signed-in user gets, regardless of role/state.
+// Spread into every authenticated state below so the in-app feedback pill
+// is always one click away.
+const SHARED_AUTH_FEATURES: FeatureSet = {
+  "feedback.submit": true,
+};
+
 const SUPPLIER_APPROVED_FEATURES: FeatureSet = {
+  ...SHARED_AUTH_FEATURES,
   "supplier.dashboard": true,
   "supplier.onboarding.wizard": true, // approved suppliers may edit business info
   "supplier.catalog": true,
@@ -75,6 +94,7 @@ const SUPPLIER_APPROVED_FEATURES: FeatureSet = {
 };
 
 const ORGANIZER_FEATURES: FeatureSet = {
+  ...SHARED_AUTH_FEATURES,
   "organizer.dashboard": true,
   "organizer.events": true,
   "organizer.rfqs": true,
@@ -83,6 +103,8 @@ const ORGANIZER_FEATURES: FeatureSet = {
 
 const ADMIN_FEATURES: FeatureSet = {
   "admin.console": true,
+  "feedback.admin.read": true,
+  "feedback.admin.write": true,
   ...SUPPLIER_APPROVED_FEATURES,
   ...ORGANIZER_FEATURES,
 };
@@ -120,6 +142,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     // path picker instead of rendering a broken dashboard.
     allowedRoutePrefixes: ["/supplier/onboarding"],
     features: {
+      ...SHARED_AUTH_FEATURES,
       "supplier.onboarding.path": true,
     },
   },
@@ -132,6 +155,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/profile",
     ],
     features: {
+      ...SHARED_AUTH_FEATURES,
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
       "supplier.profile.access": true,
@@ -145,6 +169,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/profile",
     ],
     features: {
+      ...SHARED_AUTH_FEATURES,
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
       "supplier.profile.access": true,
@@ -163,6 +188,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/profile",
     ],
     features: {
+      ...SHARED_AUTH_FEATURES,
       "supplier.dashboard": true,
       "supplier.onboarding.wizard": true,
       "supplier.profile.access": true,
@@ -172,6 +198,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     bestDestination: "/supplier/dashboard",
     allowedRoutePrefixes: ["/supplier/dashboard"],
     features: {
+      ...SHARED_AUTH_FEATURES,
       "supplier.dashboard": true,
     },
   },

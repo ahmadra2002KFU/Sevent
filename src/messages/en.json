@@ -37,7 +37,8 @@
     },
     "admin": {
       "dashboard": "Overview",
-      "verifications": "Verifications"
+      "verifications": "Verifications",
+      "feedback": "Feedback"
     },
     "menu": {
       "open": "Open menu",
@@ -81,6 +82,34 @@
     "previous": "Previous",
     "next": "Next",
     "pageOf": "Page {page} of {totalPages}"
+  },
+  "feedback": {
+    "pill": {
+      "label": "Feedback",
+      "ariaLabel": "Send feedback to the Sevent team"
+    },
+    "modal": {
+      "title": "Send us feedback",
+      "description": "Tell us what's working, what's broken, or what's missing. We'll attach context automatically so you don't have to.",
+      "category": "Category",
+      "categoryOptions": {
+        "bug": "Bug",
+        "feature": "Feature request",
+        "confusing": "Confusing",
+        "praise": "Praise",
+        "other": "Other"
+      },
+      "message": "Your message",
+      "messagePlaceholder": "What's on your mind?",
+      "contextHint": "We'll attach the current page, your role, and recent console errors automatically.",
+      "submit": "Send feedback",
+      "submitting": "Sending…",
+      "cancel": "Cancel",
+      "errorGeneric": "We couldn't send your feedback. Try again."
+    },
+    "toast": {
+      "thanks": "Thanks! We got your feedback."
+    }
   },
   "languageSwitcher": {
     "label": "Language",
@@ -1513,6 +1542,65 @@
         "approveBody": "This marks the supplier as approved, publishes their profile, approves non-rejected documents, and emails the welcome message.",
         "approveConfirm": "Approve and notify",
         "cancel": "Cancel"
+      }
+    },
+    "feedback": {
+      "pageTitle": "User feedback",
+      "pageDescription": "Bug reports, feature requests, and other inbound feedback from authenticated users.",
+      "empty": "No feedback yet.",
+      "errorLoad": "Failed to load feedback",
+      "filters": {
+        "status": {
+          "label": "Status",
+          "all": "All",
+          "new": "New",
+          "triaged": "Triaged",
+          "resolved": "Resolved"
+        },
+        "role": {
+          "label": "Role",
+          "all": "All roles",
+          "supplier": "Suppliers",
+          "organizer": "Organizers",
+          "admin": "Admins",
+          "agency": "Agencies"
+        },
+        "category": {
+          "label": "Category",
+          "all": "All categories",
+          "bug": "Bug",
+          "feature": "Feature request",
+          "confusing": "Confusing",
+          "praise": "Praise",
+          "other": "Other"
+        }
+      },
+      "columns": {
+        "when": "When",
+        "user": "User",
+        "role": "Role",
+        "category": "Category",
+        "page": "Page · Message",
+        "status": "Status"
+      },
+      "row": {
+        "expand": "Expand",
+        "collapse": "Collapse",
+        "messageHeading": "Message",
+        "consoleHeading": "Console errors",
+        "notesLabel": "Admin notes",
+        "notesPlaceholder": "Internal notes — not visible to the submitter.",
+        "saveStatus": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "errorSave": "Couldn't save. Try again.",
+        "meta": {
+          "page": "Page",
+          "locale": "Locale",
+          "viewport": "Viewport",
+          "userAgent": "User agent",
+          "resolvedAt": "Resolved at"
+        }
       }
     }
   },

@@ -117,6 +117,12 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       iconKey: "verifications",
       feature: "admin.console",
     },
+    {
+      href: "/admin/feedback",
+      labelKey: "admin.feedback",
+      iconKey: "feedback",
+      feature: "feedback.admin.read",
+    },
   ],
 };
 

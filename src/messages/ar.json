@@ -37,7 +37,8 @@
     },
     "admin": {
       "dashboard": "نظرة عامة",
-      "verifications": "التحققات"
+      "verifications": "التحققات",
+      "feedback": "الملاحظات"
     },
     "menu": {
       "open": "فتح القائمة",
@@ -81,6 +82,34 @@
     "previous": "السابق",
     "next": "التالي",
     "pageOf": "الصفحة {page} من {totalPages}"
+  },
+  "feedback": {
+    "pill": {
+      "label": "ملاحظات",
+      "ariaLabel": "إرسال ملاحظات إلى فريق Sevent"
+    },
+    "modal": {
+      "title": "أرسل لنا ملاحظاتك",
+      "description": "أخبرنا بما يعمل بشكل جيد، أو ما لا يعمل، أو ما الذي ينقص. سنرفق السياق تلقائيًا.",
+      "category": "الفئة",
+      "categoryOptions": {
+        "bug": "خلل",
+        "feature": "طلب ميزة",
+        "confusing": "غير واضح",
+        "praise": "إشادة",
+        "other": "أخرى"
+      },
+      "message": "رسالتك",
+      "messagePlaceholder": "ما الذي تريد إخبارنا به؟",
+      "contextHint": "سنرفق الصفحة الحالية ودورك والأخطاء الحديثة في وحدة التحكم تلقائيًا.",
+      "submit": "إرسال",
+      "submitting": "جارٍ الإرسال…",
+      "cancel": "إلغاء",
+      "errorGeneric": "تعذّر إرسال ملاحظتك. حاول مرة أخرى."
+    },
+    "toast": {
+      "thanks": "شكراً! استلمنا ملاحظاتك."
+    }
   },
   "languageSwitcher": {
     "label": "اللغة",
@@ -1513,6 +1542,65 @@
         "approveBody": "سيتم اعتماد المورد ونشر ملفه، مع اعتماد المستندات غير المرفوضة وإرسال بريد الترحيب.",
         "approveConfirm": "اعتمد وأخطر",
         "cancel": "إلغاء"
+      }
+    },
+    "feedback": {
+      "pageTitle": "ملاحظات المستخدمين",
+      "pageDescription": "بلاغات الأخطاء وطلبات الميزات والملاحظات الواردة من المستخدمين المسجلين.",
+      "empty": "لا توجد ملاحظات بعد.",
+      "errorLoad": "تعذّر تحميل الملاحظات",
+      "filters": {
+        "status": {
+          "label": "الحالة",
+          "all": "الكل",
+          "new": "جديدة",
+          "triaged": "قيد المعالجة",
+          "resolved": "تم الحل"
+        },
+        "role": {
+          "label": "الدور",
+          "all": "كل الأدوار",
+          "supplier": "الموردون",
+          "organizer": "المنظمون",
+          "admin": "المسؤولون",
+          "agency": "الوكالات"
+        },
+        "category": {
+          "label": "الفئة",
+          "all": "كل الفئات",
+          "bug": "خلل",
+          "feature": "طلب ميزة",
+          "confusing": "غير واضح",
+          "praise": "إشادة",
+          "other": "أخرى"
+        }
+      },
+      "columns": {
+        "when": "متى",
+        "user": "المستخدم",
+        "role": "الدور",
+        "category": "الفئة",
+        "page": "الصفحة · الرسالة",
+        "status": "الحالة"
+      },
+      "row": {
+        "expand": "عرض التفاصيل",
+        "collapse": "إخفاء التفاصيل",
+        "messageHeading": "الرسالة",
+        "consoleHeading": "أخطاء وحدة التحكم",
+        "notesLabel": "ملاحظات داخلية",
+        "notesPlaceholder": "ملاحظات داخلية — لن تظهر للمستخدم.",
+        "saveStatus": "حفظ",
+        "saving": "جارٍ الحفظ…",
+        "saved": "تم الحفظ",
+        "errorSave": "تعذّر الحفظ. حاول مرة أخرى.",
+        "meta": {
+          "page": "الصفحة",
+          "locale": "اللغة",
+          "viewport": "حجم الشاشة",
+          "userAgent": "متصفح المستخدم",
+          "resolvedAt": "وقت الحل"
+        }
       }
     }
   },
