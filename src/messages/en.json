@@ -1895,11 +1895,14 @@
     "shortlist": {
       "heading": "Suggested matches",
       "addHeading": "Added by you",
-      "searchPlaceholder": "Search approved suppliers by name or slug…",
+      "addCta": "Add supplier",
+      "searchPlaceholder": "Search approved suppliers…",
+      "searchHint": "Type at least 2 characters to search.",
+      "removeTooltip": "Remove from shortlist",
       "searching": "Searching…",
       "noResults": "No suppliers found.",
       "noMatches": "No auto-match suggestions available for this event.",
-      "noManual": "Search above to add suppliers manually.",
+      "noManual": "Click \"Add supplier\" above to search approved suppliers.",
       "table": {
         "supplier": "Supplier",
         "matchReasons": "Why we matched",

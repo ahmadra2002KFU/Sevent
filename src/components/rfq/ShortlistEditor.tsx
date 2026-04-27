@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -87,6 +88,7 @@ export function ShortlistEditor({
   onRemoveManual,
   onSearchSuppliers,
 }: Props) {
+  const t = useTranslations("organizer.shortlist");
   const [query, setQuery] = useState("");
   const [rawSuggestions, setRawSuggestions] = useState<ShortlistSupplier[]>([]);
   const [searching, setSearching] = useState(false);
@@ -160,7 +162,7 @@ export function ShortlistEditor({
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Suggested matches
+              {t("heading")}
             </h3>
             <span className="text-xs tabular-nums text-muted-foreground">
               {matches.length}
@@ -169,16 +171,20 @@ export function ShortlistEditor({
 
           {matches.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-              No auto-match suggestions available for this event.
+              {t("noMatches")}
             </p>
           ) : (
             <Card className="overflow-hidden py-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="px-4">Supplier</TableHead>
-                    <TableHead className="px-4">Why we matched</TableHead>
-                    <TableHead className="px-4 text-end">Score</TableHead>
+                    <TableHead className="px-4">{t("table.supplier")}</TableHead>
+                    <TableHead className="px-4">
+                      {t("table.matchReasons")}
+                    </TableHead>
+                    <TableHead className="px-4 text-end">
+                      {t("table.score")}
+                    </TableHead>
                     <TableHead className="px-4 w-12" />
                   </TableRow>
                 </TableHeader>
@@ -215,12 +221,14 @@ export function ShortlistEditor({
                               variant="ghost"
                               size="icon-sm"
                               onClick={() => onRemoveMatch(m.supplier_id)}
-                              aria-label={`Remove ${m.business_name}`}
+                              aria-label={t("removeLabel", {
+                                name: m.business_name,
+                              })}
                             >
                               <X aria-hidden />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Remove from shortlist</TooltipContent>
+                          <TooltipContent>{t("removeTooltip")}</TooltipContent>
                         </Tooltip>
                       </TableCell>
                     </TableRow>
@@ -237,13 +245,13 @@ export function ShortlistEditor({
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Added by you
+              {t("addHeading")}
             </h3>
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button type="button" variant="outline" size="sm">
                   <Plus aria-hidden />
-                  Add supplier
+                  {t("addCta")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -253,7 +261,7 @@ export function ShortlistEditor({
               >
                 <Command shouldFilter={false}>
                   <CommandInput
-                    placeholder="Search approved suppliers…"
+                    placeholder={t("searchPlaceholder")}
                     value={query}
                     onValueChange={setQuery}
                   />
@@ -264,14 +272,14 @@ export function ShortlistEditor({
                           className="mb-2 inline size-4 opacity-70"
                           aria-hidden
                         />{" "}
-                        Type at least 2 characters to search.
+                        {t("searchHint")}
                       </div>
                     ) : searching ? (
                       <div className="px-3 py-4 text-sm text-muted-foreground">
-                        Searching…
+                        {t("searching")}
                       </div>
                     ) : suggestions.length === 0 ? (
-                      <CommandEmpty>No suppliers found.</CommandEmpty>
+                      <CommandEmpty>{t("noResults")}</CommandEmpty>
                     ) : (
                       suggestions.map((s) => (
                         <CommandItem
@@ -288,7 +296,7 @@ export function ShortlistEditor({
                               {s.base_city}
                               {s.out_of_subcategory ? (
                                 <span className="inline-flex items-center rounded-full bg-semantic-warning-100 px-1.5 py-0.5 text-[11px] font-medium text-semantic-warning-500">
-                                  Outside this subcategory
+                                  {t("outOfSubcategoryShort")}
                                 </span>
                               ) : null}
                             </span>
@@ -304,16 +312,15 @@ export function ShortlistEditor({
 
           {manualAdds.length === 0 ? (
             <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-              Click &ldquo;Add supplier&rdquo; above to search approved
-              suppliers.
+              {t("noManual")}
             </p>
           ) : (
             <Card className="overflow-hidden py-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="px-4">Supplier</TableHead>
-                    <TableHead className="px-4">City</TableHead>
+                    <TableHead className="px-4">{t("table.supplier")}</TableHead>
+                    <TableHead className="px-4">{t("table.city")}</TableHead>
                     <TableHead className="px-4 w-12" />
                   </TableRow>
                 </TableHeader>
@@ -327,7 +334,7 @@ export function ShortlistEditor({
                           </span>
                           {s.out_of_subcategory ? (
                             <span className="mt-0.5 inline-flex w-fit items-center rounded-full bg-semantic-warning-100 px-2 py-0.5 text-[11px] font-medium text-semantic-warning-500">
-                              Outside this subcategory — supplier may decline
+                              {t("outOfSubcategoryLong")}
                             </span>
                           ) : null}
                         </div>
@@ -343,12 +350,14 @@ export function ShortlistEditor({
                               variant="ghost"
                               size="icon-sm"
                               onClick={() => onRemoveManual(s.id)}
-                              aria-label={`Remove ${s.business_name}`}
+                              aria-label={t("removeLabel", {
+                                name: s.business_name,
+                              })}
                             >
                               <X aria-hidden />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Remove from shortlist</TooltipContent>
+                          <TooltipContent>{t("removeTooltip")}</TooltipContent>
                         </Tooltip>
                       </TableCell>
                     </TableRow>
