@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  startTransition,
   useActionState,
   useEffect,
   useRef,
@@ -139,7 +140,13 @@ export function FeedbackWidget() {
       // than blocking the whole submission. Action is no-op for the field.
     }
 
-    formAction(fd);
+    // Wrap in startTransition: we awaited above, so we're outside React's
+    // automatic transition boundary. Without this, isPending won't flip and
+    // React 19 warns. (The capture-time pending UX is handled separately by
+    // the local `capturing` state above.)
+    startTransition(() => {
+      formAction(fd);
+    });
   }
 
   const trimmed = message.trim();
