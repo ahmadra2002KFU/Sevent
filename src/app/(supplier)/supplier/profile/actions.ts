@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
 import { ACCENT_HEX_VALUES } from "@/lib/domain/taxonomy";
+import { SUPPLIER_BIO_MAX_LENGTH } from "@/lib/domain/onboarding";
 
 const SECTION_KEYS = ["bio", "packages", "portfolio", "reviews"] as const;
 type SectionKey = (typeof SECTION_KEYS)[number];
@@ -143,4 +144,90 @@ export async function updateProfileCustomizationAction(
   }
 
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Bio editor
+// ---------------------------------------------------------------------------
+//
+// Separate from updateProfileCustomizationAction because bio is independent
+// of accent color + section order — different validation, different dirty
+// state on the client. Keeping it as its own action keeps each form's error
+// surface obvious and lets the client wire `useActionState` per form.
+
+export type UpdateBioState = {
+  ok: boolean;
+  code?: "no_supplier" | "invalid_bio" | "db_error";
+  message?: string;
+  // Echoed on success so the client can update its "saved" snapshot from the
+  // value the server actually persisted, not the textarea state at success
+  // time (those can drift if the user keeps typing during the action's
+  // round-trip).
+  savedBio?: string | null;
+};
+
+const BioSchema = z.object({
+  bio: z
+    .string()
+    .max(SUPPLIER_BIO_MAX_LENGTH, "bio_too_long")
+    .transform((v) => {
+      const trimmed = v.trim();
+      return trimmed.length === 0 ? null : trimmed;
+    }),
+});
+
+export async function updateBioAction(
+  _prev: UpdateBioState | undefined,
+  formData: FormData,
+): Promise<UpdateBioState> {
+  const { decision, admin } = await requireAccess(
+    "supplier.profile.customize",
+  );
+  const supplierId = decision.supplierId;
+  if (!supplierId) {
+    return { ok: false, code: "no_supplier" };
+  }
+
+  const parsed = BioSchema.safeParse({
+    bio: formData.get("bio") ?? "",
+  });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      code: "invalid_bio",
+      message: parsed.error.issues[0]?.message ?? "invalid_bio",
+    };
+  }
+
+  const { data: supplier, error: supplierErr } = await admin
+    .from("suppliers")
+    .select("id, slug")
+    .eq("id", supplierId)
+    .maybeSingle();
+
+  if (supplierErr) {
+    return { ok: false, code: "db_error", message: supplierErr.message };
+  }
+  if (!supplier) {
+    return { ok: false, code: "no_supplier" };
+  }
+
+  const supplierRow = supplier as { id: string; slug: string | null };
+
+  const { error: updateErr } = await admin
+    .from("suppliers")
+    .update({ bio: parsed.data.bio })
+    .eq("id", supplierRow.id);
+
+  if (updateErr) {
+    return { ok: false, code: "db_error", message: updateErr.message };
+  }
+
+  revalidatePath("/supplier/profile");
+  revalidatePath("/supplier/dashboard");
+  if (supplierRow.slug) {
+    revalidatePath(`/s/${supplierRow.slug}`, "page");
+  }
+
+  return { ok: true, savedBio: parsed.data.bio };
 }

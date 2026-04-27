@@ -27,6 +27,7 @@ import {
   LOGO_MAX_BYTES,
   OnboardingStep1 as OnboardingStep1Schema,
   PDF_MAX_BYTES,
+  SUPPLIER_BIO_MAX_LENGTH,
 } from "@/lib/domain/onboarding";
 import type { MarketSegmentSlug } from "@/lib/domain/segments";
 import {
@@ -576,7 +577,7 @@ function Step1Form({
             onBlur={field.onBlur}
             name={field.name}
             error={errors.bio?.message}
-            maxLength={240}
+            maxLength={SUPPLIER_BIO_MAX_LENGTH}
             labels={{
               label: t("bioLabel"),
               placeholder: t("placeholder.bio"),

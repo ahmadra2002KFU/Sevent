@@ -20,6 +20,15 @@ import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 25;
+
+function parsePage(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseInt(raw ?? "1", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
 type EventListRow = {
   id: string;
   event_type: string;
@@ -51,21 +60,37 @@ function formatDateRange(
   }
 }
 
-export default async function OrganizerEventsPage() {
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function OrganizerEventsPage({
+  searchParams,
+}: PageProps) {
+  const params = await searchParams;
+  const page = parsePage(params.page);
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.events");
+  const tPag = await getTranslations("pagination");
 
   const { user, admin } = await requireAccess("organizer.events");
 
-  const { data } = await admin
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, count } = await admin
     .from("events")
     .select(
       "id, event_type, client_name, city, starts_at, ends_at, guest_count, rfqs(id)",
+      { count: "exact" },
     )
     .eq("organizer_id", user.id)
-    .order("starts_at", { ascending: false });
+    .order("starts_at", { ascending: false })
+    .range(from, to);
 
   const rows = (data ?? []) as unknown as EventListRow[];
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <section className="flex flex-col gap-6">
@@ -162,6 +187,45 @@ export default async function OrganizerEventsPage() {
           </Table>
         </Card>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-between gap-3 text-sm"
+        >
+          {page > 1 ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/organizer/events",
+                  query: { page: page - 1 },
+                }}
+              >
+                {tPag("previous")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <span className="text-muted-foreground">
+            {tPag("pageOf", { page, totalPages })}
+          </span>
+          {page < totalPages ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/organizer/events",
+                  query: { page: page + 1 },
+                }}
+              >
+                {tPag("next")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </section>
   );
 }

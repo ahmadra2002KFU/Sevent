@@ -77,6 +77,11 @@
       }
     }
   },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}"
+  },
   "languageSwitcher": {
     "label": "Language",
     "en": "English",
@@ -1178,6 +1183,22 @@
       "customizer": {
         "title": "Customize your profile",
         "description": "Pick an accent color and order the sections shown on your public profile.",
+        "preview": "Preview public profile",
+        "actions": {
+          "edit": "Edit"
+        },
+        "bio": {
+          "placeholder": "Tell organizers what makes you different…",
+          "hint": "Up to {max} characters.",
+          "counter": "{count}/{max}",
+          "save": "Save",
+          "cancel": "Cancel",
+          "saving": "Saving…",
+          "saved": "Saved",
+          "errorTooLong": "Bio must be {max} characters or fewer.",
+          "errorGeneric": "We couldn't save your bio. Try again.",
+          "emptyHelper": "Add a short intro about you and your services."
+        },
         "accentColor": {
           "heading": "Accent color",
           "helper": "This color appears on buttons and links on your public profile."

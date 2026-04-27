@@ -77,6 +77,11 @@
       }
     }
   },
+  "pagination": {
+    "previous": "السابق",
+    "next": "التالي",
+    "pageOf": "الصفحة {page} من {totalPages}"
+  },
   "languageSwitcher": {
     "label": "اللغة",
     "en": "English",
@@ -1178,6 +1183,22 @@
       "customizer": {
         "title": "تخصيص ملفك",
         "description": "اختر لونًا مميزًا ورتّب الأقسام التي تظهر في ملفك العام.",
+        "preview": "معاينة الملف العام",
+        "actions": {
+          "edit": "تعديل"
+        },
+        "bio": {
+          "placeholder": "أخبر منظّمي الفعاليات بما يميّزك…",
+          "hint": "حتى {max} حرفًا.",
+          "counter": "{count}/{max}",
+          "save": "حفظ",
+          "cancel": "إلغاء",
+          "saving": "جارٍ الحفظ…",
+          "saved": "تم الحفظ",
+          "errorTooLong": "يجب أن تكون النبذة {max} حرفًا أو أقل.",
+          "errorGeneric": "تعذّر حفظ النبذة. حاول مرة أخرى.",
+          "emptyHelper": "نبذة قصيرة عنك وعن خدماتك."
+        },
         "accentColor": {
           "heading": "اللون المميز",
           "helper": "سيظهر هذا اللون على الأزرار والروابط في ملفك العام."

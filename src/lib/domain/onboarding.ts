@@ -19,6 +19,19 @@ import { MARKET_SEGMENT_SLUGS } from "./segments";
 export const LEGAL_TYPES = ["company", "freelancer", "foreign"] as const;
 export type LegalType = (typeof LEGAL_TYPES)[number];
 
+/**
+ * Hard cap on supplier bio length. The same value is used by:
+ * - the onboarding wizard textarea (Step 1 — `wizard.tsx`)
+ * - the inline bio editor on the customizer page (`profile/ProfileCustomizer.tsx`)
+ * - the `updateBioAction` Zod schema (`profile/actions.ts`)
+ * - the `OnboardingStep1.bio` Zod schema below
+ *
+ * Keeping all four sites referencing this constant prevents a class of bug
+ * where one path enforces 240 and another enforces 2000, leaving suppliers
+ * with legacy long bios unable to save unrelated edits.
+ */
+export const SUPPLIER_BIO_MAX_LENGTH = 240;
+
 export const LANGUAGES = ["ar", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
@@ -70,7 +83,7 @@ export const OnboardingStep1 = z
     legal_type: z.enum(LEGAL_TYPES),
     cr_number: z.string().trim().optional(),
     national_id: z.string().trim().optional(),
-    bio: z.string().trim().max(2000).optional(),
+    bio: z.string().trim().max(SUPPLIER_BIO_MAX_LENGTH).optional(),
     base_city: z.enum(CITY_TUPLE),
     serves_all_ksa: z.boolean().default(false),
     service_area_cities: z

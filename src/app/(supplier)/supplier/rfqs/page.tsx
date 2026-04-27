@@ -15,6 +15,15 @@ import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 25;
+
+function parsePage(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseInt(raw ?? "1", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
 type InviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
 
 type InviteRow = {
@@ -97,10 +106,19 @@ type PendingRfpRequest = {
   event_starts_at: string | null;
 };
 
-export default async function SupplierRfqInboxPage() {
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function SupplierRfqInboxPage({
+  searchParams,
+}: PageProps) {
+  const params = await searchParams;
+  const page = parsePage(params.page);
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
   const tRfp = await getTranslations("supplier.rfp");
+  const tPag = await getTranslations("pagination");
   const formatEventDate = (iso: string): string => fmtDateTime(iso, locale);
 
   const { decision, admin } = await requireAccess("supplier.rfqs.view");
@@ -114,7 +132,10 @@ export default async function SupplierRfqInboxPage() {
     );
   }
 
-  const { data: invitesData } = await admin
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data: invitesData, count } = await admin
     .from("rfq_invites")
     .select(
       `id, status, sent_at, response_due_at, responded_at, decline_reason_code,
@@ -123,11 +144,15 @@ export default async function SupplierRfqInboxPage() {
          events ( id, city, starts_at, ends_at, guest_count ),
          categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar )
        )`,
+      { count: "exact" },
     )
     .eq("supplier_id", supplierId)
-    .order("sent_at", { ascending: false });
+    .order("sent_at", { ascending: false })
+    .range(from, to);
 
   const rawInvites = (invitesData ?? []) as unknown as InviteRow[];
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // Open invites come first — they're the only actionable rows. Everything
   // else (quoted / declined / withdrawn) surfaces below as past activity so
@@ -335,6 +360,39 @@ export default async function SupplierRfqInboxPage() {
           })}
         </ul>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-between gap-3 text-sm"
+        >
+          {page > 1 ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{ pathname: "/supplier/rfqs", query: { page: page - 1 } }}
+              >
+                {tPag("previous")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <span className="text-muted-foreground">
+            {tPag("pageOf", { page, totalPages })}
+          </span>
+          {page < totalPages ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{ pathname: "/supplier/rfqs", query: { page: page + 1 } }}
+              >
+                {tPag("next")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
 
       {past.length > 0 ? (
         <Card>

@@ -25,6 +25,15 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 25;
+
+function parsePage(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseInt(raw ?? "1", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
 type SupplierListRow = {
   id: string;
   business_name: string;
@@ -83,12 +92,14 @@ function legalTypeLabel(raw: string, t: Translator): string {
 export default async function AdminVerificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; tab?: string }>;
+  searchParams: Promise<{ filter?: string; tab?: string; page?: string }>;
 }) {
   const t = await getTranslations("admin.verifications");
+  const tPag = await getTranslations("pagination");
   const params = await searchParams;
   // Accept both legacy `?tab=` and the new `?filter=` for URL stability.
   const filter = parseFilter(params.filter ?? params.tab);
+  const page = parsePage(params.page);
 
   const gate = await requireRole("admin");
   if (gate.status === "unauthenticated") {
@@ -106,19 +117,26 @@ export default async function AdminVerificationsPage({
   }
   const { admin } = gate;
 
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   let query = admin
     .from("suppliers")
     .select(
       "id, business_name, slug, base_city, legal_type, verification_status, created_at, supplier_docs(id, doc_type, status)",
+      { count: "exact" },
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   if (filter !== "all") {
     query = query.eq("verification_status", filter);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   const suppliers: SupplierListRow[] = (data as SupplierListRow[] | null) ?? [];
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <section className="flex flex-col gap-6">
@@ -235,6 +253,45 @@ export default async function AdminVerificationsPage({
           </CardContent>
         </Card>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-between gap-3 text-sm"
+        >
+          {page > 1 ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/admin/verifications",
+                  query: { filter, page: page - 1 },
+                }}
+              >
+                {tPag("previous")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <span className="text-muted-foreground">
+            {tPag("pageOf", { page, totalPages })}
+          </span>
+          {page < totalPages ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={{
+                  pathname: "/admin/verifications",
+                  query: { filter, page: page + 1 },
+                }}
+              >
+                {tPag("next")}
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </section>
   );
 }

@@ -11,6 +11,7 @@ import {
   STORAGE_BUCKETS,
   createSignedDownloadUrl,
 } from "@/lib/supabase/storage";
+import { PreviewProfileButton } from "@/components/ui-ext/PreviewProfileButton";
 import { ProfilePageTabs } from "./ProfilePageTabs";
 import type { PortfolioItem } from "../portfolio/PortfolioManager";
 
@@ -60,7 +61,7 @@ export default async function SupplierProfileCustomizePage() {
   const { data: supplier } = supplierId
     ? await admin
         .from("suppliers")
-        .select("accent_color, profile_sections_order")
+        .select("accent_color, profile_sections_order, bio, slug")
         .eq("id", supplierId)
         .maybeSingle()
     : { data: null };
@@ -81,6 +82,8 @@ export default async function SupplierProfileCustomizePage() {
   const supplierRow = supplier as {
     accent_color: string | null;
     profile_sections_order: string[] | null;
+    bio: string | null;
+    slug: string | null;
   };
 
   const { data: mediaRows } = await admin
@@ -115,13 +118,22 @@ export default async function SupplierProfileCustomizePage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          supplierRow.slug ? (
+            <PreviewProfileButton slug={supplierRow.slug} />
+          ) : null
+        }
+      />
       <ProfilePageTabs
         initialAccentColor={coerceAccentColor(supplierRow.accent_color)}
         initialSectionOrder={coerceSectionsOrder(
           supplierRow.profile_sections_order,
         )}
         initialPortfolioItems={portfolioItems}
+        initialBio={supplierRow.bio}
       />
     </section>
   );
