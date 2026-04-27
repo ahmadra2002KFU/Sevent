@@ -99,7 +99,12 @@ export function EventForm() {
         const path = issue.path.join(".");
         if (!path) continue;
         if (fieldErrors[path]) continue;
-        fieldErrors[path] = { type: issue.code, message: issue.message };
+        // Replace Zod's default messages (which leak raw enum values like
+        // "private_occasions"|"business_events"|… into the UI) with stable,
+        // localized copy. Path-based mapping with light heuristics for
+        // fields that can produce multiple distinct issue shapes.
+        const message = friendlyMessage(path, issue, t) ?? issue.message;
+        fieldErrors[path] = { type: issue.code, message };
       }
       return { values: {}, errors: fieldErrors };
     },
@@ -338,6 +343,57 @@ export function EventForm() {
       </div>
     </form>
   );
+}
+
+/**
+ * Translate a Zod issue into a user-friendly, localized message.
+ *
+ * Why this exists: Zod's default messages for invalid enum / invalid_value
+ * issues include the full set of accepted literal values
+ * ("private_occasions"|"business_events"|…). Rendering that in the UI is
+ * noisy and untranslated. We map by `path` (fields are unique on this form)
+ * with light disambiguation on issue code / existing message for fields
+ * that can fail multiple ways (venue_address, ends_at, budget_max_sar).
+ *
+ * Returns `null` for unmapped paths so the caller falls back to Zod's
+ * default message — no silent message-swallowing for fields we forgot.
+ */
+function friendlyMessage(
+  path: string,
+  issue: { code: string; message: string },
+  t: (key: string) => string,
+): string | null {
+  switch (path) {
+    case "event_type":
+      return t("error.eventTypeRequired");
+    case "city":
+      return t("error.cityRequired");
+    case "venue_address":
+      return issue.code === "too_big"
+        ? t("error.venueAddressTooLong")
+        : t("error.venueAddressRequired");
+    case "starts_at":
+      return t("error.startsAtRequired");
+    case "ends_at":
+      // superRefine sets a custom message containing the literal "after"
+      // for the ends-after-start invariant; everything else on this field
+      // is "datetime required" territory.
+      return issue.message.includes("after")
+        ? t("error.endsAfterStart")
+        : t("error.endsAtRequired");
+    case "guest_count":
+      return t("error.guestCountRange");
+    case "budget_min_sar":
+      return t("error.budgetNonNegative");
+    case "budget_max_sar":
+      return issue.message.includes("greater than or equal")
+        ? t("error.budgetMaxLessThanMin")
+        : t("error.budgetNonNegative");
+    case "notes":
+      return t("error.notesTooLong");
+    default:
+      return null;
+  }
 }
 
 function FormField({
