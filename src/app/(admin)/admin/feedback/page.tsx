@@ -87,7 +87,11 @@ type FeedbackQueryRow = {
   admin_notes: string | null;
   resolved_at: string | null;
   created_at: string;
+  screenshot_path: string | null;
 };
+
+const SCREENSHOT_BUCKET = "feedback-screenshots";
+const SCREENSHOT_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export default async function AdminFeedbackPage({
   searchParams,
@@ -117,7 +121,7 @@ export default async function AdminFeedbackPage({
   let query = admin
     .from("app_feedback")
     .select(
-      "id, user_id, role, category, message, page_url, locale, viewport_w, viewport_h, user_agent, console_errors, status, admin_notes, resolved_at, created_at",
+      "id, user_id, role, category, message, page_url, locale, viewport_w, viewport_h, user_agent, console_errors, status, admin_notes, resolved_at, created_at, screenshot_path",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -150,6 +154,26 @@ export default async function AdminFeedbackPage({
     });
   }
 
+  // Generate one signed URL per row that has a screenshot. 1-hour TTL is
+  // plenty for an admin to scroll the page; if it expires they reload.
+  const screenshotPaths = rows
+    .map((r) => r.screenshot_path)
+    .filter((p): p is string => p !== null && p.length > 0);
+  const screenshotUrls = new Map<string, string>();
+  if (screenshotPaths.length > 0) {
+    const signedResults = await Promise.all(
+      screenshotPaths.map((path) =>
+        admin.storage
+          .from(SCREENSHOT_BUCKET)
+          .createSignedUrl(path, SCREENSHOT_URL_TTL_SECONDS),
+      ),
+    );
+    signedResults.forEach((res, i) => {
+      const url = res.data?.signedUrl;
+      if (url) screenshotUrls.set(screenshotPaths[i], url);
+    });
+  }
+
   const tableRows: FeedbackRowData[] = rows.map((r) => ({
     id: r.id,
     role: r.role,
@@ -166,6 +190,9 @@ export default async function AdminFeedbackPage({
     resolved_at: r.resolved_at,
     created_at: r.created_at,
     user_email: r.user_id ? (userEmails.get(r.user_id) ?? null) : null,
+    screenshot_url: r.screenshot_path
+      ? (screenshotUrls.get(r.screenshot_path) ?? null)
+      : null,
   }));
 
   return (

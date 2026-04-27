@@ -1,11 +1,18 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { MessageSquarePlus, Send } from "lucide-react";
+import { Camera, MessageSquarePlus, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -32,6 +39,7 @@ import {
 } from "@/app/_actions/feedback";
 import { gatherClientContext } from "./feedbackContext";
 import { useConsoleErrorBuffer } from "./useConsoleErrorBuffer";
+import { captureViewportScreenshot } from "./screenshotCapture";
 
 const MESSAGE_MAX_LENGTH = 5000;
 const CATEGORIES: FeedbackCategory[] = [
@@ -59,12 +67,32 @@ export function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>("bug");
   const [message, setMessage] = useState("");
+  // Default-on for bug, off otherwise. The user can override via the checkbox
+  // — `screenshotTouchedRef` tracks whether they have, so changing the
+  // category later doesn't clobber their explicit choice.
+  const [includeScreenshot, setIncludeScreenshot] = useState(true);
+  const screenshotTouchedRef = useRef(false);
+  const [capturing, setCapturing] = useState(false);
   const [state, formAction, pending] = useActionState(
     submitFeedbackAction,
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
   const { getSnapshot } = useConsoleErrorBuffer();
+
+  // Sync screenshot default to category until the user explicitly toggles it.
+  useEffect(() => {
+    if (!screenshotTouchedRef.current) {
+      setIncludeScreenshot(category === "bug");
+    }
+  }, [category]);
+
+  // Reset everything when the dialog closes (incl. via Send success).
+  useEffect(() => {
+    if (!open) {
+      screenshotTouchedRef.current = false;
+    }
+  }, [open]);
 
   // On successful submit: close dialog, reset fields, and fire a toast.
   // Track the last `ok` we acted on so re-renders don't re-fire the toast.
@@ -80,23 +108,48 @@ export function FeedbackWidget() {
     }
   }, [state, t]);
 
-  // Snapshot client context the moment the form is submitted, so hidden
-  // inputs reflect the page the user was actually on (not the page at
-  // dialog-open time, in case they navigated mid-flow — unlikely but cheap
-  // to do right). Invoked from onSubmit before the form data is read.
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    const form = event.currentTarget;
+  /**
+   * Build the FormData manually rather than letting the form's `action=`
+   * attribute serialize. We need to (a) fill in client-only context fields
+   * (URL, viewport, …) and (b) optionally append a Blob screenshot — neither
+   * of which fits the static <form> serialization. Calling `formAction(fd)`
+   * directly is fully supported by useActionState.
+   */
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!formRef.current) return;
+
+    const fd = new FormData(formRef.current);
     const ctx = gatherClientContext();
-    setHidden(form, "page_url", ctx.page_url);
-    setHidden(form, "locale", ctx.locale);
-    setHidden(form, "viewport_w", ctx.viewport_w?.toString() ?? null);
-    setHidden(form, "viewport_h", ctx.viewport_h?.toString() ?? null);
-    setHidden(form, "user_agent", ctx.user_agent);
-    setHidden(form, "console_errors", getSnapshot() || null);
+    fd.set("page_url", ctx.page_url ?? "");
+    fd.set("locale", ctx.locale ?? "");
+    fd.set("viewport_w", ctx.viewport_w?.toString() ?? "");
+    fd.set("viewport_h", ctx.viewport_h?.toString() ?? "");
+    fd.set("user_agent", ctx.user_agent ?? "");
+    fd.set("console_errors", getSnapshot());
+
+    if (includeScreenshot) {
+      setCapturing(true);
+      const blob = await captureViewportScreenshot();
+      setCapturing(false);
+      if (blob) {
+        fd.set("screenshot", blob, "screenshot.jpg");
+      }
+      // If capture failed silently, we proceed without a screenshot rather
+      // than blocking the whole submission. Action is no-op for the field.
+    }
+
+    formAction(fd);
   }
 
   const trimmed = message.trim();
-  const canSubmit = !pending && trimmed.length > 0;
+  const busy = pending || capturing;
+  const canSubmit = !busy && trimmed.length > 0;
+  const buttonLabel = capturing
+    ? t("modal.capturing")
+    : pending
+      ? t("modal.submitting")
+      : t("modal.submit");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -107,6 +160,9 @@ export function FeedbackWidget() {
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 22 }}
         aria-label={t("pill.ariaLabel")}
+        // Skip the pill itself from html2canvas capture so it doesn't appear
+        // in the user's screenshot (it'd be visually distracting).
+        data-feedback-skip-capture=""
         className={cn(
           "fixed bottom-4 z-40 inline-flex items-center gap-2 rounded-full",
           "bg-brand-navy-900 text-white shadow-brand-md",
@@ -128,18 +184,9 @@ export function FeedbackWidget() {
         </DialogHeader>
         <form
           ref={formRef}
-          action={formAction}
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
         >
-          {/* Hidden inputs: filled in by handleSubmit just before POST. */}
-          <input type="hidden" name="page_url" />
-          <input type="hidden" name="locale" />
-          <input type="hidden" name="viewport_w" />
-          <input type="hidden" name="viewport_h" />
-          <input type="hidden" name="user_agent" />
-          <input type="hidden" name="console_errors" />
-
           <div className="flex flex-col gap-2">
             <Label htmlFor="feedback-category">{t("modal.category")}</Label>
             <Select
@@ -178,6 +225,39 @@ export function FeedbackWidget() {
             </p>
           </div>
 
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-md border bg-muted/30 px-3 py-2.5">
+            <Checkbox
+              checked={includeScreenshot}
+              onCheckedChange={(value) => {
+                screenshotTouchedRef.current = true;
+                setIncludeScreenshot(value === true);
+              }}
+              className="mt-0.5"
+              aria-describedby="feedback-screenshot-hint"
+            />
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+                <Camera className="size-3.5" aria-hidden />
+                {t("modal.includeScreenshot")}
+              </span>
+              <span
+                id="feedback-screenshot-hint"
+                className="text-[12px] text-neutral-500"
+              >
+                {t("modal.screenshotHint")}
+              </span>
+            </div>
+          </label>
+
+          {/* Hidden inputs for context fields. Values are populated in
+              handleSubmit before formAction is called. */}
+          <input type="hidden" name="page_url" />
+          <input type="hidden" name="locale" />
+          <input type="hidden" name="viewport_w" />
+          <input type="hidden" name="viewport_h" />
+          <input type="hidden" name="user_agent" />
+          <input type="hidden" name="console_errors" />
+
           {state.ok === false && state.code && state.code !== "unauthenticated" ? (
             <p
               role="alert"
@@ -189,26 +269,17 @@ export function FeedbackWidget() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={busy}>
                 {t("modal.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={!canSubmit}>
               <Send className="size-4" aria-hidden />
-              {pending ? t("modal.submitting") : t("modal.submit")}
+              {buttonLabel}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
-
-function setHidden(
-  form: HTMLFormElement,
-  name: string,
-  value: string | null | undefined,
-) {
-  const el = form.elements.namedItem(name) as HTMLInputElement | null;
-  if (el) el.value = value ?? "";
 }

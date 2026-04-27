@@ -25,6 +25,29 @@ export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 // client-side ring buffer (last 10 × 500 chars ≈ 5 KB) with headroom.
 const CONSOLE_ERRORS_MAX_BYTES = 10_000;
 
+// Screenshot upload caps. Bucket has its own 3 MB ceiling + MIME allowlist
+// (see migration 20260428010000); these are the action-level guards.
+const SCREENSHOT_MAX_BYTES = 3 * 1024 * 1024; // 3 MB
+const SCREENSHOT_MIME_ALLOWLIST = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const SCREENSHOT_BUCKET = "feedback-screenshots";
+
+function extensionForMime(mime: string): string {
+  switch (mime) {
+    case "image/jpeg":
+      return "jpg";
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    default:
+      return "bin";
+  }
+}
+
 const SubmitFeedbackSchema = z.object({
   category: z.enum(FEEDBACK_CATEGORIES),
   message: z
@@ -49,6 +72,9 @@ export type SubmitFeedbackState = {
   code?:
     | "unauthenticated"
     | "invalid"
+    | "screenshot_too_large"
+    | "screenshot_invalid_type"
+    | "screenshot_upload_failed"
     | "db_error";
   message?: string;
 };
@@ -108,6 +134,49 @@ export async function submitFeedbackAction(
     }
   }
 
+  // Screenshot is optional. When the client ticks the "include screenshot"
+  // checkbox, the widget captures the viewport with html2canvas, encodes a
+  // JPEG, and appends it as a Blob under the `screenshot` field. We validate
+  // size + MIME, upload via the service-role admin client (the storage RLS
+  // policy also enforces "owner only" as defense in depth), and persist the
+  // resulting path on the row.
+  const screenshotEntry = formData.get("screenshot");
+  let screenshotPath: string | null = null;
+  if (screenshotEntry instanceof File && screenshotEntry.size > 0) {
+    if (screenshotEntry.size > SCREENSHOT_MAX_BYTES) {
+      return {
+        ok: false,
+        code: "screenshot_too_large",
+        message: `screenshot exceeds ${SCREENSHOT_MAX_BYTES} bytes`,
+      };
+    }
+    const mime = screenshotEntry.type;
+    if (!SCREENSHOT_MIME_ALLOWLIST.has(mime)) {
+      return {
+        ok: false,
+        code: "screenshot_invalid_type",
+        message: `unsupported mime: ${mime || "<empty>"}`,
+      };
+    }
+    const ext = extensionForMime(mime);
+    const objectPath = `${decision.userId}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await admin.storage
+      .from(SCREENSHOT_BUCKET)
+      .upload(objectPath, screenshotEntry, {
+        contentType: mime,
+        cacheControl: "private, max-age=31536000, immutable",
+        upsert: false,
+      });
+    if (uploadError) {
+      return {
+        ok: false,
+        code: "screenshot_upload_failed",
+        message: uploadError.message,
+      };
+    }
+    screenshotPath = objectPath;
+  }
+
   const { error } = await admin.from("app_feedback").insert({
     user_id: decision.userId,
     role,
@@ -119,8 +188,14 @@ export async function submitFeedbackAction(
     viewport_h: parsed.data.viewport_h ?? null,
     user_agent: parsed.data.user_agent ?? null,
     console_errors: consoleErrors,
+    screenshot_path: screenshotPath,
   });
   if (error) {
+    // Best-effort: if the insert failed but we already uploaded a screenshot,
+    // remove it so we don't accumulate orphan blobs in the bucket.
+    if (screenshotPath) {
+      await admin.storage.from(SCREENSHOT_BUCKET).remove([screenshotPath]);
+    }
     return { ok: false, code: "db_error", message: error.message };
   }
 

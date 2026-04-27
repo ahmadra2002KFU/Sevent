@@ -37,6 +37,9 @@ export type FeedbackRowData = {
   resolved_at: string | null;
   created_at: string;
   user_email: string | null;
+  // Server-resolved short-lived signed URL (1h). Null when the row has no
+  // attached screenshot. Refreshes on next page load if it expires.
+  screenshot_url: string | null;
 };
 
 const initialState: UpdateFeedbackStatusState = { ok: false };
@@ -204,6 +207,32 @@ export function FeedbackRow({ row }: { row: FeedbackRowData }) {
                     </>
                   ) : null}
                 </dl>
+                {row.screenshot_url ? (
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                      {t("row.screenshotHeading")}
+                    </h4>
+                    {/* Inline preview only — admins are expected to view, not
+                        download. The signed URL expires after 1h; on reload
+                        the server regenerates a fresh one. */}
+                    <a
+                      href={row.screenshot_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-md border bg-background"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element --
+                          can't use next/image with a remote signed URL whose
+                          host is the local supabase storage proxy. */}
+                      <img
+                        src={row.screenshot_url}
+                        alt={t("row.screenshotHeading")}
+                        loading="lazy"
+                        className="h-auto w-full"
+                      />
+                    </a>
+                  </div>
+                ) : null}
                 {consolePretty ? (
                   <details className="mt-2 rounded-md border bg-background">
                     <summary className="cursor-pointer px-3 py-2 text-[12px] font-medium text-muted-foreground">
