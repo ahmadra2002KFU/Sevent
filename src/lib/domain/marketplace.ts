@@ -11,10 +11,11 @@
  * RLS gate:
  *   - `rfqs: marketplace supplier read` lets an approved+published supplier
  *     read any RFQ where `is_published_to_marketplace AND status='sent'`.
- *   - The `exclude-already-invited` rule is applied here in TS after pulling
- *     the candidate set, because the RFQ rows the caller has an invite for
- *     are already readable under `rfqs: invited supplier read` — a DB-side
- *     anti-join would need a raw SQL function we don't need yet.
+ *   - The `exclude-already-invited` anti-join runs server-side via the
+ *     `marketplace_opportunities_for_supplier(supplier_id, limit)` SECURITY
+ *     DEFINER function — see migration 20260505030000_marketplace_opportunities_fn.sql.
+ *     The function returns the bounded set of candidate rfq ids; we then
+ *     hydrate the joined event/category fields with one keyed SELECT.
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -83,20 +84,23 @@ export async function listMarketplaceOpportunities(
 ): Promise<MarketplaceOpportunity[]> {
   const supabase = await createSupabaseServerClient();
 
-  // 1. Fetch every invite row for this supplier so we can exclude the joined
-  //    RFQs. A Set keeps the downstream .filter() O(1).
-  const { data: inviteRows } = await supabase
-    .from("rfq_invites")
-    .select("rfq_id")
-    .eq("supplier_id", params.supplier_id);
-  const excludedRfqIds = new Set<string>(
-    ((inviteRows ?? []) as Array<{ rfq_id: string }>).map((r) => r.rfq_id),
+  // 1. Server-side anti-join via SECURITY DEFINER fn. Returns the bounded set
+  //    of candidate rfq ids that are published, sent, not yet expired, and
+  //    NOT already invited to this supplier. Pushes filtering to indexes —
+  //    no more unbounded `rfq_invites` scan in TS.
+  const { data: candidateRows, error: rpcError } = await supabase.rpc(
+    "marketplace_opportunities_for_supplier",
+    { p_supplier_id: params.supplier_id, p_limit: 200 },
   );
+  if (rpcError) return [];
+  const candidateIds = ((candidateRows ?? []) as Array<{ rfq_id: string }>).map(
+    (r) => r.rfq_id,
+  );
+  if (candidateIds.length === 0) return [];
 
-  // 2. Fetch candidate RFQs via RLS. The relational select pulls the event +
-  //    both category rows in one hop. Supabase returns `categories` as an
-  //    array when the foreign key is ambiguous — we use the named FK hint
-  //    (same pattern as the supplier quote builder loader).
+  // 2. Hydrate the joined event/category fields. Supabase returns
+  //    `categories` as an array when the foreign key is ambiguous — we use
+  //    the named FK hint (same pattern as the supplier quote builder loader).
   type RfqJoinRow = {
     id: string;
     sent_at: string | null;
@@ -146,28 +150,20 @@ export async function listMarketplaceOpportunities(
          id, slug, name_en, name_ar
        )`,
     )
-    .eq("is_published_to_marketplace", true)
-    .eq("status", "sent")
-    .order("sent_at", { ascending: false })
-    .limit(200);
+    .in("id", candidateIds)
+    .order("sent_at", { ascending: false });
   if (error) return [];
 
   const rows = (rfqRows ?? []) as unknown as RfqJoinRow[];
 
-  // 3. Apply filters client-side. The candidate set is bounded (<=200) and
-  //    most filters boil down to column comparisons that don't benefit from
-  //    SQL pushdown at our pilot scale.
+  // 3. Apply UI-side filters (category/city/segment/date/budget). The
+  //    exclusion + expiry checks already happened in SQL. The candidate set
+  //    is bounded by the function's LIMIT, so column comparisons here are
+  //    cheap.
   const filters = params.filters;
-  const now = Date.now();
 
   const filtered = rows
-    .filter((r) => !excludedRfqIds.has(r.id))
     .filter((r) => r.events !== null)
-    .filter((r) => {
-      // Skip expired RFQs so suppliers don't waste a click.
-      if (r.expires_at && new Date(r.expires_at).getTime() < now) return false;
-      return true;
-    })
     .filter((r) => {
       if (!filters.category_id) return true;
       return r.category?.id === filters.category_id;
