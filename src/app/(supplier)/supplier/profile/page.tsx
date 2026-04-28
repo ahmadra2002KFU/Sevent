@@ -52,35 +52,65 @@ function coerceSectionsOrder(raw: unknown): string[] {
   return unique;
 }
 
-export default async function SupplierProfilePage() {
+export default async function SupplierProfilePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string | string[] }>;
+}) {
   // The Profile page is the unified hub: customize + portfolio + settings
   // (the wizard, formerly its own /supplier/onboarding route). The
   // `supplier.profile.access` gate admits in_onboarding / pending_review /
   // approved / rejected suppliers; the customize + portfolio tabs are
   // shown-disabled for non-approved states (see ProfilePageTabs).
-  const { decision, admin, user } = await requireAccess(
-    "supplier.profile.access",
-  );
+  const [{ decision, admin, user }, sp, t] = await Promise.all([
+    requireAccess("supplier.profile.access"),
+    searchParams ?? Promise.resolve(undefined),
+    getTranslations("supplier.profile.customizer"),
+  ]);
   const supplierId = decision.supplierId;
   const isApproved = decision.state === "supplier.approved";
-  const t = await getTranslations("supplier.profile.customizer");
+  const tabParamRaw = sp?.tab;
+  const tabParam = Array.isArray(tabParamRaw) ? tabParamRaw[0] : tabParamRaw;
 
-  // Wizard bootstrap is needed for the Settings tab regardless of state.
-  const bootstrap = await loadOnboardingBootstrap({
-    admin,
-    supplierId,
-    userId: user.id,
-  });
+  // Bootstrap is only consumed by the wizard inside the Settings tab. Approved
+  // suppliers default to Customize and only need bootstrap if they navigate
+  // to ?tab=settings — skip it on initial load to avoid 4 wasted DB round
+  // trips. Unapproved suppliers always default to Settings, so they need it.
+  const needsBootstrap = !isApproved || tabParam === "settings";
 
   // Customize + portfolio data are only rendered for approved suppliers, so
   // we skip the read for unapproved states to save a couple of round-trips.
-  const { data: supplier } = isApproved && supplierId
-    ? await admin
-        .from("suppliers")
-        .select("accent_color, profile_sections_order, bio, slug")
-        .eq("id", supplierId)
-        .maybeSingle()
-    : { data: null };
+  const supplierRowPromise =
+    isApproved && supplierId
+      ? admin
+          .from("suppliers")
+          .select("accent_color, profile_sections_order, bio, slug")
+          .eq("id", supplierId)
+          .maybeSingle()
+      : Promise.resolve({ data: null });
+
+  const bootstrapPromise = needsBootstrap
+    ? loadOnboardingBootstrap({ admin, supplierId, userId: user.id })
+    : Promise.resolve(null);
+
+  // Portfolio media is only loaded when approved; unapproved suppliers see
+  // the disabled Portfolio tab and never need the signed URLs.
+  const portfolioMediaPromise =
+    isApproved && supplierId
+      ? admin
+          .from("supplier_media")
+          .select("id, kind, file_path, title, sort_order")
+          .eq("supplier_id", supplierId)
+          .in("kind", ["photo", "document"])
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: null });
+
+  const [{ data: supplier }, bootstrap, { data: mediaRows }] =
+    await Promise.all([
+      supplierRowPromise,
+      bootstrapPromise,
+      portfolioMediaPromise,
+    ]);
 
   // Defensive: if a user with profile.access reaches us before a suppliers
   // row exists (race window between auth trigger + onboarding setup), bounce
@@ -106,44 +136,32 @@ export default async function SupplierProfilePage() {
   } | null) ?? {
     accent_color: null,
     profile_sections_order: null,
-    bio: bootstrap.supplier?.bio ?? null,
-    slug: bootstrap.supplier?.slug ?? null,
+    bio: bootstrap?.supplier?.bio ?? null,
+    slug: bootstrap?.supplier?.slug ?? null,
   };
 
-  // Portfolio media is only loaded when approved; unapproved suppliers see
-  // the disabled Portfolio tab and never need the signed URLs.
-  let portfolioItems: PortfolioItem[] = [];
-  if (isApproved) {
-    const { data: mediaRows } = await admin
-      .from("supplier_media")
-      .select("id, kind, file_path, title, sort_order")
-      .eq("supplier_id", supplierId)
-      .in("kind", ["photo", "document"])
-      .order("sort_order", { ascending: true });
-
-    portfolioItems = await Promise.all(
-      (
-        (mediaRows as Array<{
-          id: string;
-          kind: string;
-          file_path: string;
-          title: string | null;
-          sort_order: number;
-        }> | null) ?? []
-      ).map(async (row) => ({
-        id: row.id,
-        kind: row.kind === "document" ? "document" : "photo",
-        public_url: await createSignedDownloadUrl(
-          admin,
-          STORAGE_BUCKETS.portfolio,
-          row.file_path,
-        ),
-        file_path: row.file_path,
-        title: row.title,
-        sort_order: Number(row.sort_order ?? 0),
-      })),
-    );
-  }
+  const portfolioItems: PortfolioItem[] = await Promise.all(
+    (
+      (mediaRows as Array<{
+        id: string;
+        kind: string;
+        file_path: string;
+        title: string | null;
+        sort_order: number;
+      }> | null) ?? []
+    ).map(async (row) => ({
+      id: row.id,
+      kind: row.kind === "document" ? "document" : "photo",
+      public_url: await createSignedDownloadUrl(
+        admin,
+        STORAGE_BUCKETS.portfolio,
+        row.file_path,
+      ),
+      file_path: row.file_path,
+      title: row.title,
+      sort_order: Number(row.sort_order ?? 0),
+    })),
+  );
 
   // Header copy adapts to the supplier's state. Approved sees the
   // customize-focused copy; everyone else sees a profile-completion framing.

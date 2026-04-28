@@ -1,13 +1,35 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileCustomizer } from "./ProfileCustomizer";
 import { PortfolioManager, type PortfolioItem } from "../portfolio/PortfolioManager";
-import { OnboardingWizard } from "@/app/(onboarding)/supplier/onboarding/wizard";
 import type { OnboardingBootstrap } from "@/app/(onboarding)/supplier/onboarding/loader";
+
+// The wizard pulls motion/react, react-hook-form, zod resolver, and ~8 picker
+// subcomponents — heavy enough that shipping it on first paint of the profile
+// page added seconds to load. Defer to a chunk that only downloads when the
+// Settings tab is the first thing the user opens (or they navigate to it).
+const OnboardingWizard = dynamic(
+  () =>
+    import("@/app/(onboarding)/supplier/onboarding/wizard").then((m) => ({
+      default: m.OnboardingWizard,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-6 w-1/3" />
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    ),
+  },
+);
 
 type ProfilePageTabsProps = {
   isApproved: boolean;
@@ -15,7 +37,7 @@ type ProfilePageTabsProps = {
   initialSectionOrder: string[];
   initialPortfolioItems: PortfolioItem[];
   initialBio: string | null;
-  bootstrap: OnboardingBootstrap;
+  bootstrap: OnboardingBootstrap | null;
 };
 
 const TAB_KEYS = ["customize", "portfolio", "settings"] as const;
@@ -131,7 +153,19 @@ export function ProfilePageTabs({
         </>
       ) : null}
       <TabsContent value="settings">
-        <OnboardingWizard bootstrap={bootstrap} />
+        {bootstrap ? (
+          <OnboardingWizard bootstrap={bootstrap} />
+        ) : (
+          // Approved supplier landed on Customize first, so the server skipped
+          // the wizard bootstrap fetch. Clicking Settings already triggered a
+          // router.replace → the next render will arrive with bootstrap. Show
+          // a short skeleton instead of a blank panel.
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-72 w-full" />
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );
