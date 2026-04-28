@@ -84,6 +84,7 @@
     "pageOf": "Page {page} of {totalPages}"
   },
   "feedback": {
+    "menuItem": "Send feedback",
     "pill": {
       "label": "Feedback",
       "ariaLabel": "Send feedback to the Sevent team"
@@ -1704,6 +1705,26 @@
         "Medina": "Medina",
         "Khobar": "Khobar",
         "Taif": "Taif"
+      },
+      "bunood": {
+        "tableTitle": "Line items",
+        "tableDescription": "Each line item is auto-published to the marketplace and reaches suppliers in that category.",
+        "subcategoryLabel": "Category",
+        "subcategoryPlaceholder": "Choose a category",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Any extra detail that helps suppliers prepare their quote",
+        "addBand": "Add line item",
+        "removeBand": "Remove",
+        "emptyHint": "No line items yet. Add at least one before saving the event.",
+        "atLeastOneRequired": "Add at least one line item before saving the event.",
+        "loadingCategories": "Loading categories…",
+        "dialogTitle": "Add a line item",
+        "dialogDescription": "This line item is published to the marketplace and reaches qualified suppliers immediately.",
+        "dialogSubmit": "Publish line item",
+        "dialogSaving": "Publishing…",
+        "dialogCancel": "Cancel",
+        "bandSavedToast": "Line item added and published to the marketplace.",
+        "bandFailedToast": "Could not add the line item."
       }
     },
     "rfqs": {

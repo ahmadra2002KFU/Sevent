@@ -132,20 +132,12 @@ export default async function OrganizerDashboardPage() {
         title={t("title")}
         description={t("subtitle")}
         actions={
-          <>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/organizer/events/new">
-                <Plus aria-hidden />
-                {t("newEvent")}
-              </Link>
-            </Button>
-            <Button size="lg" asChild>
-              <Link href="/organizer/rfqs/new">
-                <Sparkles aria-hidden />
-                {t("newRfq")}
-              </Link>
-            </Button>
-          </>
+          <Button size="lg" asChild>
+            <Link href="/organizer/events/new">
+              <Plus aria-hidden />
+              {t("newEvent")}
+            </Link>
+          </Button>
         }
       />
 

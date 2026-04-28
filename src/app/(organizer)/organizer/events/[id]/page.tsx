@@ -7,9 +7,9 @@ import {
   MapPin,
   Users,
   FileText,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AddBandDialog } from "./AddBandDialog";
 import {
   Card,
   CardContent,
@@ -119,6 +119,7 @@ export default async function EventDetailPage({ params }: PageProps) {
   const locale = (await getLocale()) as "en" | "ar";
   const t = await getTranslations("organizer.events");
   const eventFormT = await getTranslations("organizer.eventForm");
+  const bunoodT = await getTranslations("organizer.eventForm.bunood");
   const rfqT = await getTranslations("organizer.rfqs");
 
   const { user, admin } = await requireAccess("organizer.events");
@@ -179,12 +180,10 @@ export default async function EventDetailPage({ params }: PageProps) {
         title={title}
         description={t("detailEyebrow")}
         actions={
-          <Button size="lg" asChild>
-            <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
-              <Plus aria-hidden />
-              {t("newRfqForThisEvent")}
-            </Link>
-          </Button>
+          <AddBandDialog
+            eventId={event.id}
+            triggerLabel={bunoodT("addBand")}
+          />
         }
       />
 
@@ -233,12 +232,11 @@ export default async function EventDetailPage({ params }: PageProps) {
         <CardHeader className="border-b pb-4 flex-row items-center justify-between">
           <CardTitle className="text-lg">{t("rfqsHeading")}</CardTitle>
           {rfqs.length > 0 ? (
-            <Button size="sm" variant="outline" asChild>
-              <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
-                <Plus aria-hidden />
-                {t("sendNewRfq")}
-              </Link>
-            </Button>
+            <AddBandDialog
+              eventId={event.id}
+              triggerLabel={bunoodT("addBand")}
+              variant="outline"
+            />
           ) : null}
         </CardHeader>
         <CardContent className="p-0">
@@ -249,12 +247,10 @@ export default async function EventDetailPage({ params }: PageProps) {
               title={t("noRfqsForEvent")}
               description={t("noRfqsDescription")}
               action={
-                <Button asChild>
-                  <Link href={`/organizer/rfqs/new?event_id=${event.id}`}>
-                    <Plus aria-hidden />
-                    {t("sendNewRfq")}
-                  </Link>
-                </Button>
+                <AddBandDialog
+                  eventId={event.id}
+                  triggerLabel={bunoodT("addBand")}
+                />
               }
             />
           ) : (

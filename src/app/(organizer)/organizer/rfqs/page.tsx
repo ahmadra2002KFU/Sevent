@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText } from "lucide-react";
 import { fmtDate, type SupportedLocale } from "@/lib/domain/formatDate";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -140,18 +140,7 @@ export default async function OrganizerRfqsPage({ searchParams }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader
-        title={t("title")}
-        description={t("subtitle")}
-        actions={
-          <Button size="lg" asChild>
-            <Link href="/organizer/rfqs/new">
-              <Sparkles aria-hidden />
-              {t("newRfq")}
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title={t("title")} description={t("subtitle")} />
 
       {rows.length === 0 ? (
         <EmptyState

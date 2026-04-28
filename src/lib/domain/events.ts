@@ -38,6 +38,19 @@ export type CityOption = string;
 const EVENT_TYPE_TUPLE = EVENT_TYPES as unknown as readonly [EventType, ...EventType[]];
 const CITY_TUPLE = CITY_OPTIONS as unknown as readonly [string, ...string[]];
 
+/**
+ * Per-بند input. A بند is a single line-item attached to an event that becomes
+ * one auto-published RFQ (kind="generic"). Per-بند fields are intentionally
+ * minimal — subcategory + optional notes — so creating an event takes one form,
+ * not a four-step wizard. Organizers can refine the resulting RFQ later from
+ * its detail page if they want richer requirements.
+ */
+export const BandInput = z.object({
+  subcategory_id: z.string().uuid(),
+  notes: z.string().trim().max(2000).optional(),
+});
+export type BandInput = z.infer<typeof BandInput>;
+
 export const EventFormInput = z
   .object({
     event_type: z.enum(EVENT_TYPE_TUPLE),
@@ -50,6 +63,7 @@ export const EventFormInput = z
     budget_min_sar: z.union([z.string(), z.number()]).optional(),
     budget_max_sar: z.union([z.string(), z.number()]).optional(),
     notes: z.string().trim().max(2000).optional(),
+    bunood: z.array(BandInput).min(1),
   })
   .superRefine((val, ctx) => {
     if (new Date(val.ends_at).getTime() <= new Date(val.starts_at).getTime()) {

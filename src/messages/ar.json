@@ -84,6 +84,7 @@
     "pageOf": "الصفحة {page} من {totalPages}"
   },
   "feedback": {
+    "menuItem": "إرسال ملاحظات",
     "pill": {
       "label": "ملاحظات",
       "ariaLabel": "إرسال ملاحظات إلى فريق Sevent"
@@ -1704,6 +1705,26 @@
         "Medina": "المدينة المنورة",
         "Khobar": "الخبر",
         "Taif": "الطائف"
+      },
+      "bunood": {
+        "tableTitle": "بنود الطلب",
+        "tableDescription": "لكل بند ستُرسل دعوة عرض سعر للموردين في هذا التخصص. تظهر مباشرة في السوق.",
+        "subcategoryLabel": "التخصص",
+        "subcategoryPlaceholder": "اختر التخصص",
+        "notesLabel": "ملاحظات (اختياري)",
+        "notesPlaceholder": "أي تفاصيل إضافية تساعد المورد على تجهيز عرضه",
+        "addBand": "إضافة بند",
+        "removeBand": "حذف",
+        "emptyHint": "لم تُضف بنوداً بعد. أضف بنداً واحداً على الأقل قبل حفظ الفعالية.",
+        "atLeastOneRequired": "أضف بنداً واحداً على الأقل قبل حفظ الفعالية.",
+        "loadingCategories": "جاري تحميل التخصصات…",
+        "dialogTitle": "إضافة بند جديد",
+        "dialogDescription": "ينشر هذا البند تلقائياً في السوق ويصل إلى الموردين المؤهلين.",
+        "dialogSubmit": "نشر البند",
+        "dialogSaving": "جارٍ النشر…",
+        "dialogCancel": "إلغاء",
+        "bandSavedToast": "تمت إضافة البند ونشره في السوق.",
+        "bandFailedToast": "تعذّر إضافة البند."
       }
     },
     "rfqs": {

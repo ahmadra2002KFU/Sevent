@@ -13,13 +13,18 @@
  * server action contract (datetime-local strings over FormData) is unchanged.
  */
 
-import { useRef, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
+import { ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +38,13 @@ import { MARKET_SEGMENTS } from "@/lib/domain/segments";
 import { CityCombobox } from "@/components/supplier/CityCombobox";
 import { HelperText } from "@/components/ui-ext/HelperText";
 import { createEventAction } from "../actions";
+import {
+  listCategoriesAction,
+  type CategoriesBundle,
+  type CategoryOption,
+} from "../../rfqs/actions";
+
+type BandRow = { subcategory_id: string; notes: string };
 
 type FormValues = {
   event_type: EventType | "";
@@ -62,6 +74,54 @@ export function EventForm() {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement | null>(null);
 
+  // بنود are tracked outside RHF (RHF is awkward with arrays of objects under
+  // the existing string-centric FormValues shape). We pipe the array into the
+  // Zod resolver candidate manually so EventFormInput's `.min(1)` rule still
+  // fires, and serialize as JSON into a hidden input for the server action.
+  const [bunood, setBunood] = useState<BandRow[]>([]);
+  const [bunoodTouched, setBunoodTouched] = useState(false);
+  const [categories, setCategories] = useState<CategoriesBundle | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCategoriesAction()
+      .then((cats) => {
+        if (!cancelled) setCategories(cats);
+      })
+      .catch(() => {
+        // listCategoriesAction never rejects today, but guard anyway so a
+        // network blip on first render doesn't render an empty placeholder
+        // forever.
+        if (!cancelled) setCategories({ parents: [], children: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const subcategoryGroups = useMemo(() => {
+    if (!categories) return [];
+    return categories.parents
+      .map((parent) => ({
+        parent,
+        children: categories.children
+          .filter((c) => c.parent_id === parent.id)
+          .sort((a, b) => a.sort_order - b.sort_order),
+      }))
+      .filter((g) => g.children.length > 0);
+  }, [categories]);
+
+  const bunoodForServer = useMemo(
+    () =>
+      bunood.map((b) => ({
+        subcategory_id: b.subcategory_id,
+        notes: b.notes.trim() ? b.notes.trim() : undefined,
+      })),
+    [bunood],
+  );
+  const bunoodIsValid = bunood.every((b) => b.subcategory_id.length > 0);
+  const bunoodEmpty = bunood.length === 0;
+
   const {
     register,
     handleSubmit,
@@ -89,6 +149,9 @@ export function EventForm() {
         budget_max_sar: values.budget_max_sar?.trim()
           ? values.budget_max_sar.trim()
           : undefined,
+        // بنود live in component state; thread them through so the schema's
+        // `bunood.min(1)` rule contributes to the resolver's error map.
+        bunood: bunoodForServer,
       };
       const parsed = EventFormInput.safeParse(candidate);
       if (parsed.success) {
@@ -141,6 +204,12 @@ export function EventForm() {
   const watchedEventType = watch("event_type");
   const watchedCity = watch("city");
 
+  // FormValues doesn't list `bunood`, but the resolver's error map can carry
+  // a `bunood` key (the schema's `.min(1)` rule). Read it through a cast.
+  const bunoodErrorMessage = (
+    errors as unknown as Record<string, { message?: string } | undefined>
+  ).bunood?.message;
+
   // Register hidden controlled fields for Radix Select (doesn't emit form data)
   const eventTypeReg = register("event_type", { required: true });
   const cityReg = register("city", { required: true });
@@ -155,6 +224,12 @@ export function EventForm() {
       {/* Hidden inputs so FormData picks up the Select values for server action */}
       <input type="hidden" {...eventTypeReg} value={watchedEventType ?? ""} />
       <input type="hidden" {...cityReg} value={watchedCity ?? ""} />
+      {/* بنود — server action JSON.parses this back into BandInput[]. */}
+      <input
+        type="hidden"
+        name="bunood"
+        value={JSON.stringify(bunoodForServer)}
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-5 p-6">
@@ -321,6 +396,21 @@ export function EventForm() {
         </CardContent>
       </Card>
 
+      <BunoodCard
+        bunood={bunood}
+        setBunood={(updater) => {
+          setBunood(updater);
+          setBunoodTouched(true);
+        }}
+        groups={subcategoryGroups}
+        categoriesLoaded={categories !== null}
+        locale={isAr ? "ar" : "en"}
+        showError={
+          (bunoodTouched && bunoodEmpty) || !!bunoodErrorMessage
+        }
+        errorMessage={bunoodErrorMessage ?? t("bunood.atLeastOneRequired")}
+      />
+
       <div className="flex items-center justify-end gap-3 border-t pt-5">
         <Button
           type="button"
@@ -330,7 +420,11 @@ export function EventForm() {
         >
           {t("cancel")}
         </Button>
-        <Button type="submit" size="lg" disabled={isPending}>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={isPending || bunoodEmpty || !bunoodIsValid}
+        >
           {isPending ? (
             <>
               <Loader2 className="animate-spin" aria-hidden />
@@ -391,6 +485,8 @@ function friendlyMessage(
         : t("error.budgetNonNegative");
     case "notes":
       return t("error.notesTooLong");
+    case "bunood":
+      return t("bunood.atLeastOneRequired");
     default:
       return null;
   }
@@ -430,5 +526,212 @@ function FormField({
         <p className="text-xs text-destructive">{error}</p>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * بنود table — one row per RFQ to fan out. Subcategory drives the marketplace
+ * routing; notes are optional and free-form. Adding a row enables submit; the
+ * server action publishes one RFQ per row immediately on save.
+ */
+function BunoodCard({
+  bunood,
+  setBunood,
+  groups,
+  categoriesLoaded,
+  locale,
+  showError,
+  errorMessage,
+}: {
+  bunood: BandRow[];
+  setBunood: (updater: (prev: BandRow[]) => BandRow[]) => void;
+  groups: Array<{ parent: CategoryOption; children: CategoryOption[] }>;
+  categoriesLoaded: boolean;
+  locale: "ar" | "en";
+  showError: boolean;
+  errorMessage: string;
+}) {
+  const t = useTranslations("organizer.eventForm.bunood");
+
+  const updateRow = (index: number, patch: Partial<BandRow>) => {
+    setBunood((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+  };
+
+  const removeRow = (index: number) => {
+    setBunood((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addRow = () => {
+    setBunood((prev) => [...prev, { subcategory_id: "", notes: "" }]);
+  };
+
+  // Single-line row layout: subcategory select | notes input | delete button.
+  // Mobile (<sm): stack the three cells vertically. Desktop: 3-column grid
+  // with a subcategory column wide enough for KSA category names and a
+  // flexible notes column.
+  const ROW_GRID =
+    "sm:grid sm:grid-cols-[minmax(11rem,15rem)_minmax(0,1fr)_2.5rem] sm:items-center sm:gap-3";
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b pb-4">
+        <CardTitle className="text-lg">{t("tableTitle")}</CardTitle>
+        <HelperText>{t("tableDescription")}</HelperText>
+      </CardHeader>
+
+      {showError ? (
+        <div
+          role="alert"
+          className="border-b bg-destructive/5 px-6 py-2.5 text-sm text-destructive"
+        >
+          {errorMessage}
+        </div>
+      ) : null}
+
+      {bunood.length === 0 ? (
+        <CardContent className="flex flex-col items-center gap-2 p-10 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-brand-cobalt-100 text-brand-cobalt-500">
+            <ClipboardList className="size-6" aria-hidden />
+          </span>
+          <p className="text-sm font-medium text-foreground">
+            {t("emptyHint")}
+          </p>
+        </CardContent>
+      ) : (
+        // Scroll container holds BOTH the sticky header and the list, so the
+        // header stays pinned while rows scroll. Capped to roughly 3 rows
+        // visible — adding a 4th بند triggers the scrollbar.
+        <div className="max-h-[220px] overflow-y-auto sm:max-h-[260px]">
+          {/* Sticky column header — visible only at sm+, since rows stack on mobile */}
+          <div
+            className={cn(
+              "sticky top-0 z-10 hidden border-b bg-muted/40 px-6 py-2.5 backdrop-blur-sm sm:block",
+              ROW_GRID,
+            )}
+          >
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("subcategoryLabel")}
+              <span className="text-destructive" aria-hidden>
+                {" "}
+                *
+              </span>
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("notesLabel")}
+            </span>
+            <span className="sr-only">{t("removeBand")}</span>
+          </div>
+
+          <ul className="flex flex-col divide-y">
+            {bunood.map((row, idx) => (
+              <li
+                key={idx}
+                className={cn(
+                  "flex flex-col gap-2 px-6 py-3 transition-colors hover:bg-muted/30",
+                  ROW_GRID,
+                )}
+              >
+                <div className="flex flex-col gap-1.5 sm:gap-0">
+                  <Label
+                    htmlFor={`band_subcategory_${idx}`}
+                    className="text-xs text-muted-foreground sm:hidden"
+                  >
+                    {t("subcategoryLabel")}
+                    <span className="text-destructive" aria-hidden>
+                      {" "}
+                      *
+                    </span>
+                  </Label>
+                  <select
+                    id={`band_subcategory_${idx}`}
+                    value={row.subcategory_id}
+                    onChange={(e) =>
+                      updateRow(idx, { subcategory_id: e.target.value })
+                    }
+                    disabled={!categoriesLoaded}
+                    aria-label={t("subcategoryLabel")}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>
+                      {categoriesLoaded
+                        ? t("subcategoryPlaceholder")
+                        : t("loadingCategories")}
+                    </option>
+                    {groups.map((group) => (
+                      <optgroup
+                        key={group.parent.id}
+                        label={
+                          locale === "ar"
+                            ? group.parent.name_ar
+                            : group.parent.name_en
+                        }
+                      >
+                        {group.children.map((child) => (
+                          <option key={child.id} value={child.id}>
+                            {locale === "ar" ? child.name_ar : child.name_en}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 sm:gap-0">
+                  <Label
+                    htmlFor={`band_notes_${idx}`}
+                    className="text-xs text-muted-foreground sm:hidden"
+                  >
+                    {t("notesLabel")}
+                  </Label>
+                  <Input
+                    id={`band_notes_${idx}`}
+                    value={row.notes}
+                    onChange={(e) =>
+                      updateRow(idx, { notes: e.target.value })
+                    }
+                    placeholder={t("notesPlaceholder")}
+                    aria-label={t("notesPlaceholder")}
+                    maxLength={2000}
+                    className="h-10"
+                  />
+                </div>
+
+                <div className="flex justify-end sm:justify-center">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(idx)}
+                    aria-label={t("removeBand")}
+                    title={t("removeBand")}
+                    className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    <span className="sr-only">{t("removeBand")}</span>
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Footer — always visible, even when the list scrolls. */}
+      <div className="flex items-center justify-between gap-3 border-t bg-muted/20 px-6 py-3">
+        <span className="text-xs text-muted-foreground">
+          {bunood.length === 0 ? t("atLeastOneRequired") : null}
+        </span>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={addRow}
+          disabled={!categoriesLoaded}
+        >
+          <Plus className="size-4" aria-hidden />
+          {t("addBand")}
+        </Button>
+      </div>
+    </Card>
   );
 }
