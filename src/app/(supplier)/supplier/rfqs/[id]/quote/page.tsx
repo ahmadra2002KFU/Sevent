@@ -154,14 +154,29 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
     redirect(`/supplier/rfqs/${inviteId}`);
   }
 
-  // 4. Existing quote (if any).
-  const { data: quoteRow } = await admin
-    .from("quotes")
-    .select("id, status, source, quoted_package_id, current_revision_id")
-    .eq("rfq_id", rfq.id)
-    .eq("supplier_id", supplierId)
-    .maybeSingle();
-  const quote = (quoteRow as QuoteRow | null) ?? null;
+  // 4. Existing quote, packages, pricing rules — independent siblings; fan
+  //    out in one round-trip block.
+  const today = new Date().toISOString().slice(0, 10);
+  const [quoteRes, pkgsRes, rulesRes] = await Promise.all([
+    admin
+      .from("quotes")
+      .select("id, status, source, quoted_package_id, current_revision_id")
+      .eq("rfq_id", rfq.id)
+      .eq("supplier_id", supplierId)
+      .maybeSingle(),
+    admin
+      .from("packages")
+      .select("id, name, base_price_halalas, unit, min_qty, max_qty, is_active, subcategory_id")
+      .eq("supplier_id", supplierId)
+      .eq("is_active", true),
+    admin
+      .from("pricing_rules")
+      .select("id, rule_type, config_jsonb, priority, version, package_id, is_active, valid_from, valid_to")
+      .eq("supplier_id", supplierId)
+      .eq("is_active", true),
+  ]);
+
+  const quote = (quoteRes.data as QuoteRow | null) ?? null;
 
   // Redirect on terminal quote states — the RPC would reject anyway, but a
   // redirect beats a form-level error for a read-only state.
@@ -169,7 +184,7 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
     redirect(`/supplier/rfqs/${inviteId}`);
   }
 
-  // 5. Latest revision (for form pre-fill).
+  // 5. Latest revision (for form pre-fill). Real dependency on quote.id.
   let latestRevision: RevisionRow | null = null;
   if (quote?.current_revision_id) {
     const { data: revRow } = await admin
@@ -180,24 +195,10 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
     latestRevision = (revRow as RevisionRow | null) ?? null;
   }
 
-  // 6. Packages for this supplier in the RFQ's subcategory.
-  const { data: pkgsData } = await admin
-    .from("packages")
-    .select("id, name, base_price_halalas, unit, min_qty, max_qty, is_active, subcategory_id")
-    .eq("supplier_id", supplierId)
-    .eq("is_active", true);
-  const packages = ((pkgsData as PackageRow[] | null) ?? []).filter(
+  const packages = ((pkgsRes.data as PackageRow[] | null) ?? []).filter(
     (p) => p.subcategory_id === rfq.subcategory_id,
   );
-
-  // 7. Active pricing rules (active + valid-date).
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: rulesData } = await admin
-    .from("pricing_rules")
-    .select("id, rule_type, config_jsonb, priority, version, package_id, is_active, valid_from, valid_to")
-    .eq("supplier_id", supplierId)
-    .eq("is_active", true);
-  const activeRules = ((rulesData as RuleRow[] | null) ?? []).filter((r) => {
+  const activeRules = ((rulesRes.data as RuleRow[] | null) ?? []).filter((r) => {
     if (r.valid_from && r.valid_from > today) return false;
     if (r.valid_to && r.valid_to < today) return false;
     return true;

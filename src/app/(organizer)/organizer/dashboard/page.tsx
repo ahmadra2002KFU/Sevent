@@ -74,51 +74,55 @@ export default async function OrganizerDashboardPage() {
 
   const { user, admin } = await requireAccess("organizer.dashboard");
 
-  const eventsCountRes = await admin
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .eq("organizer_id", user.id);
-  const totalEvents = eventsCountRes.count ?? 0;
+  const nowIso = new Date().toISOString();
 
-  const { data: rfqStatusData } = await admin
-    .from("rfqs")
-    .select("id, status, events!inner(organizer_id)")
-    .eq("events.organizer_id", user.id);
-  const allRfqs = (rfqStatusData ?? []) as Array<{ id: string; status: string }>;
+  const [eventsCountRes, rfqStatusRes, confirmedRes, latestRes, upcomingRes] =
+    await Promise.all([
+      admin
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("organizer_id", user.id),
+      admin
+        .from("rfqs")
+        .select("id, status, events!inner(organizer_id)")
+        .eq("events.organizer_id", user.id),
+      admin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("organizer_id", user.id)
+        .eq("confirmation_status", "confirmed"),
+      admin
+        .from("rfqs")
+        .select(
+          `id, status, sent_at, created_at,
+           events!inner ( id, city, organizer_id ),
+           sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar ),
+           rfq_invites ( id )`,
+        )
+        .eq("events.organizer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5),
+      admin
+        .from("events")
+        .select("id, event_type, client_name, city, starts_at, ends_at")
+        .eq("organizer_id", user.id)
+        .gt("starts_at", nowIso)
+        .order("starts_at", { ascending: true })
+        .limit(3),
+    ]);
+
+  const totalEvents = eventsCountRes.count ?? 0;
+  const allRfqs = (rfqStatusRes.data ?? []) as Array<{
+    id: string;
+    status: string;
+  }>;
   const activeRfqs = allRfqs.filter(
     (r) => r.status === "sent" || r.status === "quoted",
   ).length;
   const awaitingQuotes = allRfqs.filter((r) => r.status === "sent").length;
-
-  const confirmedRes = await admin
-    .from("bookings")
-    .select("id", { count: "exact", head: true })
-    .eq("organizer_id", user.id)
-    .eq("confirmation_status", "confirmed");
   const confirmedBookings = confirmedRes.count ?? 0;
-
-  const { data: latestData } = await admin
-    .from("rfqs")
-    .select(
-      `id, status, sent_at, created_at,
-       events!inner ( id, city, organizer_id ),
-       sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar ),
-       rfq_invites ( id )`,
-    )
-    .eq("events.organizer_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(5);
-  const latest = (latestData ?? []) as unknown as DashboardRfq[];
-
-  const nowIso = new Date().toISOString();
-  const { data: upcomingData } = await admin
-    .from("events")
-    .select("id, event_type, client_name, city, starts_at, ends_at")
-    .eq("organizer_id", user.id)
-    .gt("starts_at", nowIso)
-    .order("starts_at", { ascending: true })
-    .limit(3);
-  const upcoming = (upcomingData ?? []) as UpcomingEvent[];
+  const latest = (latestRes.data ?? []) as unknown as DashboardRfq[];
+  const upcoming = (upcomingRes.data ?? []) as UpcomingEvent[];
 
   const hasAnyActivity = latest.length > 0 || upcoming.length > 0;
 
