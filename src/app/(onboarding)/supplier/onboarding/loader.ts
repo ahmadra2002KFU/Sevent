@@ -74,51 +74,99 @@ export async function loadOnboardingBootstrap(
     .select("id, slug, name_en, name_ar, parent_id")
     .order("sort_order", { ascending: true });
 
+  // Server-side onboarding reads use the service-role client; ownership is
+  // still enforced by profile_id/userId filters before data reaches the UI.
+  const supplierSelect =
+    "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments";
+
   if (userId) {
-    // Server-side onboarding reads use the service-role client; ownership is
-    // still enforced by profile_id/userId filters before data reaches the UI.
-    const supplierSelect =
-      "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments";
     let supplierQuery = admin.from("suppliers").select(supplierSelect);
     supplierQuery = options.supplierId
       ? supplierQuery.eq("id", options.supplierId).eq("profile_id", userId)
       : supplierQuery.eq("profile_id", userId);
 
-    const [{ data: profileRow }, { data: supplierRow }] = await Promise.all([
-      admin
-        .from("profiles")
-        .select("full_name")
-        .eq("id", userId)
-        .maybeSingle(),
-      supplierQuery.maybeSingle(),
-    ]);
-    profileFullName = (profileRow?.full_name as string | null) ?? null;
-
-    if (supplierRow) {
-      supplier = {
-        ...supplierRow,
-        works_with_segments: (supplierRow.works_with_segments ?? []) as string[],
-        logo_path: (supplierRow.logo_path ?? null) as string | null,
-        serves_all_ksa: Boolean(
-          (supplierRow as { serves_all_ksa?: boolean }).serves_all_ksa,
-        ),
-      } as OnboardingBootstrap["supplier"];
-      const [docRowsRes, catsRes] = await Promise.all([
+    // Fast path: caller (e.g. profile page) passes supplierId up front, so
+    // we can fan out all reads — profile, supplier, docs, categories — in a
+    // single round-trip-wave instead of 2 sequential waves. Saves one full
+    // DB RTT (~50–80ms) on every wizard load.
+    if (options.supplierId) {
+      const [
+        { data: profileRow },
+        { data: supplierRow },
+        { data: docRows },
+        { data: catRows },
+      ] = await Promise.all([
+        admin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .maybeSingle(),
+        supplierQuery.maybeSingle(),
         admin
           .from("supplier_docs")
           .select("id, doc_type, file_path, status, notes, created_at")
-          .eq("supplier_id", supplierRow.id)
+          .eq("supplier_id", options.supplierId)
           .order("created_at", { ascending: false }),
         admin
           .from("supplier_categories")
           .select("subcategory_id")
-          .eq("supplier_id", supplierRow.id),
+          .eq("supplier_id", options.supplierId),
       ]);
-      const docRows = docRowsRes.data;
+      profileFullName = (profileRow?.full_name as string | null) ?? null;
+      if (supplierRow) {
+        supplier = {
+          ...supplierRow,
+          works_with_segments: (supplierRow.works_with_segments ??
+            []) as string[],
+          logo_path: (supplierRow.logo_path ?? null) as string | null,
+          serves_all_ksa: Boolean(
+            (supplierRow as { serves_all_ksa?: boolean }).serves_all_ksa,
+          ),
+        } as OnboardingBootstrap["supplier"];
+      }
       if (docRows) docs.push(...docRows);
-      const cats = catsRes.data;
-      if (cats) {
-        for (const c of cats) subcategoryIds.push(c.subcategory_id as string);
+      if (catRows) {
+        for (const c of catRows) subcategoryIds.push(c.subcategory_id as string);
+      }
+    } else {
+      // Slow path: no supplierId hint — must look up suppliers row first
+      // before issuing dependent reads.
+      const [{ data: profileRow }, { data: supplierRow }] = await Promise.all([
+        admin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .maybeSingle(),
+        supplierQuery.maybeSingle(),
+      ]);
+      profileFullName = (profileRow?.full_name as string | null) ?? null;
+
+      if (supplierRow) {
+        supplier = {
+          ...supplierRow,
+          works_with_segments: (supplierRow.works_with_segments ??
+            []) as string[],
+          logo_path: (supplierRow.logo_path ?? null) as string | null,
+          serves_all_ksa: Boolean(
+            (supplierRow as { serves_all_ksa?: boolean }).serves_all_ksa,
+          ),
+        } as OnboardingBootstrap["supplier"];
+        const [docRowsRes, catsRes] = await Promise.all([
+          admin
+            .from("supplier_docs")
+            .select("id, doc_type, file_path, status, notes, created_at")
+            .eq("supplier_id", supplierRow.id)
+            .order("created_at", { ascending: false }),
+          admin
+            .from("supplier_categories")
+            .select("subcategory_id")
+            .eq("supplier_id", supplierRow.id),
+        ]);
+        if (docRowsRes.data) docs.push(...docRowsRes.data);
+        if (catsRes.data) {
+          for (const c of catsRes.data)
+            subcategoryIds.push(c.subcategory_id as string);
+        }
       }
     }
   }

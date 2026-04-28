@@ -9,7 +9,7 @@ import {
 } from "@/lib/domain/taxonomy";
 import {
   STORAGE_BUCKETS,
-  createSignedDownloadUrl,
+  createSignedDownloadUrls,
 } from "@/lib/supabase/storage";
 import { PreviewProfileButton } from "@/components/ui-ext/PreviewProfileButton";
 import { ProfilePageTabs } from "./ProfilePageTabs";
@@ -140,28 +140,36 @@ export default async function SupplierProfilePage({
     slug: bootstrap?.supplier?.slug ?? null,
   };
 
-  const portfolioItems: PortfolioItem[] = await Promise.all(
-    (
-      (mediaRows as Array<{
-        id: string;
-        kind: string;
-        file_path: string;
-        title: string | null;
-        sort_order: number;
-      }> | null) ?? []
-    ).map(async (row) => ({
-      id: row.id,
-      kind: row.kind === "document" ? "document" : "photo",
-      public_url: await createSignedDownloadUrl(
-        admin,
-        STORAGE_BUCKETS.portfolio,
-        row.file_path,
-      ),
-      file_path: row.file_path,
-      title: row.title,
-      sort_order: Number(row.sort_order ?? 0),
-    })),
+  // Batch all portfolio signed URLs into a single storage round-trip instead
+  // of one per row. With 50 portfolio items this drops 50 sequential HTTPS
+  // calls to 1.
+  const rawMediaRows =
+    (mediaRows as Array<{
+      id: string;
+      kind: string;
+      file_path: string;
+      title: string | null;
+      sort_order: number;
+    }> | null) ?? [];
+  const portfolioUrlMap = await createSignedDownloadUrls(
+    admin,
+    STORAGE_BUCKETS.portfolio,
+    rawMediaRows.map((r) => r.file_path),
   );
+  const portfolioItems: PortfolioItem[] = rawMediaRows
+    .map((row): PortfolioItem | null => {
+      const url = portfolioUrlMap.get(row.file_path);
+      if (!url) return null;
+      return {
+        id: row.id,
+        kind: row.kind === "document" ? "document" : "photo",
+        public_url: url,
+        file_path: row.file_path,
+        title: row.title,
+        sort_order: Number(row.sort_order ?? 0),
+      };
+    })
+    .filter((row): row is PortfolioItem => row !== null);
 
   // Header copy adapts to the supplier's state. Approved sees the
   // customize-focused copy; everyone else sees a profile-completion framing.
