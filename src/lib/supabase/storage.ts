@@ -72,3 +72,34 @@ export async function createSignedDownloadUrl(
   return data.signedUrl;
 }
 
+/**
+ * Batch variant — returns a Map from path → signed URL for every path the
+ * storage API was able to sign. Paths that fail individually are omitted from
+ * the map (the caller falls back to `null` for those quotes/rows). Useful for
+ * comparison-grid loaders where N rows each need 1–3 URLs and we want one
+ * round-trip per bucket instead of 3·N.
+ */
+export async function createSignedDownloadUrls(
+  client: SupabaseClient,
+  bucket: StorageBucket,
+  paths: string[],
+): Promise<Map<string, string>> {
+  if (paths.length === 0) return new Map();
+  const unique = Array.from(new Set(paths));
+  const { data, error } = await client.storage
+    .from(bucket)
+    .createSignedUrls(unique, SIGNED_URL_SECONDS.download);
+  if (error || !data) {
+    throw new Error(
+      `createSignedDownloadUrls failed: ${error?.message ?? "no data"}`,
+    );
+  }
+  const out = new Map<string, string>();
+  for (const item of data) {
+    if (item.path && !item.error && item.signedUrl) {
+      out.set(item.path, item.signedUrl);
+    }
+  }
+  return out;
+}
+

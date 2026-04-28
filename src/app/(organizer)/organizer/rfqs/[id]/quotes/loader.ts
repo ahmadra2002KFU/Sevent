@@ -16,7 +16,7 @@ import { notFound } from "next/navigation";
 import { requireAccess } from "@/lib/auth/access";
 import {
   STORAGE_BUCKETS,
-  createSignedDownloadUrl,
+  createSignedDownloadUrls,
 } from "@/lib/supabase/storage";
 import {
   parseQuoteSnapshot,
@@ -254,89 +254,91 @@ export async function loadQuotesComparison(
   }
 
   // ---- assemble columns ----------------------------------------------------
-  // Each quote needs up to 3 signed-URL round trips (tech proposal, logo,
-  // fulfilled RFP response). Doing those sequentially across N suppliers
-  // serialised page render at ~3·N round-trips. We fan out across quotes and
-  // across the three URLs per quote — at the comparison grid's ~10-supplier
-  // ceiling that caps concurrent storage calls at ~30, well under the
-  // service-role rate limit.
+  // Each quote needs up to 3 signed URLs (tech proposal, logo, fulfilled RFP
+  // response). Previously we minted those inline per quote → 3·N storage
+  // round-trips. Now we collect every path up front and batch one
+  // `createSignedUrls` call per bucket, dropping the call count to ≤2
+  // regardless of N. Activity per quote is otherwise pure / non-IO.
   const skipped: string[] = [];
-  const assembled = await Promise.all(
-    quotes.map(async (q): Promise<QuoteColumn | null> => {
-      const rev = extractRevision(q.quote_revisions);
-      if (!rev) {
-        // Either no current revision, or `snapshot_jsonb` failed Zod
-        // validation. Either way the grid can't render a column for this
-        // supplier — log the quote_id so ops can correlate with skipped.
-        console.warn("[loader] dropped quote with invalid snapshot", {
-          quote_id: q.id,
-        });
-        skipped.push(q.id);
-        return null;
-      }
 
-      const techPromise = rev.technical_proposal_path
-        ? createSignedDownloadUrl(
-            admin,
-            STORAGE_BUCKETS.docs,
-            rev.technical_proposal_path,
-          ).catch(() => null)
-        : Promise.resolve<string | null>(null);
+  type Prepared = {
+    quote: (typeof quotes)[number];
+    rev: ReturnType<typeof extractRevision>;
+    active: ReturnType<typeof pickActiveRfpRequest>;
+    techPath: string | null;
+    logoPath: string | null;
+    fulfilledPath: string | null;
+  };
 
-      const logoPath = q.suppliers?.logo_path ?? null;
-      const logoPromise = logoPath
-        ? createSignedDownloadUrl(
-            admin,
-            STORAGE_BUCKETS.logos,
-            logoPath,
-          ).catch(() => null)
-        : Promise.resolve<string | null>(null);
-
-      const reqs = requestsByQuote.get(q.id) ?? [];
-      const active = pickActiveRfpRequest(reqs);
-      const fulfilledPromise =
-        active && active.status === "fulfilled" && active.response_file_path
-          ? createSignedDownloadUrl(
-              admin,
-              STORAGE_BUCKETS.docs,
-              active.response_file_path,
-            ).catch(() => null)
-          : Promise.resolve<string | null>(null);
-
-      const [techUrl, logoUrl, fulfilledUrl] = await Promise.all([
-        techPromise,
-        logoPromise,
-        fulfilledPromise,
-      ]);
-
-      return {
+  const prepared: Prepared[] = [];
+  const docsPaths: string[] = [];
+  const logoPaths: string[] = [];
+  for (const q of quotes) {
+    const rev = extractRevision(q.quote_revisions);
+    if (!rev) {
+      console.warn("[loader] dropped quote with invalid snapshot", {
         quote_id: q.id,
-        supplier_id: q.supplier_id,
-        supplier: {
-          business_name: q.suppliers?.business_name ?? "—",
-          base_city: q.suppliers?.base_city ?? null,
-          slug: q.suppliers?.slug ?? null,
-          logo_url: logoUrl,
-          verification_status: q.suppliers?.verification_status ?? null,
-        },
-        invite_source: sourceBySupplier.get(q.supplier_id) ?? null,
-        has_conflict: conflictMap.get(q.supplier_id) === true,
-        submitted_at: q.sent_at,
-        snapshot: rev.snapshot,
-        tech_proposal_url: techUrl,
-        rfp: {
-          status: rfpStatus(active),
-          request_id: active?.id ?? null,
-          message: active?.message ?? null,
-          requested_at: active?.requested_at ?? null,
-          fulfilled_url: fulfilledUrl,
-          responded_at: active?.responded_at ?? null,
-        },
-      };
-    }),
-  );
+      });
+      skipped.push(q.id);
+      continue;
+    }
+    const reqs = requestsByQuote.get(q.id) ?? [];
+    const active = pickActiveRfpRequest(reqs);
+    const techPath = rev.technical_proposal_path ?? null;
+    const logoPath = q.suppliers?.logo_path ?? null;
+    const fulfilledPath =
+      active && active.status === "fulfilled" && active.response_file_path
+        ? active.response_file_path
+        : null;
 
-  const columns = assembled.filter((c): c is QuoteColumn => c !== null);
+    if (techPath) docsPaths.push(techPath);
+    if (fulfilledPath) docsPaths.push(fulfilledPath);
+    if (logoPath) logoPaths.push(logoPath);
+
+    prepared.push({ quote: q, rev, active, techPath, logoPath, fulfilledPath });
+  }
+
+  const [docsUrls, logoUrls] = await Promise.all([
+    createSignedDownloadUrls(admin, STORAGE_BUCKETS.docs, docsPaths).catch(
+      () => new Map<string, string>(),
+    ),
+    createSignedDownloadUrls(admin, STORAGE_BUCKETS.logos, logoPaths).catch(
+      () => new Map<string, string>(),
+    ),
+  ]);
+
+  const columns: QuoteColumn[] = prepared.map((p) => {
+    const techUrl = p.techPath ? (docsUrls.get(p.techPath) ?? null) : null;
+    const logoUrl = p.logoPath ? (logoUrls.get(p.logoPath) ?? null) : null;
+    const fulfilledUrl = p.fulfilledPath
+      ? (docsUrls.get(p.fulfilledPath) ?? null)
+      : null;
+    const rev = p.rev!;
+    return {
+      quote_id: p.quote.id,
+      supplier_id: p.quote.supplier_id,
+      supplier: {
+        business_name: p.quote.suppliers?.business_name ?? "—",
+        base_city: p.quote.suppliers?.base_city ?? null,
+        slug: p.quote.suppliers?.slug ?? null,
+        logo_url: logoUrl,
+        verification_status: p.quote.suppliers?.verification_status ?? null,
+      },
+      invite_source: sourceBySupplier.get(p.quote.supplier_id) ?? null,
+      has_conflict: conflictMap.get(p.quote.supplier_id) === true,
+      submitted_at: p.quote.sent_at,
+      snapshot: rev.snapshot,
+      tech_proposal_url: techUrl,
+      rfp: {
+        status: rfpStatus(p.active),
+        request_id: p.active?.id ?? null,
+        message: p.active?.message ?? null,
+        requested_at: p.active?.requested_at ?? null,
+        fulfilled_url: fulfilledUrl,
+        responded_at: p.active?.responded_at ?? null,
+      },
+    };
+  });
 
   return {
     rfq_id: rfq.id,
