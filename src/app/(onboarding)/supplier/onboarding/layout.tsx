@@ -1,5 +1,5 @@
 import { OnboardingTopbar } from "@/components/supplier/onboarding/OnboardingTopbar";
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import FeedbackWidgetLazy from "@/components/feedback/FeedbackWidgetLazy";
 
 /**
  * Onboarding-only chrome. Sits outside the `(supplier)` route group so
@@ -18,7 +18,7 @@ export default function OnboardingLayout({
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         {children}
       </main>
-      <FeedbackWidget />
+      <FeedbackWidgetLazy />
     </div>
   );
 }
