@@ -363,6 +363,7 @@ function emptyFreeForm(): QuoteSnapshot {
     teardown_fee_halalas: 0,
     vat_rate_pct: 0,
     vat_amount_halalas: 0,
+    prices_include_vat: false,
     total_halalas: 0,
     deposit_pct: 0,
     payment_schedule: "",

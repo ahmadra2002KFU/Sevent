@@ -57,6 +57,12 @@ function makeCtx(overrides: CtxOverrides): PricingCtx {
     rules: [],
     distance_km: null,
     source: "rule_engine",
+    // The 13 cases below assert exact total_halalas values straight from
+    // pricing-examples.md, which was authored before VAT was switched on.
+    // Defaulting to VAT-inclusive here makes total === taxable base, so the
+    // existing assertions still hold — the dedicated VAT block below
+    // exercises the exclusive-mode math separately.
+    prices_include_vat: true,
     addons: {
       setup_fee_halalas: 0,
       teardown_fee_halalas: 0,
@@ -381,14 +387,47 @@ describe("composePrice — pricing-examples.md (13 deterministic cases)", () => 
     expect(snapshot.total_halalas).toBe(0);
   });
 
-  it("Case 13 — VAT columns present but zero in v1", () => {
+  it("Case 13 — VAT exclusive (default): 15% added on top of base", () => {
     const ctx = makeCtx({
       pkg: { base_price_halalas: 1000_00, unit: "event" },
       qty: 1,
+      prices_include_vat: false,
     });
     const { snapshot } = composePrice(ctx);
-    expect(snapshot.vat_rate_pct).toBe(0);
-    expect(snapshot.vat_amount_halalas).toBe(0);
+    expect(snapshot.subtotal_halalas).toBe(1000_00);
+    expect(snapshot.vat_rate_pct).toBe(15);
+    expect(snapshot.vat_amount_halalas).toBe(150_00);
+    expect(snapshot.total_halalas).toBe(1150_00);
+    expect(snapshot.prices_include_vat).toBe(false);
+  });
+
+  it("Case 13b — VAT inclusive: 15% reverse-derived from gross base", () => {
+    const ctx = makeCtx({
+      pkg: { base_price_halalas: 1150_00, unit: "event" },
+      qty: 1,
+      prices_include_vat: true,
+    });
+    const { snapshot } = composePrice(ctx);
+    expect(snapshot.subtotal_halalas).toBe(1150_00);
+    expect(snapshot.vat_rate_pct).toBe(15);
+    // 1150_00 × 15 / 115 = 150_00 — back-derived VAT portion.
+    expect(snapshot.vat_amount_halalas).toBe(150_00);
+    // Total equals the gross base; VAT is "of which", not added on top.
+    expect(snapshot.total_halalas).toBe(1150_00);
+    expect(snapshot.prices_include_vat).toBe(true);
+  });
+
+  it("Case 13c — VAT exclusive base includes setup + teardown + travel", () => {
+    const ctx = makeCtx({
+      pkg: { base_price_halalas: 800_00, unit: "event" },
+      qty: 1,
+      prices_include_vat: false,
+      addons: { setup_fee_halalas: 150_00, teardown_fee_halalas: 100_00 },
+    });
+    const { snapshot } = composePrice(ctx);
+    // Base = 800 + 150 + 100 = 1050. VAT 15% = 157.50 → 157_50. Total = 1207_50.
+    expect(snapshot.vat_amount_halalas).toBe(157_50);
+    expect(snapshot.total_halalas).toBe(1207_50);
   });
 });
 

@@ -49,6 +49,14 @@ export type QuoteSnapshot = {
   teardown_fee_halalas: number;
   vat_rate_pct: number;
   vat_amount_halalas: number;
+  /**
+   * Whether the supplier-entered prices already include VAT. When true,
+   * `total_halalas` equals the gross base and `vat_amount_halalas` is the
+   * portion already inside it. When false (default), VAT is added on top.
+   * Optional for backward-compatibility with snapshots written before VAT
+   * was switched on.
+   */
+  prices_include_vat?: boolean;
   total_halalas: number;
   deposit_pct: number;
   payment_schedule: string;
@@ -164,6 +172,7 @@ export const QuoteSnapshotSchema = z
     teardown_fee_halalas: z.number().int(),
     vat_rate_pct: z.number(),
     vat_amount_halalas: z.number().int(),
+    prices_include_vat: z.boolean().optional(),
     total_halalas: z.number().int(),
     deposit_pct: z.number(),
     payment_schedule: z.string(),

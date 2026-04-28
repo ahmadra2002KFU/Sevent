@@ -80,6 +80,7 @@ const lineItemSchema = z.object({
 
 const formSchema = z.object({
   source: z.enum(["rule_engine", "free_form", "mixed"] as const),
+  prices_include_vat: z.boolean(),
   line_items: z.array(lineItemSchema).min(1),
   setup_fee_sar: moneyStringSchema,
   teardown_fee_sar: moneyStringSchema,
@@ -91,6 +92,8 @@ const formSchema = z.object({
   notes: z.string().max(1024),
   expires_at: z.string(),
 });
+
+const VAT_RATE_PCT = 15;
 
 type FormValues = z.input<typeof formSchema>;
 
@@ -214,18 +217,31 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   const exclusionsPayload = splitLines(values.exclusions_text ?? "");
 
   // Preview total — reflects the user's current edits (line totals + setup +
-  // teardown). In engine/mixed mode the server re-derives travel fee + VAT
-  // on send, so this is a client-side approximation, not the final amount.
+  // teardown + VAT). Mirrors engine.ts step 8/9; in engine/mixed mode the
+  // server re-derives travel fee separately, so this is a client-side
+  // approximation, not the final amount.
   const liveSubtotalHalalas = lineItemsPayload.reduce(
     (sum, li) => sum + (Number.isFinite(li.total_halalas) ? li.total_halalas : 0),
     0,
   );
   const liveSetupHalalas = tryHalalas(values.setup_fee_sar);
   const liveTeardownHalalas = tryHalalas(values.teardown_fee_sar);
-  const liveTotalHalalas = Math.max(
+  const liveTaxableBaseHalalas = Math.max(
     0,
     Math.round(liveSubtotalHalalas + liveSetupHalalas + liveTeardownHalalas),
   );
+  const pricesIncludeVat = values.prices_include_vat === true;
+  const liveVatHalalas = pricesIncludeVat
+    ? Math.round(
+        (liveTaxableBaseHalalas * VAT_RATE_PCT) / (100 + VAT_RATE_PCT),
+      )
+    : Math.round((liveTaxableBaseHalalas * VAT_RATE_PCT) / 100);
+  const liveTotalHalalas = pricesIncludeVat
+    ? liveTaxableBaseHalalas
+    : liveTaxableBaseHalalas + liveVatHalalas;
+  const liveBeforeVatHalalas = pricesIncludeVat
+    ? liveTaxableBaseHalalas - liveVatHalalas
+    : liveTaxableBaseHalalas;
 
   return (
     <form action={formAction} className="flex flex-col gap-6" noValidate>
@@ -245,6 +261,11 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       <input type="hidden" name="inclusions" value={JSON.stringify(inclusionsPayload)} />
       <input type="hidden" name="exclusions" value={JSON.stringify(exclusionsPayload)} />
       <input type="hidden" name="source" value={values.source ?? "rule_engine"} />
+      <input
+        type="hidden"
+        name="prices_include_vat"
+        value={pricesIncludeVat ? "true" : "false"}
+      />
       <input type="hidden" name="setup_fee_sar" value={values.setup_fee_sar ?? ""} />
       <input type="hidden" name="teardown_fee_sar" value={values.teardown_fee_sar ?? ""} />
       <input type="hidden" name="deposit_pct" value={String(values.deposit_pct ?? 0)} />
@@ -301,6 +322,24 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
             {t("addLineItem")}
           </Button>
         </div>
+
+        <label className="flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 accent-brand-cobalt-500"
+            {...register("prices_include_vat")}
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="font-medium text-foreground">
+              {t("pricesIncludeVat", { rate: VAT_RATE_PCT })}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {pricesIncludeVat
+                ? t("pricesIncludeVatHintOn", { rate: VAT_RATE_PCT })
+                : t("pricesIncludeVatHintOff", { rate: VAT_RATE_PCT })}
+            </span>
+          </span>
+        </label>
 
         <div className="overflow-hidden rounded-lg border border-border">
           <Table className="min-w-[720px]">
@@ -479,13 +518,29 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 
       {/* Totals summary — live from current form state, not the stale snapshot. */}
       <section className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-foreground">{t("total")}</span>
-          <span className="text-lg font-semibold text-brand-navy-900">
-            {formatHalalas(liveTotalHalalas)}
-          </span>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <dl className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-muted-foreground">
+            <dt>{t("subtotalBeforeVat")}</dt>
+            <dd className="tabular-nums">
+              {formatHalalas(liveBeforeVatHalalas)}
+            </dd>
+          </div>
+          <div className="flex items-center justify-between text-muted-foreground">
+            <dt>
+              {pricesIncludeVat
+                ? t("vatOfWhich", { rate: VAT_RATE_PCT })
+                : t("vatLine", { rate: VAT_RATE_PCT })}
+            </dt>
+            <dd className="tabular-nums">{formatHalalas(liveVatHalalas)}</dd>
+          </div>
+          <div className="mt-1 flex items-center justify-between border-t pt-2.5">
+            <dt className="font-medium text-foreground">{t("total")}</dt>
+            <dd className="text-lg font-semibold text-brand-navy-900 tabular-nums">
+              {formatHalalas(liveTotalHalalas)}
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-xs text-muted-foreground">
           {isEngineMode ? t("totalHintEngine") : t("totalHintFreeForm")}
         </p>
       </section>
@@ -653,6 +708,7 @@ function ErrorText({ msg }: { msg?: string }) {
 function buildDefaults(snapshot: QuoteSnapshot): FormValues {
   return {
     source: snapshot.source,
+    prices_include_vat: snapshot.prices_include_vat === true,
     line_items:
       snapshot.line_items.length > 0
         ? snapshot.line_items.map((li) => ({

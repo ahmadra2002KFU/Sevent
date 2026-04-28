@@ -35,6 +35,7 @@ import {
 } from "@/lib/domain/quote";
 import {
   composePrice,
+  VAT_RATE_PCT,
   type PricingCtx,
   type PricingPackageInput,
   type PricingRuleInput,
@@ -97,6 +98,12 @@ const submissionSchema = z.object({
   // Addons in SAR strings — converted to halalas before engine call.
   setup_fee_sar: sarMoneyString,
   teardown_fee_sar: sarMoneyString,
+  // FormData stringifies the checkbox; treat "true"/"on"/"1" as on, anything
+  // else (including absent) as off. z.coerce.boolean would treat "false" as
+  // truthy, which is exactly the bug we want to avoid.
+  prices_include_vat: z
+    .union([z.string(), z.boolean(), z.undefined(), z.null()])
+    .transform((v) => v === true || v === "true" || v === "on" || v === "1"),
   deposit_pct: z.coerce.number().min(0).max(100).default(0),
   payment_schedule: z.string().trim().max(500).default(""),
   cancellation_terms: z.string().trim().max(500).default(""),
@@ -144,6 +151,7 @@ function readSubmission(formData: FormData): QuoteSubmissionParsed | { error: st
     line_items: parseJsonField<unknown[]>(formData, "line_items", []),
     setup_fee_sar: formData.get("setup_fee_sar") ?? "",
     teardown_fee_sar: formData.get("teardown_fee_sar") ?? "",
+    prices_include_vat: formData.get("prices_include_vat"),
     deposit_pct: formData.get("deposit_pct") ?? 0,
     payment_schedule: formData.get("payment_schedule") ?? "",
     cancellation_terms: formData.get("cancellation_terms") ?? "",
@@ -349,6 +357,7 @@ export async function sendQuoteAction(
       rules: rules.data,
       distance_km,
       source: data.source,
+      prices_include_vat: data.prices_include_vat,
       addons: {
         setup_fee_halalas,
         teardown_fee_halalas,
@@ -377,8 +386,16 @@ export async function sendQuoteAction(
       total_halalas: li.total_halalas,
     }));
     const subtotal = line_items.reduce((acc, li) => acc + li.total_halalas, 0);
-    const total =
-      subtotal + setup_fee_halalas + teardown_fee_halalas; // VAT=0 in v1
+    // Mirror engine.ts step 8/9: same taxable base, same inclusive/exclusive
+    // branches. Free-form has no travel fee (no rules), so the base is just
+    // subtotal + addons.
+    const taxable_base = subtotal + setup_fee_halalas + teardown_fee_halalas;
+    const vat_amount = data.prices_include_vat
+      ? Math.round((taxable_base * VAT_RATE_PCT) / (100 + VAT_RATE_PCT))
+      : Math.round((taxable_base * VAT_RATE_PCT) / 100);
+    const total = data.prices_include_vat
+      ? taxable_base
+      : taxable_base + vat_amount;
 
     snapshotBase = {
       engine_version: QUOTE_ENGINE_VERSION,
@@ -389,8 +406,9 @@ export async function sendQuoteAction(
       travel_fee_halalas: 0,
       setup_fee_halalas,
       teardown_fee_halalas,
-      vat_rate_pct: 0,
-      vat_amount_halalas: 0,
+      vat_rate_pct: VAT_RATE_PCT,
+      vat_amount_halalas: vat_amount,
+      prices_include_vat: data.prices_include_vat,
       total_halalas: total,
       deposit_pct,
       payment_schedule: data.payment_schedule,
@@ -530,15 +548,17 @@ export async function sendQuoteAction(
   });
 
   // 12. Revalidate both sides of the sent-quote UX, then redirect the supplier
-  //     to the RFQ detail page so they land on a confirmation view (the saved
-  //     quote snapshot + the now-`quoted` invite status) instead of staring at
-  //     the editor with a tiny banner. `redirect()` throws a Next.js control
-  //     signal — it must be the final statement in the success path.
+  //     out of the editor to the RFQ list. They land on a fresh page that
+  //     shows their now-`quoted` invite alongside any other open invites,
+  //     instead of staying parked on the quote builder. `redirect()` throws
+  //     a Next.js control signal — must be the final statement in the
+  //     success path.
+  revalidatePath(`/supplier/rfqs`);
   revalidatePath(`/supplier/rfqs/${data.invite_id}`);
   revalidatePath(`/supplier/rfqs/${data.invite_id}/quote`);
   revalidatePath(`/organizer/rfqs/${data.rfq_id}/quotes`);
 
-  redirect(`/supplier/rfqs/${data.invite_id}?quoteSent=1`);
+  redirect(`/supplier/rfqs?quoteSent=1`);
 }
 
 // ---------------------------------------------------------------------------

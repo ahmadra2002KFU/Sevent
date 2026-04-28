@@ -23,13 +23,16 @@
  *                                  the rule is skipped with reason
  *                                  "no_venue_location" but the engine still
  *                                  returns a valid snapshot with travel = 0)
- *   8. VAT line                  (always written; rate = 0 in v1 for ZATCA
- *                                  readiness — add non-zero in a later sprint
- *                                  without changing schema)
- *   9. total                     (= subtotal + setup + teardown + travel + vat;
- *                                  clamp >= 0; single Math.round at the end
- *                                  for subtotal so floats like 12.5% discount
- *                                  round once — never per-line)
+ *   8. VAT line                  (ZATCA standard 15% on the full taxable base
+ *                                  = subtotal + setup + teardown + travel.
+ *                                  When ctx.prices_include_vat is true, the
+ *                                  supplier's entered prices are gross and we
+ *                                  reverse-derive VAT from the base; otherwise
+ *                                  VAT is added on top.)
+ *   9. total                     (exclusive mode: base + vat. inclusive mode:
+ *                                  base (vat already inside). clamp >= 0; single
+ *                                  Math.round at the end for subtotal so floats
+ *                                  like 12.5% discount round once — never per-line)
  *
  * Invariants:
  * - Pure function; no Date.now(), no Math.random. Same ctx → same output.
@@ -47,6 +50,9 @@ import {
   type QuoteUnit,
 } from "@/lib/domain/quote";
 import { parsePricingRuleConfig, type PricingRuleType } from "./rules";
+
+/** Saudi ZATCA standard VAT rate. */
+export const VAT_RATE_PCT = 15;
 
 /** Package snapshot at the time of quote, as delivered to the engine. */
 export type PricingPackageInput = {
@@ -93,6 +99,13 @@ export type PricingCtx = {
    * future rule type replaces it. Null/undefined means no discount.
    */
   supplier_discount_pct?: number | null;
+  /**
+   * Whether the supplier-entered prices already include VAT (true) or are
+   * net of VAT (false / undefined → defaults to false). Drives step 8: in
+   * inclusive mode we reverse-derive VAT from the gross base and the total
+   * equals the base; in exclusive mode VAT is added on top.
+   */
+  prices_include_vat?: boolean;
   /** Free-form overrides / addons the supplier typed in the quote builder. */
   addons: {
     setup_fee_halalas: number;
@@ -530,19 +543,31 @@ export function composePrice(ctx: PricingCtx): PricingResult {
 
   // --- 8. VAT line --------------------------------------------------------
   //
-  // v1 is pre-ZATCA. The columns are zero but present so future integration
-  // is strictly additive — no schema change required to turn VAT on.
-  const vat_rate_pct = 0;
-  const vat_amount_halalas = 0;
+  // ZATCA standard rate. Base is everything taxable: service subtotal plus
+  // the addon fees and the travel line. If the supplier marked prices as
+  // VAT-inclusive, reverse-derive the VAT portion from the gross base
+  // (vat = base × rate / (100 + rate)); otherwise add it on top.
+  const vat_rate_pct = VAT_RATE_PCT;
+  const taxable_base_halalas =
+    subtotal_halalas + setupFee + teardownFee + travel_fee_halalas;
+  const prices_include_vat = ctx.prices_include_vat === true;
+  let vat_amount_halalas = prices_include_vat
+    ? Math.round(
+        (taxable_base_halalas * VAT_RATE_PCT) / (100 + VAT_RATE_PCT),
+      )
+    : Math.round((taxable_base_halalas * VAT_RATE_PCT) / 100);
+  if (vat_amount_halalas < 0) vat_amount_halalas = 0;
 
   // --- 9. total -----------------------------------------------------------
   //
-  // subtotal + setup + teardown + travel + vat. Clamp >= 0 as a defence in
-  // depth — each component is already non-negative but a future rule type
-  // might produce a negative travel fee (e.g. travel credit) and we want the
-  // customer-facing total to never go negative without loud failure.
-  let total_halalas =
-    subtotal_halalas + setupFee + teardownFee + travel_fee_halalas + vat_amount_halalas;
+  // Inclusive mode: total equals the gross base the supplier already entered.
+  // Exclusive mode: base + VAT. Clamp >= 0 as a defence in depth — each
+  // component is already non-negative but a future rule type might produce a
+  // negative travel fee (e.g. travel credit) and we want the customer-facing
+  // total to never go negative without loud failure.
+  let total_halalas = prices_include_vat
+    ? taxable_base_halalas
+    : taxable_base_halalas + vat_amount_halalas;
   if (total_halalas < 0) total_halalas = 0;
 
   const snapshot: QuoteSnapshot = {
@@ -556,6 +581,7 @@ export function composePrice(ctx: PricingCtx): PricingResult {
     teardown_fee_halalas: teardownFee,
     vat_rate_pct,
     vat_amount_halalas,
+    prices_include_vat,
     total_halalas,
     deposit_pct: addons.deposit_pct,
     payment_schedule: addons.payment_schedule,
