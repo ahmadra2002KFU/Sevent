@@ -95,6 +95,18 @@ export function FeedbackWidget() {
     }
   }, [open]);
 
+  // Allow other UI (e.g. the user-menu "Send feedback" item shown on mobile,
+  // where the floating pill is hidden) to open this dialog without prop
+  // drilling. Single owner stays here so the console-error buffer and dialog
+  // state aren't duplicated.
+  useEffect(() => {
+    function onOpen() {
+      setOpen(true);
+    }
+    window.addEventListener("sevent:open-feedback", onOpen);
+    return () => window.removeEventListener("sevent:open-feedback", onOpen);
+  }, []);
+
   // On successful submit: close dialog, reset fields, and fire a toast.
   // Track the last `ok` we acted on so re-renders don't re-fire the toast.
   const lastHandledRef = useRef<SubmitFeedbackState | null>(null);
@@ -171,7 +183,11 @@ export function FeedbackWidget() {
         // in the user's screenshot (it'd be visually distracting).
         data-feedback-skip-capture=""
         className={cn(
-          "fixed bottom-4 z-40 inline-flex items-center gap-2 rounded-full",
+          // Hidden on mobile — on small viewports the pill overlapped sticky
+          // form actions like "Save event". The user-menu's "Send feedback"
+          // entry covers the mobile path; pill returns at md+ where there's
+          // room beside content.
+          "fixed bottom-4 z-40 hidden items-center gap-2 rounded-full md:inline-flex",
           "bg-brand-navy-900 text-white shadow-brand-md",
           "px-4 py-2.5 text-[13px] font-semibold",
           "hover:bg-brand-navy-700 transition-colors",

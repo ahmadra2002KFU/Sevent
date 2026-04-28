@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FeedbackMenuItem } from "@/components/feedback/FeedbackMenuItem";
 
 type UserMenuProps = {
   email: string;
@@ -62,6 +63,8 @@ export function UserMenu({ email, displayName, tone = "light" }: UserMenuProps) 
             </span>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <FeedbackMenuItem />
         <DropdownMenuSeparator />
         <form action={signOutAction}>
           <DropdownMenuItem asChild>
