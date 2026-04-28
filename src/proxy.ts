@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { resolveAccessForUser } from "@/lib/auth/access";
+import {
+  ACCESS_HEADER_NAME,
+  resolveAccessForUser,
+  signAccessPayload,
+} from "@/lib/auth/access";
 import { isRouteAllowed } from "@/lib/auth/featureMatrix";
 
 const ROLE_PREFIXES = ["/organizer", "/supplier", "/admin"] as const;
@@ -63,7 +67,42 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  return response;
+  // Forward the resolved decision to the page render via a signed header so
+  // `requireAccess()` can skip a duplicate auth + role round-trip. HMAC stops
+  // a forged client header from being trusted; middleware overwrites the
+  // header on every request, so a cached/forged value can't poison a session.
+  // Returns null when SEVENT_ACCESS_SIGNING_SECRET is unset — in that case
+  // we just fall through to the original (slower) response without the
+  // optimization.
+  const token = await signAccessPayload({
+    userId: user.id,
+    email: user.email ?? null,
+    role: decision.role,
+    state: decision.state,
+    bestDestination: decision.bestDestination,
+    allowedRoutePrefixes: decision.allowedRoutePrefixes,
+    features: decision.features,
+    supplierId: decision.supplierId,
+    iat: Date.now(),
+  });
+
+  if (!token) {
+    return response;
+  }
+
+  // Re-create the response with the access header injected on the forwarded
+  // request so the page render sees it via `headers()` from "next/headers".
+  // Cookies set by `updateSession` (refreshed Supabase auth tokens) are
+  // copied across so they still reach the browser.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(ACCESS_HEADER_NAME, token);
+  const finalResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  for (const cookie of response.cookies.getAll()) {
+    finalResponse.cookies.set(cookie);
+  }
+  return finalResponse;
 }
 
 export const config = {
