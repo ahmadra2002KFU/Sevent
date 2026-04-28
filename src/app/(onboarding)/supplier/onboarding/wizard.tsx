@@ -220,7 +220,7 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
         : t("step3Subtitle");
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl font-extrabold tracking-tight text-brand-navy-900">
@@ -237,7 +237,7 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
         />
 
         <Card className="overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <AnimatePresence mode="wait" custom={rtl ? -direction : direction}>
               <motion.div
                 key={step}

@@ -84,33 +84,38 @@ export function ProfilePageTabs({
       onValueChange={handleChange}
       className="w-full gap-4"
     >
-      <TabsList className="self-start">
-        <TabsTrigger
-          value="customize"
-          disabled={!isApproved}
-          title={!isApproved ? lockedTooltip : undefined}
-          aria-label={
-            !isApproved ? `${t("customize")} — ${lockedTooltip}` : undefined
-          }
-          className={!isApproved ? "gap-1.5" : undefined}
-        >
-          {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
-          {t("customize")}
-        </TabsTrigger>
-        <TabsTrigger
-          value="portfolio"
-          disabled={!isApproved}
-          title={!isApproved ? lockedTooltip : undefined}
-          aria-label={
-            !isApproved ? `${t("portfolio")} — ${lockedTooltip}` : undefined
-          }
-          className={!isApproved ? "gap-1.5" : undefined}
-        >
-          {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
-          {t("portfolio")}
-        </TabsTrigger>
-        <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
-      </TabsList>
+      {/* Horizontal-scroll wrapper: TabsList is `inline-flex w-fit`, so the
+          three triggers + lock icons can exceed a narrow viewport. The
+          wrapper lets the row scroll instead of overflowing the page. */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <TabsList className="self-start">
+          <TabsTrigger
+            value="customize"
+            disabled={!isApproved}
+            title={!isApproved ? lockedTooltip : undefined}
+            aria-label={
+              !isApproved ? `${t("customize")} — ${lockedTooltip}` : undefined
+            }
+            className={!isApproved ? "gap-1.5" : undefined}
+          >
+            {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
+            {t("customize")}
+          </TabsTrigger>
+          <TabsTrigger
+            value="portfolio"
+            disabled={!isApproved}
+            title={!isApproved ? lockedTooltip : undefined}
+            aria-label={
+              !isApproved ? `${t("portfolio")} — ${lockedTooltip}` : undefined
+            }
+            className={!isApproved ? "gap-1.5" : undefined}
+          >
+            {!isApproved ? <Lock className="size-3" aria-hidden /> : null}
+            {t("portfolio")}
+          </TabsTrigger>
+          <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
+        </TabsList>
+      </div>
       {isApproved ? (
         <>
           <TabsContent value="customize">
