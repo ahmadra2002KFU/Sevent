@@ -51,6 +51,13 @@ next-env.d.ts
 # per-machine; never belongs in the repo.
 .claude/
 
+# Agent skill installs (personal, per-machine). Managed via `npx skills`.
+.agents/
+.augment/
+.trae/
+.windsurf/
+skills-lock.json
+
 # Scratch / throwaway files
 .tmp/
 .tmp-*
