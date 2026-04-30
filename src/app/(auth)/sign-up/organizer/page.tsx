@@ -90,6 +90,9 @@ export default async function SignUpOrganizerPage() {
                   fullNamePlaceholder: t("fullNamePlaceholder"),
                   emailLabel: t("emailLabel"),
                   emailPlaceholder: t("emailPlaceholder"),
+                  phoneLabel: t("phoneLabel"),
+                  phoneCountryCode: t("phoneCountryCode"),
+                  phonePlaceholder: t("phonePlaceholder"),
                   passwordLabel: t("passwordLabel"),
                   passwordPlaceholder: t("passwordPlaceholder"),
                   passwordHint: t("passwordHint"),
@@ -97,6 +100,7 @@ export default async function SignUpOrganizerPage() {
                   submitting: t("submitting"),
                   errorFullName: t("errorFullName"),
                   errorEmail: t("errorEmail"),
+                  errorPhone: t("errorPhone"),
                   errorPassword: t("errorPassword"),
                 }}
               />

@@ -17,8 +17,10 @@ const SKIPLIST_EXACT = new Set<string>([
   "auth.signUp.emailPlaceholder",
   "auth.signUp.supplier.emailPlaceholder",
   // `+966` international dialing code — identical in both locales (numeric literal).
+  "auth.signUp.phoneCountryCode",
   "auth.signUp.supplier.phoneCountryCode",
   // `5XXXXXXXX` Saudi mobile mask — numeric placeholder, locale-neutral.
+  "auth.signUp.phonePlaceholder",
   "auth.signUp.supplier.phonePlaceholder",
   // `{count}/{max}` numeric bio char counter — locale-neutral format.
   "supplier.onboarding.wizard.bioCharCounter",

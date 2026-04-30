@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PhoneInput } from "@/components/auth/PhoneInput";
 import { signUpAction } from "../actions";
 
 type AuthState = { ok: boolean; error?: string };
@@ -29,6 +30,9 @@ type Labels = {
   fullNamePlaceholder: string;
   emailLabel: string;
   emailPlaceholder: string;
+  phoneLabel: string;
+  phoneCountryCode: string;
+  phonePlaceholder: string;
   passwordLabel: string;
   passwordPlaceholder: string;
   passwordHint: string;
@@ -36,6 +40,7 @@ type Labels = {
   submitting: string;
   errorFullName: string;
   errorEmail: string;
+  errorPhone: string;
   errorPassword: string;
 };
 
@@ -60,13 +65,14 @@ export function SignUpForm({
       .min(2, labels.errorFullName)
       .max(120, labels.errorFullName),
     email: z.string().email(labels.errorEmail),
+    phone: z.string().regex(/^5\d{8}$/, labels.errorPhone),
     password: z.string().min(8, labels.errorPassword),
   });
   type FormValues = z.infer<typeof schema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { fullName: "", email: "", password: "" },
+    defaultValues: { fullName: "", email: "", phone: "", password: "" },
     mode: "onBlur",
   });
 
@@ -78,6 +84,7 @@ export function SignUpForm({
     const fd = new FormData();
     fd.set("fullName", values.fullName);
     fd.set("email", values.email);
+    fd.set("phone", values.phone);
     fd.set("password", values.password);
     fd.set("role", role);
     startTransition(() => formAction(fd));
@@ -146,6 +153,28 @@ export function SignUpForm({
                   name="email"
                   autoComplete="email"
                   placeholder={labels.emailPlaceholder}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel>{labels.phoneLabel}</FormLabel>
+              <FormControl>
+                <PhoneInput
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  countryCode={labels.phoneCountryCode}
+                  placeholder={labels.phonePlaceholder}
+                  invalid={Boolean(fieldState.error)}
+                  onValueChange={(digits) => field.onChange(digits)}
                 />
               </FormControl>
               <FormMessage />

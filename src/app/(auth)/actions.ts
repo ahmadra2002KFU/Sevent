@@ -17,6 +17,7 @@ const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   fullName: z.string().min(2).max(120),
+  phone: z.string().regex(/^5\d{8}$/),
   role: z.enum(["organizer", "supplier"]),
   language: z.enum(["en", "ar"]).default("en"),
 });
@@ -48,6 +49,7 @@ export async function signUpAction(
     email: formData.get("email"),
     password: formData.get("password"),
     fullName: formData.get("fullName"),
+    phone: formData.get("phone"),
     role: formData.get("role"),
     language: formData.get("language") ?? "en",
   });
@@ -59,12 +61,18 @@ export async function signUpAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const { email, password, fullName, role, language } = parsed.data;
+  const { email, password, fullName, phone, role, language } = parsed.data;
+  const canonicalPhone = `+966${phone}`;
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { role, full_name: fullName, language },
+      data: {
+        role,
+        full_name: fullName,
+        phone: canonicalPhone,
+        language,
+      },
       emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/sign-in`,
     },
   });
