@@ -48,6 +48,12 @@ const CITY_TUPLE = CITY_OPTIONS as unknown as readonly [string, ...string[]];
 export const BandInput = z.object({
   subcategory_id: z.string().uuid(),
   notes: z.string().trim().max(2000).optional(),
+  /**
+   * How many of this line item the organizer needs (e.g. 5 photographers, 3
+   * stages). Default 1. The supplier resolves the unit (event/hour/day/...) in
+   * their quote line items — keeping `qty` unit-less here is intentional.
+   */
+  qty: z.coerce.number().int().min(1).max(999).default(1),
 });
 export type BandInput = z.infer<typeof BandInput>;
 
@@ -56,7 +62,7 @@ export const EventFormInput = z
     event_type: z.enum(EVENT_TYPE_TUPLE),
     city: z.enum(CITY_TUPLE),
     client_name: z.string().trim().max(120).optional(),
-    venue_address: z.string().trim().min(3).max(500),
+    venue_address: z.string().trim().max(500).optional().or(z.literal("")),
     starts_at: z.string().datetime(),
     ends_at: z.string().datetime(),
     guest_count: z.coerce.number().int().min(1).max(100000).optional(),

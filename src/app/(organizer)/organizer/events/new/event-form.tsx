@@ -44,7 +44,7 @@ import {
   type CategoryOption,
 } from "../../rfqs/actions";
 
-type BandRow = { subcategory_id: string; notes: string };
+type BandRow = { subcategory_id: string; notes: string; qty: number };
 
 type FormValues = {
   event_type: EventType | "";
@@ -66,6 +66,65 @@ function toIsoIfPresent(local: string): string {
   return d.toISOString();
 }
 
+/**
+ * Compose a date input ("YYYY-MM-DD") + optional time input ("HH:mm") into an
+ * ISO string. When time is missing, the supplied fallback (typically "00:00"
+ * for the start, "23:59" for the end) is used so the schema's `.datetime()`
+ * check still passes and the underlying timestamp column receives a value.
+ */
+function composeDateTime(
+  date: string,
+  time: string,
+  fallbackTime: "00:00" | "23:59",
+): string {
+  if (!date) return "";
+  const t = time && /^\d{2}:\d{2}/.test(time) ? time : fallbackTime;
+  const d = new Date(`${date}T${t}`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString();
+}
+
+/**
+ * Render a friendly "X days [Y hours]" label. When no times are set we treat
+ * the event as whole-day and show days only. When times are set on both sides
+ * we show days+hours (or hours alone when the event spans less than a day).
+ * Returns null when inputs are incomplete or invalid.
+ */
+function formatDuration(
+  startsDate: string,
+  startsTime: string,
+  endsDate: string,
+  endsTime: string,
+  translate: (
+    key: "durationDays" | "durationHours" | "durationDaysHours",
+    args: { days?: number; hours?: number },
+  ) => string,
+): string | null {
+  if (!startsDate || !endsDate) return null;
+  const hasTimes = Boolean(startsTime && endsTime);
+  if (hasTimes) {
+    const start = new Date(`${startsDate}T${startsTime}`);
+    const end = new Date(`${endsDate}T${endsTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    if (!Number.isFinite(diffMs) || diffMs <= 0) return null;
+    const totalHours = Math.round(diffMs / 3_600_000);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    if (days > 0 && hours > 0) {
+      return translate("durationDaysHours", { days, hours });
+    }
+    if (days > 0) return translate("durationDays", { days });
+    return translate("durationHours", { hours: Math.max(1, totalHours) });
+  }
+  const start = new Date(`${startsDate}T00:00`);
+  const end = new Date(`${endsDate}T00:00`);
+  const diffDays = Math.round(
+    (end.getTime() - start.getTime()) / 86_400_000,
+  );
+  const days = Math.max(1, diffDays + 1);
+  return translate("durationDays", { days });
+}
+
 export function EventForm() {
   const t = useTranslations("organizer.eventForm");
   const locale = useLocale();
@@ -81,6 +140,13 @@ export function EventForm() {
   const [bunood, setBunood] = useState<BandRow[]>([]);
   const [bunoodTouched, setBunoodTouched] = useState(false);
   const [categories, setCategories] = useState<CategoriesBundle | null>(null);
+  const [startsDate, setStartsDate] = useState("");
+  const [startsTime, setStartsTime] = useState("");
+  const [endsDate, setEndsDate] = useState("");
+  const [endsTime, setEndsTime] = useState("");
+
+  const startsAtIso = composeDateTime(startsDate, startsTime, "00:00");
+  const endsAtIso = composeDateTime(endsDate, endsTime, "23:59");
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +182,7 @@ export function EventForm() {
       bunood.map((b) => ({
         subcategory_id: b.subcategory_id,
         notes: b.notes.trim() ? b.notes.trim() : undefined,
+        qty: b.qty,
       })),
     [bunood],
   );
@@ -200,9 +267,22 @@ export function EventForm() {
     });
   };
 
-  const watchedStart = watch("starts_at");
   const watchedEventType = watch("event_type");
   const watchedCity = watch("city");
+
+  useEffect(() => {
+    setValue("starts_at", startsAtIso, { shouldValidate: false });
+    setValue("ends_at", endsAtIso, { shouldValidate: false });
+  }, [startsAtIso, endsAtIso, setValue]);
+
+  const durationLabel = formatDuration(
+    startsDate,
+    startsTime,
+    endsDate,
+    endsTime,
+    (key, args) =>
+      t(key as "durationDays" | "durationHours" | "durationDaysHours", args),
+  );
 
   // FormValues doesn't list `bunood`, but the resolver's error map can carry
   // a `bunood` key (the schema's `.min(1)` rule). Read it through a cast.
@@ -269,9 +349,6 @@ export function EventForm() {
                         : "border-border bg-card text-foreground hover:border-brand-cobalt-500/30",
                     )}
                   >
-                    <span className="text-2xl leading-none" aria-hidden>
-                      {segment.icon}
-                    </span>
                     <span className="flex-1 text-sm font-semibold">
                       {label}
                     </span>
@@ -312,42 +389,73 @@ export function EventForm() {
             label={t("venueAddressLabel")}
             htmlFor="venue_address"
             error={errors.venue_address?.message}
-            required
+            helper={isAr ? "اختياري — يكفي اختيار المدينة أعلاه" : "Optional — choosing the city above is enough"}
           >
             <Textarea
               id="venue_address"
               rows={2}
-              {...register("venue_address", { required: true })}
+              {...register("venue_address")}
             />
           </FormField>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField
-              label={t("startsAtLabel")}
-              htmlFor="starts_at"
+              label={t("startDateLabel")}
+              htmlFor="starts_date"
               error={errors.starts_at?.message}
               required
             >
-              <Input
-                id="starts_at"
-                type="datetime-local"
-                {...register("starts_at", { required: true })}
-              />
+              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                <Input
+                  id="starts_date"
+                  type="date"
+                  required
+                  value={startsDate}
+                  onChange={(e) => setStartsDate(e.currentTarget.value)}
+                />
+                <Input
+                  type="time"
+                  aria-label={t("startTimeLabel")}
+                  value={startsTime}
+                  onChange={(e) => setStartsTime(e.currentTarget.value)}
+                />
+              </div>
             </FormField>
             <FormField
-              label={t("endsAtLabel")}
-              htmlFor="ends_at"
+              label={t("endDateLabel")}
+              htmlFor="ends_date"
               error={errors.ends_at?.message}
               required
             >
-              <Input
-                id="ends_at"
-                type="datetime-local"
-                min={watchedStart || undefined}
-                {...register("ends_at", { required: true })}
-              />
+              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                <Input
+                  id="ends_date"
+                  type="date"
+                  required
+                  min={startsDate || undefined}
+                  value={endsDate}
+                  onChange={(e) => setEndsDate(e.currentTarget.value)}
+                />
+                <Input
+                  type="time"
+                  aria-label={t("endTimeLabel")}
+                  value={endsTime}
+                  onChange={(e) => setEndsTime(e.currentTarget.value)}
+                />
+              </div>
             </FormField>
           </div>
+          <input type="hidden" name="starts_at" value={startsAtIso} />
+          <input type="hidden" name="ends_at" value={endsAtIso} />
+          {durationLabel ? (
+            <div
+              className="inline-flex w-fit items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground"
+              aria-live="polite"
+            >
+              <span className="font-medium">{t("durationLabel")}:</span>
+              <span>{durationLabel}</span>
+            </div>
+          ) : null}
 
           <div className="grid gap-5 sm:grid-cols-3">
             <FormField
@@ -564,7 +672,7 @@ function BunoodCard({
   };
 
   const addRow = () => {
-    setBunood((prev) => [...prev, { subcategory_id: "", notes: "" }]);
+    setBunood((prev) => [...prev, { subcategory_id: "", notes: "", qty: 1 }]);
   };
 
   // Single-line row layout: subcategory select | notes input | delete button.
@@ -572,7 +680,7 @@ function BunoodCard({
   // with a subcategory column wide enough for KSA category names and a
   // flexible notes column.
   const ROW_GRID =
-    "sm:grid sm:grid-cols-[minmax(11rem,15rem)_minmax(0,1fr)_2.5rem] sm:items-center sm:gap-3";
+    "sm:grid sm:grid-cols-[minmax(11rem,15rem)_4.5rem_minmax(0,1fr)_2.5rem] sm:items-center sm:gap-3";
 
   return (
     <Card className="overflow-hidden">
@@ -617,6 +725,9 @@ function BunoodCard({
                 {" "}
                 *
               </span>
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("qtyLabel")}
             </span>
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("notesLabel")}
@@ -676,6 +787,29 @@ function BunoodCard({
                       </optgroup>
                     ))}
                   </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 sm:gap-0">
+                  <Label
+                    htmlFor={`band_qty_${idx}`}
+                    className="text-xs text-muted-foreground sm:hidden"
+                  >
+                    {t("qtyLabel")}
+                  </Label>
+                  <Input
+                    id={`band_qty_${idx}`}
+                    type="number"
+                    min={1}
+                    max={999}
+                    value={row.qty}
+                    onChange={(e) =>
+                      updateRow(idx, {
+                        qty: Math.max(1, Number(e.target.value) || 1),
+                      })
+                    }
+                    aria-label={t("qtyLabel")}
+                    className="h-10"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:gap-0">

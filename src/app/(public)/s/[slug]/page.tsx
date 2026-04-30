@@ -98,6 +98,8 @@ export default async function PublicSupplierProfilePage({ params }: PageProps) {
         serviceAreaLabel={t("serviceAreaLabel")}
         servesAllKsaLabel={t("servesAllKsaLabel")}
         languagesLabel={t("languagesLabel")}
+        websiteUrl={supplier.website_url}
+        websiteLabel={t("websiteLabel")}
       />
 
       {/*

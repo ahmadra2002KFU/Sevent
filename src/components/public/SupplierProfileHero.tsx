@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { MapPin, Languages, Globe2 } from "lucide-react";
+import { ExternalLink, MapPin, Languages, Globe2 } from "lucide-react";
 import { VerifiedBadge } from "@/components/public/VerifiedBadge";
 import { Badge } from "@/components/ui/badge";
 import type { SupportedLocale } from "@/lib/domain/formatDate";
@@ -26,6 +26,8 @@ type SupplierProfileHeroProps = {
   serviceAreaLabel: string;
   servesAllKsaLabel: string;
   languagesLabel: string;
+  websiteUrl?: string | null;
+  websiteLabel?: string;
 };
 
 /** Two-letter initials extracted from a supplier's business name. */
@@ -62,6 +64,8 @@ export function SupplierProfileHero({
   serviceAreaLabel,
   servesAllKsaLabel,
   languagesLabel,
+  websiteUrl = null,
+  websiteLabel,
 }: SupplierProfileHeroProps) {
   const initials = getInitials(businessName);
   const isAr = locale === "ar";
@@ -175,6 +179,18 @@ export function SupplierProfileHero({
               <p className="max-w-3xl text-sm leading-relaxed text-foreground">
                 {bio}
               </p>
+            ) : null}
+
+            {websiteUrl ? (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener nofollow ugc"
+                className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-brand-navy-900 transition-colors hover:border-brand-cobalt-500 hover:text-brand-cobalt-500"
+              >
+                <ExternalLink className="size-3.5" aria-hidden />
+                {websiteLabel ?? websiteUrl}
+              </a>
             ) : null}
 
             {subcategories.length > 0 ? (

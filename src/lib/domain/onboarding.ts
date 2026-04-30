@@ -91,6 +91,21 @@ export const OnboardingStep1 = z
       .max(15, "Select at most 15 service-area cities")
       .default([]),
     languages: z.array(z.enum(LANGUAGES)).min(1).default(["ar"]),
+    /**
+     * Outbound link the supplier wants pinned to their public profile (e.g.
+     * portfolio site, Instagram). Optional. Empty string is normalised to
+     * "no link" before persistence.
+     */
+    website_url: z
+      .string()
+      .trim()
+      .max(500)
+      .url()
+      .refine((v) => /^https?:\/\//i.test(v), {
+        message: "Must start with http:// or https://",
+      })
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
   })
   .superRefine((data, ctx) => {
     if (data.legal_type === "company" && !data.cr_number) {

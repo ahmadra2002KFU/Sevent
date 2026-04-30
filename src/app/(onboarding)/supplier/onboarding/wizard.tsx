@@ -299,6 +299,8 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
                       }
                       for (const lang of values.languages)
                         fd.append("languages", lang);
+                      if (values.website_url)
+                        fd.append("website_url", values.website_url);
                       startTransition(async () => {
                         const result = await submitOnboardingStep1(undefined, fd);
                         handleStepResult(result, 2);
@@ -426,6 +428,7 @@ type Step1Values = {
   serves_all_ksa: boolean;
   service_area_cities: string[];
   languages: Array<(typeof LANGUAGES)[number]>;
+  website_url?: string;
 };
 
 function Step1Form({
@@ -474,6 +477,7 @@ function Step1Form({
       languages: ((initial?.languages as Step1Values["languages"]) ?? ["ar"]).filter(
         (l) => (LANGUAGES as readonly string[]).includes(l),
       ) as Step1Values["languages"],
+      website_url: initial?.website_url ?? "",
     },
   });
 
@@ -531,14 +535,22 @@ function Step1Form({
       onSubmit={handleSubmit(onSubmit)}
       noValidate
     >
-      <ImportWebsiteCard
-        labels={{
-          title: t("importWebsite.title"),
-          subtitle: t("importWebsite.subtitle"),
-          placeholder: t("importWebsite.placeholder"),
-          cta: t("importWebsite.cta"),
-          comingSoon: t("importWebsite.comingSoon"),
-        }}
+      <Controller
+        control={control}
+        name="website_url"
+        render={({ field, fieldState }) => (
+          <ImportWebsiteCard
+            inputId="supplier_website_url"
+            labels={{
+              title: t("importWebsite.title"),
+              subtitle: t("importWebsite.subtitle"),
+              placeholder: t("importWebsite.placeholder"),
+            }}
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            error={fieldState.error?.message ?? null}
+          />
+        )}
       />
 
       <Field
@@ -631,42 +643,31 @@ function Step1Form({
       <Field label={t("serviceAreaLabel")} helperKey="helper.serviceArea">
         <Controller
           control={control}
-          name="serves_all_ksa"
-          render={({ field }) => (
-            <ServesAllKsaToggle
-              checked={Boolean(field.value)}
-              onChange={(next) => {
-                field.onChange(next);
-                if (next) {
-                  // Flip ON → wipe any city picks so the refinement passes and
-                  // the picker UI starts fresh if they toggle back off.
-                  setValue("service_area_cities", [], {
-                    shouldDirty: true,
-                    shouldValidate: false,
-                  });
-                }
-              }}
-              labels={{
-                label: t("servesAllKsa.label"),
-                hint: t("servesAllKsa.hint"),
-                chip: t("servesAllKsa.chip"),
-              }}
+          name="service_area_cities"
+          render={({ field: cityField }) => (
+            <Controller
+              control={control}
+              name="serves_all_ksa"
+              render={({ field: allField }) => (
+                <ServiceAreaPicker
+                  excludeSlug={baseCity}
+                  value={cityField.value ?? []}
+                  onChange={cityField.onChange}
+                  servesAllKsa={Boolean(allField.value)}
+                  onServesAllKsaChange={(next) => {
+                    allField.onChange(next);
+                    if (next) {
+                      setValue("service_area_cities", [], {
+                        shouldDirty: true,
+                        shouldValidate: false,
+                      });
+                    }
+                  }}
+                />
+              )}
             />
           )}
         />
-        {servesAllKsa ? null : (
-          <Controller
-            control={control}
-            name="service_area_cities"
-            render={({ field }) => (
-              <ServiceAreaPicker
-                excludeSlug={baseCity}
-                value={field.value ?? []}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        )}
         {!servesAllKsa && serviceAreas.length > 15 ? (
           <p className="text-xs text-semantic-danger-500">
             {t("serviceAreaTooMany")}
@@ -737,10 +738,14 @@ function ServiceAreaPicker({
   value,
   excludeSlug,
   onChange,
+  servesAllKsa,
+  onServesAllKsaChange,
 }: {
   value: string[];
   excludeSlug: string;
   onChange: (next: string[]) => void;
+  servesAllKsa: boolean;
+  onServesAllKsaChange: (next: boolean) => void;
 }) {
   const t = useTranslations("supplier.onboarding");
   const locale = useLocale() as "en" | "ar";
@@ -753,6 +758,8 @@ function ServiceAreaPicker({
     if (slug === excludeSlug) return; // base city should not double up
     if (value.includes(slug)) return;
     if (value.length >= 15) return;
+    // Selecting an individual city implies they don't serve "all KSA".
+    if (servesAllKsa) onServesAllKsaChange(false);
     onChange([...value, slug]);
     setPending("");
     setNonce((n) => n + 1);
@@ -762,69 +769,114 @@ function ServiceAreaPicker({
     onChange(value.filter((s) => s !== slug));
   }
 
+  function toggleAllKsa() {
+    const next = !servesAllKsa;
+    if (next && value.length > 0) {
+      // Flipping ON wipes individual city picks — they're superseded.
+      onChange([]);
+    }
+    onServesAllKsaChange(next);
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {value.length > 0 ? (
-          <motion.ul
-            key="chips"
-            layout
-            className="flex flex-wrap gap-1.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {value.map((slug) => (
-                <motion.li
-                  key={slug}
-                  layout
-                  initial={{ opacity: 0, scale: 0.6, y: -6 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.6, y: -4 }}
-                  transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                >
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => removeCity(slug)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
-                    aria-label={t("serviceAreaRemove", {
-                      city: cityNameFor(slug, locale),
-                    })}
-                  >
-                    <span>{cityNameFor(slug, locale)}</span>
-                    <X className="size-3.5 opacity-70" aria-hidden />
-                  </motion.button>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
-        ) : (
-          <motion.p
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-xs italic text-muted-foreground"
-          >
-            {t("serviceAreaEmpty")}
-          </motion.p>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={servesAllKsa}
+        onClick={toggleAllKsa}
+        className={cn(
+          "flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start transition-colors",
+          servesAllKsa
+            ? "border-brand-cobalt-500 bg-brand-cobalt-100 text-brand-navy-900"
+            : "border-neutral-200 bg-neutral-50 hover:border-brand-cobalt-500/40",
         )}
-      </AnimatePresence>
-      {value.length < 15 ? (
-        <CityCombobox
-          key={nonce}
-          value={pending}
-          onChange={(slug) => appendCity(slug)}
-          placeholder={t("serviceAreaAdd")}
-          ariaLabel={t("serviceAreaAdd")}
-        />
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {t("serviceAreaMaxReached")}
-        </p>
+      >
+        <span
+          className={cn(
+            "inline-flex size-5 shrink-0 items-center justify-center rounded-full border",
+            servesAllKsa
+              ? "border-brand-cobalt-500 bg-brand-cobalt-500 text-white"
+              : "border-neutral-300 bg-white",
+          )}
+          aria-hidden
+        >
+          {servesAllKsa ? <Check className="size-3.5" /> : null}
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-sm font-medium">
+            {t("servesAllKsa.label")}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {t("servesAllKsa.hint")}
+          </span>
+        </span>
+      </button>
+      {servesAllKsa ? null : (
+        <>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {value.length > 0 ? (
+              <motion.ul
+                key="chips"
+                layout
+                className="flex flex-wrap gap-1.5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {value.map((slug) => (
+                    <motion.li
+                      key={slug}
+                      layout
+                      initial={{ opacity: 0, scale: 0.6, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.6, y: -4 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                    >
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => removeCity(slug)}
+                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                        aria-label={t("serviceAreaRemove", {
+                          city: cityNameFor(slug, locale),
+                        })}
+                      >
+                        <span>{cityNameFor(slug, locale)}</span>
+                        <X className="size-3.5 opacity-70" aria-hidden />
+                      </motion.button>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            ) : (
+              <motion.p
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-xs italic text-muted-foreground"
+              >
+                {t("serviceAreaEmpty")}
+              </motion.p>
+            )}
+          </AnimatePresence>
+          {value.length < 15 ? (
+            <CityCombobox
+              key={nonce}
+              value={pending}
+              onChange={(slug) => appendCity(slug)}
+              placeholder={t("serviceAreaAdd")}
+              ariaLabel={t("serviceAreaAdd")}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {t("serviceAreaMaxReached")}
+            </p>
+          )}
+        </>
       )}
     </div>
   );
@@ -1278,69 +1330,3 @@ function Field({
   );
 }
 
-// ---------------------------------------------------------------------------
-// ServesAllKsaToggle — switch that flips the service-area field into a single
-// "Serves all KSA" declaration. Supersedes individual city picks; the Zod
-// refinement in OnboardingStep1 enforces that the two can't coexist.
-// ---------------------------------------------------------------------------
-
-function ServesAllKsaToggle({
-  checked,
-  onChange,
-  labels,
-}: {
-  checked: boolean;
-  onChange: (next: boolean) => void;
-  labels: { label: string; hint: string; chip: string };
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "group flex items-center gap-3 rounded-xl border p-3 text-start transition-colors",
-          checked
-            ? "border-brand-cobalt-500/60 bg-brand-cobalt-100/40"
-            : "border-neutral-200 bg-neutral-50 hover:border-brand-cobalt-500/40",
-        )}
-      >
-        <span
-          className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-            checked ? "bg-brand-cobalt-500" : "bg-neutral-300",
-          )}
-        >
-          <span
-            className={cn(
-              "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
-              checked ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5",
-            )}
-          />
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="text-sm font-medium text-foreground">
-            {labels.label}
-          </span>
-          <span className="text-xs text-muted-foreground">{labels.hint}</span>
-        </span>
-      </button>
-      <AnimatePresence initial={false}>
-        {checked ? (
-          <motion.div
-            key="all-ksa-chip"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-xs text-brand-navy-900"
-          >
-            <Check className="size-3.5" aria-hidden />
-            {labels.chip}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}

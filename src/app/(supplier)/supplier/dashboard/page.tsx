@@ -23,6 +23,7 @@ import { PendingReviewChecklist } from "@/components/supplier/onboarding/Pending
 import { CelebrationBanner } from "@/components/supplier/onboarding/CelebrationBanner";
 import { FirstRunDashboardCard } from "@/components/supplier/onboarding/FirstRunDashboardCard";
 import { ApprovedCelebration } from "@/components/supplier/ApprovedCelebration";
+import { OpportunitiesPreviewCard } from "@/components/supplier/dashboard/OpportunitiesPreviewCard";
 import { dismissCelebrationAction } from "./celebration-actions";
 import type {
   QuoteStatus,
@@ -490,10 +491,17 @@ export default async function SupplierDashboardPage() {
 
       {statusCard ? <StatusCard card={statusCard} /> : null}
 
+      {journeyState === "live" ? (
+        <OpportunitiesPreviewCard
+          supplierId={supplierSummary.id}
+          locale={locale}
+        />
+      ) : null}
+
       <div
         className={cn(
           "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 transition-opacity",
-          locked && "opacity-60",
+          (locked || journeyState === "live") && "opacity-60",
         )}
       >
         <MetricCard
@@ -525,7 +533,7 @@ export default async function SupplierDashboardPage() {
       <div
         className={cn(
           "grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] transition-opacity",
-          locked && "opacity-70",
+          (locked || journeyState === "live") && "opacity-60",
         )}
       >
         <Card>

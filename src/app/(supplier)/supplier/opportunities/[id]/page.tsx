@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CalendarDays,
   ClockAlert,
+  Hash,
   MapPin,
   Users,
   Wallet,
@@ -52,6 +53,7 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
     opportunity.event.budget_min_halalas,
     opportunity.event.budget_max_halalas,
   );
+  const qty = readQty(opportunity.requirements_jsonb);
 
   return (
     <section className="flex flex-col gap-6">
@@ -107,6 +109,13 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
           label={t("detail.budgetLabel")}
           value={budget ?? t("detail.notDisclosed")}
         />
+        {qty > 1 ? (
+          <InfoTile
+            icon={Hash}
+            label={t("detail.qtyLabel")}
+            value={String(qty)}
+          />
+        ) : null}
       </div>
 
       <Card>
@@ -169,7 +178,9 @@ function RequirementsBlock({
     return <p className="text-sm text-muted-foreground">{emDash}</p>;
   }
   const entries = Object.entries(requirements as Record<string, unknown>).filter(
-    ([k]) => k !== "kind",
+    // `qty` is surfaced as a prominent info tile above; suppress it here so the
+    // requirements block stays focused on free-text/structured organizer notes.
+    ([k]) => k !== "kind" && k !== "qty",
   );
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground">{emDash}</p>;
@@ -191,6 +202,13 @@ function renderRequirementValue(v: unknown): string {
   if (Array.isArray(v)) return v.map(String).join(", ") || "—";
   if (typeof v === "boolean") return v ? "✓" : "—";
   return String(v);
+}
+
+function readQty(requirements: unknown): number {
+  if (!requirements || typeof requirements !== "object") return 1;
+  const raw = (requirements as { qty?: unknown }).qty;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
 function formatBudget(

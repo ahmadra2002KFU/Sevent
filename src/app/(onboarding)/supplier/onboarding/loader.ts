@@ -26,6 +26,7 @@ export type OnboardingBootstrap = {
     is_published: boolean;
     logo_path: string | null;
     works_with_segments: string[];
+    website_url: string | null;
   } | null;
   docs: Array<{
     id: string;
@@ -77,7 +78,7 @@ export async function loadOnboardingBootstrap(
   // Server-side onboarding reads use the service-role client; ownership is
   // still enforced by profile_id/userId filters before data reaches the UI.
   const supplierSelect =
-    "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments";
+    "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments, website_url";
 
   if (userId) {
     let supplierQuery = admin.from("suppliers").select(supplierSelect);
@@ -122,6 +123,9 @@ export async function loadOnboardingBootstrap(
           serves_all_ksa: Boolean(
             (supplierRow as { serves_all_ksa?: boolean }).serves_all_ksa,
           ),
+          website_url:
+            ((supplierRow as { website_url?: string | null }).website_url ??
+              null) as string | null,
         } as OnboardingBootstrap["supplier"];
       }
       if (docRows) docs.push(...docRows);
@@ -150,6 +154,9 @@ export async function loadOnboardingBootstrap(
           serves_all_ksa: Boolean(
             (supplierRow as { serves_all_ksa?: boolean }).serves_all_ksa,
           ),
+          website_url:
+            ((supplierRow as { website_url?: string | null }).website_url ??
+              null) as string | null,
         } as OnboardingBootstrap["supplier"];
         const [docRowsRes, catsRes] = await Promise.all([
           admin

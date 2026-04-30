@@ -92,6 +92,7 @@ export async function submitOnboardingStep1(
       // whole submit.
       service_area_cities: servesAllKsa ? [] : serviceArea,
       languages: languages.length > 0 ? languages : ["ar"],
+      website_url: (formData.get("website_url") as string)?.trim() || "",
     });
     if (!parsed.success) {
       return {
@@ -136,6 +137,7 @@ export async function submitOnboardingStep1(
           serves_all_ksa: payload.serves_all_ksa,
           service_area_cities: payload.service_area_cities,
           languages: payload.languages,
+          website_url: payload.website_url ?? null,
           verification_status: "pending",
           is_published: false,
         })
@@ -156,6 +158,7 @@ export async function submitOnboardingStep1(
       serves_all_ksa: payload.serves_all_ksa,
       service_area_cities: payload.service_area_cities,
       languages: payload.languages,
+      website_url: payload.website_url ?? null,
     };
     if (payload.business_name !== supplier.business_name) {
       const priorBase = slugifyBusinessName(supplier.business_name ?? "");

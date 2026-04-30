@@ -102,7 +102,11 @@ async function publishBunoodForEvent(
     subcategory_id: b.subcategory_id,
     status: "sent" as const,
     sent_at: sentAt,
-    requirements_jsonb: { kind: "generic", notes: b.notes ?? "" },
+    requirements_jsonb: {
+      kind: "generic",
+      notes: b.notes ?? "",
+      qty: b.qty ?? 1,
+    },
   }));
 
   const { data: inserted, error: rfqErr } = await supabase
@@ -170,7 +174,7 @@ export async function createEventAction(formData: FormData): Promise<void> {
     client_name: parsed.client_name ?? null,
     event_type: parsed.event_type,
     city: parsed.city,
-    venue_address: parsed.venue_address,
+    venue_address: parsed.venue_address ? parsed.venue_address : null,
     starts_at: parsed.starts_at,
     ends_at: parsed.ends_at,
     guest_count: parsed.guest_count ?? null,
@@ -246,6 +250,7 @@ export async function addBandAction(input: unknown): Promise<AddBandResult> {
       {
         subcategory_id: parsed.data.subcategory_id,
         notes: parsed.data.notes,
+        qty: parsed.data.qty,
       },
     ]);
   } catch (err) {

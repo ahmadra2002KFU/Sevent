@@ -90,6 +90,8 @@ export type PublicSupplierProfile = {
   profile_sections_order: string[];
   /** Company profile PDF download, when the supplier has an approved row. */
   company_profile: PublicSupplierCompanyProfileDoc | null;
+  /** Optional outbound link the supplier added during onboarding. */
+  website_url: string | null;
   packages: PublicSupplierPackage[];
   media: PublicSupplierMedia[];
   subcategories: PublicSupplierSubcategory[];
@@ -113,7 +115,7 @@ export async function getPublicSupplierBySlug(
   const { data: supplier, error: supplierErr } = await supabase
     .from("suppliers")
     .select(
-      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, serves_all_ksa, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order",
+      "id, profile_id, slug, business_name, bio, base_city, service_area_cities, serves_all_ksa, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order, website_url",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -324,6 +326,10 @@ export async function getPublicSupplierBySlug(
     accent_color: accentColor,
     profile_sections_order: profileSectionsOrder,
     company_profile: companyProfile,
+    website_url:
+      ((supplier as { website_url?: string | null }).website_url ?? null) as
+        | string
+        | null,
     packages,
     media,
     subcategories,

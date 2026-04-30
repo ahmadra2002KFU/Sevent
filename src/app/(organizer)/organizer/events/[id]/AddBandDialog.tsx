@@ -49,6 +49,7 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
   const [open, setOpen] = useState(false);
   const [subcategoryId, setSubcategoryId] = useState("");
   const [notes, setNotes] = useState("");
+  const [qty, setQty] = useState(1);
   const [categories, setCategories] = useState<CategoriesBundle | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -85,6 +86,7 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
   const reset = () => {
     setSubcategoryId("");
     setNotes("");
+    setQty(1);
   };
 
   const handleSubmit = () => {
@@ -94,6 +96,7 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
         event_id: eventId,
         subcategory_id: subcategoryId,
         notes: notes.trim() ? notes.trim() : undefined,
+        qty,
       });
       if (result.ok) {
         toast.success(t("bandSavedToast"));
@@ -161,6 +164,18 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
                 </optgroup>
               ))}
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="add_band_qty">{t("qtyLabel")}</Label>
+            <Input
+              id="add_band_qty"
+              type="number"
+              min={1}
+              max={999}
+              value={qty}
+              onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

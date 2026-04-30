@@ -638,11 +638,9 @@
         "continue": "متابعة"
       },
       "importWebsite": {
-        "title": "لديك موقع إلكتروني؟",
-        "subtitle": "ألصق الرابط ونعبّئ الحقول تلقائياً",
-        "placeholder": "https://",
-        "cta": "استيراد",
-        "comingSoon": "قريباً — سنُفعّل الاستيراد التلقائي لاحقاً"
+        "title": "أضف رابطًا لملفك",
+        "subtitle": "اختياري — موقعك أو معرض أعمالك أو حسابك الاجتماعي. سيظهر الرابط على ملفك العام ليزوره العملاء.",
+        "placeholder": "https://"
       },
       "autosave": {
         "saved": "تم الحفظ تلقائياً قبل ثوانٍ"
@@ -1149,6 +1147,8 @@
       "onePerLine": "عنصر واحد في كل سطر.",
       "notes": "ملاحظات",
       "expiresAt": "صلاحية العرض حتى",
+      "validityDaysLabel": "مدة صلاحية العرض (بالأيام)",
+      "validityDaysHint": "هذا العرض ساري لمدة {days, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}} — ينتهي في {endDate}",
       "totalHintFreeForm": "الإجمالي هو مجموع بنود التسعير مع الإضافات.",
       "totalHintEngine": "يُعاد احتساب الإجمالي من قواعدك عند الإرسال.",
       "pricesIncludeVat": "الأسعار تشمل ضريبة القيمة المضافة {rate}%",
@@ -1178,7 +1178,7 @@
     "opportunities": {
       "title": "فرص السوق",
       "subtitle": "تصفح طلبات العروض المنشورة وتقدّم إلى ما يناسبك. تقديمك يُرسل عرض سعر كاملاً، ويراه المنظّم بجانب عروض المورّدين المدعوّين.",
-      "applyCta": "عرض والتقديم",
+      "applyCta": "عرض التفاصيل",
       "backToList": "عودة إلى الفرص",
       "guestsLabel": "الضيوف",
       "budgetLabel": "الميزانية",
@@ -1207,6 +1207,7 @@
         "startsAtLabel": "نافذة الفعالية",
         "guestsLabel": "الضيوف",
         "budgetLabel": "الميزانية",
+        "qtyLabel": "الكمية",
         "notDisclosed": "غير محدّدة",
         "requirements": "متطلبات المنظّم",
         "noRequirements": "لا توجد متطلبات إضافية — لم يضف المنظّم تفاصيل خاصة.",
@@ -1327,7 +1328,7 @@
     "pending": {
       "statusPill": "حالة الطلب · قيد المراجعة",
       "title": "استلمنا طلبك",
-      "sub": "فريق التوثيق يراجع الآن مستنداتك. عادةً ما تستغرق المراجعة ٢٤ ساعة عمل.",
+      "sub": "سيتم مراجعة ملفاتك والرد خلال 24 ساعة.",
       "emailNotice": "سنرسل إشعاراً على {email} فور اعتماد ملفك",
       "timeline": [
         {
@@ -1686,6 +1687,14 @@
       "venueAddressLabel": "عنوان المكان",
       "startsAtLabel": "البداية",
       "endsAtLabel": "النهاية",
+      "startDateLabel": "تاريخ البداية",
+      "endDateLabel": "تاريخ النهاية",
+      "startTimeLabel": "وقت البداية (اختياري)",
+      "endTimeLabel": "وقت النهاية (اختياري)",
+      "durationLabel": "المدة الإجمالية",
+      "durationDays": "{days, plural, one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+      "durationHours": "{hours, plural, one {ساعة واحدة} two {ساعتان} few {# ساعات} many {# ساعة} other {# ساعة}}",
+      "durationDaysHours": "{days, plural, one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}} و{hours, plural, one {ساعة واحدة} two {ساعتان} few {# ساعات} many {# ساعة} other {# ساعة}}",
       "guestCountLabel": "عدد المدعوين",
       "budgetMinLabel": "الحد الأدنى للميزانية (SAR)",
       "budgetMaxLabel": "الحد الأعلى للميزانية (SAR)",
@@ -1717,6 +1726,7 @@
         "tableDescription": "لكل بند ستُرسل دعوة عرض سعر للموردين في هذا التخصص. تظهر مباشرة في السوق.",
         "subcategoryLabel": "التخصص",
         "subcategoryPlaceholder": "اختر التخصص",
+        "qtyLabel": "الكمية",
         "notesLabel": "ملاحظات (اختياري)",
         "notesPlaceholder": "أي تفاصيل إضافية تساعد المورد على تجهيز عرضه",
         "addBand": "إضافة بند",
@@ -2157,6 +2167,7 @@
       "servesAllKsaLabel": "يخدم جميع مناطق المملكة",
       "languages": "اللغات: {list}",
       "languagesLabel": "اللغات",
+      "websiteLabel": "زيارة الموقع",
       "backToHome": "← العودة إلى سِيفِنت",
       "qtyRange": "الكمية {min} – {max}",
       "packageUnit": {

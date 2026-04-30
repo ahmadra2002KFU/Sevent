@@ -638,11 +638,9 @@
         "continue": "Continue"
       },
       "importWebsite": {
-        "title": "Got a website?",
-        "subtitle": "Paste the link and we'll prefill the form",
-        "placeholder": "https://",
-        "cta": "Import",
-        "comingSoon": "Coming soon — automatic import isn't enabled yet."
+        "title": "Add a link to your profile",
+        "subtitle": "Optional — your website, portfolio, or social handle. We'll show it on your public profile so clients can visit it.",
+        "placeholder": "https://"
       },
       "autosave": {
         "saved": "Draft saved moments ago"
@@ -1149,6 +1147,8 @@
       "onePerLine": "One per line.",
       "notes": "Notes",
       "expiresAt": "Quote valid until",
+      "validityDaysLabel": "Quote valid for (days)",
+      "validityDaysHint": "This offer is valid for {days, plural, one {# day} other {# days}} — ends on {endDate}",
       "totalHintFreeForm": "Free-form total is the sum of your line items plus add-ons.",
       "totalHintEngine": "The server recomputes totals from your rules on send.",
       "pricesIncludeVat": "Prices already include {rate}% VAT",
@@ -1178,7 +1178,7 @@
     "opportunities": {
       "title": "Marketplace opportunities",
       "subtitle": "Browse published RFQs and apply to the ones that fit you. Applying submits a full quote — the organizer sees it alongside invited suppliers' quotes.",
-      "applyCta": "View & apply",
+      "applyCta": "View details",
       "backToList": "Back to opportunities",
       "guestsLabel": "Guests",
       "budgetLabel": "Budget",
@@ -1207,6 +1207,7 @@
         "startsAtLabel": "Event window",
         "guestsLabel": "Guests",
         "budgetLabel": "Budget",
+        "qtyLabel": "Quantity",
         "notDisclosed": "Not disclosed",
         "requirements": "Organizer's requirements",
         "noRequirements": "No extra requirements — the organizer didn't add specifics.",
@@ -1327,7 +1328,7 @@
     "pending": {
       "statusPill": "Application status · Under review",
       "title": "We've received your application",
-      "sub": "Our verification team is reviewing your documents. Review usually takes 24 business hours.",
+      "sub": "Your documents will be reviewed and you'll hear back within 24 hours.",
       "emailNotice": "We'll email {email} as soon as your profile is approved",
       "timeline": [
         {
@@ -1686,6 +1687,14 @@
       "venueAddressLabel": "Venue address",
       "startsAtLabel": "Starts at",
       "endsAtLabel": "Ends at",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "startTimeLabel": "Start time (optional)",
+      "endTimeLabel": "End time (optional)",
+      "durationLabel": "Total duration",
+      "durationDays": "{days, plural, one {# day} other {# days}}",
+      "durationHours": "{hours, plural, one {# hour} other {# hours}}",
+      "durationDaysHours": "{days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}",
       "guestCountLabel": "Guest count",
       "budgetMinLabel": "Budget minimum (SAR)",
       "budgetMaxLabel": "Budget maximum (SAR)",
@@ -1717,6 +1726,7 @@
         "tableDescription": "Each line item is auto-published to the marketplace and reaches suppliers in that category.",
         "subcategoryLabel": "Category",
         "subcategoryPlaceholder": "Choose a category",
+        "qtyLabel": "Qty",
         "notesLabel": "Notes (optional)",
         "notesPlaceholder": "Any extra detail that helps suppliers prepare their quote",
         "addBand": "Add line item",
@@ -2157,6 +2167,7 @@
       "servesAllKsaLabel": "Serves all KSA",
       "languages": "Languages: {list}",
       "languagesLabel": "Languages",
+      "websiteLabel": "Visit website",
       "backToHome": "← Back to Sevent",
       "qtyRange": "Qty {min} – {max}",
       "packageUnit": {

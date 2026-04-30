@@ -22,7 +22,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { formatHalalas, halalasToSar, sarToHalalas } from "@/lib/domain/money";
 import type {
@@ -90,7 +90,7 @@ const formSchema = z.object({
   inclusions_text: z.string().max(4000),
   exclusions_text: z.string().max(4000),
   notes: z.string().max(1024),
-  expires_at: z.string(),
+  validity_days: z.coerce.number().int().min(1).max(365),
 });
 
 const VAT_RATE_PCT = 15;
@@ -119,6 +119,7 @@ const TECHNICAL_PROPOSAL_MAX_BYTES = 10 * 1024 * 1024;
 
 export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   const t = useTranslations("supplier.quote");
+  const locale = useLocale();
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     sendQuoteAction,
     initialActionState,
@@ -275,7 +276,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       <input
         type="hidden"
         name="expires_at"
-        value={datetimeLocalToIso(values.expires_at ?? "") ?? ""}
+        value={validityDaysToIso(values.validity_days as number | string | undefined)}
       />
 
       <ActionBanner state={state} />
@@ -472,11 +473,33 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
               {...register("deposit_pct")}
             />
           </LabeledField>
-          <LabeledField label={t("expiresAt")} error={errors.expires_at?.message}>
+          <LabeledField
+            label={t("validityDaysLabel")}
+            error={errors.validity_days?.message}
+          >
             <Input
-              type="datetime-local"
-              {...register("expires_at")}
+              type="number"
+              min={1}
+              max={365}
+              {...register("validity_days")}
             />
+            {(() => {
+              const d = Number(values.validity_days);
+              if (!Number.isFinite(d) || d < 1) return null;
+              const days = Math.floor(d);
+              const endDate = new Date(
+                Date.now() + days * 86_400_000,
+              ).toLocaleDateString(locale, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              });
+              return (
+                <p className="mt-1.5 inline-flex w-fit rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  {t("validityDaysHint", { days, endDate })}
+                </p>
+              );
+            })()}
           </LabeledField>
           <LabeledField
             label={t("paymentSchedule")}
@@ -737,27 +760,17 @@ function buildDefaults(snapshot: QuoteSnapshot): FormValues {
     inclusions_text: snapshot.inclusions.join("\n"),
     exclusions_text: snapshot.exclusions.join("\n"),
     notes: snapshot.notes ?? "",
-    expires_at: snapshot.expires_at ? toDatetimeLocal(snapshot.expires_at) : "",
+    validity_days: snapshot.expires_at
+      ? Math.max(1, Math.ceil((new Date(snapshot.expires_at).getTime() - Date.now()) / 86_400_000))
+      : 14,
   };
 }
 
-function toDatetimeLocal(iso: string): string {
-  // <input type="datetime-local"> expects "YYYY-MM-DDTHH:mm"
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  } catch {
-    return "";
-  }
-}
-
-function datetimeLocalToIso(local: string): string | null {
-  if (!local) return null;
-  const d = new Date(local);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
+function validityDaysToIso(daysRaw: number | string | undefined): string {
+  const days = Number(daysRaw);
+  if (!Number.isFinite(days) || days < 1) return "";
+  const ms = Date.now() + Math.floor(days) * 86_400_000;
+  return new Date(ms).toISOString();
 }
 
 function splitLines(text: string): string[] {

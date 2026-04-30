@@ -260,9 +260,6 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
             {subLabel ? (
               <span className="text-xs text-muted-foreground">{subLabel}</span>
             ) : null}
-            <span className="text-xs text-muted-foreground">
-              · {segmentNameFor(op.event.event_type, locale)}
-            </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">

@@ -69,6 +69,12 @@ export type PhotographyExtension = z.infer<typeof PhotographyExtension>;
 export const GenericExtension = z.object({
   kind: z.literal("generic"),
   notes: z.string().trim().max(2000),
+  /**
+   * Optional quantity hint set by the organizer when adding the بند. Older
+   * RFQs (predating qty support) don't carry this field, so it's optional and
+   * callers should treat absence as "1".
+   */
+  qty: z.coerce.number().int().min(1).max(999).optional(),
 });
 export type GenericExtension = z.infer<typeof GenericExtension>;
 
