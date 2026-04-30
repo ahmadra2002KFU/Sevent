@@ -27,9 +27,6 @@ type GalleryGridProps = {
  * lightbox via shadcn Dialog; document tiles open the PDF in a new tab so the
  * browser's native viewer can render it (an in-page <iframe> would be blocked
  * by the storage host's `X-Frame-Options`).
- *
- * Uses `next/image` with `unoptimized` because the public storage host is not
- * whitelisted in next.config — this behaves like a plain <img> at runtime.
  */
 export function GalleryGrid({
   items,
@@ -68,7 +65,6 @@ export function GalleryGrid({
                   src={item.public_url}
                   alt={item.title ?? businessName}
                   fill
-                  unoptimized
                   sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                   className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
                 />
@@ -120,7 +116,6 @@ export function GalleryGrid({
                 src={active.public_url}
                 alt={active.title ?? businessName}
                 fill
-                unoptimized
                 sizes="95vw"
                 className="object-contain"
               />

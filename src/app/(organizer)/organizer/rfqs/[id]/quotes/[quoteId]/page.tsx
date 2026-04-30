@@ -172,13 +172,24 @@ export default async function OrganizerQuoteDetailPage({
     );
   }
 
-  const { data: revisionRaw } = await admin
-    .from("quote_revisions")
-    .select("id, version, snapshot_jsonb, technical_proposal_path, created_at")
-    .eq("id", quote.current_revision_id)
-    .maybeSingle();
+  // Revision (keyed by quote.current_revision_id) and proposal requests
+  // (keyed by quoteId) are independent — fetch in parallel.
+  const [revisionResult, rfpRowsResult] = await Promise.all([
+    admin
+      .from("quote_revisions")
+      .select("id, version, snapshot_jsonb, technical_proposal_path, created_at")
+      .eq("id", quote.current_revision_id)
+      .maybeSingle(),
+    admin
+      .from("quote_proposal_requests")
+      .select(
+        "id, quote_id, requested_by, requested_at, message, response_file_path, responded_at, status, cancelled_at",
+      )
+      .eq("quote_id", quoteId)
+      .order("requested_at", { ascending: false }),
+  ]);
 
-  const revision = revisionRaw as {
+  const revision = revisionResult.data as {
     id: string;
     version: number;
     snapshot_jsonb: unknown;
@@ -205,53 +216,43 @@ export default async function OrganizerQuoteDetailPage({
     );
   }
 
-  // Tech proposal (optional). Signed URL via service-role client — the
-  // organizer has no direct storage RLS grant on `supplier-docs`, but they're
-  // gated on this page by the quote's (rfq_id, organizer_id) check above so
-  // minting a 1-hour URL is safe.
-  const tTech = await getTranslations("organizer.quote.technicalProposal");
-  const tRfp = await getTranslations("organizer.quote.rfp");
-  let techProposalUrl: string | null = null;
-  if (revision.technical_proposal_path) {
-    try {
-      techProposalUrl = await createSignedDownloadUrl(
-        admin,
-        STORAGE_BUCKETS.docs,
-        revision.technical_proposal_path,
-      );
-    } catch {
-      techProposalUrl = null;
-    }
-  }
-
-  // Latest proposal request (organizer-initiated RFP). Show its status
-  // read-only here; the cancel/re-request UX lives on the comparison grid.
-  const { data: rfpRows } = await admin
-    .from("quote_proposal_requests")
-    .select(
-      "id, quote_id, requested_by, requested_at, message, response_file_path, responded_at, status, cancelled_at",
-    )
-    .eq("quote_id", quoteId)
-    .order("requested_at", { ascending: false });
+  const rfpRows = rfpRowsResult.data;
   const activeRfp = pickActiveRfpRequest(
     (rfpRows ?? []) as QuoteProposalRequest[],
   );
-  let rfpResponseUrl: string | null = null;
-  if (
+
+  // Tech proposal (optional). Signed URL via service-role client — the
+  // organizer has no direct storage RLS grant on `supplier-docs`, but they're
+  // gated on this page by the quote's (rfq_id, organizer_id) check above so
+  // minting a 1-hour URL is safe. Both signed URLs (tech proposal + RFP
+  // response) are independent — mint them in parallel.
+  const tTech = await getTranslations("organizer.quote.technicalProposal");
+  const tRfp = await getTranslations("organizer.quote.rfp");
+
+  const techProposalPath = revision.technical_proposal_path;
+  const rfpResponsePath =
     activeRfp &&
     activeRfp.status === "fulfilled" &&
     activeRfp.response_file_path
-  ) {
-    try {
-      rfpResponseUrl = await createSignedDownloadUrl(
-        admin,
-        STORAGE_BUCKETS.docs,
-        activeRfp.response_file_path,
-      );
-    } catch {
-      rfpResponseUrl = null;
-    }
-  }
+      ? activeRfp.response_file_path
+      : null;
+
+  const [techProposalUrl, rfpResponseUrl] = await Promise.all([
+    techProposalPath
+      ? createSignedDownloadUrl(
+          admin,
+          STORAGE_BUCKETS.docs,
+          techProposalPath,
+        ).catch(() => null)
+      : Promise.resolve<string | null>(null),
+    rfpResponsePath
+      ? createSignedDownloadUrl(
+          admin,
+          STORAGE_BUCKETS.docs,
+          rfpResponsePath,
+        ).catch(() => null)
+      : Promise.resolve<string | null>(null),
+  ]);
 
   return (
     <section className="flex flex-col gap-6">

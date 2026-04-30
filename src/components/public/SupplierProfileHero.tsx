@@ -75,7 +75,6 @@ export function SupplierProfileHero({
               src={heroImageUrl}
               alt={businessName}
               fill
-              unoptimized
               sizes="100vw"
               className="object-cover"
               priority
@@ -116,7 +115,6 @@ export function SupplierProfileHero({
                       src={logoUrl}
                       alt={`${businessName} logo`}
                       fill
-                      unoptimized
                       sizes="80px"
                       className="object-cover"
                     />

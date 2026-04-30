@@ -135,27 +135,37 @@ export default async function EventDetailPage({ params }: PageProps) {
   const event = eventData as EventDetail | null;
   if (!event) notFound();
 
-  if (event.organizer_id !== user.id) {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    const role = (profile as { role: string } | null)?.role;
+  const ownsEvent = event.organizer_id === user.id;
+
+  // Parallelize the admin role check (only needed when not owner) with the
+  // RFQs fetch — they're independent: profile is keyed by user.id, rfqs is
+  // keyed by event_id. The admin check still gates whether the page renders
+  // (notFound) but doesn't gate WHICH rfqs to load.
+  const [profileResult, rfqsResult] = await Promise.all([
+    ownsEvent
+      ? Promise.resolve({ data: null })
+      : admin
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle(),
+    admin
+      .from("rfqs")
+      .select(
+        `id, status, sent_at, created_at,
+       categories:categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar ),
+       rfq_invites ( id, status )`,
+      )
+      .eq("event_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (!ownsEvent) {
+    const role = (profileResult.data as { role: string } | null)?.role;
     if (role !== "admin") notFound();
   }
 
-  const { data: rfqsData } = await admin
-    .from("rfqs")
-    .select(
-      `id, status, sent_at, created_at,
-       categories:categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar ),
-       rfq_invites ( id, status )`,
-    )
-    .eq("event_id", id)
-    .order("created_at", { ascending: false });
-
-  const rfqs = (rfqsData ?? []) as unknown as EventRfq[];
+  const rfqs = (rfqsResult.data ?? []) as unknown as EventRfq[];
 
   const budget =
     event.budget_range_min_halalas !== null ||
