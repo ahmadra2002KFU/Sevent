@@ -15,9 +15,11 @@
  *      builder (the RFQ inbox will also show the row now).
  *   4. Redirect to the existing `/supplier/rfqs/[inviteId]/quote` route where
  *      the QuoteBuilder renders exactly like it does for invited suppliers.
+ *      Use history replacement so browser Back returns to the opportunities
+ *      list instead of the now-consumed marketplace detail URL.
  */
 
-import { redirect } from "next/navigation";
+import { RedirectType, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAccess } from "@/lib/auth/access";
 
@@ -113,5 +115,5 @@ export async function applyToOpportunity(rfqId: string): Promise<
 
   revalidatePath("/supplier/opportunities");
   revalidatePath("/supplier/rfqs");
-  redirect(`/supplier/rfqs/${inviteId}/quote`);
+  redirect(`/supplier/rfqs/${inviteId}/quote`, RedirectType.replace);
 }

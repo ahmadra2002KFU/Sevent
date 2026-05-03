@@ -332,3 +332,24 @@ export async function getMarketplaceOpportunity(params: {
     response_due_at: row.expires_at,
   };
 }
+
+/**
+ * Finds the supplier's regular RFQ invite for a marketplace RFQ after it has
+ * been self-applied or otherwise invited. Used by the marketplace detail route
+ * to avoid showing a 404 for stale history entries after apply.
+ */
+export async function getExistingInviteForMarketplaceOpportunity(params: {
+  rfq_id: string;
+  supplier_id: string;
+}): Promise<{ id: string } | null> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data } = await supabase
+    .from("rfq_invites")
+    .select("id")
+    .eq("rfq_id", params.rfq_id)
+    .eq("supplier_id", params.supplier_id)
+    .maybeSingle();
+
+  return data ? { id: (data as { id: string }).id } : null;
+}

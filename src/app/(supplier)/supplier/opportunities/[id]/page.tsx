@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
@@ -16,7 +16,10 @@ import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
 import { formatHalalas } from "@/lib/domain/money";
 import { segmentNameFor } from "@/lib/domain/segments";
-import { getMarketplaceOpportunity } from "@/lib/domain/marketplace";
+import {
+  getExistingInviteForMarketplaceOpportunity,
+  getMarketplaceOpportunity,
+} from "@/lib/domain/marketplace";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import {
   Card,
@@ -45,7 +48,14 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
     rfq_id: id,
     supplier_id: supplierId,
   });
-  if (!opportunity) notFound();
+  if (!opportunity) {
+    const existingInvite = await getExistingInviteForMarketplaceOpportunity({
+      rfq_id: id,
+      supplier_id: supplierId,
+    });
+    if (existingInvite) redirect(`/supplier/rfqs/${existingInvite.id}/quote`);
+    notFound();
+  }
 
   const categoryLabel = categoryName(opportunity.category, locale);
   const subLabel = categoryName(opportunity.subcategory, locale);
