@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/popover";
 import { KSA_CITIES, type KsaRegionSlug } from "@/lib/domain/cities";
 
+type PrependItem = {
+  /** Search-matchable label and rendered text. */
+  label: string;
+  /** Optional helper line shown beneath the bold label. */
+  description?: string;
+  /** Whether this option is currently the active selection. */
+  selected?: boolean;
+  onSelect: () => void;
+};
+
 type Props = {
   value: string | null | undefined;
   onChange: (slug: string) => void;
@@ -27,6 +37,12 @@ type Props = {
   ariaLabel?: string;
   disabled?: boolean;
   className?: string;
+  /**
+   * Optional bold item rendered at the very top of the dropdown — used by
+   * the supplier service-area picker to surface "Serves all KSA" inside the
+   * city picker instead of as a separate toggle.
+   */
+  prependItem?: PrependItem;
 };
 
 export function CityCombobox({
@@ -36,6 +52,7 @@ export function CityCombobox({
   ariaLabel,
   disabled,
   className,
+  prependItem,
 }: Props) {
   const t = useTranslations("common.cityCombobox");
   const locale = useLocale();
@@ -101,6 +118,28 @@ export function CityCombobox({
           <CommandInput placeholder={t("searchPlaceholder")} />
           <CommandList>
             <CommandEmpty>{t("empty")}</CommandEmpty>
+            {prependItem ? (
+              <CommandGroup>
+                <CommandItem
+                  value={prependItem.label}
+                  data-checked={prependItem.selected ? "true" : undefined}
+                  onSelect={() => {
+                    prependItem.onSelect();
+                    setOpen(false);
+                  }}
+                  className="flex flex-col items-start gap-0.5 py-2.5"
+                >
+                  <span className="text-sm font-bold text-brand-navy-900">
+                    {prependItem.label}
+                  </span>
+                  {prependItem.description ? (
+                    <span className="text-xs text-muted-foreground">
+                      {prependItem.description}
+                    </span>
+                  ) : null}
+                </CommandItem>
+              </CommandGroup>
+            ) : null}
             {grouped.map((g) => (
               <CommandGroup key={g.regionLabel} heading={g.regionLabel}>
                 {g.items.map((c) => {

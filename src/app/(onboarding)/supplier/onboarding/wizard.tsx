@@ -880,105 +880,100 @@ function ServiceAreaPicker({
     onServesAllKsaChange(next);
   }
 
+  const hasAnything = servesAllKsa || value.length > 0;
+
   return (
     <div className="flex flex-col gap-3">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={servesAllKsa}
-        onClick={toggleAllKsa}
-        className={cn(
-          "flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start transition-colors",
-          servesAllKsa
-            ? "border-brand-cobalt-500 bg-brand-cobalt-100 text-brand-navy-900"
-            : "border-neutral-200 bg-neutral-50 hover:border-brand-cobalt-500/40",
-        )}
-      >
-        <span
-          className={cn(
-            "inline-flex size-5 shrink-0 items-center justify-center rounded-full border",
-            servesAllKsa
-              ? "border-brand-cobalt-500 bg-brand-cobalt-500 text-white"
-              : "border-neutral-300 bg-white",
-          )}
-          aria-hidden
-        >
-          {servesAllKsa ? <Check className="size-3.5" /> : null}
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="text-sm font-medium">
-            {t("servesAllKsa.label")}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {t("servesAllKsa.hint")}
-          </span>
-        </span>
-      </button>
-      {servesAllKsa ? null : (
-        <>
-          <AnimatePresence mode="popLayout" initial={false}>
-            {value.length > 0 ? (
-              <motion.ul
-                key="chips"
-                layout
-                className="flex flex-wrap gap-1.5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {value.map((slug) => (
-                    <motion.li
-                      key={slug}
-                      layout
-                      initial={{ opacity: 0, scale: 0.6, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.6, y: -4 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+      <AnimatePresence mode="popLayout" initial={false}>
+        {hasAnything ? (
+          <motion.ul
+            key="chips"
+            layout
+            className="flex flex-wrap gap-1.5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {servesAllKsa ? (
+                <motion.li
+                  key="__all_ksa__"
+                  layout
+                  initial={{ opacity: 0, scale: 0.6, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.6, y: -4 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                >
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => onServesAllKsaChange(false)}
+                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/60 bg-brand-cobalt-100 px-3 py-1 text-sm font-semibold text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                    aria-label={t("servesAllKsa.chip")}
+                  >
+                    <span>{t("servesAllKsa.chip")}</span>
+                    <X className="size-3.5 opacity-70" aria-hidden />
+                  </motion.button>
+                </motion.li>
+              ) : (
+                value.map((slug) => (
+                  <motion.li
+                    key={slug}
+                    layout
+                    initial={{ opacity: 0, scale: 0.6, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.6, y: -4 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                  >
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => removeCity(slug)}
+                      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                      aria-label={t("serviceAreaRemove", {
+                        city: cityNameFor(slug, locale),
+                      })}
                     >
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => removeCity(slug)}
-                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
-                        aria-label={t("serviceAreaRemove", {
-                          city: cityNameFor(slug, locale),
-                        })}
-                      >
-                        <span>{cityNameFor(slug, locale)}</span>
-                        <X className="size-3.5 opacity-70" aria-hidden />
-                      </motion.button>
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </motion.ul>
-            ) : (
-              <motion.p
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-xs italic text-muted-foreground"
-              >
-                {t("serviceAreaEmpty")}
-              </motion.p>
-            )}
-          </AnimatePresence>
-          {value.length < 15 ? (
-            <CityCombobox
-              key={nonce}
-              value={pending}
-              onChange={(slug) => appendCity(slug)}
-              placeholder={t("serviceAreaAdd")}
-              ariaLabel={t("serviceAreaAdd")}
-            />
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t("serviceAreaMaxReached")}
-            </p>
-          )}
-        </>
+                      <span>{cityNameFor(slug, locale)}</span>
+                      <X className="size-3.5 opacity-70" aria-hidden />
+                    </motion.button>
+                  </motion.li>
+                ))
+              )}
+            </AnimatePresence>
+          </motion.ul>
+        ) : (
+          <motion.p
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-xs italic text-muted-foreground"
+          >
+            {t("serviceAreaEmpty")}
+          </motion.p>
+        )}
+      </AnimatePresence>
+      {servesAllKsa ? null : value.length < 15 ? (
+        <CityCombobox
+          key={nonce}
+          value={pending}
+          onChange={(slug) => appendCity(slug)}
+          placeholder={t("serviceAreaAdd")}
+          ariaLabel={t("serviceAreaAdd")}
+          prependItem={{
+            label: t("servesAllKsa.label"),
+            description: t("servesAllKsa.hint"),
+            selected: false,
+            onSelect: () => toggleAllKsa(),
+          }}
+        />
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          {t("serviceAreaMaxReached")}
+        </p>
       )}
     </div>
   );

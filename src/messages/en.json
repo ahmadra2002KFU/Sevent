@@ -715,6 +715,7 @@
         "etaPrefix": "Takes about",
         "etaSuffix": "",
         "cta": "Continue",
+        "ctaLoading": "Continuing...",
         "back": "Back"
       },
       "wizard": {

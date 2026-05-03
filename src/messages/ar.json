@@ -715,6 +715,7 @@
         "etaPrefix": "يستغرق",
         "etaSuffix": "تقريباً",
         "cta": "متابعة",
+        "ctaLoading": "جارٍ المتابعة...",
         "back": "رجوع"
       },
       "wizard": {

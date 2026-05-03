@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, ChevronRight, User } from "lucide-react";
+import { Building2, ChevronRight, Loader2, User } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { PathCard } from "@/components/supplier/onboarding/PathCard";
@@ -16,6 +16,7 @@ export type PathClientLabels = {
   etaPrefix: string;
   etaSuffix: string;
   cta: string;
+  ctaLoading: string;
   back: string;
   freelancer: {
     title: string;
@@ -128,8 +129,17 @@ export function PathClient({ labels }: { labels: PathClientLabels }) {
             "disabled:cursor-not-allowed disabled:opacity-60",
           )}
         >
-          {labels.cta}
-          <ChevronRight className="size-4 rtl:rotate-180" strokeWidth={2} />
+          {pending ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              {labels.ctaLoading}
+            </>
+          ) : (
+            <>
+              {labels.cta}
+              <ChevronRight className="size-4 rtl:rotate-180" strokeWidth={2} />
+            </>
+          )}
         </motion.button>
       </div>
     </div>

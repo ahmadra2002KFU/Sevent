@@ -27,6 +27,7 @@ export default async function SupplierOnboardingPathPage() {
     etaPrefix: t("etaPrefix"),
     etaSuffix: t("etaSuffix"),
     cta: t("cta"),
+    ctaLoading: t("ctaLoading"),
     back: t("back"),
     freelancer: {
       title: t("freelancer.title"),
