@@ -730,6 +730,9 @@
     "catalog": {
       "title": "Catalog",
       "subtitle": "Manage the packages you sell and the pricing rules that adjust the base price.",
+      "comingSoonBadge": "Coming in V2",
+      "comingSoonTitle": "Catalog is coming soon",
+      "comingSoonDescription": "Packages and pricing rules will be available in the next release. For now, suppliers are matched directly through RFQs.",
       "packagesHeading": "Packages",
       "rulesHeading": "Pricing rules",
       "rulesSubheading": "Rules are evaluated in priority order. Only one date surcharge rule wins per event date.",

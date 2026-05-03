@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -57,19 +57,42 @@ export default async function SupplierCatalogPage() {
   );
 
   return (
-    <section className="flex flex-col gap-6">
-      <PageHeader
-        title={t("title")}
-        description={t("subtitle")}
-        actions={actions}
-      />
+    <section className="relative flex flex-col gap-6">
+      <div
+        aria-hidden
+        className="pointer-events-none select-none flex flex-col gap-6 blur-sm"
+      >
+        <PageHeader
+          title={t("title")}
+          description={t("subtitle")}
+          actions={actions}
+        />
 
-      <CatalogClient
-        supplierId={bootstrap.supplier.id}
-        packages={bootstrap.packages}
-        rules={bootstrap.rules}
-        subcategories={bootstrap.subcategories}
-      />
+        <CatalogClient
+          supplierId={bootstrap.supplier.id}
+          packages={bootstrap.packages}
+          rules={bootstrap.rules}
+          subcategories={bootstrap.subcategories}
+        />
+      </div>
+
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[2px]">
+        <div className="mx-4 flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-card/95 p-6 text-center shadow-brand">
+          <Badge
+            variant="outline"
+            className="gap-1 border-brand-cobalt-500/30 bg-brand-cobalt-100 text-brand-cobalt-500"
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            {t("comingSoonBadge")}
+          </Badge>
+          <h2 className="text-xl font-bold tracking-tight text-brand-navy-900">
+            {t("comingSoonTitle")}
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {t("comingSoonDescription")}
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
