@@ -1348,7 +1348,10 @@
           "desc": "Depends on quote quality"
         }
       ],
-      "primaryCta": "Back to dashboard",
+      "primaryCta": "Review your profile",
+      "primaryHref": "/supplier/profile?tab=settings",
+      "browseCta": "Browse the marketplace",
+      "browseHref": "/",
       "chatCta": "Chat with verification team"
     },
     "rejected": {

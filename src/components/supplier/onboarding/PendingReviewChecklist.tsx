@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { MessageCircle, ShieldCheck, XCircle } from "lucide-react";
+import { Compass, MessageCircle, ShieldCheck, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PendingReviewChecklistProps = {
@@ -115,10 +115,17 @@ function PendingHero({
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <Link
-              href="/supplier/dashboard"
+              href={t("primaryHref")}
               className="inline-flex items-center gap-2 rounded-lg bg-brand-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-navy-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2"
             >
               {t("primaryCta")}
+            </Link>
+            <Link
+              href={t("browseHref")}
+              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:border-brand-cobalt-500/40 hover:text-brand-cobalt-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2"
+            >
+              <Compass className="h-4 w-4" aria-hidden />
+              {t("browseCta")}
             </Link>
             <a
               href="mailto:verification@sevent.sa"

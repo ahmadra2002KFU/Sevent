@@ -1348,7 +1348,10 @@
           "desc": "حسب جودة عروضك"
         }
       ],
-      "primaryCta": "عد إلى لوحة التحكم",
+      "primaryCta": "راجع ملفك",
+      "primaryHref": "/supplier/profile?tab=settings",
+      "browseCta": "تصفح المنصة",
+      "browseHref": "/",
       "chatCta": "تحدّث مع فريق التوثيق"
     },
     "rejected": {
