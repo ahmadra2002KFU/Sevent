@@ -17,7 +17,21 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { ar, enUS } from "date-fns/locale";
+import {
+  CalendarIcon,
+  ClipboardList,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import type { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,6 +42,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   EventFormInput,
@@ -72,6 +95,18 @@ function toIsoIfPresent(local: string): string {
  * for the start, "23:59" for the end) is used so the schema's `.datetime()`
  * check still passes and the underlying timestamp column receives a value.
  */
+function ymdFromDate(d: Date | undefined): string {
+  if (!d) return "";
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function dateFromYmd(ymd: string): Date | undefined {
+  if (!ymd) return undefined;
+  const d = new Date(`${ymd}T00:00`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
 function composeDateTime(
   date: string,
   time: string,
@@ -398,51 +433,43 @@ export function EventForm() {
             />
           </FormField>
 
+          <DateRangeField
+            label={t("eventDatesLabel")}
+            startsDate={startsDate}
+            endsDate={endsDate}
+            onChange={(next) => {
+              setStartsDate(ymdFromDate(next.from));
+              setEndsDate(ymdFromDate(next.to));
+            }}
+            error={
+              errors.starts_at?.message ?? errors.ends_at?.message ?? undefined
+            }
+            placeholder={t("eventDatesPlaceholder")}
+            isAr={isAr}
+          />
+
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField
-              label={t("startDateLabel")}
-              htmlFor="starts_date"
-              error={errors.starts_at?.message}
-              required
+              label={t("startTimeLabel")}
+              htmlFor="starts_time"
             >
-              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                <Input
-                  id="starts_date"
-                  type="date"
-                  required
-                  value={startsDate}
-                  onChange={(e) => setStartsDate(e.currentTarget.value)}
-                />
-                <Input
-                  type="time"
-                  aria-label={t("startTimeLabel")}
-                  value={startsTime}
-                  onChange={(e) => setStartsTime(e.currentTarget.value)}
-                />
-              </div>
+              <Input
+                id="starts_time"
+                type="time"
+                value={startsTime}
+                onChange={(e) => setStartsTime(e.currentTarget.value)}
+              />
             </FormField>
             <FormField
-              label={t("endDateLabel")}
-              htmlFor="ends_date"
-              error={errors.ends_at?.message}
-              required
+              label={t("endTimeLabel")}
+              htmlFor="ends_time"
             >
-              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                <Input
-                  id="ends_date"
-                  type="date"
-                  required
-                  min={startsDate || undefined}
-                  value={endsDate}
-                  onChange={(e) => setEndsDate(e.currentTarget.value)}
-                />
-                <Input
-                  type="time"
-                  aria-label={t("endTimeLabel")}
-                  value={endsTime}
-                  onChange={(e) => setEndsTime(e.currentTarget.value)}
-                />
-              </div>
+              <Input
+                id="ends_time"
+                type="time"
+                value={endsTime}
+                onChange={(e) => setEndsTime(e.currentTarget.value)}
+              />
             </FormField>
           </div>
           <input type="hidden" name="starts_at" value={startsAtIso} />
@@ -638,6 +665,117 @@ function FormField({
 }
 
 /**
+ * Date range trigger — a single field-group control that displays the start
+ * and end dates side-by-side and opens a Popover with a `react-day-picker`
+ * range calendar on click. Selecting a range writes back to the form's
+ * `startsDate` / `endsDate` strings via the `onChange` callback. Time pickers
+ * live outside this component so the user can still leave time blank.
+ */
+function DateRangeField({
+  label,
+  startsDate,
+  endsDate,
+  onChange,
+  error,
+  placeholder,
+  isAr,
+}: {
+  label: string;
+  startsDate: string;
+  endsDate: string;
+  onChange: (range: { from?: Date; to?: Date }) => void;
+  error?: string;
+  placeholder: string;
+  isAr: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const range: DateRange = {
+    from: dateFromYmd(startsDate),
+    to: dateFromYmd(endsDate),
+  };
+  const localeCode = isAr ? "ar" : "en";
+  const fmt = (d: Date | undefined) =>
+    d
+      ? d.toLocaleDateString(localeCode, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : null;
+  const startsLabel = fmt(range.from);
+  const endsLabel = fmt(range.to);
+  const hasAnyDate = Boolean(startsLabel || endsLabel);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label
+        htmlFor="event_date_range_trigger"
+        className={cn(error && "text-destructive")}
+      >
+        {label}
+        <span className="text-destructive" aria-hidden>
+          *
+        </span>
+      </Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            id="event_date_range_trigger"
+            type="button"
+            aria-label={label}
+            aria-invalid={Boolean(error)}
+            className={cn(
+              "flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
+              "hover:border-brand-cobalt-500/40",
+              error && "border-destructive ring-1 ring-destructive/30",
+            )}
+          >
+            <CalendarIcon
+              className="size-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <span
+              className={cn(
+                "flex flex-1 items-center gap-2 truncate text-start",
+                !hasAnyDate && "text-muted-foreground",
+              )}
+            >
+              {hasAnyDate ? (
+                <>
+                  <span className="font-medium text-foreground">
+                    {startsLabel ?? "—"}
+                  </span>
+                  <span className="text-muted-foreground" aria-hidden>
+                    →
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {endsLabel ?? "—"}
+                  </span>
+                </>
+              ) : (
+                <span>{placeholder}</span>
+              )}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            numberOfMonths={2}
+            selected={range}
+            onSelect={(next) => onChange(next ?? {})}
+            defaultMonth={range.from ?? new Date()}
+            locale={isAr ? ar : enUS}
+            disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+/**
  * بنود table — one row per RFQ to fan out. Subcategory drives the marketplace
  * routing; notes are optional and free-form. Adding a row enables submit; the
  * server action publishes one RFQ per row immediately on save.
@@ -755,38 +893,43 @@ function BunoodCard({
                       *
                     </span>
                   </Label>
-                  <select
-                    id={`band_subcategory_${idx}`}
-                    value={row.subcategory_id}
-                    onChange={(e) =>
-                      updateRow(idx, { subcategory_id: e.target.value })
+                  <Select
+                    value={row.subcategory_id || undefined}
+                    onValueChange={(v) =>
+                      updateRow(idx, { subcategory_id: v })
                     }
                     disabled={!categoriesLoaded}
-                    aria-label={t("subcategoryLabel")}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="" disabled>
-                      {categoriesLoaded
-                        ? t("subcategoryPlaceholder")
-                        : t("loadingCategories")}
-                    </option>
-                    {groups.map((group) => (
-                      <optgroup
-                        key={group.parent.id}
-                        label={
-                          locale === "ar"
-                            ? group.parent.name_ar
-                            : group.parent.name_en
+                    <SelectTrigger
+                      id={`band_subcategory_${idx}`}
+                      aria-label={t("subcategoryLabel")}
+                      className="h-10 w-full"
+                    >
+                      <SelectValue
+                        placeholder={
+                          categoriesLoaded
+                            ? t("subcategoryPlaceholder")
+                            : t("loadingCategories")
                         }
-                      >
-                        {group.children.map((child) => (
-                          <option key={child.id} value={child.id}>
-                            {locale === "ar" ? child.name_ar : child.name_en}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map((group) => (
+                        <SelectGroup key={group.parent.id}>
+                          <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-foreground">
+                            {locale === "ar"
+                              ? group.parent.name_ar
+                              : group.parent.name_en}
+                          </SelectLabel>
+                          {group.children.map((child) => (
+                            <SelectItem key={child.id} value={child.id}>
+                              {locale === "ar" ? child.name_ar : child.name_en}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:gap-0">

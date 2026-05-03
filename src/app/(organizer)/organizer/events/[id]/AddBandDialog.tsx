@@ -27,6 +27,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { addBandAction } from "../actions";
 import {
   listCategoriesAction,
@@ -139,31 +148,35 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
                 *
               </span>
             </Label>
-            <select
-              id="add_band_subcategory"
-              value={subcategoryId}
-              onChange={(e) => setSubcategoryId(e.target.value)}
+            <Select
+              value={subcategoryId || undefined}
+              onValueChange={setSubcategoryId}
               disabled={categories === null}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="" disabled>
-                {categories === null
-                  ? t("loadingCategories")
-                  : t("subcategoryPlaceholder")}
-              </option>
-              {subcategoryGroups.map((group) => (
-                <optgroup
-                  key={group.parent.id}
-                  label={isAr ? group.parent.name_ar : group.parent.name_en}
-                >
-                  {group.children.map((child) => (
-                    <option key={child.id} value={child.id}>
-                      {isAr ? child.name_ar : child.name_en}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              <SelectTrigger id="add_band_subcategory" className="h-10 w-full">
+                <SelectValue
+                  placeholder={
+                    categories === null
+                      ? t("loadingCategories")
+                      : t("subcategoryPlaceholder")
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {subcategoryGroups.map((group) => (
+                  <SelectGroup key={group.parent.id}>
+                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-foreground">
+                      {isAr ? group.parent.name_ar : group.parent.name_en}
+                    </SelectLabel>
+                    {group.children.map((child) => (
+                      <SelectItem key={child.id} value={child.id}>
+                        {isAr ? child.name_ar : child.name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
