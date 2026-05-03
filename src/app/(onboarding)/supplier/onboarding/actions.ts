@@ -466,33 +466,68 @@ export async function submitOnboardingStep3(
     let crPath: string | null = null;
     let naPath: string | null = null;
     let vatPath: string | null = null;
+    // Parallelize step-3 PDF uploads. `uploadCompanyDoc` already pushes
+    // successful uploads onto `uploaded[]`, so even if one rejects after others
+    // have settled successfully, the rollback below cleans up every success.
+    // We use Promise.allSettled so that no in-flight upload is abandoned; any
+    // failure is then reported and triggers a full rollback.
+    const companyDocJobs: Array<{
+      key: "cr" | "na" | "vat";
+      promise: Promise<
+        { ok: true; path: string } | { ok: false; message: string }
+      >;
+    }> = [];
     if (crFile) {
-      const r = await uploadCompanyDoc(crFile, "cr-certificate", "CR certificate");
-      if (!r.ok) {
-        await rollback(admin, uploaded);
-        return { ok: false, message: r.message };
-      }
-      crPath = r.path;
+      companyDocJobs.push({
+        key: "cr",
+        promise: uploadCompanyDoc(crFile, "cr-certificate", "CR certificate"),
+      });
     }
     if (nationalAddressFile) {
-      const r = await uploadCompanyDoc(
-        nationalAddressFile,
-        "national-address",
-        "National address certificate",
-      );
-      if (!r.ok) {
-        await rollback(admin, uploaded);
-        return { ok: false, message: r.message };
-      }
-      naPath = r.path;
+      companyDocJobs.push({
+        key: "na",
+        promise: uploadCompanyDoc(
+          nationalAddressFile,
+          "national-address",
+          "National address certificate",
+        ),
+      });
     }
     if (vatFile) {
-      const r = await uploadCompanyDoc(vatFile, "vat-certificate", "Tax certificate");
-      if (!r.ok) {
-        await rollback(admin, uploaded);
-        return { ok: false, message: r.message };
+      companyDocJobs.push({
+        key: "vat",
+        promise: uploadCompanyDoc(vatFile, "vat-certificate", "Tax certificate"),
+      });
+    }
+    if (companyDocJobs.length > 0) {
+      const settled = await Promise.allSettled(companyDocJobs.map((j) => j.promise));
+      const failureMessages: string[] = [];
+      for (let i = 0; i < settled.length; i++) {
+        const job = companyDocJobs[i]!;
+        const result = settled[i]!;
+        if (result.status === "rejected") {
+          failureMessages.push(
+            `${job.key} upload failed: ${
+              result.reason instanceof Error
+                ? result.reason.message
+                : String(result.reason)
+            }`,
+          );
+          continue;
+        }
+        const value = result.value;
+        if (!value.ok) {
+          failureMessages.push(value.message);
+          continue;
+        }
+        if (job.key === "cr") crPath = value.path;
+        else if (job.key === "na") naPath = value.path;
+        else vatPath = value.path;
       }
-      vatPath = r.path;
+      if (failureMessages.length > 0) {
+        await rollback(admin, uploaded);
+        return { ok: false, message: failureMessages.join("; ") };
+      }
     }
 
     // ---- 5. DB writes ------------------------------------------------------

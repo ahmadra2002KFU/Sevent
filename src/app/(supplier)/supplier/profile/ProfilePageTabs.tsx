@@ -6,9 +6,36 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProfileCustomizer } from "./ProfileCustomizer";
-import { PortfolioManager, type PortfolioItem } from "../portfolio/PortfolioManager";
+import type { PortfolioItem } from "../portfolio/PortfolioManager";
 import type { OnboardingBootstrap } from "@/app/(onboarding)/supplier/onboarding/loader";
+
+// ProfileCustomizer + PortfolioManager pull in @dnd-kit (sortable + utilities,
+// ~150 KB gzip combined). Both are gated behind `isApproved`, so unapproved
+// suppliers — i.e. everyone in onboarding — never render them. Defer the
+// chunks so they only download when an approved supplier actually opens
+// these tabs.
+const ProfileCustomizer = dynamic(
+  () => import("./ProfileCustomizer").then((m) => ({ default: m.ProfileCustomizer })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-72 w-full animate-pulse rounded-md bg-muted" />
+    ),
+  },
+);
+
+const PortfolioManager = dynamic(
+  () =>
+    import("../portfolio/PortfolioManager").then((m) => ({
+      default: m.PortfolioManager,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-72 w-full animate-pulse rounded-md bg-muted" />
+    ),
+  },
+);
 
 // The wizard pulls motion/react, react-hook-form, zod resolver, and ~8 picker
 // subcomponents — heavy enough that shipping it on first paint of the profile

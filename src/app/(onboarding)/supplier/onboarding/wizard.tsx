@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, useForm, useWatch, type Control, type SubmitHandler, type UseFormRegister, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, motion } from "motion/react";
@@ -454,7 +454,6 @@ function Step1Form({
   const {
     register,
     handleSubmit,
-    watch,
     control,
     setValue,
     formState: { errors },
@@ -480,54 +479,6 @@ function Step1Form({
       website_url: initial?.website_url ?? "",
     },
   });
-
-  const legalType = watch("legal_type");
-  const baseCity = watch("base_city");
-  const businessName = watch("business_name") ?? "";
-  const bio = watch("bio") ?? "";
-  const serviceAreas = watch("service_area_cities") ?? [];
-  const servesAllKsa = watch("serves_all_ksa") ?? false;
-  const languagesSelected = watch("languages") ?? [];
-
-  // Lift watched values to the parent so the preview rail sees them live.
-  useEffect(() => {
-    onLiveChange({
-      business_name: businessName,
-      bio,
-      base_city: baseCity,
-    });
-  }, [businessName, bio, baseCity, onLiveChange]);
-
-  // Autosave indicator UX (no real autosave call — just the indicator).
-  // On any keystroke → debounce 600ms → show "saved" for 2s.
-  const [autoSaveVisible, setAutoSaveVisible] = useState(false);
-  const autoSaveTimers = useRef<{
-    debounce: ReturnType<typeof setTimeout> | null;
-    hide: ReturnType<typeof setTimeout> | null;
-  }>({ debounce: null, hide: null });
-
-  useEffect(() => {
-    const timers = autoSaveTimers.current;
-    if (timers.debounce) clearTimeout(timers.debounce);
-    timers.debounce = setTimeout(() => {
-      setAutoSaveVisible(true);
-      if (timers.hide) clearTimeout(timers.hide);
-      timers.hide = setTimeout(() => setAutoSaveVisible(false), 2000);
-    }, 600);
-    return () => {
-      if (timers.debounce) clearTimeout(timers.debounce);
-    };
-  }, [businessName, bio, baseCity, legalType]);
-
-  useEffect(() => {
-    // Snapshot the ref's container object (stable for the component's lifetime)
-    // so the unmount cleanup reads the same `timers` instance the effect saw.
-    const timers = autoSaveTimers.current;
-    return () => {
-      if (timers.debounce) clearTimeout(timers.debounce);
-      if (timers.hide) clearTimeout(timers.hide);
-    };
-  }, []);
 
   return (
     <form
@@ -602,24 +553,8 @@ function Step1Form({
         )}
       />
 
-      {legalType === "company" ? (
-        <Field
-          label={t("crNumberLabel")}
-          helperKey="helper.crNumber"
-          error={errors.cr_number?.message}
-        >
-          <Input {...register("cr_number")} />
-        </Field>
-      ) : null}
-      {legalType === "freelancer" ? (
-        <Field
-          label={t("nationalIdLabel")}
-          helperKey="helper.nationalId"
-          error={errors.national_id?.message}
-        >
-          <Input {...register("national_id")} />
-        </Field>
-      ) : null}
+      <LegalTypeFields control={control} register={register} errors={errors} />
+
 
       <Field
         label={t("baseCityLabel")}
@@ -649,8 +584,8 @@ function Step1Form({
               control={control}
               name="serves_all_ksa"
               render={({ field: allField }) => (
-                <ServiceAreaPicker
-                  excludeSlug={baseCity}
+                <ServiceAreaPickerWithBaseCity
+                  control={control}
                   value={cityField.value ?? []}
                   onChange={cityField.onChange}
                   servesAllKsa={Boolean(allField.value)}
@@ -668,70 +603,237 @@ function Step1Form({
             />
           )}
         />
-        {!servesAllKsa && serviceAreas.length > 15 ? (
-          <p className="text-xs text-semantic-danger-500">
-            {t("serviceAreaTooMany")}
-          </p>
-        ) : null}
+        <ServiceAreaTooManyWarning control={control} message={t("serviceAreaTooMany")} />
       </Field>
 
       <Field label={t("languagesLabel")} helperKey="helper.languages">
-        <div className="flex flex-wrap gap-2">
-          {LANGUAGES.map((lang) => {
-            const active = (languagesSelected as readonly string[]).includes(lang);
-            return (
-              <motion.label
-                key={lang}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className="group relative cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  value={lang}
-                  className="peer sr-only"
-                  {...register("languages", { validate: (v) => v.length > 0 })}
-                />
-                <span
-                  className={cn(
-                    "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors",
-                    "border-neutral-200 bg-neutral-50 text-neutral-900",
-                    "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
-                    "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
-                    "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
-                  )}
-                >
-                  <motion.span
-                    animate={{
-                      width: active ? 14 : 0,
-                      opacity: active ? 1 : 0,
-                      marginInlineEnd: active ? 0 : -4,
-                    }}
-                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                    className="inline-flex items-center overflow-hidden"
-                  >
-                    <Check className="size-3.5" aria-hidden />
-                  </motion.span>
-                  {t(`language.${lang}`)}
-                </span>
-              </motion.label>
-            );
-          })}
-        </div>
+        <LanguagesChips control={control} register={register} t={t} />
       </Field>
 
+      <LiveSyncSubscriber control={control} onLiveChange={onLiveChange} />
+
       <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-        <AutoSaveIndicator
-          label={t("autosave.saved")}
-          visible={autoSaveVisible}
-        />
+        <AutoSaveSlot control={control} label={t("autosave.saved")} />
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? t("saving") : t("continue")}
         </Button>
       </div>
     </form>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Step 1 — scoped subscriber children. Each calls `useWatch` so only it
+// re-renders on keystrokes, instead of the whole 700-node Step1Form tree.
+// ---------------------------------------------------------------------------
+
+function LegalTypeFields({
+  control,
+  register,
+  errors,
+}: {
+  control: Control<Step1Values>;
+  register: UseFormRegister<Step1Values>;
+  errors: FieldErrors<Step1Values>;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  const legalType = useWatch({ control, name: "legal_type" });
+  return (
+    <>
+      {legalType === "company" ? (
+        <Field
+          label={t("crNumberLabel")}
+          helperKey="helper.crNumber"
+          error={errors.cr_number?.message}
+        >
+          <Input {...register("cr_number")} />
+        </Field>
+      ) : null}
+      {legalType === "freelancer" ? (
+        <Field
+          label={t("nationalIdLabel")}
+          helperKey="helper.nationalId"
+          error={errors.national_id?.message}
+        >
+          <Input {...register("national_id")} />
+        </Field>
+      ) : null}
+    </>
+  );
+}
+
+function ServiceAreaPickerWithBaseCity({
+  control,
+  value,
+  onChange,
+  servesAllKsa,
+  onServesAllKsaChange,
+}: {
+  control: Control<Step1Values>;
+  value: string[];
+  onChange: (next: string[]) => void;
+  servesAllKsa: boolean;
+  onServesAllKsaChange: (next: boolean) => void;
+}) {
+  const baseCity = useWatch({ control, name: "base_city" }) ?? "";
+  return (
+    <ServiceAreaPicker
+      excludeSlug={baseCity}
+      value={value}
+      onChange={onChange}
+      servesAllKsa={servesAllKsa}
+      onServesAllKsaChange={onServesAllKsaChange}
+    />
+  );
+}
+
+function ServiceAreaTooManyWarning({
+  control,
+  message,
+}: {
+  control: Control<Step1Values>;
+  message: string;
+}) {
+  const serviceAreas = useWatch({ control, name: "service_area_cities" }) ?? [];
+  const servesAllKsa = useWatch({ control, name: "serves_all_ksa" }) ?? false;
+  if (servesAllKsa || serviceAreas.length <= 15) return null;
+  return <p className="text-xs text-semantic-danger-500">{message}</p>;
+}
+
+function LanguagesChips({
+  control,
+  register,
+  t,
+}: {
+  control: Control<Step1Values>;
+  register: UseFormRegister<Step1Values>;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const languagesSelected = useWatch({ control, name: "languages" }) ?? [];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {LANGUAGES.map((lang) => {
+        const active = (languagesSelected as readonly string[]).includes(lang);
+        return (
+          <motion.label
+            key={lang}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="group relative cursor-pointer select-none"
+          >
+            <input
+              type="checkbox"
+              value={lang}
+              className="peer sr-only"
+              {...register("languages", { validate: (v) => v.length > 0 })}
+            />
+            <span
+              className={cn(
+                "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors",
+                "border-neutral-200 bg-neutral-50 text-neutral-900",
+                "hover:border-brand-cobalt-500 hover:bg-brand-cobalt-100/40",
+                "peer-checked:border-brand-cobalt-500 peer-checked:bg-brand-cobalt-100 peer-checked:text-brand-cobalt-500 peer-checked:font-medium",
+                "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-cobalt-500 peer-focus-visible:ring-offset-2",
+              )}
+            >
+              <motion.span
+                animate={{
+                  width: active ? 14 : 0,
+                  opacity: active ? 1 : 0,
+                  marginInlineEnd: active ? 0 : -4,
+                }}
+                transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                className="inline-flex items-center overflow-hidden"
+              >
+                <Check className="size-3.5" aria-hidden />
+              </motion.span>
+              {t(`language.${lang}`)}
+            </span>
+          </motion.label>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Lifts watched values to the parent (preview rail) without forcing the entire
+ * Step1Form to re-render on every keystroke. Renders nothing.
+ */
+function LiveSyncSubscriber({
+  control,
+  onLiveChange,
+}: {
+  control: Control<Step1Values>;
+  onLiveChange: (partial: {
+    business_name?: string;
+    bio?: string;
+    base_city?: string;
+  }) => void;
+}) {
+  const businessName = useWatch({ control, name: "business_name" }) ?? "";
+  const bio = useWatch({ control, name: "bio" }) ?? "";
+  const baseCity = useWatch({ control, name: "base_city" }) ?? "";
+
+  useEffect(() => {
+    onLiveChange({
+      business_name: businessName,
+      bio,
+      base_city: baseCity,
+    });
+  }, [businessName, bio, baseCity, onLiveChange]);
+
+  return null;
+}
+
+/**
+ * Owns the autosave indicator state and animation. Subscribes to the same
+ * fields that previously triggered the keystroke effect, but only this small
+ * subtree re-renders.
+ */
+function AutoSaveSlot({
+  control,
+  label,
+}: {
+  control: Control<Step1Values>;
+  label: string;
+}) {
+  const businessName = useWatch({ control, name: "business_name" }) ?? "";
+  const bio = useWatch({ control, name: "bio" }) ?? "";
+  const baseCity = useWatch({ control, name: "base_city" }) ?? "";
+  const legalType = useWatch({ control, name: "legal_type" });
+
+  const [autoSaveVisible, setAutoSaveVisible] = useState(false);
+  const autoSaveTimers = useRef<{
+    debounce: ReturnType<typeof setTimeout> | null;
+    hide: ReturnType<typeof setTimeout> | null;
+  }>({ debounce: null, hide: null });
+
+  useEffect(() => {
+    const timers = autoSaveTimers.current;
+    if (timers.debounce) clearTimeout(timers.debounce);
+    timers.debounce = setTimeout(() => {
+      setAutoSaveVisible(true);
+      if (timers.hide) clearTimeout(timers.hide);
+      timers.hide = setTimeout(() => setAutoSaveVisible(false), 2000);
+    }, 600);
+    return () => {
+      if (timers.debounce) clearTimeout(timers.debounce);
+    };
+  }, [businessName, bio, baseCity, legalType]);
+
+  useEffect(() => {
+    // Snapshot the ref's container object (stable for the component's lifetime)
+    // so the unmount cleanup reads the same `timers` instance the effect saw.
+    const timers = autoSaveTimers.current;
+    return () => {
+      if (timers.debounce) clearTimeout(timers.debounce);
+      if (timers.hide) clearTimeout(timers.hide);
+    };
+  }, []);
+
+  return <AutoSaveIndicator label={label} visible={autoSaveVisible} />;
 }
 
 function ServiceAreaPicker({

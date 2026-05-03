@@ -14,7 +14,10 @@ import {
 import { PreviewProfileButton } from "@/components/ui-ext/PreviewProfileButton";
 import { ProfilePageTabs } from "./ProfilePageTabs";
 import type { PortfolioItem } from "../portfolio/PortfolioManager";
-import { loadOnboardingBootstrap } from "@/app/(onboarding)/supplier/onboarding/loader";
+import {
+  getSupplierRowForUserCached,
+  loadOnboardingBootstrap,
+} from "@/app/(onboarding)/supplier/onboarding/loader";
 
 export const dynamic = "force-dynamic";
 
@@ -78,19 +81,11 @@ export default async function SupplierProfilePage({
   // trips. Unapproved suppliers always default to Settings, so they need it.
   const needsBootstrap = !isApproved || tabParam === "settings";
 
-  // Customize + portfolio data are only rendered for approved suppliers, so
-  // we skip the read for unapproved states to save a couple of round-trips.
-  const supplierRowPromise =
-    isApproved && supplierId
-      ? admin
-          .from("suppliers")
-          .select("accent_color, profile_sections_order, bio, slug")
-          .eq("id", supplierId)
-          .maybeSingle()
-      : Promise.resolve({ data: null });
-
-  const bootstrapPromise = needsBootstrap
-    ? loadOnboardingBootstrap({ admin, supplierId, userId: user.id })
+  // Fetch the wide `suppliers` row once via the per-request cache. The
+  // onboarding bootstrap reuses this row (passed via options) instead of
+  // issuing its own SELECT.
+  const supplierRowPromise = supplierId
+    ? getSupplierRowForUserCached(admin, user.id, supplierId)
     : Promise.resolve(null);
 
   // Portfolio media is only loaded when approved; unapproved suppliers see
@@ -105,12 +100,20 @@ export default async function SupplierProfilePage({
           .order("sort_order", { ascending: true })
       : Promise.resolve({ data: null });
 
-  const [{ data: supplier }, bootstrap, { data: mediaRows }] =
-    await Promise.all([
-      supplierRowPromise,
-      bootstrapPromise,
-      portfolioMediaPromise,
-    ]);
+  const [supplier, { data: mediaRows }] = await Promise.all([
+    supplierRowPromise,
+    portfolioMediaPromise,
+  ]);
+
+  const bootstrap = needsBootstrap
+    ? await loadOnboardingBootstrap({
+        admin,
+        supplierId,
+        userId: user.id,
+        // Reuse the wide row we just fetched; loader skips its own SELECT.
+        supplierRow: supplier,
+      })
+    : null;
 
   // Defensive: if a user with profile.access reaches us before a suppliers
   // row exists (race window between auth trigger + onboarding setup), bounce
@@ -128,12 +131,7 @@ export default async function SupplierProfilePage({
     );
   }
 
-  const supplierRow = (supplier as {
-    accent_color: string | null;
-    profile_sections_order: string[] | null;
-    bio: string | null;
-    slug: string | null;
-  } | null) ?? {
+  const supplierRow = supplier ?? {
     accent_color: null,
     profile_sections_order: null,
     bio: bootstrap?.supplier?.bio ?? null,
@@ -151,11 +149,16 @@ export default async function SupplierProfilePage({
       title: string | null;
       sort_order: number;
     }> | null) ?? [];
-  const portfolioUrlMap = await createSignedDownloadUrls(
-    admin,
-    STORAGE_BUCKETS.portfolio,
-    rawMediaRows.map((r) => r.file_path),
-  );
+  // Skip the storage round-trip entirely when there's nothing to sign — no
+  // portfolio rows means an empty Map, no HTTPS call to Supabase Storage.
+  const portfolioUrlMap =
+    rawMediaRows.length === 0
+      ? new Map<string, string>()
+      : await createSignedDownloadUrls(
+          admin,
+          STORAGE_BUCKETS.portfolio,
+          rawMediaRows.map((r) => r.file_path),
+        );
   const portfolioItems: PortfolioItem[] = rawMediaRows
     .map((row): PortfolioItem | null => {
       const url = portfolioUrlMap.get(row.file_path);
