@@ -1,21 +1,13 @@
 "use client";
 
 /**
- * Sprint 4 Lane 2 — supplier quote builder (client form).
+ * Supplier quote builder (free-form only).
  *
- * Two trust domains:
- *   - rule_engine / mixed: line-item totals are read-only because the server
- *     ignores them and recomputes via composePrice(). We still let the
- *     supplier tweak addons (setup/teardown/deposit/etc) because those are
- *     passed through to composePrice verbatim.
- *   - free_form: every line item + total is editable. The server trusts the
- *     numbers but the Zod schema on the action rejects non-integer halalas.
- *
- * Submission flow: the real form (`<form action={formAction}>`) hosts hidden
- * inputs that are generated from RHF state on every render. RHF drives the
- * editable UI + blur-time validation; the hidden fields are what the server
- * action actually reads from FormData. This keeps `useActionState`'s pending
- * / success / error UX without fighting RHF for form control.
+ * Every line item, total, and addon is editable; the server still re-validates
+ * via Zod and clamps to integer halalas. Submission uses `<form action>` wired
+ * to a server action via `useActionState`, with an onSubmit interceptor that
+ * runs RHF validation first so inline field errors render instead of the
+ * server's raw zod path on bad input.
  */
 
 import { useActionState, useEffect, useState } from "react";
@@ -25,11 +17,7 @@ import { z } from "zod";
 import { useLocale, useTranslations } from "next-intl";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { formatHalalas, halalasToSar, sarToHalalas } from "@/lib/domain/money";
-import type {
-  QuoteLineItemKind,
-  QuoteSnapshot,
-  QuoteSource,
-} from "@/lib/domain/quote";
+import type { QuoteLineItemKind, QuoteSnapshot } from "@/lib/domain/quote";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,7 +67,6 @@ const lineItemSchema = z.object({
 });
 
 const formSchema = z.object({
-  source: z.enum(["rule_engine", "free_form", "mixed"] as const),
   prices_include_vat: z.boolean(),
   line_items: z.array(lineItemSchema).min(1),
   setup_fee_sar: moneyStringSchema,
@@ -105,7 +92,6 @@ export type QuoteBuilderFormProps = {
   inviteId: string;
   rfqId: string;
   supplierId: string;
-  packageId: string | null;
   initialSnapshot: QuoteSnapshot;
   locked: boolean; // true when the quote is terminal; form disables submission
 };
@@ -141,6 +127,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
     watch,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -150,9 +137,9 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 
   const { fields, append, remove } = useFieldArray({ control, name: "line_items" });
 
-  // Auto-recompute per-line total on qty/unit-price change in free-form mode.
-  // The field stays editable, so the supplier can override; the override
-  // survives until they touch qty/price again.
+  // Auto-recompute per-line total on qty/unit-price change. The field stays
+  // editable, so the supplier can override; the override survives until they
+  // touch qty/price again.
   useEffect(() => {
     const syncLine = (line: FormValues["line_items"][number] | undefined, idx: number) => {
       if (!line) return;
@@ -166,22 +153,13 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       }
     };
     // Seed current values once so an already-filled row without a total
-    // (e.g. after a page refresh in free-form mode) displays the sum.
+    // (e.g. after a page refresh) displays the sum.
     const initial = getValues();
-    if (initial.source === "free_form") {
-      (initial.line_items ?? []).forEach((line, idx) => {
-        if (!line.total_sar || line.total_sar.length === 0) syncLine(line, idx);
-      });
-    }
+    (initial.line_items ?? []).forEach((line, idx) => {
+      if (!line.total_sar || line.total_sar.length === 0) syncLine(line, idx);
+    });
     const subscription = watch((value, info) => {
       if (!info.name) return;
-      if (value.source !== "free_form") return;
-      if (info.name === "source") {
-        (value.line_items ?? []).forEach((line, idx) =>
-          syncLine(line as FormValues["line_items"][number] | undefined, idx),
-        );
-        return;
-      }
       const match = /^line_items\.(\d+)\.(qty|unit_price_sar)$/.exec(info.name);
       if (!match) return;
       const idx = Number(match[1]);
@@ -194,8 +172,6 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   }, [watch, setValue, getValues]);
 
   const values = watch();
-  const source = values.source as QuoteSource;
-  const isEngineMode = source === "rule_engine" || source === "mixed";
 
   // Snapshot shape the server action parses — computed from live RHF state.
   const lineItemsPayload = (values.line_items ?? []).map((li) => {
@@ -218,9 +194,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   const exclusionsPayload = splitLines(values.exclusions_text ?? "");
 
   // Preview total — reflects the user's current edits (line totals + setup +
-  // teardown + VAT). Mirrors engine.ts step 8/9; in engine/mixed mode the
-  // server re-derives travel fee separately, so this is a client-side
-  // approximation, not the final amount.
+  // teardown + VAT). Mirrors the server's free_form arithmetic in actions.ts.
   const liveSubtotalHalalas = lineItemsPayload.reduce(
     (sum, li) => sum + (Number.isFinite(li.total_halalas) ? li.total_halalas : 0),
     0,
@@ -245,14 +219,24 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
     : liveTaxableBaseHalalas;
 
   return (
-    <form action={formAction} className="flex flex-col gap-6" noValidate>
+    <form
+      action={formAction}
+      className="flex flex-col gap-6"
+      noValidate
+      onSubmit={async (e) => {
+        // Gate the action on RHF validation so empty/invalid fields show
+        // inline errors instead of bouncing off the server zod schema and
+        // surfacing as a raw "path: message" banner.
+        e.preventDefault();
+        const valid = await trigger();
+        if (!valid) return;
+        formAction(new FormData(e.currentTarget));
+      }}
+    >
       {/* Hidden identity + invariant fields */}
       <input type="hidden" name="rfq_id" value={props.rfqId} />
       <input type="hidden" name="supplier_id" value={props.supplierId} />
       <input type="hidden" name="invite_id" value={props.inviteId} />
-      {props.packageId ? (
-        <input type="hidden" name="package_id" value={props.packageId} />
-      ) : null}
       <input
         type="hidden"
         name="qty"
@@ -261,7 +245,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
       <input type="hidden" name="line_items" value={JSON.stringify(lineItemsPayload)} />
       <input type="hidden" name="inclusions" value={JSON.stringify(inclusionsPayload)} />
       <input type="hidden" name="exclusions" value={JSON.stringify(exclusionsPayload)} />
-      <input type="hidden" name="source" value={values.source ?? "rule_engine"} />
+      <input type="hidden" name="source" value="free_form" />
       <input
         type="hidden"
         name="prices_include_vat"
@@ -288,16 +272,6 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
           </AlertDescription>
         </Alert>
       ) : null}
-
-      {/* Mode toggle */}
-      <section className="flex flex-col gap-2">
-        <span className="text-sm font-medium">{t("modeLabel")}</span>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("modeLabel")}>
-          <ModeRadio value="rule_engine" label={t("modeRuleEngine")} {...register("source")} />
-          <ModeRadio value="mixed" label={t("modeMixed")} {...register("source")} />
-          <ModeRadio value="free_form" label={t("modeFreeForm")} {...register("source")} />
-        </div>
-      </section>
 
       {/* Line items */}
       <section className="flex flex-col gap-3">
@@ -413,8 +387,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      disabled={isEngineMode}
-                      className="w-28 disabled:bg-muted disabled:text-muted-foreground"
+                      className="w-28"
                       aria-label={t("total")}
                       {...register(`line_items.${idx}.total_sar`)}
                     />
@@ -437,12 +410,6 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
             </TableBody>
           </Table>
         </div>
-
-        {isEngineMode ? (
-          <p className="text-xs text-muted-foreground">
-            {t("travelFeeComputed")}
-          </p>
-        ) : null}
       </section>
 
       {/* Addons */}
@@ -564,7 +531,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
           </div>
         </dl>
         <p className="mt-2 text-xs text-muted-foreground">
-          {isEngineMode ? t("totalHintEngine") : t("totalHintFreeForm")}
+          {t("totalHintFreeForm")}
         </p>
       </section>
 
@@ -670,30 +637,6 @@ function ActionBanner({ state }: { state: ActionState }) {
   );
 }
 
-function ModeRadio({
-  value,
-  label,
-  ...rest
-}: {
-  value: string;
-  label: string;
-  name?: string;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  onBlur?: React.FocusEventHandler<HTMLInputElement>;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm transition-colors has-[:checked]:border-brand-cobalt-500 has-[:checked]:bg-brand-cobalt-100 has-[:checked]:text-brand-navy-900 has-[:checked]:font-medium">
-      <input
-        type="radio"
-        value={value}
-        className="accent-brand-cobalt-500"
-        {...rest}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
-
 function LabeledField({
   label,
   hint,
@@ -730,7 +673,6 @@ function ErrorText({ msg }: { msg?: string }) {
 
 function buildDefaults(snapshot: QuoteSnapshot): FormValues {
   return {
-    source: snapshot.source,
     prices_include_vat: snapshot.prices_include_vat === true,
     line_items:
       snapshot.line_items.length > 0

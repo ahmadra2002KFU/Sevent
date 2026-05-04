@@ -24,7 +24,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AlertTriangle } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -44,7 +43,6 @@ import {
 } from "@/lib/domain/quote";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { QuoteBuilderForm } from "./QuoteBuilderForm";
 
 export const dynamic = "force-dynamic";
@@ -295,21 +293,12 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
 
       <p className="-mt-2 text-sm text-muted-foreground">{t("intro")}</p>
 
-      {packages.length === 0 ? (
-        <Alert>
-          <AlertTriangle />
-          <AlertTitle>{t("noPackagesTitle")}</AlertTitle>
-          <AlertDescription>{t("noPackagesBody")}</AlertDescription>
-        </Alert>
-      ) : null}
-
       <Card>
         <CardContent className="p-6">
           <QuoteBuilderForm
             inviteId={invite.id}
             rfqId={rfq.id}
             supplierId={supplierId}
-            packageId={selectedPackage?.id ?? null}
             initialSnapshot={initialSnapshot}
             locked={locked}
           />

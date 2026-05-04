@@ -162,9 +162,13 @@ function readSubmission(formData: FormData): QuoteSubmissionParsed | { error: st
   };
   const parsed = submissionSchema.safeParse(payload);
   if (!parsed.success) {
-    const first = parsed.error.issues[0];
-    const path = first?.path.length ? `${first.path.join(".")}: ` : "";
-    return { error: `${path}${first?.message ?? "Invalid quote submission."}` };
+    // Don't leak the raw zod path/message to the banner — RHF on the client
+    // surfaces field-level errors inline. This message is the server-side
+    // fallback for when something slips past the client gate.
+    return {
+      error:
+        "Some fields are missing or invalid. Please review the highlighted fields and try again.",
+    };
   }
   return parsed.data;
 }
