@@ -1,7 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata() {
   const t = await getTranslations({ locale: "en", namespace: "privacy" });
   return {

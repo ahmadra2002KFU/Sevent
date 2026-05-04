@@ -535,6 +535,7 @@ export default async function SupplierRfqDetailPage({
                 noteLabel: t("noteOptional"),
                 cancel: t("cancel"),
                 confirm: t("declineConfirmCta"),
+                pendingLabel: t("declineConfirmCtaPending"),
                 reasons: {
                   too_busy: t("declineReason.too_busy"),
                   out_of_area: t("declineReason.out_of_area"),

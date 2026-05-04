@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { applyToOpportunity } from "./apply";
+import { ApplySubmitButton } from "./apply-submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -147,9 +148,10 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
         }}
         className="flex justify-end"
       >
-        <Button type="submit" size="lg">
-          {t("detail.applyCta")}
-        </Button>
+        <ApplySubmitButton
+          label={t("detail.applyCta")}
+          pendingLabel={t("detail.applyingCta")}
+        />
       </form>
     </section>
   );

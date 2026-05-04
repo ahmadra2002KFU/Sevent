@@ -1056,6 +1056,7 @@
       "declineConfirmHeading": "Decline this RFQ?",
       "declineConfirmBody": "The organizer will be notified immediately. You can still quote other invites.",
       "declineConfirmCta": "Confirm decline",
+      "declineConfirmCtaPending": "Declining…",
       "cancel": "Cancel",
       "requirements": {
         "seatingStyle": "Seating style",
@@ -1216,7 +1217,8 @@
         "requirements": "Organizer's requirements",
         "noRequirements": "No extra requirements — the organizer didn't add specifics.",
         "dueAt": "Responses due by {date}",
-        "applyCta": "Apply and submit a quote"
+        "applyCta": "Apply and submit a quote",
+        "applyingCta": "Submitting application…"
       }
     },
     "profile": {

@@ -10,6 +10,7 @@
  * so every row these queries return is safe to expose publicly.
  */
 
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   STORAGE_BUCKETS,
@@ -50,7 +51,7 @@ const SUPPLIERS_PER_SUBCATEGORY = 8;
  * Two-query approach keeps the typing flat: we pull parents, then children,
  * then supplier_categories joined to the visible suppliers, and join in TS.
  */
-export async function listTopLevelCategories(): Promise<PublicBrowseCategory[]> {
+export async function listTopLevelCategoriesUncached(): Promise<PublicBrowseCategory[]> {
   const supabase = await createSupabaseServerClient();
 
   const { data: parentRows, error: parentErr } = await supabase
@@ -137,7 +138,7 @@ export async function listTopLevelCategories(): Promise<PublicBrowseCategory[]> 
  * with that slug exists (the caller should render 404). We explicitly filter
  * on `parent_id IS NULL` so a child slug does not leak through.
  */
-export async function getParentCategoryBySlug(
+export async function getParentCategoryBySlugUncached(
   slug: string,
 ): Promise<{
   id: string;
@@ -171,7 +172,7 @@ export async function getParentCategoryBySlug(
  * it). Each supplier is returned with its first portfolio photo (sort_order
  * ascending) or null when no photo has been uploaded.
  */
-export async function listSubcategoriesWithSuppliers(
+export async function listSubcategoriesWithSuppliersUncached(
   parentId: string,
   city: string | null,
 ): Promise<PublicBrowseSubcategoryWithSuppliers[]> {
@@ -298,3 +299,14 @@ export async function listSubcategoriesWithSuppliers(
     };
   });
 }
+
+/**
+ * Cached variants for production. Safe to call multiple times in the same RSC
+ * tree (e.g. `generateMetadata` + page body); React `cache()` coalesces
+ * repeated calls into a single DB round-trip per request.
+ */
+export const listTopLevelCategories = cache(listTopLevelCategoriesUncached);
+export const getParentCategoryBySlug = cache(getParentCategoryBySlugUncached);
+export const listSubcategoriesWithSuppliers = cache(
+  listSubcategoriesWithSuppliersUncached,
+);

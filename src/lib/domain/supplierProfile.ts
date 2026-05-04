@@ -10,6 +10,7 @@
  * unpublished rows.
  */
 
+import { cache } from "react";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
@@ -104,8 +105,12 @@ export type PublicSupplierProfile = {
  * Supabase client is intentionally used here — RLS policies enforce the
  * `is_published AND verification_status='approved'` visibility rule, so any
  * row this query returns is safe to expose publicly.
+ *
+ * Exported uncached for unit tests; production callers should prefer the
+ * `cache()`-wrapped `getPublicSupplierBySlug` below so generateMetadata + the
+ * page body share a single DB round-trip per request.
  */
-export async function getPublicSupplierBySlug(
+export async function getPublicSupplierBySlugUncached(
   slug: string,
 ): Promise<PublicSupplierProfile | null> {
   if (!slug || typeof slug !== "string") return null;
@@ -336,3 +341,10 @@ export async function getPublicSupplierBySlug(
     reviewSummary,
   };
 }
+
+/**
+ * Cached variant for production. Safe to call multiple times in the same RSC
+ * tree (e.g. once in `generateMetadata` and once in the page body); React
+ * `cache()` coalesces repeated calls into a single DB round-trip.
+ */
+export const getPublicSupplierBySlug = cache(getPublicSupplierBySlugUncached);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { XCircle } from "lucide-react";
+import { useFormStatus } from "react-dom";
+import { Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +34,7 @@ type Labels = {
   noteLabel: string;
   cancel: string;
   confirm: string;
+  pendingLabel: string;
   reasons: Record<ReasonCode, string>;
 };
 
@@ -105,12 +107,35 @@ export function DeclineInviteForm({ inviteId, action, labels }: Props) {
                 {labels.cancel}
               </Button>
             </DialogClose>
-            <Button type="submit" variant="destructive">
-              {labels.confirm}
-            </Button>
+            <SubmitButton
+              confirmLabel={labels.confirm}
+              pendingLabel={labels.pendingLabel}
+            />
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SubmitButton({
+  confirmLabel,
+  pendingLabel,
+}: {
+  confirmLabel: string;
+  pendingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="destructive" disabled={pending}>
+      {pending ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden />
+          {pendingLabel}
+        </>
+      ) : (
+        confirmLabel
+      )}
+    </Button>
   );
 }
