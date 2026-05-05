@@ -613,6 +613,10 @@
         "errorType": "Tax certificate must be a PDF.",
         "errorSize": "Tax certificate must be 10 MB or smaller."
       },
+      "trialNotice": {
+        "title": "We're in a trial phase",
+        "body": "During this phase, none of these documents are required. You can submit your application with no attachments at all and we'll still review it."
+      },
       "pathPicker": {
         "badge": "Before we start",
         "title": "Tell us about your business",

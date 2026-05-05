@@ -1217,6 +1217,18 @@ function Step3Form({
 
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
+      {/* TEMP (2026-05-05): trial-phase notice. Tells suppliers that no
+          documents are required during the pre-legal window. Remove this
+          banner together with the rest of the TEMP block when legal lands. */}
+      <div className="flex flex-col gap-1.5 rounded-xl border border-brand-cobalt-500/30 bg-brand-cobalt-100/40 p-4">
+        <span className="text-sm font-semibold text-brand-navy-900">
+          {t("trialNotice.title")}
+        </span>
+        <span className="text-[12.5px] leading-relaxed text-brand-navy-900/80">
+          {t("trialNotice.body")}
+        </span>
+      </div>
+
       <UploadChip
         label={t("logo.label")}
         hint={t("logo.cta")}
@@ -1224,7 +1236,6 @@ function Step3Form({
         kind="image"
         previewUrl={logoPreview}
         file={values.logo ?? null}
-        optional
         onPick={(f) =>
           pickFile("logo", f ?? undefined, validateLogo)
         }
@@ -1238,8 +1249,6 @@ function Step3Form({
         kind="pdf"
         file={values.iban ?? null}
         status={values.iban ? "verified" : "idle"}
-        // TEMP (2026-05-05): IBAN is optional during the pre-legal window.
-        optional
         onPick={(f) =>
           pickFile("iban", f ?? undefined, (file) =>
             validatePdf(file, t("iban.errorType"), t("iban.errorSize")),
@@ -1254,7 +1263,6 @@ function Step3Form({
         accept="application/pdf"
         kind="pdf"
         file={values.companyProfile ?? null}
-        optional
         onPick={(f) =>
           pickFile("companyProfile", f ?? undefined, (file) =>
             validatePdf(
@@ -1279,7 +1287,8 @@ function Step3Form({
           </div>
 
           {/* TEMP (2026-05-05): every company doc below is optional during
-              the pre-legal window. Restore required status when legal lands. */}
+              the pre-legal window — see trial-phase notice at the top of the
+              form. Restore required status when legal lands. */}
           <UploadChip
             label={t("crCert.label")}
             hint={t("crCert.cta")}
@@ -1287,7 +1296,6 @@ function Step3Form({
             kind="pdf"
             file={values.cr ?? null}
             status={values.cr ? "verified" : "idle"}
-            optional
             onPick={(f) =>
               pickFile("cr", f ?? undefined, (file) =>
                 validatePdf(
@@ -1307,7 +1315,6 @@ function Step3Form({
             kind="pdf"
             file={values.nationalAddress ?? null}
             status={values.nationalAddress ? "verified" : "idle"}
-            optional
             onPick={(f) =>
               pickFile("nationalAddress", f ?? undefined, (file) =>
                 validatePdf(
@@ -1327,7 +1334,6 @@ function Step3Form({
             kind="pdf"
             file={values.vat ?? null}
             status={values.vat ? "verified" : "idle"}
-            optional
             onPick={(f) =>
               pickFile("vat", f ?? undefined, (file) =>
                 validatePdf(
