@@ -156,43 +156,20 @@ export type OnboardingStep2 = z.infer<typeof OnboardingStep2>;
 export const LOGO_MAX_BYTES = 1 * 1024 * 1024; // 1 MB
 export const PDF_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
-export const OnboardingStep3 = z
-  .object({
-    logo_file: FileLike.optional(),
-    iban_file: FileLike,
-    company_profile_file: FileLike.optional(),
-    // Company-only docs. Enforced below via superRefine so freelancers can
-    // still submit step 3 without them.
-    legal_type: z.enum(LEGAL_TYPES).optional(),
-    cr_file: FileLike.optional(),
-    national_address_file: FileLike.optional(),
-    vat_file: FileLike.optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.legal_type === "company") {
-      if (!data.cr_file) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["cr_file"],
-          message: "Commercial registration certificate (PDF) is required",
-        });
-      }
-      if (!data.national_address_file) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["national_address_file"],
-          message: "National address certificate (PDF) is required",
-        });
-      }
-      if (!data.vat_file) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["vat_file"],
-          message: "Tax / VAT certificate (PDF) is required",
-        });
-      }
-    }
-  });
+// TEMP (2026-05-05): every document is optional for both freelancers and
+// companies because we don't yet have legal privilege to collect KYC data. The
+// supplier can submit step 3 with zero attachments and still transition to
+// pending_review. Restore the previous required-iban + company-only superRefine
+// when legal sign-off lands.
+export const OnboardingStep3 = z.object({
+  logo_file: FileLike.optional(),
+  iban_file: FileLike.optional(),
+  company_profile_file: FileLike.optional(),
+  legal_type: z.enum(LEGAL_TYPES).optional(),
+  cr_file: FileLike.optional(),
+  national_address_file: FileLike.optional(),
+  vat_file: FileLike.optional(),
+});
 export type OnboardingStep3 = z.infer<typeof OnboardingStep3>;
 
 // -----------------------------------------------------------------------------

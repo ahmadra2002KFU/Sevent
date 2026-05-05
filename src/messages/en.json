@@ -570,20 +570,20 @@
       "step2RequireCategory": "Add at least one service.",
       "step2RequireSegment": "Pick at least one event type.",
       "logo": {
-        "label": "Business logo (optional)",
+        "label": "Business logo",
         "cta": "Choose a logo image (≤1 MB)",
         "errorType": "Logo must be an image file.",
         "errorSize": "Logo must be 1 MB or smaller."
       },
       "iban": {
-        "label": "IBAN certificate (required)",
+        "label": "IBAN certificate",
         "cta": "Upload your IBAN certificate (PDF, ≤10 MB)",
         "required": "IBAN certificate is required.",
         "errorType": "IBAN certificate must be a PDF.",
         "errorSize": "IBAN certificate must be 10 MB or smaller."
       },
       "companyProfile": {
-        "label": "Company profile (optional)",
+        "label": "Company profile",
         "cta": "Upload a company profile PDF (≤10 MB)",
         "errorType": "Company profile must be a PDF.",
         "errorSize": "Company profile must be 10 MB or smaller."
@@ -593,21 +593,21 @@
         "subheading": "Registered companies must upload commercial registration, national address, and tax certificates."
       },
       "crCert": {
-        "label": "Commercial registration (required)",
+        "label": "Commercial registration",
         "cta": "Upload your CR certificate (PDF, ≤10 MB)",
         "required": "Commercial registration certificate is required.",
         "errorType": "CR certificate must be a PDF.",
         "errorSize": "CR certificate must be 10 MB or smaller."
       },
       "nationalAddress": {
-        "label": "National address (required)",
+        "label": "National address",
         "cta": "Upload the company's national address certificate (PDF, ≤10 MB)",
         "required": "National address certificate is required.",
         "errorType": "National address certificate must be a PDF.",
         "errorSize": "National address certificate must be 10 MB or smaller."
       },
       "vatCert": {
-        "label": "Tax / VAT certificate (required)",
+        "label": "Tax / VAT certificate",
         "cta": "Upload your tax certificate (PDF, ≤10 MB)",
         "required": "Tax certificate is required.",
         "errorType": "Tax certificate must be a PDF.",

@@ -34,6 +34,12 @@ export type OnboardingState = {
 const DOCS_BUCKET = "supplier-docs";
 const LOGOS_BUCKET = "supplier-logos";
 
+// TEMP (2026-05-05): placeholder file_path stamped on a sentinel supplier_docs
+// row when a supplier submits step 3 without uploading anything. The row only
+// exists to satisfy the in_onboarding → pending_review transition in
+// src/lib/auth/access.ts. Grep this constant when removing the temp policy.
+const TEMP_NO_UPLOAD_SENTINEL = "__TEMP_AWAITING_LEGAL__";
+
 async function loadSupplierContext() {
   // Reads that would hit the `profiles`/`suppliers` RLS policy cycle go
   // through the service-role admin client. Storage uploads run on the
@@ -317,9 +323,9 @@ export async function submitOnboardingStep3(
       };
     }
 
-    // Zod guarantees iban_file is present by shape, but TS narrowing doesn't
-    // cross the safeParse boundary — re-assert from the parsed payload.
-    const iban = parsed.data.iban_file as File;
+    // TEMP (2026-05-05): IBAN is now optional — re-assert the parsed value
+    // without the non-null cast the previous required-shape relied on.
+    const iban = (parsed.data.iban_file as File | undefined) ?? null;
 
     // Size + MIME validation (beyond Zod's "is a File" check). Mirrors the
     // client-side size guards so users can't bypass them via curl.
@@ -331,11 +337,13 @@ export async function submitOnboardingStep3(
         return { ok: false, message: "Logo must be an image file" };
       }
     }
-    if (iban.size > PDF_MAX_BYTES) {
-      return { ok: false, message: "IBAN certificate must be 10 MB or smaller" };
-    }
-    if (iban.type && iban.type !== "application/pdf") {
-      return { ok: false, message: "IBAN certificate must be a PDF" };
+    if (iban) {
+      if (iban.size > PDF_MAX_BYTES) {
+        return { ok: false, message: "IBAN certificate must be 10 MB or smaller" };
+      }
+      if (iban.type && iban.type !== "application/pdf") {
+        return { ok: false, message: "IBAN certificate must be a PDF" };
+      }
     }
     if (profileFile) {
       if (profileFile.size > PDF_MAX_BYTES) {
@@ -394,24 +402,30 @@ export async function submitOnboardingStep3(
       logoPath = path;
     }
 
-    // ---- 2. IBAN certificate upload ----------------------------------------
-    const ibanDocPath = supplierScopedPath(
-      supplier.id,
-      "docs",
-      `iban-certificate-${crypto.randomUUID()}.pdf`,
-    );
-    const ibanBuffer = Buffer.from(await iban.arrayBuffer());
-    const { error: ibanErr } = await admin.storage
-      .from(DOCS_BUCKET)
-      .upload(ibanDocPath, ibanBuffer, {
-        contentType: "application/pdf",
-        upsert: false,
-      });
-    if (ibanErr) {
-      await rollback(admin, uploaded);
-      return { ok: false, message: `IBAN upload failed: ${ibanErr.message}` };
+    // ---- 2. IBAN certificate upload (optional during TEMP window) ---------
+    // TEMP (2026-05-05): IBAN is now optional. Skip the upload entirely when
+    // the supplier didn't pick a file — the placeholder row inserted further
+    // down still drives the in_onboarding → pending_review transition.
+    let ibanDocPath: string | null = null;
+    if (iban) {
+      ibanDocPath = supplierScopedPath(
+        supplier.id,
+        "docs",
+        `iban-certificate-${crypto.randomUUID()}.pdf`,
+      );
+      const ibanBuffer = Buffer.from(await iban.arrayBuffer());
+      const { error: ibanErr } = await admin.storage
+        .from(DOCS_BUCKET)
+        .upload(ibanDocPath, ibanBuffer, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+      if (ibanErr) {
+        await rollback(admin, uploaded);
+        return { ok: false, message: `IBAN upload failed: ${ibanErr.message}` };
+      }
+      uploaded.push({ bucket: DOCS_BUCKET, path: ibanDocPath });
     }
-    uploaded.push({ bucket: DOCS_BUCKET, path: ibanDocPath });
 
     // ---- 3. Company profile upload (optional) ------------------------------
     let companyProfilePath: string | null = null;
@@ -536,14 +550,15 @@ export async function submitOnboardingStep3(
       doc_type: SupplierDocType;
       file_path: string;
       notes: string | null;
-    }> = [
-      {
+    }> = [];
+    if (ibanDocPath) {
+      docRows.push({
         supplier_id: supplier.id,
         doc_type: "iban_certificate",
         file_path: ibanDocPath,
         notes: null,
-      },
-    ];
+      });
+    }
     if (companyProfilePath) {
       docRows.push({
         supplier_id: supplier.id,
@@ -577,13 +592,38 @@ export async function submitOnboardingStep3(
       });
     }
 
-    const { error: insertErr } = await admin.from("supplier_docs").insert(docRows);
-    if (insertErr) {
-      await rollback(admin, uploaded);
-      return {
-        ok: false,
-        message: `Saving document records failed: ${insertErr.message}`,
-      };
+    // TEMP (2026-05-05): if the supplier submitted with zero attachments,
+    // insert a sentinel doc row so the access-state machine can transition
+    // them in_onboarding → pending_review (gated on supplier_docs row count
+    // in src/lib/auth/access.ts). Skipped once any real doc is present —
+    // those already satisfy the row-count check. We also skip it when the
+    // supplier has previously inserted a sentinel for this submission, so
+    // re-submitting doesn't duplicate placeholders.
+    if (docRows.length === 0) {
+      const { count: existingDocCount } = await admin
+        .from("supplier_docs")
+        .select("id", { count: "exact", head: true })
+        .eq("supplier_id", supplier.id);
+      if ((existingDocCount ?? 0) === 0) {
+        docRows.push({
+          supplier_id: supplier.id,
+          doc_type: "other",
+          file_path: TEMP_NO_UPLOAD_SENTINEL,
+          notes:
+            "TEMP: submitted without documents — legal privilege not yet acquired (2026-05-05).",
+        });
+      }
+    }
+
+    if (docRows.length > 0) {
+      const { error: insertErr } = await admin.from("supplier_docs").insert(docRows);
+      if (insertErr) {
+        await rollback(admin, uploaded);
+        return {
+          ok: false,
+          message: `Saving document records failed: ${insertErr.message}`,
+        };
+      }
     }
 
     if (logoPath && logoPath !== supplier.logo_path) {

@@ -1189,28 +1189,15 @@ function Step3Form({
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!values.iban) {
-      setError(t("iban.required"));
-      return;
-    }
-    if (isCompany) {
-      if (!values.cr) {
-        setError(t("crCert.required"));
-        return;
-      }
-      if (!values.nationalAddress) {
-        setError(t("nationalAddress.required"));
-        return;
-      }
-      if (!values.vat) {
-        setError(t("vatCert.required"));
-        return;
-      }
-    }
+    // TEMP (2026-05-05): every document is optional during the pre-legal
+    // window. Suppliers — freelancer or company — can submit step 3 with no
+    // attachments at all and the server will still mark them as awaiting
+    // review. Restore the iban / cr / nationalAddress / vat required-checks
+    // when legal privilege lands.
     setError(null);
     const fd = new FormData();
     if (values.logo) fd.append("logo_file", values.logo);
-    fd.append("iban_file", values.iban);
+    if (values.iban) fd.append("iban_file", values.iban);
     if (values.companyProfile)
       fd.append("company_profile_file", values.companyProfile);
     if (values.cr) fd.append("cr_file", values.cr);
@@ -1251,6 +1238,8 @@ function Step3Form({
         kind="pdf"
         file={values.iban ?? null}
         status={values.iban ? "verified" : "idle"}
+        // TEMP (2026-05-05): IBAN is optional during the pre-legal window.
+        optional
         onPick={(f) =>
           pickFile("iban", f ?? undefined, (file) =>
             validatePdf(file, t("iban.errorType"), t("iban.errorSize")),
@@ -1289,6 +1278,8 @@ function Step3Form({
             </span>
           </div>
 
+          {/* TEMP (2026-05-05): every company doc below is optional during
+              the pre-legal window. Restore required status when legal lands. */}
           <UploadChip
             label={t("crCert.label")}
             hint={t("crCert.cta")}
@@ -1296,6 +1287,7 @@ function Step3Form({
             kind="pdf"
             file={values.cr ?? null}
             status={values.cr ? "verified" : "idle"}
+            optional
             onPick={(f) =>
               pickFile("cr", f ?? undefined, (file) =>
                 validatePdf(
@@ -1315,6 +1307,7 @@ function Step3Form({
             kind="pdf"
             file={values.nationalAddress ?? null}
             status={values.nationalAddress ? "verified" : "idle"}
+            optional
             onPick={(f) =>
               pickFile("nationalAddress", f ?? undefined, (file) =>
                 validatePdf(
@@ -1334,6 +1327,7 @@ function Step3Form({
             kind="pdf"
             file={values.vat ?? null}
             status={values.vat ? "verified" : "idle"}
+            optional
             onPick={(f) =>
               pickFile("vat", f ?? undefined, (file) =>
                 validatePdf(
