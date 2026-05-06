@@ -62,6 +62,11 @@ skills-lock.json
 .tmp/
 .tmp-*
 
+# Local performance-audit reports from open-review agents (Kimi/DeepSeek/GPT etc).
+# Personal/per-machine analysis output; never belongs in the repo.
+agent-reviews/
+Agents/
+
 # Local admin/dev one-off scripts (not part of the app build)
 /approve.ts
 /set-supplier-state.ts
