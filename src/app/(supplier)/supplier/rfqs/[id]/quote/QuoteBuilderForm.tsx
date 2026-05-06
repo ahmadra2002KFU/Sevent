@@ -228,9 +228,12 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
         // inline errors instead of bouncing off the server zod schema and
         // surfacing as a raw "path: message" banner.
         e.preventDefault();
+        // React nulls e.currentTarget once the sync portion of the handler
+        // returns; capture the form ref before the await or FormData() throws.
+        const form = e.currentTarget;
         const valid = await trigger();
         if (!valid) return;
-        formAction(new FormData(e.currentTarget));
+        formAction(new FormData(form));
       }}
     >
       {/* Hidden identity + invariant fields */}
