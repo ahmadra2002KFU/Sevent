@@ -144,6 +144,13 @@ export function linkForNotification(
         return { href: `/organizer/rfqs/${rfqId}`, label: "view" };
       }
       return null;
+    case "message.received":
+    case "message.reply_received": {
+      const threadId = pickString(payload, "thread_id");
+      if (!threadId) return null;
+      const target = role === "admin" ? `/admin/messages/${threadId}` : `/${role}/messages/${threadId}`;
+      return { href: target, label: "view" };
+    }
     default: {
       // Fall back to any ID we can find.
       if (role === "organizer") {
@@ -205,6 +212,9 @@ function iconForKind(kind: string): { icon: LucideIcon; tone: Tone } {
       return { icon: AlertTriangle, tone: "warning" };
     case "rfq_invite_declined":
       return { icon: XCircle, tone: "warning" };
+    case "message.received":
+    case "message.reply_received":
+      return { icon: MessageSquare, tone: "info" };
     default:
       return { icon: Info, tone: "neutral" };
   }
@@ -290,6 +300,8 @@ export default async function NotificationsInbox({
     "quote.proposal_fulfilled",
     "booking.created",
     "booking.awaiting_supplier",
+    "message.received",
+    "message.reply_received",
   ] as const;
   const kindLabels: Record<string, string> = {};
   for (const k of kindKeys) {

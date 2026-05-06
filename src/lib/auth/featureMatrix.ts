@@ -48,11 +48,17 @@ export type OrganizerFeature =
 export type AdminFeature =
   | "admin.console"
   | "feedback.admin.read"
-  | "feedback.admin.write";
+  | "feedback.admin.write"
+  | "messaging.admin.read"
+  | "messaging.admin.write";
 
-// Cross-role features available to any signed-in user. Today this is just the
-// in-app feedback widget; keep this union small so the matrix stays readable.
-export type SharedFeature = "feedback.submit";
+// Cross-role features available to any signed-in user. Today this is the
+// in-app feedback widget plus the threaded messaging surface; keep this union
+// small so the matrix stays readable.
+export type SharedFeature =
+  | "feedback.submit"
+  | "messaging.user.read"
+  | "messaging.user.write";
 
 export type AccessFeature =
   | SupplierFeature
@@ -73,6 +79,8 @@ type StateConfig = {
 // is always one click away.
 const SHARED_AUTH_FEATURES: FeatureSet = {
   "feedback.submit": true,
+  "messaging.user.read": true,
+  "messaging.user.write": true,
 };
 
 const SUPPLIER_APPROVED_FEATURES: FeatureSet = {
@@ -105,6 +113,8 @@ const ADMIN_FEATURES: FeatureSet = {
   "admin.console": true,
   "feedback.admin.read": true,
   "feedback.admin.write": true,
+  "messaging.admin.read": true,
+  "messaging.admin.write": true,
   ...SUPPLIER_APPROVED_FEATURES,
   ...ORGANIZER_FEATURES,
 };
@@ -153,6 +163,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/dashboard",
       "/supplier/onboarding",
       "/supplier/profile",
+      "/supplier/messages",
     ],
     features: {
       ...SHARED_AUTH_FEATURES,
@@ -167,6 +178,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/dashboard",
       "/supplier/onboarding",
       "/supplier/profile",
+      "/supplier/messages",
     ],
     features: {
       ...SHARED_AUTH_FEATURES,
@@ -186,6 +198,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
       "/supplier/dashboard",
       "/supplier/onboarding",
       "/supplier/profile",
+      "/supplier/messages",
     ],
     features: {
       ...SHARED_AUTH_FEATURES,
@@ -196,7 +209,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
   },
   "supplier.suspended": {
     bestDestination: "/supplier/dashboard",
-    allowedRoutePrefixes: ["/supplier/dashboard"],
+    allowedRoutePrefixes: ["/supplier/dashboard", "/supplier/messages"],
     features: {
       ...SHARED_AUTH_FEATURES,
       "supplier.dashboard": true,

@@ -23,7 +23,8 @@
       "dashboard": "Dashboard",
       "events": "Events",
       "rfqs": "RFQs",
-      "bookings": "Bookings"
+      "bookings": "Bookings",
+      "messages": "Messages"
     },
     "supplier": {
       "dashboard": "Dashboard",
@@ -33,12 +34,14 @@
       "rfqs": "RFQs",
       "opportunities": "Opportunities",
       "bookings": "Bookings",
-      "profile": "Profile"
+      "profile": "Profile",
+      "messages": "Messages"
     },
     "admin": {
       "dashboard": "Overview",
       "verifications": "Verifications",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "messages": "Messages"
     },
     "menu": {
       "open": "Open menu",
@@ -431,6 +434,10 @@
       "booking": {
         "created": "A booking was created",
         "awaiting_supplier": "Booking awaiting your confirmation"
+      },
+      "message": {
+        "received": "New message",
+        "reply_received": "New reply"
       }
     }
   },
@@ -1627,6 +1634,105 @@
           "resolvedAt": "Resolved at"
         }
       }
+    },
+    "messages": {
+      "pageTitle": "Messages",
+      "pageDescription": "Threaded conversations with users — feedback, support, and announcements.",
+      "compose": "Compose message",
+      "empty": "No conversations yet.",
+      "errorLoad": "Failed to load conversations",
+      "filters": {
+        "status": {
+          "label": "Status",
+          "all": "All",
+          "new": "New",
+          "triaged": "In progress",
+          "resolved": "Resolved",
+          "open": "Open",
+          "closed": "Closed"
+        },
+        "role": {
+          "label": "Role",
+          "all": "All roles",
+          "supplier": "Suppliers",
+          "organizer": "Organizers",
+          "admin": "Admins",
+          "agency": "Agencies"
+        },
+        "unread": {
+          "label": "Unread",
+          "all": "All",
+          "only": "Only unread"
+        },
+        "search": {
+          "label": "Search",
+          "placeholder": "Subject or message text…"
+        }
+      },
+      "columns": {
+        "when": "Last activity",
+        "user": "User",
+        "role": "Role",
+        "subject": "Subject",
+        "status": "Status",
+        "snippet": "Last message"
+      },
+      "row": {
+        "unread": "Unread",
+        "noSubject": "(no subject)",
+        "noEmail": "(account removed)"
+      },
+      "thread": {
+        "back": "Back to messages",
+        "recipient": "User",
+        "noEmail": "(account removed)",
+        "subjectPlaceholder": "(no subject)",
+        "campaign": "Part of campaign"
+      },
+      "actions": {
+        "close": "Close",
+        "reopen": "Reopen",
+        "triage": "Mark in progress",
+        "resolve": "Mark resolved",
+        "reopened": "Reopened.",
+        "closed": "Closed."
+      },
+      "reply": {
+        "placeholder": "Reply to this user…",
+        "send": "Send reply",
+        "sending": "Sending…",
+        "errorClosed": "This conversation is closed. Reopen to reply.",
+        "error": "Couldn't send the reply."
+      },
+      "composeForm": {
+        "title": "Compose message",
+        "back": "Back to messages",
+        "targetType": "Send to",
+        "targetTypeUser": "A specific user",
+        "targetTypeRole": "Everyone in a role",
+        "targetTypeAll": "All users",
+        "userSearch": "Find user (email or name)",
+        "userSearchPlaceholder": "Type to search…",
+        "userSelected": "Selected: {name}",
+        "noUserSelected": "No user selected.",
+        "role": "Role",
+        "subject": "Subject",
+        "subjectPlaceholder": "Short headline",
+        "body": "Message",
+        "bodyPlaceholder": "What do you want to tell them?",
+        "recipientCount": "{count, plural, =0 {No recipients} one {# recipient} other {# recipients}}",
+        "send": "Send message",
+        "sending": "Sending…",
+        "confirmTitle": "Send to {count} recipients?",
+        "confirmDescription": "Each recipient will receive their own thread. They can reply directly.",
+        "confirmCancel": "Cancel",
+        "confirmSend": "Yes, send",
+        "errorEmpty": "Subject and message are required.",
+        "errorNoTarget": "Please pick a target user or role.",
+        "errorTooMany": "Bulk sends are limited to {limit} recipients per campaign.",
+        "successSingle": "Message sent.",
+        "successBulk": "Sent to {count, plural, one {# recipient} other {# recipients}}."
+      }
     }
   },
   "organizer": {
@@ -2419,6 +2525,67 @@
       "reasonPlaceholder": "Tell the organizer why you can't take this booking…",
       "cancel": "Cancel",
       "declineConfirm": "Decline booking"
+    }
+  },
+  "messaging": {
+    "title": "Messages",
+    "empty": "No conversations yet.",
+    "newThread": "New message",
+    "back": "Back to messages",
+    "you": "You",
+    "admin": "Admin",
+    "system": "System",
+    "edited": "edited",
+    "viewDetails": "View details",
+    "loadingMore": "Loading more…",
+    "newMessages": "{count, plural, one {# new message} other {# new messages}}",
+    "filters": {
+      "status": {
+        "label": "Status",
+        "open": "Open",
+        "closed": "Closed",
+        "all": "All"
+      },
+      "unread": {
+        "label": "Unread",
+        "all": "All",
+        "only": "Only unread"
+      }
+    },
+    "status": {
+      "new": "New",
+      "triaged": "In progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "thread": {
+      "subject": "Subject",
+      "noSubject": "(no subject)",
+      "closedNotice": "This conversation is closed.",
+      "openedFromCampaign": "Part of a broadcast"
+    },
+    "composer": {
+      "placeholder": "Write a reply…",
+      "newPlaceholder": "Type your message…",
+      "send": "Send",
+      "sending": "Sending…",
+      "errorEmpty": "Please write something before sending.",
+      "errorClosed": "This conversation is closed.",
+      "error": "Couldn't send. Try again."
+    },
+    "newThreadForm": {
+      "title": "New message",
+      "category": "Category",
+      "categoryHint": "Optional — helps the team triage faster.",
+      "categoryAll": "Choose…",
+      "subject": "Subject (optional)",
+      "subjectPlaceholder": "What is this about?",
+      "body": "Message",
+      "bodyPlaceholder": "Tell us what's going on…",
+      "submit": "Send message",
+      "submitting": "Sending…",
+      "errorEmpty": "Please write a message.",
+      "error": "Couldn't send. Try again."
     }
   }
 }

@@ -62,6 +62,12 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       iconKey: "bookings",
       feature: "organizer.bookings",
     },
+    {
+      href: "/organizer/messages",
+      labelKey: "organizer.messages",
+      iconKey: "messages",
+      feature: "messaging.user.read",
+    },
   ],
   supplier: [
     {
@@ -103,6 +109,12 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       iconKey: "profile",
       feature: "supplier.profile.access",
     },
+    {
+      href: "/supplier/messages",
+      labelKey: "supplier.messages",
+      iconKey: "messages",
+      feature: "messaging.user.read",
+    },
   ],
   admin: [
     {
@@ -122,6 +134,12 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       labelKey: "admin.feedback",
       iconKey: "feedback",
       feature: "feedback.admin.read",
+    },
+    {
+      href: "/admin/messages",
+      labelKey: "admin.messages",
+      iconKey: "messages",
+      feature: "messaging.admin.read",
     },
   ],
 };

@@ -8,6 +8,7 @@ import {
   FileText,
   Inbox,
   LayoutDashboard,
+  Mail,
   MessageSquare,
   Palette,
   ShieldCheck,
@@ -41,6 +42,7 @@ export const NAV_ICONS = {
   verifications: ShieldCheck,
   notifications: Bell,
   feedback: MessageSquare,
+  messages: Mail,
 } as const satisfies Record<string, LucideIcon>;
 
 export type NavIconKey = keyof typeof NAV_ICONS;

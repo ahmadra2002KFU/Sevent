@@ -24,7 +24,10 @@ export type NotificationKind =
   | "booking.created"
   | "booking.awaiting_supplier"
   | "booking.confirmed"
-  | "booking.cancelled";
+  | "booking.cancelled"
+  // Round-2 messaging — admin↔user threaded conversations.
+  | "message.received"
+  | "message.reply_received";
 
 export type CreateNotificationParams = {
   /** Supabase client with INSERT rights on `public.notifications` (service role). */

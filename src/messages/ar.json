@@ -23,7 +23,8 @@
       "dashboard": "لوحة التحكم",
       "events": "الفعاليات",
       "rfqs": "طلبات العروض",
-      "bookings": "الحجوزات"
+      "bookings": "الحجوزات",
+      "messages": "الرسائل"
     },
     "supplier": {
       "dashboard": "لوحة التحكم",
@@ -33,12 +34,14 @@
       "rfqs": "طلبات العروض",
       "opportunities": "الفرص",
       "bookings": "الحجوزات",
-      "profile": "ملفي"
+      "profile": "ملفي",
+      "messages": "الرسائل"
     },
     "admin": {
       "dashboard": "نظرة عامة",
       "verifications": "التحققات",
-      "feedback": "الملاحظات"
+      "feedback": "الملاحظات",
+      "messages": "الرسائل"
     },
     "menu": {
       "open": "فتح القائمة",
@@ -431,6 +434,10 @@
       "booking": {
         "created": "تم إنشاء حجز",
         "awaiting_supplier": "حجز بانتظار تأكيدك"
+      },
+      "message": {
+        "received": "رسالة جديدة",
+        "reply_received": "رد جديد"
       }
     }
   },
@@ -1627,6 +1634,105 @@
           "resolvedAt": "وقت الحل"
         }
       }
+    },
+    "messages": {
+      "pageTitle": "الرسائل",
+      "pageDescription": "محادثات مترابطة مع المستخدمين — ملاحظات ودعم وإعلانات.",
+      "compose": "كتابة رسالة",
+      "empty": "لا توجد محادثات بعد.",
+      "errorLoad": "تعذر تحميل المحادثات",
+      "filters": {
+        "status": {
+          "label": "الحالة",
+          "all": "الكل",
+          "new": "جديدة",
+          "triaged": "قيد المعالجة",
+          "resolved": "تم حلها",
+          "open": "مفتوحة",
+          "closed": "مغلقة"
+        },
+        "role": {
+          "label": "الدور",
+          "all": "كل الأدوار",
+          "supplier": "الموردون",
+          "organizer": "المنظمون",
+          "admin": "المشرفون",
+          "agency": "الوكالات"
+        },
+        "unread": {
+          "label": "غير المقروءة",
+          "all": "الكل",
+          "only": "غير المقروءة فقط"
+        },
+        "search": {
+          "label": "بحث",
+          "placeholder": "في الموضوع أو نص الرسالة…"
+        }
+      },
+      "columns": {
+        "when": "آخر نشاط",
+        "user": "المستخدم",
+        "role": "الدور",
+        "subject": "الموضوع",
+        "status": "الحالة",
+        "snippet": "آخر رسالة"
+      },
+      "row": {
+        "unread": "غير مقروءة",
+        "noSubject": "(بدون موضوع)",
+        "noEmail": "(تم حذف الحساب)"
+      },
+      "thread": {
+        "back": "رجوع إلى الرسائل",
+        "recipient": "المستخدم",
+        "noEmail": "(تم حذف الحساب)",
+        "subjectPlaceholder": "(بدون موضوع)",
+        "campaign": "ضمن حملة"
+      },
+      "actions": {
+        "close": "إغلاق",
+        "reopen": "إعادة فتح",
+        "triage": "وضع علامة قيد المعالجة",
+        "resolve": "وضع علامة محلولة",
+        "reopened": "تم إعادة الفتح.",
+        "closed": "تم الإغلاق."
+      },
+      "reply": {
+        "placeholder": "ردّ على هذا المستخدم…",
+        "send": "إرسال الرد",
+        "sending": "جاري الإرسال…",
+        "errorClosed": "هذه المحادثة مغلقة. أعد فتحها للرد.",
+        "error": "تعذر إرسال الرد."
+      },
+      "composeForm": {
+        "title": "كتابة رسالة",
+        "back": "رجوع إلى الرسائل",
+        "targetType": "إرسال إلى",
+        "targetTypeUser": "مستخدم محدد",
+        "targetTypeRole": "كل من في دور معين",
+        "targetTypeAll": "جميع المستخدمين",
+        "userSearch": "ابحث عن مستخدم (بريد إلكتروني أو اسم)",
+        "userSearchPlaceholder": "اكتب للبحث…",
+        "userSelected": "المختار: {name}",
+        "noUserSelected": "لم يتم اختيار مستخدم.",
+        "role": "الدور",
+        "subject": "الموضوع",
+        "subjectPlaceholder": "عنوان قصير",
+        "body": "الرسالة",
+        "bodyPlaceholder": "ماذا تريد إخبارهم؟",
+        "recipientCount": "{count, plural, =0 {لا يوجد مستلمون} one {مستلم واحد} other {# مستلمين}}",
+        "send": "إرسال الرسالة",
+        "sending": "جاري الإرسال…",
+        "confirmTitle": "إرسال إلى {count} مستلمين؟",
+        "confirmDescription": "سيستلم كل شخص نسخته الخاصة من المحادثة ويستطيع الرد مباشرة.",
+        "confirmCancel": "إلغاء",
+        "confirmSend": "نعم، أرسل",
+        "errorEmpty": "الموضوع والرسالة مطلوبان.",
+        "errorNoTarget": "يرجى اختيار مستخدم أو دور.",
+        "errorTooMany": "الإرسال الجماعي محدود بـ {limit} مستلمًا لكل حملة.",
+        "successSingle": "تم إرسال الرسالة.",
+        "successBulk": "أُرسلت إلى {count, plural, one {مستلم واحد} other {# مستلمين}}."
+      }
     }
   },
   "organizer": {
@@ -2419,6 +2525,67 @@
       "reasonPlaceholder": "أخبر المنظّم لماذا لا يمكنك أخذ هذا الحجز…",
       "cancel": "إلغاء",
       "declineConfirm": "رفض الحجز"
+    }
+  },
+  "messaging": {
+    "title": "الرسائل",
+    "empty": "لا توجد محادثات بعد.",
+    "newThread": "رسالة جديدة",
+    "back": "رجوع إلى الرسائل",
+    "you": "أنت",
+    "admin": "المشرف",
+    "system": "النظام",
+    "edited": "تم تعديلها",
+    "viewDetails": "عرض التفاصيل",
+    "loadingMore": "جاري التحميل…",
+    "newMessages": "{count, plural, one {رسالة جديدة} other {# رسائل جديدة}}",
+    "filters": {
+      "status": {
+        "label": "الحالة",
+        "open": "مفتوحة",
+        "closed": "مغلقة",
+        "all": "الكل"
+      },
+      "unread": {
+        "label": "غير المقروءة",
+        "all": "الكل",
+        "only": "غير المقروءة فقط"
+      }
+    },
+    "status": {
+      "new": "جديد",
+      "triaged": "قيد المعالجة",
+      "resolved": "تم الحل",
+      "closed": "مغلقة"
+    },
+    "thread": {
+      "subject": "الموضوع",
+      "noSubject": "(بدون موضوع)",
+      "closedNotice": "هذه المحادثة مغلقة.",
+      "openedFromCampaign": "ضمن حملة عامة"
+    },
+    "composer": {
+      "placeholder": "اكتب ردًا…",
+      "newPlaceholder": "اكتب رسالتك…",
+      "send": "إرسال",
+      "sending": "جاري الإرسال…",
+      "errorEmpty": "يرجى كتابة شيء قبل الإرسال.",
+      "errorClosed": "هذه المحادثة مغلقة.",
+      "error": "تعذر الإرسال. حاول مرة أخرى."
+    },
+    "newThreadForm": {
+      "title": "رسالة جديدة",
+      "category": "الفئة",
+      "categoryHint": "اختياري — يساعدنا في الفرز بسرعة.",
+      "categoryAll": "اختر…",
+      "subject": "الموضوع (اختياري)",
+      "subjectPlaceholder": "ما عنوان الرسالة؟",
+      "body": "الرسالة",
+      "bodyPlaceholder": "أخبرنا بما يحدث…",
+      "submit": "إرسال الرسالة",
+      "submitting": "جاري الإرسال…",
+      "errorEmpty": "يرجى كتابة الرسالة.",
+      "error": "تعذر الإرسال. حاول مرة أخرى."
     }
   }
 }

@@ -118,12 +118,16 @@ export default async function AdminFeedbackPage({
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
+  // Scope to user-initiated feedback only: admin-initiated threads (announcements,
+  // direct messages from admin) are managed in /admin/messages and would render
+  // here with `category = null` which the row component can't label.
   let query = admin
     .from("app_feedback")
     .select(
       "id, user_id, role, category, message, page_url, locale, viewport_w, viewport_h, user_agent, console_errors, status, admin_notes, resolved_at, created_at, screenshot_path",
       { count: "exact" },
     )
+    .eq("initiator", "user")
     .order("created_at", { ascending: false })
     .range(from, to);
 
