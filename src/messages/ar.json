@@ -961,7 +961,8 @@
           "reviewHintDone": "اكتملت المراجعة",
           "live": "منشور",
           "liveHintPending": "يُنشر ملفك عند الاعتماد",
-          "liveHintActive": "ملفك منشور الآن"
+          "liveHintActive": "ملفك منشور الآن",
+          "liveCta": "افتح ملفك العام"
         }
       },
       "resubmit": {

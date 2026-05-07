@@ -439,6 +439,14 @@ export default async function SupplierDashboardPage() {
           liveHintPending: t("journey.steps.liveHintPending"),
           liveHintActive: t("journey.steps.liveHintActive"),
         }}
+        liveCta={
+          journeyState === "live" && supplierSummary.slug
+            ? {
+                label: t("journey.steps.liveCta"),
+                href: `/s/${supplierSummary.slug}`,
+              }
+            : undefined
+        }
       />
 
       {shouldCelebrate ? (
@@ -698,10 +706,19 @@ type JourneyLabels = {
   liveHintActive: string;
 };
 
+type JourneyTile = {
+  title: string;
+  hint: string;
+  state: TileState;
+  icon: LucideIcon;
+  cta?: { label: string; href: string };
+};
+
 function tilesForState(
   state: JourneyState,
   labels: JourneyLabels,
-): Array<{ title: string; hint: string; state: TileState; icon: LucideIcon }> {
+  liveCta?: { label: string; href: string },
+): Array<JourneyTile> {
   switch (state) {
     case "submitting":
       return [
@@ -719,7 +736,7 @@ function tilesForState(
       return [
         { title: labels.submit, hint: labels.submitHintDone, state: "done", icon: CheckCircle2 },
         { title: labels.review, hint: labels.reviewHintDone, state: "done", icon: CheckCircle2 },
-        { title: labels.live, hint: labels.liveHintActive, state: "active", icon: Rocket },
+        { title: labels.live, hint: labels.liveHintActive, state: "active", icon: Rocket, cta: liveCta },
       ];
     case "rejected":
       return [
@@ -752,12 +769,14 @@ function JourneyStrip({
   state,
   heading,
   labels,
+  liveCta,
 }: {
   state: JourneyState;
   heading: string;
   labels: JourneyLabels;
+  liveCta?: { label: string; href: string };
 }) {
-  const tiles = tilesForState(state, labels);
+  const tiles = tilesForState(state, labels, liveCta);
   return (
     <div>
       <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -795,6 +814,17 @@ function JourneyStrip({
                 <span className="text-xs text-muted-foreground">
                   {tile.hint}
                 </span>
+                {tile.cta ? (
+                  <Link
+                    href={tile.cta.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 self-start rounded-md bg-brand-cobalt-500 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-brand-cobalt-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500/40"
+                  >
+                    {tile.cta.label}
+                    <ArrowUpRight className="size-3.5 rtl:-scale-x-100" aria-hidden />
+                  </Link>
+                ) : null}
               </div>
             </li>
           );

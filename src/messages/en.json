@@ -961,7 +961,8 @@
           "reviewHintDone": "Review complete",
           "live": "Live",
           "liveHintPending": "Public profile publishes on approval",
-          "liveHintActive": "Your profile is live"
+          "liveHintActive": "Your profile is live",
+          "liveCta": "Open public profile"
         }
       },
       "resubmit": {
