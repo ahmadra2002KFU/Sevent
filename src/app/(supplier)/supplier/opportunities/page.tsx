@@ -6,13 +6,11 @@ import {
   MapPin,
   Search,
   Users,
-  Wallet,
 } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor, cityOptions } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
-import { formatHalalas } from "@/lib/domain/money";
 import { segmentNameFor, MARKET_SEGMENT_SLUGS } from "@/lib/domain/segments";
 import {
   listMarketplaceOpportunities,
@@ -152,41 +150,10 @@ export default async function OpportunitiesPage({ searchParams }: PageProps) {
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-          {t("filters.budgetMin")}
-          <input
-            type="number"
-            name="min"
-            inputMode="numeric"
-            min={0}
-            placeholder="0"
-            defaultValue={
-              filters.budgetMinHalalas !== null &&
-              filters.budgetMinHalalas !== undefined
-                ? String(filters.budgetMinHalalas)
-                : ""
-            }
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-          {t("filters.budgetMax")}
-          <input
-            type="number"
-            name="max"
-            inputMode="numeric"
-            min={0}
-            placeholder="0"
-            defaultValue={
-              filters.budgetMaxHalalas !== null &&
-              filters.budgetMaxHalalas !== undefined
-                ? String(filters.budgetMaxHalalas)
-                : ""
-            }
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-          />
-        </label>
+        {/* Budget min/max filters intentionally hidden: the underlying field is
+            the organizer's whole-event budget, which is misleading per-RFQ.
+            URL params still work — restore the inputs once we capture per-بند
+            budgets. */}
 
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
           <Button type="submit" size="sm">
@@ -215,8 +182,6 @@ export default async function OpportunitiesPage({ searchParams }: PageProps) {
                 tLabels={{
                   applyCta: t("applyCta"),
                   guestsLabel: t("guestsLabel"),
-                  budgetLabel: t("budgetLabel"),
-                  budgetNotDisclosed: t("budgetNotDisclosed"),
                   postedLabel: t("postedLabel"),
                   dueLabel: t("dueLabel"),
                 }}
@@ -236,8 +201,6 @@ type OpportunityCardProps = {
   tLabels: {
     applyCta: string;
     guestsLabel: string;
-    budgetLabel: string;
-    budgetNotDisclosed: string;
     postedLabel: string;
     dueLabel: string;
   };
@@ -246,7 +209,6 @@ type OpportunityCardProps = {
 function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
   const categoryLabel = categoryName(op.category, locale);
   const subLabel = categoryName(op.subcategory, locale);
-  const budget = formatBudget(op.event.budget_min_halalas, op.event.budget_max_halalas);
   const cityLabel = cityNameFor(op.event.city, locale);
 
   return (
@@ -281,13 +243,6 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
                 </span>
               </span>
             ) : null}
-            <span className="inline-flex items-center gap-1.5">
-              <Wallet className="size-4" aria-hidden />
-              {tLabels.budgetLabel}:{" "}
-              <span className="font-medium text-foreground">
-                {budget ?? tLabels.budgetNotDisclosed}
-              </span>
-            </span>
           </div>
           {op.expires_at ? (
             <p className="text-xs text-muted-foreground">
@@ -304,17 +259,4 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
       </CardContent>
     </Card>
   );
-}
-
-function formatBudget(
-  min: number | null,
-  max: number | null,
-): string | null {
-  if (min === null && max === null) return null;
-  if (min !== null && max !== null) {
-    return `${formatHalalas(min)} – ${formatHalalas(max)}`;
-  }
-  if (min !== null) return `≥ ${formatHalalas(min)}`;
-  if (max !== null) return `≤ ${formatHalalas(max)}`;
-  return null;
 }

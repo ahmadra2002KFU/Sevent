@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, MapPin, Wallet } from "lucide-react";
+import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import {
   Card,
@@ -14,7 +14,6 @@ import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
-import { formatHalalas } from "@/lib/domain/money";
 import {
   listMarketplaceOpportunities,
   type MarketplaceOpportunity,
@@ -102,10 +101,6 @@ function PreviewRow({
   const categoryLabel = categoryName(op.category, locale);
   const subLabel = categoryName(op.subcategory, locale);
   const cityLabel = cityNameFor(op.event.city, locale);
-  const budget = formatBudget(
-    op.event.budget_min_halalas,
-    op.event.budget_max_halalas,
-  );
 
   return (
     <div className="min-w-0 flex-1">
@@ -128,23 +123,7 @@ function PreviewRow({
             {fmtDateTime(op.event.starts_at, locale)}
           </span>
         </span>
-        {budget ? (
-          <span className="inline-flex items-center gap-1">
-            <Wallet className="size-3.5" aria-hidden />
-            <span className="font-medium text-foreground">{budget}</span>
-          </span>
-        ) : null}
       </p>
     </div>
   );
-}
-
-function formatBudget(min: number | null, max: number | null): string | null {
-  if (min === null && max === null) return null;
-  if (min !== null && max !== null) {
-    return `${formatHalalas(min)} – ${formatHalalas(max)}`;
-  }
-  if (min !== null) return `≥ ${formatHalalas(min)}`;
-  if (max !== null) return `≤ ${formatHalalas(max)}`;
-  return null;
 }

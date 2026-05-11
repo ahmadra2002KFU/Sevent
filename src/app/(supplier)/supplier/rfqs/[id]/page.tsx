@@ -96,17 +96,6 @@ const TERMINAL_QUOTE_STATUSES = new Set<QuoteRow["status"]>([
 ]);
 
 
-function formatBudget(
-  min: number | null | undefined,
-  max: number | null | undefined,
-): string {
-  if (min == null && max == null) return "—";
-  if (min != null && max != null) return `${formatHalalas(min)} – ${formatHalalas(max)}`;
-  if (min != null) return `≥ ${formatHalalas(min)}`;
-  if (max != null) return `≤ ${formatHalalas(max)}`;
-  return "—";
-}
-
 function Field({
   label,
   value,
@@ -406,13 +395,6 @@ export default async function SupplierRfqDetailPage({
             <Field
               label={t("guestCountLabel")}
               value={event?.guest_count != null ? event.guest_count : "—"}
-            />
-            <Field
-              label={t("budgetLabel")}
-              value={formatBudget(
-                event?.budget_range_min_halalas,
-                event?.budget_range_max_halalas,
-              )}
             />
             {event?.notes ? (
               <Field

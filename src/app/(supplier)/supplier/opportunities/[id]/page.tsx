@@ -8,13 +8,11 @@ import {
   Hash,
   MapPin,
   Users,
-  Wallet,
 } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
-import { formatHalalas } from "@/lib/domain/money";
 import { segmentNameFor } from "@/lib/domain/segments";
 import {
   getExistingInviteForMarketplaceOpportunity,
@@ -60,10 +58,6 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
 
   const categoryLabel = categoryName(opportunity.category, locale);
   const subLabel = categoryName(opportunity.subcategory, locale);
-  const budget = formatBudget(
-    opportunity.event.budget_min_halalas,
-    opportunity.event.budget_max_halalas,
-  );
   const qty = readQty(opportunity.requirements_jsonb);
 
   return (
@@ -114,11 +108,6 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
               ? String(opportunity.event.guest_count)
               : t("detail.notDisclosed")
           }
-        />
-        <InfoTile
-          icon={Wallet}
-          label={t("detail.budgetLabel")}
-          value={budget ?? t("detail.notDisclosed")}
         />
         {qty > 1 ? (
           <InfoTile
@@ -221,17 +210,4 @@ function readQty(requirements: unknown): number {
   const raw = (requirements as { qty?: unknown }).qty;
   const n = typeof raw === "number" ? raw : Number(raw);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
-}
-
-function formatBudget(
-  min: number | null,
-  max: number | null,
-): string | null {
-  if (min === null && max === null) return null;
-  if (min !== null && max !== null) {
-    return `${formatHalalas(min)} – ${formatHalalas(max)}`;
-  }
-  if (min !== null) return `≥ ${formatHalalas(min)}`;
-  if (max !== null) return `≤ ${formatHalalas(max)}`;
-  return null;
 }
