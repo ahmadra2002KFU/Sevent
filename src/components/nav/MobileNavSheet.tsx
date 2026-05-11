@@ -20,6 +20,8 @@ export type MobileNavItem = {
   href: string;
   label: string;
   iconKey: NavIconKey;
+  /** See `NavLinkItem.activePrefixes`. */
+  activePrefixes?: readonly string[];
 };
 
 type MobileNavSheetProps = {
@@ -29,9 +31,19 @@ type MobileNavSheetProps = {
   title: string;
 };
 
-function isActive(pathname: string, href: string): boolean {
-  if (pathname === href) return true;
-  if (href !== "/" && pathname.startsWith(`${href}/`)) return true;
+function matchesPrefix(pathname: string, prefix: string): boolean {
+  if (pathname === prefix) return true;
+  if (prefix !== "/" && pathname.startsWith(`${prefix}/`)) return true;
+  return false;
+}
+
+function isActive(pathname: string, item: MobileNavItem): boolean {
+  if (matchesPrefix(pathname, item.href)) return true;
+  if (item.activePrefixes) {
+    for (const p of item.activePrefixes) {
+      if (matchesPrefix(pathname, p)) return true;
+    }
+  }
   return false;
 }
 
@@ -82,7 +94,7 @@ export function MobileNavSheet({
           <ul className="flex flex-col gap-1">
             {items.map((item) => {
               const Icon = NAV_ICONS[item.iconKey];
-              const active = isActive(pathname, item.href);
+              const active = isActive(pathname, item);
               return (
                 <li key={item.href}>
                   <SheetClose asChild>

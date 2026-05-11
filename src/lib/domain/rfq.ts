@@ -25,7 +25,10 @@ export type RfqStatus =
 
 export type RfqInviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
 
-export type RfqInviteSource = "auto_match" | "organizer_picked";
+export type RfqInviteSource =
+  | "auto_match"
+  | "organizer_picked"
+  | "self_applied";
 
 export type ResponseDeadlineHours = 24 | 48 | 72;
 

@@ -9,6 +9,14 @@ export type NavLinkItem = {
   href: string;
   label: string;
   iconKey: NavIconKey;
+  /**
+   * Additional path prefixes that also light up this nav entry. Used when one
+   * top-level item groups several sibling routes (e.g. the admin Monitor entry
+   * lands on `/admin/rfqs` but also covers `/admin/applications` +
+   * `/admin/proposals`). Each prefix matches the same exact-or-trailing-slash
+   * rule as `href` itself.
+   */
+  activePrefixes?: readonly string[];
 };
 
 type NavLinksProps = {
@@ -17,16 +25,26 @@ type NavLinksProps = {
 };
 
 /**
- * Checks if `pathname` is at, or within, the nav item's `href`. Dashboard
- * entries live at `/<role>/dashboard`, but we also treat the bare `/<role>`
- * landing URL as matching dashboard. Otherwise we require either an exact
- * match or a trailing-slash-boundary match so `/organizer/events` doesn't
- * light up while viewing `/organizer/events-archive` (no current route, but
- * keeps the logic future-proof).
+ * Checks if `pathname` is at, or within, the nav item's `href` (or any extra
+ * `activePrefixes`). Dashboard entries live at `/<role>/dashboard`, but we also
+ * treat the bare `/<role>` landing URL as matching dashboard. Otherwise we
+ * require either an exact match or a trailing-slash-boundary match so
+ * `/organizer/events` doesn't light up while viewing `/organizer/events-archive`
+ * (no current route, but keeps the logic future-proof).
  */
-function isActive(pathname: string, href: string): boolean {
-  if (pathname === href) return true;
-  if (href !== "/" && pathname.startsWith(`${href}/`)) return true;
+function matchesPrefix(pathname: string, prefix: string): boolean {
+  if (pathname === prefix) return true;
+  if (prefix !== "/" && pathname.startsWith(`${prefix}/`)) return true;
+  return false;
+}
+
+function isActive(pathname: string, item: NavLinkItem): boolean {
+  if (matchesPrefix(pathname, item.href)) return true;
+  if (item.activePrefixes) {
+    for (const p of item.activePrefixes) {
+      if (matchesPrefix(pathname, p)) return true;
+    }
+  }
   return false;
 }
 
@@ -48,7 +66,7 @@ export function NavLinks({ items, tone }: NavLinksProps) {
     <ul className="hidden items-center gap-1 text-sm md:flex">
       {items.map((item) => {
         const Icon = NAV_ICONS[item.iconKey];
-        const active = isActive(pathname, item.href);
+        const active = isActive(pathname, item);
         return (
           <li key={item.href}>
             <Link

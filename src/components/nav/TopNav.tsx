@@ -22,6 +22,11 @@ type NavItem = {
   labelKey: string;
   iconKey: NavIconKey;
   feature: AccessFeature;
+  /**
+   * Optional extra path prefixes that should also highlight this entry. Used
+   * for grouped top-level items (see `NavLinkItem.activePrefixes`).
+   */
+  activePrefixes?: readonly string[];
 };
 
 /**
@@ -130,6 +135,13 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
       feature: "admin.console",
     },
     {
+      href: "/admin/rfqs",
+      labelKey: "admin.monitor",
+      iconKey: "monitor",
+      feature: "admin.console",
+      activePrefixes: ["/admin/applications", "/admin/proposals"],
+    },
+    {
       href: "/admin/feedback",
       labelKey: "admin.feedback",
       iconKey: "feedback",
@@ -193,6 +205,7 @@ export async function TopNav({ role }: { role: Role }) {
     href: item.href,
     label: nav(item.labelKey),
     iconKey: item.iconKey,
+    activePrefixes: item.activePrefixes,
   }));
 
   return (

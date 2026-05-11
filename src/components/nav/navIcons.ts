@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   Bell,
   Calendar,
   CalendarCheck,
@@ -40,6 +41,7 @@ export const NAV_ICONS = {
   opportunities: Compass,
   profile: Palette,
   verifications: ShieldCheck,
+  monitor: Activity,
   notifications: Bell,
   feedback: MessageSquare,
   messages: Mail,

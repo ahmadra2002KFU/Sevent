@@ -40,6 +40,7 @@
     "admin": {
       "dashboard": "نظرة عامة",
       "verifications": "التحققات",
+      "monitor": "المراقبة",
       "feedback": "الملاحظات",
       "messages": "الرسائل"
     },
@@ -1733,6 +1734,243 @@
         "errorTooMany": "الإرسال الجماعي محدود بـ {limit} مستلمًا لكل حملة.",
         "successSingle": "تم إرسال الرسالة.",
         "successBulk": "أُرسلت إلى {count, plural, one {مستلم واحد} other {# مستلمين}}."
+      }
+    },
+    "monitor": {
+      "tabs": {
+        "rfqs": "طلبات العروض",
+        "applications": "التقديمات",
+        "proposals": "العروض الفنية"
+      }
+    },
+    "rfqs": {
+      "title": "طلبات العروض",
+      "subtitle": "كل طلبات العروض على المنصة، قابلة للتصفية بالحالة وحالة النشر في السوق.",
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة.",
+      "filter": {
+        "all": "الكل",
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "quoted": "وصل عرض",
+        "booked": "محجوز",
+        "expired": "منتهي",
+        "cancelled": "ملغى",
+        "publishedAll": "أي حالة نشر",
+        "publishedYes": "الفرص فقط",
+        "publishedNo": "الدعوات المباشرة فقط",
+        "dateFrom": "من",
+        "dateTo": "إلى"
+      },
+      "search": {
+        "placeholder": "ابحث حسب نوع الفعالية أو المدينة…",
+        "submit": "بحث",
+        "clear": "مسح"
+      },
+      "list": {
+        "col": {
+          "event": "الفعالية",
+          "organizer": "المنظم",
+          "category": "الفئة",
+          "status": "الحالة",
+          "invites": "الدعوات",
+          "quotes": "العروض",
+          "published": "السوق",
+          "created": "أُنشئ",
+          "sent": "أُرسل",
+          "action": "إجراء"
+        },
+        "empty": "لا توجد طلبات تطابق هذه التصفية.",
+        "viewDetail": "عرض",
+        "publishedYes": "نعم",
+        "publishedNo": "لا",
+        "organizerUnknown": "(منظم غير معروف)"
+      },
+      "detail": {
+        "back": "العودة إلى طلبات العروض",
+        "summary": {
+          "heading": "ملخص",
+          "category": "الفئة",
+          "status": "الحالة",
+          "marketplace": "السوق",
+          "marketplaceYes": "منشور كفرصة",
+          "marketplaceNo": "دعوات مباشرة فقط",
+          "created": "أُنشئ",
+          "sent": "أُرسل",
+          "expires": "ينتهي",
+          "organizer": "المنظم",
+          "event": "الفعالية",
+          "guestCount": "عدد الضيوف",
+          "budget": "الميزانية"
+        },
+        "requirements": {
+          "heading": "المتطلبات",
+          "unknownKind": "محتوى المتطلبات غير معروف — عرض JSON الخام.",
+          "field": {
+            "kind": "النوع",
+            "seating_style": "أسلوب الجلوس",
+            "indoor_outdoor": "داخلي / خارجي",
+            "needs_parking": "يحتاج موقف سيارات",
+            "needs_kitchen": "يحتاج مطبخ",
+            "meal_type": "نوع الوجبة",
+            "dietary": "متطلبات غذائية",
+            "service_style": "أسلوب الخدمة",
+            "coverage_hours": "ساعات التغطية",
+            "deliverables": "المخرجات",
+            "crew_size": "حجم الطاقم",
+            "notes": "ملاحظات",
+            "qty": "الكمية"
+          },
+          "yes": "نعم",
+          "no": "لا"
+        },
+        "invites": {
+          "heading": "الدعوات",
+          "empty": "لم يُدعَ أي مورد لهذا الطلب.",
+          "col": {
+            "supplier": "المورد",
+            "source": "المصدر",
+            "status": "الحالة",
+            "sent": "أُرسلت",
+            "due": "تنتهي",
+            "responded": "تم الرد"
+          },
+          "source": {
+            "auto_match": "مطابقة تلقائية",
+            "organizer_picked": "اختيار المنظم",
+            "self_applied": "تقديم عبر السوق"
+          }
+        },
+        "quotes": {
+          "heading": "العروض",
+          "empty": "لم يُرسَل أي عرض على هذا الطلب.",
+          "col": {
+            "supplier": "المورد",
+            "status": "الحالة",
+            "version": "أحدث إصدار",
+            "sent": "أُرسل",
+            "accepted": "قُبل"
+          },
+          "revisions": {
+            "toggle": "عرض الإصدارات",
+            "empty": "لا توجد إصدارات بعد.",
+            "col": {
+              "version": "الإصدار",
+              "created": "أُنشئ",
+              "hash": "بصمة المحتوى"
+            }
+          }
+        },
+        "proposalRequests": {
+          "heading": "طلبات العروض الفنية",
+          "empty": "لا توجد طلبات عرض فني على هذا الطلب.",
+          "col": {
+            "supplier": "المورد",
+            "status": "الحالة",
+            "requested": "تاريخ الطلب",
+            "responded": "تاريخ الرد",
+            "file": "الملف"
+          },
+          "openFile": "فتح PDF",
+          "noFile": "—"
+        },
+        "booking": {
+          "heading": "الحجز",
+          "none": "لم يُنشأ حجز من هذا الطلب بعد.",
+          "confirmation": "حالة التأكيد",
+          "payment": "حالة الدفع",
+          "service": "حالة الخدمة",
+          "supplier": "المورد"
+        }
+      },
+      "status": {
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "quoted": "وصل عرض",
+        "expired": "منتهي",
+        "booked": "محجوز",
+        "cancelled": "ملغى"
+      },
+      "inviteStatus": {
+        "invited": "مدعو",
+        "declined": "رفض",
+        "quoted": "أرسل عرضًا",
+        "withdrawn": "انسحب"
+      },
+      "quoteStatus": {
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "accepted": "مقبول",
+        "rejected": "مرفوض",
+        "expired": "منتهي",
+        "withdrawn": "مسحوب"
+      }
+    },
+    "applications": {
+      "title": "التقديمات",
+      "subtitle": "كل ارتباط مورد–طلب عرض على المنصة، قابل للتصفية حسب كيفية إنشائه.",
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة.",
+      "filter": {
+        "sourceLabel": "المصدر",
+        "sourceAll": "كل المصادر",
+        "source_auto_match": "مطابقة تلقائية",
+        "source_organizer_picked": "اختيار المنظم",
+        "source_self_applied": "تقديم عبر السوق",
+        "statusLabel": "الحالة",
+        "statusAll": "كل الحالات",
+        "status_invited": "مدعو",
+        "status_declined": "رفض",
+        "status_quoted": "أرسل عرضًا",
+        "status_withdrawn": "انسحب",
+        "dateFrom": "من",
+        "dateTo": "إلى"
+      },
+      "list": {
+        "col": {
+          "supplier": "المورد",
+          "opportunity": "الفرصة",
+          "source": "المصدر",
+          "status": "الحالة",
+          "applied": "تاريخ التقديم",
+          "due": "تنتهي",
+          "quote": "العرض",
+          "action": "إجراء"
+        },
+        "empty": "لا توجد تقديمات تطابق هذه التصفية.",
+        "viewQuote": "عرض العرض",
+        "noQuote": "—",
+        "viewRfq": "عرض الطلب"
+      }
+    },
+    "proposals": {
+      "title": "العروض الفنية",
+      "subtitle": "طلبات المنظم لعرض فني (PDF) ردًا على عرض سعر المورد.",
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة.",
+      "filter": {
+        "all": "الكل",
+        "pending": "قيد الانتظار",
+        "fulfilled": "تم الرد",
+        "cancelled": "ملغى"
+      },
+      "list": {
+        "col": {
+          "organizer": "المنظم",
+          "supplier": "المورد",
+          "event": "الفعالية",
+          "status": "الحالة",
+          "requested": "تاريخ الطلب",
+          "responded": "تاريخ الرد",
+          "file": "الملف",
+          "action": "إجراء"
+        },
+        "empty": "لا توجد طلبات تطابق هذه التصفية.",
+        "openFile": "فتح PDF",
+        "noFile": "—",
+        "viewRfq": "عرض الطلب"
+      },
+      "status": {
+        "pending": "قيد الانتظار",
+        "fulfilled": "تم الرد",
+        "cancelled": "ملغى"
       }
     }
   },

@@ -218,8 +218,8 @@ export default async function AdminDashboardPage() {
 
   // 4) Recent RFQs — last 10. Primary select joins events + both category rows.
   //    A secondary group-by query collects invite counts keyed by rfq_id.
-  // TODO(sprint5): admin RFQ detail view — organizer-scoped detail pages aren't
-  // admin-readable today, so this panel is observation-only.
+  //    Row event cell links to /admin/rfqs/[id] (full admin detail view); the
+  //    footer link below opens the full /admin/rfqs list.
   const { data: rfqsData } = await admin
     .from("rfqs")
     .select(
@@ -576,13 +576,18 @@ export default async function AdminDashboardPage() {
                   return (
                     <TableRow key={r.id}>
                       <TableCell>
-                        <span className="font-medium text-foreground">
-                          {eventType}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {" · "}
-                          {city}
-                        </span>
+                        <Link
+                          href={`/admin/rfqs/${r.id}`}
+                          className="hover:underline"
+                        >
+                          <span className="font-medium text-foreground">
+                            {eventType}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {" · "}
+                            {city}
+                          </span>
+                        </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {category}
@@ -607,6 +612,14 @@ export default async function AdminDashboardPage() {
               </TableBody>
             </Table>
           )}
+          <div className="mt-3 flex justify-end">
+            <Button asChild variant="link" size="sm">
+              <Link href="/admin/rfqs">
+                {t("verificationQueue.openQueue")}
+                <ArrowRight aria-hidden className="rtl:-scale-x-100" />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </section>

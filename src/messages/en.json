@@ -40,6 +40,7 @@
     "admin": {
       "dashboard": "Overview",
       "verifications": "Verifications",
+      "monitor": "Monitor",
       "feedback": "Feedback",
       "messages": "Messages"
     },
@@ -1733,6 +1734,243 @@
         "errorTooMany": "Bulk sends are limited to {limit} recipients per campaign.",
         "successSingle": "Message sent.",
         "successBulk": "Sent to {count, plural, one {# recipient} other {# recipients}}."
+      }
+    },
+    "monitor": {
+      "tabs": {
+        "rfqs": "RFQs",
+        "applications": "Applications",
+        "proposals": "Proposals"
+      }
+    },
+    "rfqs": {
+      "title": "RFQs",
+      "subtitle": "Every RFQ on the platform, filterable by status and marketplace visibility.",
+      "errorAdminRequired": "Admin role required to view this page.",
+      "filter": {
+        "all": "All",
+        "draft": "Draft",
+        "sent": "Sent",
+        "quoted": "Quoted",
+        "booked": "Booked",
+        "expired": "Expired",
+        "cancelled": "Cancelled",
+        "publishedAll": "Any visibility",
+        "publishedYes": "Opportunities only",
+        "publishedNo": "Direct invites only",
+        "dateFrom": "From",
+        "dateTo": "To"
+      },
+      "search": {
+        "placeholder": "Search by event type or city…",
+        "submit": "Search",
+        "clear": "Clear"
+      },
+      "list": {
+        "col": {
+          "event": "Event",
+          "organizer": "Organizer",
+          "category": "Category",
+          "status": "Status",
+          "invites": "Invites",
+          "quotes": "Quotes",
+          "published": "Marketplace",
+          "created": "Created",
+          "sent": "Sent",
+          "action": "Action"
+        },
+        "empty": "No RFQs match this filter.",
+        "viewDetail": "View",
+        "publishedYes": "Yes",
+        "publishedNo": "No",
+        "organizerUnknown": "(unknown organizer)"
+      },
+      "detail": {
+        "back": "Back to RFQs",
+        "summary": {
+          "heading": "Summary",
+          "category": "Category",
+          "status": "Status",
+          "marketplace": "Marketplace",
+          "marketplaceYes": "Published as opportunity",
+          "marketplaceNo": "Direct invites only",
+          "created": "Created",
+          "sent": "Sent",
+          "expires": "Expires",
+          "organizer": "Organizer",
+          "event": "Event",
+          "guestCount": "Guests",
+          "budget": "Budget"
+        },
+        "requirements": {
+          "heading": "Requirements",
+          "unknownKind": "Unrecognized requirements payload — showing raw JSON.",
+          "field": {
+            "kind": "Kind",
+            "seating_style": "Seating",
+            "indoor_outdoor": "Indoor / outdoor",
+            "needs_parking": "Parking needed",
+            "needs_kitchen": "Kitchen needed",
+            "meal_type": "Meal type",
+            "dietary": "Dietary",
+            "service_style": "Service style",
+            "coverage_hours": "Coverage hours",
+            "deliverables": "Deliverables",
+            "crew_size": "Crew size",
+            "notes": "Notes",
+            "qty": "Qty"
+          },
+          "yes": "Yes",
+          "no": "No"
+        },
+        "invites": {
+          "heading": "Invites",
+          "empty": "No suppliers were invited to this RFQ.",
+          "col": {
+            "supplier": "Supplier",
+            "source": "Source",
+            "status": "Status",
+            "sent": "Sent",
+            "due": "Due",
+            "responded": "Responded"
+          },
+          "source": {
+            "auto_match": "Auto-match",
+            "organizer_picked": "Organizer-picked",
+            "self_applied": "Applied via marketplace"
+          }
+        },
+        "quotes": {
+          "heading": "Quotes",
+          "empty": "No quotes have been sent on this RFQ.",
+          "col": {
+            "supplier": "Supplier",
+            "status": "Status",
+            "version": "Latest version",
+            "sent": "Sent",
+            "accepted": "Accepted"
+          },
+          "revisions": {
+            "toggle": "View revisions",
+            "empty": "No revisions captured yet.",
+            "col": {
+              "version": "Version",
+              "created": "Created",
+              "hash": "Content hash"
+            }
+          }
+        },
+        "proposalRequests": {
+          "heading": "Technical proposal requests",
+          "empty": "No proposal requests on this RFQ.",
+          "col": {
+            "supplier": "Supplier",
+            "status": "Status",
+            "requested": "Requested",
+            "responded": "Responded",
+            "file": "File"
+          },
+          "openFile": "Open PDF",
+          "noFile": "—"
+        },
+        "booking": {
+          "heading": "Booking",
+          "none": "No booking created from this RFQ yet.",
+          "confirmation": "Confirmation",
+          "payment": "Payment",
+          "service": "Service",
+          "supplier": "Supplier"
+        }
+      },
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "quoted": "Quoted",
+        "expired": "Expired",
+        "booked": "Booked",
+        "cancelled": "Cancelled"
+      },
+      "inviteStatus": {
+        "invited": "Invited",
+        "declined": "Declined",
+        "quoted": "Quoted",
+        "withdrawn": "Withdrawn"
+      },
+      "quoteStatus": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "expired": "Expired",
+        "withdrawn": "Withdrawn"
+      }
+    },
+    "applications": {
+      "title": "Applications",
+      "subtitle": "Every supplier–RFQ pairing on the platform, filterable by how it was created.",
+      "errorAdminRequired": "Admin role required to view this page.",
+      "filter": {
+        "sourceLabel": "Source",
+        "sourceAll": "All sources",
+        "source_auto_match": "Auto-matched",
+        "source_organizer_picked": "Organizer-picked",
+        "source_self_applied": "Applied via marketplace",
+        "statusLabel": "Status",
+        "statusAll": "All statuses",
+        "status_invited": "Invited",
+        "status_declined": "Declined",
+        "status_quoted": "Quoted",
+        "status_withdrawn": "Withdrawn",
+        "dateFrom": "From",
+        "dateTo": "To"
+      },
+      "list": {
+        "col": {
+          "supplier": "Supplier",
+          "opportunity": "Opportunity",
+          "source": "Source",
+          "status": "Status",
+          "applied": "Applied",
+          "due": "Due",
+          "quote": "Quote",
+          "action": "Action"
+        },
+        "empty": "No applications match this filter.",
+        "viewQuote": "View quote",
+        "noQuote": "—",
+        "viewRfq": "View RFQ"
+      }
+    },
+    "proposals": {
+      "title": "Technical proposals",
+      "subtitle": "Organizer-initiated requests for a technical proposal PDF in response to a supplier quote.",
+      "errorAdminRequired": "Admin role required to view this page.",
+      "filter": {
+        "all": "All",
+        "pending": "Pending",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
+      },
+      "list": {
+        "col": {
+          "organizer": "Organizer",
+          "supplier": "Supplier",
+          "event": "Event",
+          "status": "Status",
+          "requested": "Requested",
+          "responded": "Responded",
+          "file": "File",
+          "action": "Action"
+        },
+        "empty": "No proposal requests match this filter.",
+        "openFile": "Open PDF",
+        "noFile": "—",
+        "viewRfq": "View RFQ"
+      },
+      "status": {
+        "pending": "Pending",
+        "fulfilled": "Fulfilled",
+        "cancelled": "Cancelled"
       }
     }
   },
