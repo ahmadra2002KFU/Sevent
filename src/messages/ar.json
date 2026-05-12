@@ -1740,7 +1740,51 @@
       "tabs": {
         "rfqs": "طلبات العروض",
         "applications": "التقديمات",
-        "proposals": "العروض الفنية"
+        "proposals": "العروض الفنية",
+        "disputes": "النزاعات"
+      }
+    },
+    "disputes": {
+      "title": "النزاعات",
+      "subtitle": "كل النزاعات المفتوحة على الحجوزات. الحلّ والإغلاق يتمّان من صفحة النزاع.",
+      "errorAdminRequired": "يلزم دور المشرف لعرض هذه الصفحة.",
+      "filter": {
+        "all": "الكل",
+        "open": "مفتوح",
+        "investigating": "قيد المراجعة",
+        "resolved": "حُلّ",
+        "closed": "مغلق"
+      },
+      "list": {
+        "empty": "لا توجد نزاعات بهذا التصنيف.",
+        "col": {
+          "booking": "الحجز",
+          "raisedBy": "فتحه",
+          "reason": "السبب",
+          "status": "الحالة",
+          "opened": "تاريخ الفتح",
+          "action": ""
+        },
+        "viewDetail": "عرض"
+      },
+      "detail": {
+        "title": "نزاع",
+        "subtitle": "الحجز {bookingId}",
+        "backToList": "العودة إلى قائمة النزاعات",
+        "bookingHeading": "الحجز",
+        "partiesHeading": "الأطراف",
+        "organizer": "المنظِّم",
+        "supplier": "المورّد",
+        "viewBooking": "عرض الحجز",
+        "viewAcceptedRevision": "نسخة العرض المقبولة",
+        "resolveHeading": "الحلّ أو الإغلاق",
+        "resolutionNoteLabel": "ملاحظة الحلّ",
+        "resolutionNotePlaceholder": "كيف تمّ حلّ هذا النزاع؟ تُحفظ في resolution_jsonb.",
+        "resolveButton": "وضع: حُلّ",
+        "closeButton": "إغلاق دون حلّ",
+        "alreadyClosed": "هذا النزاع {status} بالفعل.",
+        "actionSuccess": "تم تحديث النزاع.",
+        "actionError": "تعذر تحديث النزاع."
       }
     },
     "rfqs": {
@@ -2714,6 +2758,10 @@
     "downloadCompanyProfile": "تحميل ملف الشركة",
     "downloadCompanyProfileError": "تعذّر إنشاء الرابط",
     "downloadCompanyProfileNotReady": "سيُتاح ملف الشركة بعد قبول العرض",
+    "downloadContract": "تحميل ملف العقد (PDF)",
+    "downloadContractError": "تعذّر إنشاء رابط العقد",
+    "downloadContractNotReady": "سيُولَّد العقد بعد تأكيد المزوّد للحجز",
+    "downloadContractMissing": "العقد قيد التجهيز — حدّث الصفحة بعد قليل أو تواصل مع الدعم",
     "table": {
       "supplier": "المورد",
       "organizer": "المنظم",
@@ -2825,6 +2873,99 @@
       "submitting": "جاري الإرسال…",
       "errorEmpty": "يرجى كتابة الرسالة.",
       "error": "تعذر الإرسال. حاول مرة أخرى."
+    }
+  },
+  "reviews": {
+    "backToBooking": "العودة إلى الحجز",
+    "leaveReviewTitle": "اكتب تقييمك",
+    "leaveReviewDescription": "يقيّم كلا الطرفين الآخر بعد الفعالية. يبقى تقييمك مخفياً حتى يُرسل الطرف الآخر تقييمه أو تمر 14 يوماً — لا يرى أحدكما تقييم الآخر قبل ذلك.",
+    "formHeading": "تقييمك",
+    "optionalText": "ملاحظتك (اختياري)",
+    "textPlaceholder": "أي شيء آخر يستحق الذكر؟ نقاط القوة، المفاجآت، ما كنت تتمنى معرفته.",
+    "submit": "إرسال التقييم",
+    "dimensions": {
+      "overall": "التقييم العام",
+      "value": "القيمة مقابل السعر",
+      "punctuality": "الالتزام بالوقت",
+      "professionalism": "الاحترافية"
+    },
+    "blocked": {
+      "notCompleted": "لم يُعلَن انتهاء هذا الحجز بعد — يمكنك التقييم بعد انتهاء الفعالية.",
+      "windowClosed": "انتهت نافذة التقييم (14 يوماً) لهذا الحجز.",
+      "alreadySubmitted": "لقد أرسلت تقييمك بالفعل — شكراً لك!",
+      "disputeOpen": "التقييمات متوقفة أثناء وجود نزاع مفتوح على هذا الحجز.",
+      "generic": "التقييمات غير متاحة لهذا الحجز حالياً."
+    },
+    "cta": {
+      "leaveReview": "اكتب تقييمك",
+      "submitted": "أُرسل تقييمك — في انتظار تقييم الطرف الآخر أو انتهاء النافذة."
+    }
+  },
+  "disputes": {
+    "backToBooking": "العودة إلى الحجز",
+    "openTitle": "فتح نزاع",
+    "openDescription": "أخبرنا ما الذي حدث. الطرف الآخر وفريق الإدارة سيطّلعون على هذا، ويمكنك إرفاق أدلة (ملفات أو ملاحظات) بعد فتح النزاع.",
+    "windowHint": "يمكن فتح النزاع خلال 7 أيام من انتهاء الفعالية.",
+    "form": {
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اختر الأقرب",
+      "descriptionLabel": "ما الذي حدث",
+      "descriptionPlaceholder": "اشرح الموقف باختصار — المشرفون يطّلعون على هذا أولاً.",
+      "submit": "فتح النزاع"
+    },
+    "reason": {
+      "serviceNotDelivered": "لم تُقدَّم الخدمة",
+      "serviceBelowSpec": "الخدمة لم تطابق المتفق عليه",
+      "noShow": "لم يحضر المورّد",
+      "damagedOrUnsafe": "أضرار أو ظروف غير آمنة",
+      "billingDispute": "نزاع على الفوترة أو الدفع",
+      "scheduleConflict": "تعارض في الجدول الزمني",
+      "other": "سبب آخر"
+    },
+    "status": {
+      "open": "مفتوح",
+      "investigating": "قيد المراجعة",
+      "resolved": "حُلّ",
+      "closed": "مغلق"
+    },
+    "blocked": {
+      "notFound": "الحجز غير موجود.",
+      "notParty": "أنت لست طرفاً في هذا الحجز.",
+      "notCompleted": "يمكن فتح النزاع فقط للحجوزات المنتهية.",
+      "windowClosed": "انتهت نافذة فتح النزاع (7 أيام) لهذا الحجز.",
+      "alreadyOpenByViewer": "لديك نزاع مفتوح بالفعل على هذا الحجز.",
+      "generic": "النزاعات غير متاحة لهذا الحجز حالياً."
+    },
+    "cta": {
+      "openDispute": "فتح نزاع",
+      "viewDispute": "عرض النزاع",
+      "alreadyOpen": "النزاع مفتوح بالفعل — تابعه من صفحته."
+    },
+    "detail": {
+      "title": "نزاع",
+      "raisedBy": "فتحه",
+      "openedAt": "تاريخ الفتح",
+      "reasonHeading": "السبب",
+      "descriptionHeading": "ما الذي تم الإبلاغ عنه",
+      "evidenceHeading": "الأدلة",
+      "evidenceEmpty": "لم تُضف أي أدلة بعد.",
+      "evidenceVisibleToOther": "ظاهر للطرف الآخر",
+      "evidencePrivate": "ظاهر لك وللإدارة فقط",
+      "submittedBy": "أضافه",
+      "downloadFile": "تنزيل الملف"
+    },
+    "evidence": {
+      "addNoteHeading": "أضف ملاحظة",
+      "noteLabel": "الملاحظة",
+      "notePlaceholder": "أضف توقيتاً أو سياقاً أو رداً.",
+      "visibilityLabel": "مشاركتها مع الطرف الآخر",
+      "submitNote": "حفظ الملاحظة",
+      "uploadHeading": "ارفع ملفاً",
+      "fileLabel": "ملف (صورة / PDF / فيديو، 25 ميجابايت كحد أقصى)",
+      "submitFile": "رفع الملف",
+      "errorMissingFile": "اختر ملفاً أولاً.",
+      "errorTooLarge": "الملف كبير جداً (الحد 25 ميجابايت).",
+      "errorGeneric": "تعذر حفظ الدليل. حاول مرة أخرى."
     }
   }
 }

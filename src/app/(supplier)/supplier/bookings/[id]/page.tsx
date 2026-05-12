@@ -24,6 +24,9 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BookingActions } from "./BookingActions";
+import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
+import { getContractUrlAction } from "./get-contract-url";
+import { isDisputeFilingWindowOpen } from "@/lib/domain/disputes";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,9 +46,12 @@ type BookingDetailRow = {
   organizer_id: string;
   supplier_id: string;
   confirmation_status: ConfirmationStatus;
+  service_status: import("@/lib/domain/booking").ServiceStatus;
   confirm_deadline: string | null;
   confirmed_at: string | null;
+  completed_at: string | null;
   created_at: string;
+  contract_pdf_path: string | null;
   profiles: { id: string; full_name: string | null } | null;
   rfqs: {
     id: string;
@@ -112,7 +118,8 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
     .from("bookings")
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
-       supplier_id, confirmation_status, confirm_deadline, confirmed_at, created_at,
+       supplier_id, confirmation_status, service_status, confirm_deadline, confirmed_at, completed_at, created_at,
+       contract_pdf_path,
        profiles:organizer_id ( id, full_name ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, version, snapshot_jsonb )`,
@@ -128,6 +135,61 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
     | null;
   const event = row.rfqs?.events ?? null;
   const organizerName = row.profiles?.full_name ?? "—";
+
+  // Get the supplier owner profile id — used for both review-existence and
+  // dispute-existence checks below.
+  let supplierProfileId: string | null = null;
+  if (
+    row.service_status === "completed" ||
+    row.service_status === "disputed"
+  ) {
+    const { data: supplierRow } = await admin
+      .from("suppliers")
+      .select("profile_id")
+      .eq("id", supplierId)
+      .maybeSingle();
+    supplierProfileId =
+      (supplierRow as { profile_id: string } | null)?.profile_id ?? null;
+  }
+
+  let viewerHasReviewed = false;
+  if (row.service_status === "completed" && supplierProfileId) {
+    const { data: existing } = await admin
+      .from("reviews")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("reviewer_id", supplierProfileId)
+      .maybeSingle();
+    viewerHasReviewed = Boolean(existing);
+  }
+  const tReviews = await getTranslations("reviews");
+  const tDisputes = await getTranslations("disputes");
+
+  const disputeWindowOpen = isDisputeFilingWindowOpen(
+    row.service_status,
+    row.completed_at,
+  );
+  let viewerHasOpenDispute = false;
+  let anyDisputeOnBooking = false;
+  if (
+    (row.service_status === "completed" ||
+      row.service_status === "disputed") &&
+    supplierProfileId
+  ) {
+    const { data: viewerDispute } = await admin
+      .from("disputes")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("raised_by", supplierProfileId)
+      .in("status", ["open", "investigating"])
+      .maybeSingle();
+    viewerHasOpenDispute = Boolean(viewerDispute);
+    const { count } = await admin
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("booking_id", row.id);
+    anyDisputeOnBooking = (count ?? 0) > 0;
+  }
 
   const deadlineFormatted = row.confirm_deadline
     ? fmtDateTime(row.confirm_deadline, locale)
@@ -170,6 +232,43 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
             </div>
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {row.confirmation_status === "confirmed" && row.contract_pdf_path ? (
+        <ContractDownloadButton
+          bookingId={row.id}
+          getUrl={getContractUrlAction}
+          labels={{
+            download: t("downloadContract"),
+            errorGeneric: t("downloadContractError"),
+            notReady: t("downloadContractNotReady"),
+            missing: t("downloadContractMissing"),
+          }}
+        />
+      ) : null}
+
+      {row.service_status === "completed" ? (
+        viewerHasReviewed ? (
+          <Alert>
+            <AlertDescription>{tReviews("cta.submitted")}</AlertDescription>
+          </Alert>
+        ) : (
+          <Button asChild variant="default" className="w-fit">
+            <Link href={`/supplier/bookings/${row.id}/review`}>
+              {tReviews("cta.leaveReview")}
+            </Link>
+          </Button>
+        )
+      ) : null}
+
+      {disputeWindowOpen || anyDisputeOnBooking ? (
+        <Button asChild variant="outline" className="w-fit">
+          <Link href={`/supplier/bookings/${row.id}/dispute`}>
+            {viewerHasOpenDispute || anyDisputeOnBooking
+              ? tDisputes("cta.viewDispute")
+              : tDisputes("cta.openDispute")}
+          </Link>
+        </Button>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
