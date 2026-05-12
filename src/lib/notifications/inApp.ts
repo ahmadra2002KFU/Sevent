@@ -30,6 +30,9 @@ export type NotificationKind =
   | "booking.auto_completed"
   | "contract.render_failed"
   | "dispute.auto_closed"
+  // Sprint Pilot Closure — review submission + publication.
+  | "review.submitted"
+  | "review.published"
   // Round-2 messaging — admin↔user threaded conversations.
   | "message.received"
   | "message.reply_received";

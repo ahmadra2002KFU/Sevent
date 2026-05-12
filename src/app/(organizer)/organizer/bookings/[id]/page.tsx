@@ -53,8 +53,10 @@ type BookingDetailRow = {
   organizer_id: string;
   supplier_id: string;
   confirmation_status: ConfirmationStatus;
+  service_status: import("@/lib/domain/booking").ServiceStatus;
   confirm_deadline: string | null;
   confirmed_at: string | null;
+  completed_at: string | null;
   created_at: string;
   contract_pdf_path: string | null;
   suppliers: {
@@ -133,7 +135,7 @@ export default async function OrganizerBookingDetailPage({
     .from("bookings")
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
-       supplier_id, confirmation_status, confirm_deadline, confirmed_at, created_at,
+       supplier_id, confirmation_status, service_status, confirm_deadline, confirmed_at, completed_at, created_at,
        contract_pdf_path,
        suppliers ( id, business_name, base_city ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
@@ -150,6 +152,19 @@ export default async function OrganizerBookingDetailPage({
     | null;
   const event = row.rfqs?.events ?? null;
   const supplier = row.suppliers;
+
+  // Has the viewer already submitted a review? Surface the right CTA copy.
+  let viewerHasReviewed = false;
+  if (row.service_status === "completed") {
+    const { data: existing } = await admin
+      .from("reviews")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("reviewer_id", user.id)
+      .maybeSingle();
+    viewerHasReviewed = Boolean(existing);
+  }
+  const tReviews = await getTranslations("reviews");
 
   // Company profile PDF: only surfaced once the booking is confirmed. We
   // check for an existing doc row here so we don't render an action that
@@ -314,6 +329,20 @@ export default async function OrganizerBookingDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {row.service_status === "completed" ? (
+        viewerHasReviewed ? (
+          <Alert>
+            <AlertDescription>{tReviews("cta.submitted")}</AlertDescription>
+          </Alert>
+        ) : (
+          <Button asChild variant="default" className="w-fit">
+            <Link href={`/organizer/bookings/${row.id}/review`}>
+              {tReviews("cta.leaveReview")}
+            </Link>
+          </Button>
+        )
+      ) : null}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between border-b pb-4">

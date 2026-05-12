@@ -2830,5 +2830,31 @@
       "errorEmpty": "Please write a message.",
       "error": "Couldn't send. Try again."
     }
+  },
+  "reviews": {
+    "backToBooking": "Back to booking",
+    "leaveReviewTitle": "Leave a review",
+    "leaveReviewDescription": "Both parties review each other after the event. Your rating is held until the other side submits or 14 days pass — neither side sees the other's review until then.",
+    "formHeading": "Your review",
+    "optionalText": "Your comment (optional)",
+    "textPlaceholder": "Anything else worth saying? Strengths, surprises, what you wish you'd known.",
+    "submit": "Submit review",
+    "dimensions": {
+      "overall": "Overall",
+      "value": "Value for money",
+      "punctuality": "Punctuality",
+      "professionalism": "Professionalism"
+    },
+    "blocked": {
+      "notCompleted": "The booking hasn't been marked completed yet — you'll be able to review once the event has wrapped up.",
+      "windowClosed": "The 14-day review window has closed for this booking.",
+      "alreadySubmitted": "You've already submitted your review — thanks!",
+      "disputeOpen": "Reviews are paused while a dispute is open on this booking.",
+      "generic": "Reviews aren't available for this booking right now."
+    },
+    "cta": {
+      "leaveReview": "Leave a review",
+      "submitted": "Review submitted — waiting for the other side or window to close."
+    }
   }
 }

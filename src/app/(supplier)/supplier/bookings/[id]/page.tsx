@@ -45,8 +45,10 @@ type BookingDetailRow = {
   organizer_id: string;
   supplier_id: string;
   confirmation_status: ConfirmationStatus;
+  service_status: import("@/lib/domain/booking").ServiceStatus;
   confirm_deadline: string | null;
   confirmed_at: string | null;
+  completed_at: string | null;
   created_at: string;
   contract_pdf_path: string | null;
   profiles: { id: string; full_name: string | null } | null;
@@ -115,7 +117,7 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
     .from("bookings")
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
-       supplier_id, confirmation_status, confirm_deadline, confirmed_at, created_at,
+       supplier_id, confirmation_status, service_status, confirm_deadline, confirmed_at, completed_at, created_at,
        contract_pdf_path,
        profiles:organizer_id ( id, full_name ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
@@ -132,6 +134,28 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
     | null;
   const event = row.rfqs?.events ?? null;
   const organizerName = row.profiles?.full_name ?? "—";
+
+  // Get the supplier owner profile id and check for an existing review.
+  let viewerHasReviewed = false;
+  if (row.service_status === "completed") {
+    const { data: supplierRow } = await admin
+      .from("suppliers")
+      .select("profile_id")
+      .eq("id", supplierId)
+      .maybeSingle();
+    const supplierProfileId =
+      (supplierRow as { profile_id: string } | null)?.profile_id ?? null;
+    if (supplierProfileId) {
+      const { data: existing } = await admin
+        .from("reviews")
+        .select("id")
+        .eq("booking_id", row.id)
+        .eq("reviewer_id", supplierProfileId)
+        .maybeSingle();
+      viewerHasReviewed = Boolean(existing);
+    }
+  }
+  const tReviews = await getTranslations("reviews");
 
   const deadlineFormatted = row.confirm_deadline
     ? fmtDateTime(row.confirm_deadline, locale)
@@ -187,6 +211,20 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
             missing: t("downloadContractMissing"),
           }}
         />
+      ) : null}
+
+      {row.service_status === "completed" ? (
+        viewerHasReviewed ? (
+          <Alert>
+            <AlertDescription>{tReviews("cta.submitted")}</AlertDescription>
+          </Alert>
+        ) : (
+          <Button asChild variant="default" className="w-fit">
+            <Link href={`/supplier/bookings/${row.id}/review`}>
+              {tReviews("cta.leaveReview")}
+            </Link>
+          </Button>
+        )
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
