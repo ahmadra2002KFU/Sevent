@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { BookingActions } from "./BookingActions";
 import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
 import { getContractUrlAction } from "./get-contract-url";
+import { isDisputeFilingWindowOpen } from "@/lib/domain/disputes";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -135,27 +136,60 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
   const event = row.rfqs?.events ?? null;
   const organizerName = row.profiles?.full_name ?? "—";
 
-  // Get the supplier owner profile id and check for an existing review.
-  let viewerHasReviewed = false;
-  if (row.service_status === "completed") {
+  // Get the supplier owner profile id — used for both review-existence and
+  // dispute-existence checks below.
+  let supplierProfileId: string | null = null;
+  if (
+    row.service_status === "completed" ||
+    row.service_status === "disputed"
+  ) {
     const { data: supplierRow } = await admin
       .from("suppliers")
       .select("profile_id")
       .eq("id", supplierId)
       .maybeSingle();
-    const supplierProfileId =
+    supplierProfileId =
       (supplierRow as { profile_id: string } | null)?.profile_id ?? null;
-    if (supplierProfileId) {
-      const { data: existing } = await admin
-        .from("reviews")
-        .select("id")
-        .eq("booking_id", row.id)
-        .eq("reviewer_id", supplierProfileId)
-        .maybeSingle();
-      viewerHasReviewed = Boolean(existing);
-    }
+  }
+
+  let viewerHasReviewed = false;
+  if (row.service_status === "completed" && supplierProfileId) {
+    const { data: existing } = await admin
+      .from("reviews")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("reviewer_id", supplierProfileId)
+      .maybeSingle();
+    viewerHasReviewed = Boolean(existing);
   }
   const tReviews = await getTranslations("reviews");
+  const tDisputes = await getTranslations("disputes");
+
+  const disputeWindowOpen = isDisputeFilingWindowOpen(
+    row.service_status,
+    row.completed_at,
+  );
+  let viewerHasOpenDispute = false;
+  let anyDisputeOnBooking = false;
+  if (
+    (row.service_status === "completed" ||
+      row.service_status === "disputed") &&
+    supplierProfileId
+  ) {
+    const { data: viewerDispute } = await admin
+      .from("disputes")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("raised_by", supplierProfileId)
+      .in("status", ["open", "investigating"])
+      .maybeSingle();
+    viewerHasOpenDispute = Boolean(viewerDispute);
+    const { count } = await admin
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("booking_id", row.id);
+    anyDisputeOnBooking = (count ?? 0) > 0;
+  }
 
   const deadlineFormatted = row.confirm_deadline
     ? fmtDateTime(row.confirm_deadline, locale)
@@ -225,6 +259,16 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
             </Link>
           </Button>
         )
+      ) : null}
+
+      {disputeWindowOpen || anyDisputeOnBooking ? (
+        <Button asChild variant="outline" className="w-fit">
+          <Link href={`/supplier/bookings/${row.id}/dispute`}>
+            {viewerHasOpenDispute || anyDisputeOnBooking
+              ? tDisputes("cta.viewDispute")
+              : tDisputes("cta.openDispute")}
+          </Link>
+        </Button>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">

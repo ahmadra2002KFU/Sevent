@@ -24,6 +24,7 @@ export default async function MonitorLayout({
     { href: "/admin/rfqs", label: t("rfqs") },
     { href: "/admin/applications", label: t("applications") },
     { href: "/admin/proposals", label: t("proposals") },
+    { href: "/admin/disputes", label: t("disputes") },
   ];
 
   return (

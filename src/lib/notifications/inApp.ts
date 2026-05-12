@@ -30,6 +30,11 @@ export type NotificationKind =
   | "booking.auto_completed"
   | "contract.render_failed"
   | "dispute.auto_closed"
+  // Sprint Pilot Closure — dispute lifecycle (Slice 4B).
+  | "dispute.opened"
+  | "dispute.evidence_submitted"
+  | "dispute.resolved"
+  | "dispute.closed"
   // Sprint Pilot Closure — review submission + publication.
   | "review.submitted"
   | "review.published"

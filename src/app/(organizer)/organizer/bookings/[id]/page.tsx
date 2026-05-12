@@ -42,6 +42,7 @@ import { requireAccess } from "@/lib/auth/access";
 import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
 import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
 import { getContractUrlAction } from "./get-contract-url";
+import { isDisputeFilingWindowOpen } from "@/lib/domain/disputes";
 
 export const dynamic = "force-dynamic";
 
@@ -165,6 +166,34 @@ export default async function OrganizerBookingDetailPage({
     viewerHasReviewed = Boolean(existing);
   }
   const tReviews = await getTranslations("reviews");
+  const tDisputes = await getTranslations("disputes");
+
+  // Dispute CTA gating: window open + (no existing dispute by viewer OR
+  // there's an existing one to navigate to).
+  const disputeWindowOpen = isDisputeFilingWindowOpen(
+    row.service_status,
+    row.completed_at,
+  );
+  let viewerHasOpenDispute = false;
+  let anyDisputeOnBooking = false;
+  if (
+    row.service_status === "completed" ||
+    row.service_status === "disputed"
+  ) {
+    const { data: viewerDispute } = await admin
+      .from("disputes")
+      .select("id")
+      .eq("booking_id", row.id)
+      .eq("raised_by", user.id)
+      .in("status", ["open", "investigating"])
+      .maybeSingle();
+    viewerHasOpenDispute = Boolean(viewerDispute);
+    const { count } = await admin
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("booking_id", row.id);
+    anyDisputeOnBooking = (count ?? 0) > 0;
+  }
 
   // Company profile PDF: only surfaced once the booking is confirmed. We
   // check for an existing doc row here so we don't render an action that
@@ -342,6 +371,16 @@ export default async function OrganizerBookingDetailPage({
             </Link>
           </Button>
         )
+      ) : null}
+
+      {disputeWindowOpen || anyDisputeOnBooking ? (
+        <Button asChild variant="outline" className="w-fit">
+          <Link href={`/organizer/bookings/${row.id}/dispute`}>
+            {viewerHasOpenDispute || anyDisputeOnBooking
+              ? tDisputes("cta.viewDispute")
+              : tDisputes("cta.openDispute")}
+          </Link>
+        </Button>
       ) : null}
 
       <Card>

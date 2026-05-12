@@ -1740,7 +1740,51 @@
       "tabs": {
         "rfqs": "RFQs",
         "applications": "Applications",
-        "proposals": "Proposals"
+        "proposals": "Proposals",
+        "disputes": "Disputes"
+      }
+    },
+    "disputes": {
+      "title": "Disputes",
+      "subtitle": "Every dispute opened against a booking. Resolve or close from the detail page.",
+      "errorAdminRequired": "Admin role required to view this page.",
+      "filter": {
+        "all": "All",
+        "open": "Open",
+        "investigating": "Investigating",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      },
+      "list": {
+        "empty": "No disputes match this filter.",
+        "col": {
+          "booking": "Booking",
+          "raisedBy": "Raised by",
+          "reason": "Reason",
+          "status": "Status",
+          "opened": "Opened",
+          "action": ""
+        },
+        "viewDetail": "View"
+      },
+      "detail": {
+        "title": "Dispute",
+        "subtitle": "Booking {bookingId}",
+        "backToList": "Back to disputes",
+        "bookingHeading": "Booking",
+        "partiesHeading": "Parties",
+        "organizer": "Organizer",
+        "supplier": "Supplier",
+        "viewBooking": "View booking",
+        "viewAcceptedRevision": "Accepted quote revision",
+        "resolveHeading": "Resolve or close",
+        "resolutionNoteLabel": "Resolution note",
+        "resolutionNotePlaceholder": "How was this resolved? This is logged in resolution_jsonb.",
+        "resolveButton": "Mark resolved",
+        "closeButton": "Close without resolution",
+        "alreadyClosed": "This dispute is already {status}.",
+        "actionSuccess": "Dispute updated.",
+        "actionError": "Couldn't update the dispute."
       }
     },
     "rfqs": {
@@ -2855,6 +2899,73 @@
     "cta": {
       "leaveReview": "Leave a review",
       "submitted": "Review submitted — waiting for the other side or window to close."
+    }
+  },
+  "disputes": {
+    "backToBooking": "Back to booking",
+    "openTitle": "Open a dispute",
+    "openDescription": "Tell us what went wrong. The other party and our admin team will see this. You can add evidence (files or notes) after the dispute is open.",
+    "windowHint": "Disputes can be opened within 7 days of the event finishing.",
+    "form": {
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Pick the closest match",
+      "descriptionLabel": "What happened",
+      "descriptionPlaceholder": "Walk us through what went wrong. Stick to facts — admins read this first.",
+      "submit": "Open dispute"
+    },
+    "reason": {
+      "serviceNotDelivered": "Service was not delivered",
+      "serviceBelowSpec": "Service didn't match what was agreed",
+      "noShow": "Supplier did not show up",
+      "damagedOrUnsafe": "Property was damaged or conditions unsafe",
+      "billingDispute": "Billing or payment dispute",
+      "scheduleConflict": "Schedule / time conflict",
+      "other": "Something else"
+    },
+    "status": {
+      "open": "Open",
+      "investigating": "Investigating",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "blocked": {
+      "notFound": "Booking not found.",
+      "notParty": "You're not a party to this booking.",
+      "notCompleted": "Disputes can only be opened on completed bookings.",
+      "windowClosed": "The 7-day dispute window has closed for this booking.",
+      "alreadyOpenByViewer": "You already have an open dispute on this booking.",
+      "generic": "Disputes aren't available for this booking right now."
+    },
+    "cta": {
+      "openDispute": "Open a dispute",
+      "viewDispute": "View dispute",
+      "alreadyOpen": "Dispute already open — view it for updates."
+    },
+    "detail": {
+      "title": "Dispute",
+      "raisedBy": "Raised by",
+      "openedAt": "Opened",
+      "reasonHeading": "Reason",
+      "descriptionHeading": "What was reported",
+      "evidenceHeading": "Evidence",
+      "evidenceEmpty": "No evidence submitted yet.",
+      "evidenceVisibleToOther": "Visible to the other party",
+      "evidencePrivate": "Visible to admin + you only",
+      "submittedBy": "Submitted by",
+      "downloadFile": "Download file"
+    },
+    "evidence": {
+      "addNoteHeading": "Add a note",
+      "noteLabel": "Note",
+      "notePlaceholder": "Add timeline, context, or a response.",
+      "visibilityLabel": "Share with the other party",
+      "submitNote": "Save note",
+      "uploadHeading": "Upload a file",
+      "fileLabel": "File (image / PDF / video, up to 25 MB)",
+      "submitFile": "Upload file",
+      "errorMissingFile": "Pick a file first.",
+      "errorTooLarge": "File is too large (25 MB max).",
+      "errorGeneric": "Couldn't save evidence. Try again."
     }
   }
 }
