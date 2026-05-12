@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { requireAccess } from "@/lib/auth/access";
 import { resolveReviewContext } from "@/lib/domain/reviews.server";
-import { RatingPicker } from "@/components/reviews/RatingPicker";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { submitReviewAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -76,29 +76,16 @@ export default async function SupplierReviewPage({ params }: PageProps) {
             <CardTitle>{t("formHeading")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={submitReviewAction} className="flex flex-col gap-6">
-              <input type="hidden" name="booking_id" value={ctx.booking.id} />
-              <RatingPicker labels={labels} />
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="review-text"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t("optionalText")}
-                </label>
-                <textarea
-                  id="review-text"
-                  name="text"
-                  rows={5}
-                  maxLength={2000}
-                  placeholder={t("textPlaceholder")}
-                  className="rounded-md border border-input bg-background p-3 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button type="submit">{t("submit")}</Button>
-              </div>
-            </form>
+            <ReviewForm
+              bookingId={ctx.booking.id}
+              action={submitReviewAction}
+              labels={{
+                dimensions: labels,
+                optionalText: t("optionalText"),
+                textPlaceholder: t("textPlaceholder"),
+                submit: t("submit"),
+              }}
+            />
           </CardContent>
         </Card>
       )}
