@@ -77,7 +77,7 @@ begin
   -- Event + RFQ + quote + revision (event already past so we can mark
   -- completed without time travel).
   insert into public.events (organizer_id, event_type, city, starts_at, ends_at)
-  values (v_organizer, 'corporate', 'riyadh',
+  values (v_organizer, 'business_events', 'riyadh',
           now() - interval '10 days', now() - interval '10 days' + interval '4 hours')
   returning id into v_event_id;
 

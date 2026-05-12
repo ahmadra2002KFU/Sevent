@@ -38,7 +38,8 @@ create policy "contracts: booking-party read" on storage.objects
     )
   );
 
-comment on policy "contracts: booking-party read" on storage.objects is
-  'Booking parties (organizer + owning supplier profile) can SELECT their '
-  'own contract objects in the contracts bucket. Path layout: '
-  '{bookingId}/{accepted_quote_revision_id}.pdf';
+-- NOTE: comment on policy is omitted because the migration role doesn't own
+-- storage.objects (only supabase_storage_admin does) and the COMMENT statement
+-- would fail with SQLSTATE 42501. CREATE POLICY itself is permitted via the
+-- standard CREATE POLICY grant — only the metadata commands require ownership.
+-- The policy's purpose is documented in this migration's header comment instead.

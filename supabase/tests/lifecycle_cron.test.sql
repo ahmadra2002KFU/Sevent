@@ -32,6 +32,10 @@ declare
   v_rfq_id uuid;
   v_quote_id uuid;
   v_revision_id uuid;
+  v_quote_id_b uuid;
+  v_revision_id_b uuid;
+  v_rfq_id_b uuid;
+  v_event_id_b uuid;
   v_booking_expired uuid;
   v_booking_to_complete uuid;
   v_block_id uuid;
@@ -76,7 +80,7 @@ begin
   -- Build an event whose window ended ~25h ago. Use a tiny window so the
   -- soft-hold overlap trigger has nothing else to conflict with.
   insert into public.events (organizer_id, event_type, city, starts_at, ends_at)
-  values (v_organizer, 'corporate', 'riyadh',
+  values (v_organizer, 'business_events', 'riyadh',
           now() - interval '26 hours', now() - interval '25 hours')
   returning id into v_event_id;
 
@@ -127,13 +131,36 @@ begin
 
   -- =========================================================================
   -- Booking B: confirmed + scheduled with event.ends_at 25h ago (target of
-  --            auto_mark_completed()).
+  --            auto_mark_completed()). Needs a SEPARATE quote because the
+  --            partial unique index bookings_active_quote_unique disallows
+  --            two active bookings on the same quote.
   -- =========================================================================
+  insert into public.events (organizer_id, event_type, city, starts_at, ends_at)
+  values (v_organizer, 'business_events', 'riyadh',
+          now() - interval '26 hours', now() - interval '25 hours')
+  returning id into v_event_id_b;
+
+  insert into public.rfqs (event_id, category_id, subcategory_id, status, sent_at)
+  values (v_event_id_b, v_category_id, v_subcategory_id, 'booked', now() - interval '30 hours')
+  returning id into v_rfq_id_b;
+
+  insert into public.quotes (rfq_id, supplier_id, status, sent_at, accepted_at)
+  values (v_rfq_id_b, v_supplier, 'accepted', now() - interval '30 hours', now() - interval '50 hours')
+  returning id into v_quote_id_b;
+
+  insert into public.quote_revisions (quote_id, version, author_id, snapshot_jsonb, content_hash)
+  values (v_quote_id_b, 1, v_supplier_profile,
+          '{"engine_version":"1.0.0","currency":"SAR","total_halalas":100000}'::jsonb,
+          'test-hash-b-' || replace(v_quote_id_b::text, '-', ''))
+  returning id into v_revision_id_b;
+
+  update public.quotes set current_revision_id = v_revision_id_b where id = v_quote_id_b;
+
   insert into public.bookings (
     rfq_id, quote_id, accepted_quote_revision_id, organizer_id, supplier_id,
     confirmation_status, service_status, awaiting_since, confirm_deadline, confirmed_at
   ) values (
-    v_rfq_id, v_quote_id, v_revision_id, v_organizer, v_supplier,
+    v_rfq_id_b, v_quote_id_b, v_revision_id_b, v_organizer, v_supplier,
     'confirmed', 'scheduled',
     now() - interval '40 hours', now() - interval '38 hours', now() - interval '38 hours'
   ) returning id into v_booking_to_complete;

@@ -13,7 +13,14 @@ import { ContractDocument, type ContractDocumentInput } from "./ContractDocument
 export async function renderContract(
   input: ContractDocumentInput,
 ): Promise<Uint8Array> {
-  const element = createElement(ContractDocument, input);
+  // `renderToBuffer` is typed to accept ReactElement<DocumentProps>, but our
+  // ContractDocument is typed by its own props (ContractDocumentInput).
+  // It returns a <Document> at runtime — the cast bridges the prop-type gap
+  // without changing behaviour.
+  const element = createElement(
+    ContractDocument,
+    input,
+  ) as unknown as Parameters<typeof renderToBuffer>[0];
   const buffer = await renderToBuffer(element);
   return new Uint8Array(buffer);
 }
