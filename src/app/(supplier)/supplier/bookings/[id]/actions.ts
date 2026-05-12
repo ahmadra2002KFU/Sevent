@@ -93,7 +93,7 @@ export async function confirmBookingAction(
     .select(
       `id, organizer_id, rfq_id, supplier_id, accepted_quote_revision_id, confirmed_at,
        profiles:organizer_id ( id, full_name, phone ),
-       suppliers ( id, business_name, slug, representative_name ),
+       suppliers ( id, business_name, slug ),
        rfqs ( id, events ( id, event_type, city, starts_at, ends_at, venue_address, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, snapshot_jsonb, content_hash )`,
     )
@@ -112,7 +112,6 @@ export async function confirmBookingAction(
       id: string;
       business_name: string;
       slug: string;
-      representative_name: string | null;
     } | null;
     rfqs: {
       id: string;
@@ -162,7 +161,7 @@ export async function confirmBookingAction(
           supplier: {
             business_name: supplier.business_name,
             slug: supplier.slug,
-            representative_name: supplier.representative_name,
+            representative_name: null,
           },
           event: {
             event_type: event.event_type,
