@@ -25,6 +25,11 @@ export type NotificationKind =
   | "booking.awaiting_supplier"
   | "booking.confirmed"
   | "booking.cancelled"
+  // Sprint Pilot Closure — lifecycle cron + contract failure + dispute auto-close.
+  | "booking.auto_cancelled_expired_hold"
+  | "booking.auto_completed"
+  | "contract.render_failed"
+  | "dispute.auto_closed"
   // Round-2 messaging — admin↔user threaded conversations.
   | "message.received"
   | "message.reply_received";

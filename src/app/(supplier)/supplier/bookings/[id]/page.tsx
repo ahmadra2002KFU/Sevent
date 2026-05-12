@@ -24,6 +24,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BookingActions } from "./BookingActions";
+import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
+import { getContractUrlAction } from "./get-contract-url";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +48,7 @@ type BookingDetailRow = {
   confirm_deadline: string | null;
   confirmed_at: string | null;
   created_at: string;
+  contract_pdf_path: string | null;
   profiles: { id: string; full_name: string | null } | null;
   rfqs: {
     id: string;
@@ -113,6 +116,7 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
        supplier_id, confirmation_status, confirm_deadline, confirmed_at, created_at,
+       contract_pdf_path,
        profiles:organizer_id ( id, full_name ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, version, snapshot_jsonb )`,
@@ -170,6 +174,19 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
             </div>
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {row.confirmation_status === "confirmed" && row.contract_pdf_path ? (
+        <ContractDownloadButton
+          bookingId={row.id}
+          getUrl={getContractUrlAction}
+          labels={{
+            download: t("downloadContract"),
+            errorGeneric: t("downloadContractError"),
+            notReady: t("downloadContractNotReady"),
+            missing: t("downloadContractMissing"),
+          }}
+        />
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">

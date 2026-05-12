@@ -2714,6 +2714,10 @@
     "downloadCompanyProfile": "تحميل ملف الشركة",
     "downloadCompanyProfileError": "تعذّر إنشاء الرابط",
     "downloadCompanyProfileNotReady": "سيُتاح ملف الشركة بعد قبول العرض",
+    "downloadContract": "تحميل ملف العقد (PDF)",
+    "downloadContractError": "تعذّر إنشاء رابط العقد",
+    "downloadContractNotReady": "سيُولَّد العقد بعد تأكيد المزوّد للحجز",
+    "downloadContractMissing": "العقد قيد التجهيز — حدّث الصفحة بعد قليل أو تواصل مع الدعم",
     "table": {
       "supplier": "المورد",
       "organizer": "المنظم",

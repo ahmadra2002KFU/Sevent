@@ -40,6 +40,8 @@ import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
 import { requireAccess } from "@/lib/auth/access";
 import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
+import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
+import { getContractUrlAction } from "./get-contract-url";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,7 @@ type BookingDetailRow = {
   confirm_deadline: string | null;
   confirmed_at: string | null;
   created_at: string;
+  contract_pdf_path: string | null;
   suppliers: {
     id: string;
     business_name: string;
@@ -131,6 +134,7 @@ export default async function OrganizerBookingDetailPage({
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
        supplier_id, confirmation_status, confirm_deadline, confirmed_at, created_at,
+       contract_pdf_path,
        suppliers ( id, business_name, base_city ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, version, snapshot_jsonb )`,
@@ -257,6 +261,19 @@ export default async function OrganizerBookingDetailPage({
                   download: t("downloadCompanyProfile"),
                   errorGeneric: t("downloadCompanyProfileError"),
                   notReady: t("downloadCompanyProfileNotReady"),
+                }}
+                className="mt-1"
+              />
+            ) : null}
+            {row.confirmation_status === "confirmed" && row.contract_pdf_path ? (
+              <ContractDownloadButton
+                bookingId={row.id}
+                getUrl={getContractUrlAction}
+                labels={{
+                  download: t("downloadContract"),
+                  errorGeneric: t("downloadContractError"),
+                  notReady: t("downloadContractNotReady"),
+                  missing: t("downloadContractMissing"),
                 }}
                 className="mt-1"
               />

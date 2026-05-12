@@ -2714,6 +2714,10 @@
     "downloadCompanyProfile": "Download company profile",
     "downloadCompanyProfileError": "Could not generate download link",
     "downloadCompanyProfileNotReady": "Company profile becomes available after quote acceptance",
+    "downloadContract": "Download contract PDF",
+    "downloadContractError": "Could not generate contract link",
+    "downloadContractNotReady": "Contract is generated once the supplier confirms the booking",
+    "downloadContractMissing": "Contract is still being prepared — refresh in a moment or contact support",
     "table": {
       "supplier": "Supplier",
       "organizer": "Organizer",
