@@ -8,8 +8,8 @@ import {
 } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { createNotification } from "@/lib/notifications/inApp";
-import SupplierApproved from "@/lib/notifications/templates/SupplierApproved";
-import SupplierRejected from "@/lib/notifications/templates/SupplierRejected";
+import SupplierApproved from "@/lib/notifications/templates/supplier/SupplierApproved";
+import SupplierRejected from "@/lib/notifications/templates/supplier/SupplierRejected";
 import { env } from "@/lib/env";
 import type { ActionState } from "./action-state";
 

@@ -29,7 +29,7 @@ export type SendEmailResult =
   | { ok: true; id: string | null; mode: "resend" | "console" }
   | { ok: false; error: string };
 
-const DEFAULT_FROM = "Sevent <no-reply@sevent.local>";
+const DEFAULT_FROM = "Sevent <notifications@seventsa.com>";
 
 function isLocalAppUrl(): boolean {
   const url = env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
