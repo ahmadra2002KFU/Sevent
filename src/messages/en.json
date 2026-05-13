@@ -2612,7 +2612,14 @@
       "newHere": "New here?",
       "createAccount": "Create an account",
       "errorEmailRequired": "Enter a valid email address.",
-      "errorPasswordRequired": "Enter your password."
+      "errorPasswordRequired": "Enter your password.",
+      "resendCta": "Resend confirmation",
+      "resendSending": "Sending…",
+      "resendSuccess": "Sent. Check your inbox.",
+      "resendCapReached": "Resend limit reached. Try again in about an hour.",
+      "resendCooldown": "Resend limit reached. Try again in about an hour.",
+      "resendInvalidEmail": "Enter a valid email above first.",
+      "resendUnknownError": "Couldn't resend right now. Try again in a moment."
     },
     "signUp": {
       "title": "Create your Sevent account",

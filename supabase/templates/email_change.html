@@ -1,0 +1,82 @@
+<!--
+  Sevent — Auth email: email_change
+  ------------------------------------------------------------------
+  Rendered by Supabase GoTrue. Sent to BOTH the old and the new
+  address as part of the double opt-in flow.
+
+  Tokens used:
+    .ConfirmationURL  — confirm-new-address link
+    .NewEmail         — the new address being confirmed
+    .Data.language    — "ar" | "en"
+
+  All styles inline. Shell mirrors confirmation.html.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light only" />
+<meta name="supported-color-schemes" content="light" />
+<title>Confirm your new Sevent email</title>
+</head>
+{{ if eq (index .Data "language") "ar" }}
+<body dir="rtl" style="margin: 0; padding: 32px 16px; background-color: #fafaf7; color: #1a1a18; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" width="600" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e7e6df; border-radius: 12px; border-collapse: separate;">
+    <tr>
+      <td dir="rtl" align="right" style="padding: 40px; direction: rtl; text-align: right;">
+        <img src="{{ .SiteURL }}/logo.png" alt="سيڤنت" width="140" height="33" style="display: block; height: auto; border: 0; outline: none; text-decoration: none;" />
+        <p style="margin: 12px 0 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.4; color: #6b6b64; direction: rtl; text-align: right;">الحساب · تغيير البريد</p>
+        <hr style="border: 0; border-top: 1px solid #f4f4ef; margin: 24px 0 28px; width: 100%;" />
+        <h1 style="margin: 0 0 12px; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 24px; font-weight: 700; line-height: 1.25; color: #0f2e5c; direction: rtl; text-align: right;">أكّد بريدك الإلكتروني الجديد</h1>
+        <p style="margin: 0 0 12px; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #1a1a18; direction: rtl; text-align: right;">طلبت تغيير البريد الإلكتروني لحسابك في سيڤنت إلى:</p>
+        <p style="margin: 0 0 12px; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.6; color: #0f2e5c; direction: ltr; text-align: right; unicode-bidi: isolate;">{{ .NewEmail }}</p>
+        <p style="margin: 0 0 12px; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #1a1a18; direction: rtl; text-align: right;">اضغط على الزر أدناه لتأكيد العنوان الجديد. حتى يتم التأكيد سيبقى عنوانك الحالي ساريًا.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0 0; border-collapse: separate;">
+          <tr>
+            <td bgcolor="#1e7bd8" style="background-color: #1e7bd8; border-radius: 8px;">
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; padding: 12px 24px; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #ffffff; text-decoration: none; direction: rtl; text-align: center;">تأكيد البريد الجديد</a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin: 16px 0 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 13px; line-height: 1.55; color: #6b6b64; direction: rtl; text-align: right;">ينتهي صلاحية الرابط خلال 24 ساعة. إن لم تطلب تغيير البريد الإلكتروني فيرجى التواصل مع الدعم على الفور — قد يكون أحد غيرك قد حاول الوصول إلى حسابك.</p>
+        <hr style="border: 0; border-top: 1px solid #f4f4ef; margin: 32px 0 20px; width: 100%;" />
+        <p style="margin: 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: rtl; text-align: right;">تلقّيت هذه الرسالة لأنّ لديك حسابًا على سيڤنت.</p>
+        <p style="margin: 8px 0 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: rtl; text-align: right;">هل تحتاج للمساعدة؟ راسلنا على <a href="mailto:support@seventsa.com" style="color: #1e7bd8; text-decoration: none; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: rtl;">support@seventsa.com</a></p>
+        <p style="margin: 8px 0 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: rtl; text-align: right;"><a href="https://seventsa.com/privacy" style="color: #6b6b64; text-decoration: underline; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: rtl;">سياسة الخصوصية</a><span style="color: #a9a9a1;"> · </span><a href="https://seventsa.com/terms" style="color: #6b6b64; text-decoration: underline; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: rtl;">الشروط</a></p>
+        <p style="margin: 12px 0 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #a9a9a1; direction: rtl; text-align: right;">© 2026 سيڤنت — الرياض، المملكة العربية السعودية</p>
+      </td>
+    </tr>
+  </table>
+</body>
+{{ else }}
+<body dir="ltr" style="margin: 0; padding: 32px 16px; background-color: #fafaf7; color: #1a1a18; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; direction: ltr; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" width="600" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e7e6df; border-radius: 12px; border-collapse: separate;">
+    <tr>
+      <td dir="ltr" align="left" style="padding: 40px; direction: ltr; text-align: left;">
+        <img src="{{ .SiteURL }}/logo.png" alt="Sevent" width="140" height="33" style="display: block; height: auto; border: 0; outline: none; text-decoration: none;" />
+        <p style="margin: 12px 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.4; color: #6b6b64; direction: ltr; text-align: left;">Account &middot; Email change</p>
+        <hr style="border: 0; border-top: 1px solid #f4f4ef; margin: 24px 0 28px; width: 100%;" />
+        <h1 style="margin: 0 0 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 24px; font-weight: 700; line-height: 1.25; color: #0f2e5c; direction: ltr; text-align: left;">Confirm your new email</h1>
+        <p style="margin: 0 0 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #1a1a18; direction: ltr; text-align: left;">You asked to change the email address on your Sevent account to:</p>
+        <p style="margin: 0 0 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.6; color: #0f2e5c; direction: ltr; text-align: left; unicode-bidi: isolate;">{{ .NewEmail }}</p>
+        <p style="margin: 0 0 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #1a1a18; direction: ltr; text-align: left;">Click the button below to confirm the new address. Your current address stays active until you confirm.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0 0; border-collapse: separate;">
+          <tr>
+            <td bgcolor="#1e7bd8" style="background-color: #1e7bd8; border-radius: 8px;">
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; padding: 12px 24px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #ffffff; text-decoration: none; direction: ltr; text-align: center;">Confirm new email</a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin: 16px 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.55; color: #6b6b64; direction: ltr; text-align: left;">This link expires in 24 hours. If you didn&rsquo;t request this change, contact support immediately &mdash; someone else may have tried to access your account.</p>
+        <hr style="border: 0; border-top: 1px solid #f4f4ef; margin: 32px 0 20px; width: 100%;" />
+        <p style="margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: ltr; text-align: left;">You received this transactional email because you have a Sevent account.</p>
+        <p style="margin: 8px 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: ltr; text-align: left;">Need help? Email <a href="mailto:support@seventsa.com" style="color: #1e7bd8; text-decoration: none; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: ltr;">support@seventsa.com</a></p>
+        <p style="margin: 8px 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #6b6b64; direction: ltr; text-align: left;"><a href="https://seventsa.com/privacy" style="color: #6b6b64; text-decoration: underline; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: ltr;">Privacy</a><span style="color: #a9a9a1;"> &middot; </span><a href="https://seventsa.com/terms" style="color: #6b6b64; text-decoration: underline; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; direction: ltr;">Terms</a></p>
+        <p style="margin: 12px 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.55; color: #a9a9a1; direction: ltr; text-align: left;">&copy; 2026 Sevent &mdash; Riyadh, Kingdom of Saudi Arabia</p>
+      </td>
+    </tr>
+  </table>
+</body>
+{{ end }}
+</html>

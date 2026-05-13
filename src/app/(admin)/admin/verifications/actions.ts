@@ -8,8 +8,11 @@ import {
 } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { createNotification } from "@/lib/notifications/inApp";
+import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
 import SupplierApproved from "@/lib/notifications/templates/supplier/SupplierApproved";
+import { strings as approvedStrings } from "@/lib/notifications/templates/supplier/SupplierApproved.strings";
 import SupplierRejected from "@/lib/notifications/templates/supplier/SupplierRejected";
+import { strings as rejectedStrings } from "@/lib/notifications/templates/supplier/SupplierRejected.strings";
 import { env } from "@/lib/env";
 import type { ActionState } from "./action-state";
 
@@ -38,6 +41,7 @@ type SupplierContact = {
   businessName: string;
   profileId: string;
   email: string | null;
+  locale: "en" | "ar";
 };
 
 async function loadSupplierContact(
@@ -52,26 +56,54 @@ async function loadSupplierContact(
   if (error) return { error: `Failed to load supplier: ${error.message}` };
   if (!data) return { error: "Supplier not found." };
 
-  // Email lives in auth.users; fetch via service-role admin API so we don't
-  // need an explicit join policy.
-  let email: string | null = null;
-  try {
-    const resp = await serviceClient.auth.admin.getUserById(data.profile_id);
-    email = resp?.data?.user?.email ?? null;
-  } catch {
-    email = null;
-  }
+  const { email, locale } = await resolveRecipientEmailAndLocale(
+    serviceClient,
+    data.profile_id,
+  );
 
   return {
     supplierId: data.id,
     businessName: data.business_name,
     profileId: data.profile_id,
     email,
+    locale,
   };
 }
 
 function appUrl(): string {
   return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
+
+type EmailDelivery = "sent" | "console" | "failed" | "skipped";
+
+async function sendVerificationEmail(args: {
+  to: string;
+  subject: string;
+  react: Parameters<typeof sendEmail>[0]["react"];
+  context: { stage: "approve" | "reject"; supplierId: string };
+}): Promise<EmailDelivery> {
+  try {
+    const result = await sendEmail({
+      to: args.to,
+      subject: args.subject,
+      react: args.react,
+    });
+    if (!result.ok) {
+      console.warn("[verifications/" + args.context.stage + "] email send failed", {
+        supplierId: args.context.supplierId,
+        error: result.error,
+      });
+      return "failed";
+    }
+    return result.mode === "resend" ? "sent" : "console";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[verifications/" + args.context.stage + "] email send threw", {
+      supplierId: args.context.supplierId,
+      message,
+    });
+    return "failed";
+  }
 }
 
 function revalidateAll(supplierId?: string) {
@@ -210,38 +242,45 @@ export async function approveSupplierAction(
     };
   }
 
-  // Side-effects: email + in-app notification. Failures are logged but never
-  // roll back the DB writes.
-  let emailDelivery: "sent" | "console" | "failed" = "failed";
-  if (contact.email) {
-    const result = await sendEmail({
-      to: contact.email,
-      subject: `${contact.businessName} is verified on Sevent`,
-      react: SupplierApproved({
-        businessName: contact.businessName,
-        appUrl: appUrl(),
-      }),
-    });
-    if (result.ok) emailDelivery = result.mode === "resend" ? "sent" : "console";
-  } else {
-    console.warn(
-      "[verifications/approve] supplier has no email; skipping send",
-      { supplierId },
-    );
-  }
-
-  await createNotification({
+  // Side-effects: in-app notification (the source of truth, written first) +
+  // email (best-effort, never rolls back the DB writes per Sprint 2 lane 3
+  // contract).
+  const basePayload = {
+    supplier_id: supplierId,
+    business_name: contact.businessName,
+    verified_at: nowIso,
+    verified_by: ctx.adminId,
+  };
+  const inApp = await createNotification({
     supabase: ctx.serviceClient,
     user_id: contact.profileId,
     kind: "supplier.approved",
-    payload: {
-      supplier_id: supplierId,
-      business_name: contact.businessName,
-      verified_at: nowIso,
-      verified_by: ctx.adminId,
-      email_delivery: emailDelivery,
-    },
+    payload: { ...basePayload, email_delivery: "pending" },
   });
+
+  const emailDelivery = contact.email
+    ? await sendVerificationEmail({
+        to: contact.email,
+        subject: approvedStrings[contact.locale].preview(contact.businessName),
+        react: SupplierApproved({
+          locale: contact.locale,
+          businessName: contact.businessName,
+          appUrl: appUrl(),
+        }),
+        context: { stage: "approve", supplierId },
+      })
+    : (console.warn(
+        "[verifications/approve] supplier has no email; skipping send",
+        { supplierId },
+      ),
+      "skipped" as const);
+
+  if (inApp.ok) {
+    await ctx.serviceClient
+      .from("notifications")
+      .update({ payload_jsonb: { ...basePayload, email_delivery: emailDelivery } })
+      .eq("id", inApp.id);
+  }
 
   revalidateAll(supplierId);
   return {
@@ -309,38 +348,44 @@ export async function rejectSupplierAction(
     };
   }
 
-  let emailDelivery: "sent" | "console" | "failed" = "failed";
-  if (contact.email) {
-    const result = await sendEmail({
-      to: contact.email,
-      subject: `${contact.businessName} — verification needs follow-up`,
-      react: SupplierRejected({
-        businessName: contact.businessName,
-        notes,
-        appUrl: appUrl(),
-      }),
-    });
-    if (result.ok) emailDelivery = result.mode === "resend" ? "sent" : "console";
-  } else {
-    console.warn(
-      "[verifications/reject] supplier has no email; skipping send",
-      { supplierId },
-    );
-  }
-
-  await createNotification({
+  const basePayload = {
+    supplier_id: supplierId,
+    business_name: contact.businessName,
+    notes,
+    rejected_at: nowIso,
+    rejected_by: ctx.adminId,
+  };
+  const inApp = await createNotification({
     supabase: ctx.serviceClient,
     user_id: contact.profileId,
     kind: "supplier.rejected",
-    payload: {
-      supplier_id: supplierId,
-      business_name: contact.businessName,
-      notes,
-      rejected_at: nowIso,
-      rejected_by: ctx.adminId,
-      email_delivery: emailDelivery,
-    },
+    payload: { ...basePayload, email_delivery: "pending" },
   });
+
+  const emailDelivery = contact.email
+    ? await sendVerificationEmail({
+        to: contact.email,
+        subject: rejectedStrings[contact.locale].preview(contact.businessName),
+        react: SupplierRejected({
+          locale: contact.locale,
+          businessName: contact.businessName,
+          notes,
+          appUrl: appUrl(),
+        }),
+        context: { stage: "reject", supplierId },
+      })
+    : (console.warn(
+        "[verifications/reject] supplier has no email; skipping send",
+        { supplierId },
+      ),
+      "skipped" as const);
+
+  if (inApp.ok) {
+    await ctx.serviceClient
+      .from("notifications")
+      .update({ payload_jsonb: { ...basePayload, email_delivery: emailDelivery } })
+      .eq("id", inApp.id);
+  }
 
   revalidateAll(supplierId);
   return {

@@ -36,10 +36,34 @@ const signInSchema = z.object({
   next: z.string().optional(),
 });
 
+const resendConfirmationSchema = z.object({
+  email: z.string().email(),
+});
+
 export type AuthState = {
   ok: boolean;
   error?: string;
 };
+
+export type ResendState = {
+  ok: boolean;
+  error?: string;
+  // Localized i18n key the UI maps to copy. Keeps the action surface
+  // language-agnostic; the form picks the message.
+  reason?: "invalid_email" | "rate_limited" | "supabase_error" | "unknown";
+  // ISO timestamp the user can try again at. Set when the cap is hit, and
+  // also set after a successful send if THAT send put them at the cap.
+  retryAt?: string;
+};
+
+/**
+ * RESEND_LIMIT_PER_WINDOW + RESEND_WINDOW_MS encode the policy: a given email
+ * may request the confirmation email up to N times in M milliseconds. After
+ * the cap is reached the user waits until the window started_at + window
+ * elapses, then it resets.
+ */
+const RESEND_LIMIT_PER_WINDOW = 2;
+const RESEND_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 export async function signUpAction(
   _prev: AuthState | undefined,
@@ -73,12 +97,15 @@ export async function signUpAction(
         phone: canonicalPhone,
         language,
       },
-      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/sign-in`,
+      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/auth/callback`,
     },
   });
   if (error) return { ok: false, error: error.message };
 
-  // Email confirmations are enabled locally. Land the user on sign-in with a flag.
+  // Email confirmations are enabled. The confirmation link in the Resend email
+  // lands on /auth/callback, which exchanges the code for a session and
+  // redirects the user to the role-appropriate dashboard. We still show a
+  // "check your inbox" hint here in case the user came back to the tab.
   redirect(`/sign-in?confirm=1&role=${role}`);
 }
 
@@ -123,7 +150,7 @@ export async function signUpSupplierAction(
         phone: canonicalPhone,
         language,
       },
-      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/sign-in`,
+      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/auth/callback`,
     },
   });
   if (error) return { ok: false, error: error.message };
@@ -189,6 +216,109 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+/**
+ * Resend the email-confirmation message for a pending signup.
+ *
+ * Rate-limited to RESEND_LIMIT_PER_WINDOW attempts per email per
+ * RESEND_WINDOW_MS rolling window. Counters are kept in
+ * `public.auth_resend_attempts` and the window resets the next time a request
+ * arrives after `window_started_at + RESEND_WINDOW_MS`.
+ *
+ * Uses the service-role client because (a) the user has no session yet
+ * (their email isn't confirmed), so the user-scoped supabase client can't
+ * read/write the attempts table under RLS; and (b) the actual auth resend
+ * call must be made by a server identity to avoid leaking the client API key
+ * usage to the browser.
+ *
+ * Email existence is intentionally NOT verified before resending. Supabase's
+ * resend silently no-ops for unknown / already-confirmed emails so an
+ * attacker can't enumerate which addresses have an account.
+ */
+export async function resendConfirmationAction(
+  _prev: ResendState | undefined,
+  formData: FormData,
+): Promise<ResendState> {
+  const parsed = resendConfirmationSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) {
+    return { ok: false, reason: "invalid_email" };
+  }
+
+  const email = parsed.data.email.trim().toLowerCase();
+  const admin = createSupabaseServiceRoleClient();
+  const nowMs = Date.now();
+
+  const { data: existing, error: readErr } = await admin
+    .from("auth_resend_attempts")
+    .select("email, attempt_count, window_started_at")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (readErr) {
+    return { ok: false, reason: "unknown" };
+  }
+
+  let attemptCount = 0;
+  let windowStartedAtMs = nowMs;
+
+  if (existing) {
+    const existingWindowMs = new Date(existing.window_started_at).getTime();
+    const withinWindow = nowMs - existingWindowMs < RESEND_WINDOW_MS;
+    if (withinWindow) {
+      attemptCount = existing.attempt_count;
+      windowStartedAtMs = existingWindowMs;
+    }
+    // else: window expired; we'll reset by overwriting with new started_at + count=0
+  }
+
+  if (attemptCount >= RESEND_LIMIT_PER_WINDOW) {
+    return {
+      ok: false,
+      reason: "rate_limited",
+      retryAt: new Date(windowStartedAtMs + RESEND_WINDOW_MS).toISOString(),
+    };
+  }
+
+  // Resend before incrementing — if Supabase rejects (transient), we don't
+  // burn the user's quota. Supabase silently succeeds when the email is
+  // already confirmed or unknown, so we still increment in those cases to
+  // prevent enumeration via timing.
+  const supabase = await createSupabaseServerClient();
+  const { error: resendErr } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/auth/callback`,
+    },
+  });
+  if (resendErr) {
+    return { ok: false, reason: "supabase_error", error: resendErr.message };
+  }
+
+  const newCount = attemptCount + 1;
+  const upsertWindowIso = new Date(windowStartedAtMs).toISOString();
+  await admin.from("auth_resend_attempts").upsert(
+    {
+      email,
+      attempt_count: newCount,
+      window_started_at: upsertWindowIso,
+    },
+    { onConflict: "email" },
+  );
+
+  return {
+    ok: true,
+    // If this send put the user at the cap, surface retryAt so the form's
+    // cooldown banner appears immediately (otherwise the user could click
+    // again and only then learn they're throttled).
+    retryAt:
+      newCount >= RESEND_LIMIT_PER_WINDOW
+        ? new Date(windowStartedAtMs + RESEND_WINDOW_MS).toISOString()
+        : undefined,
+  };
 }
 
 /**

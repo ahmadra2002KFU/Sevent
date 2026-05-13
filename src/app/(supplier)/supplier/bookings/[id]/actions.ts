@@ -14,10 +14,53 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
 import { createNotification } from "@/lib/notifications/inApp";
+import { sendEmail } from "@/lib/notifications/email";
+import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
+import BookingConfirmed from "@/lib/notifications/templates/organizer/BookingConfirmed";
+import { strings as bookingConfirmedStrings } from "@/lib/notifications/templates/organizer/BookingConfirmed.strings";
+import BookingCancelledBySupplier from "@/lib/notifications/templates/organizer/BookingCancelledBySupplier";
+import { strings as bookingCancelledStrings } from "@/lib/notifications/templates/organizer/BookingCancelledBySupplier.strings";
 import { renderContract } from "@/lib/contracts/renderContract";
 import { uploadContractAndPersist } from "@/lib/contracts/uploadAndPersist";
 import { parseQuoteSnapshot } from "@/lib/domain/quote";
+import { env } from "@/lib/env";
 import type { BookingActionState } from "./action-state";
+
+type EmailDelivery = "sent" | "console" | "failed" | "skipped";
+
+function appUrl(): string {
+  return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
+
+async function sendLifecycleEmail(args: {
+  to: string;
+  subject: string;
+  react: Parameters<typeof sendEmail>[0]["react"];
+  context: { stage: string; id: string };
+}): Promise<EmailDelivery> {
+  try {
+    const result = await sendEmail({
+      to: args.to,
+      subject: args.subject,
+      react: args.react,
+    });
+    if (!result.ok) {
+      console.warn("[" + args.context.stage + "] email send failed", {
+        id: args.context.id,
+        error: result.error,
+      });
+      return "failed";
+    }
+    return result.mode === "resend" ? "sent" : "console";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[" + args.context.stage + "] email send threw", {
+      id: args.context.id,
+      message,
+    });
+    return "failed";
+  }
+}
 
 const confirmSchema = z.object({
   booking_id: z.string().uuid(),
@@ -92,7 +135,7 @@ export async function confirmBookingAction(
     .from("bookings")
     .select(
       `id, organizer_id, rfq_id, supplier_id, accepted_quote_revision_id, confirmed_at,
-       profiles:organizer_id ( id, full_name, phone ),
+       profiles:organizer_id ( id, full_name, phone, language ),
        suppliers ( id, business_name, slug ),
        rfqs ( id, events ( id, event_type, city, starts_at, ends_at, venue_address, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, snapshot_jsonb, content_hash )`,
@@ -107,7 +150,12 @@ export async function confirmBookingAction(
     supplier_id: string;
     accepted_quote_revision_id: string;
     confirmed_at: string | null;
-    profiles: { id: string; full_name: string | null; phone: string | null } | null;
+    profiles: {
+      id: string;
+      full_name: string | null;
+      phone: string | null;
+      language: string | null;
+    } | null;
     suppliers: {
       id: string;
       business_name: string;
@@ -137,7 +185,14 @@ export async function confirmBookingAction(
   if (ctx) {
     const snapshot = parseQuoteSnapshot(ctx.quote_revisions?.snapshot_jsonb);
     const event = ctx.rfqs?.events ?? null;
-    const organizerEmail: string | null = null; // auth.users.email lookup deferred — phone is enough for v1
+    // Resolve organizer email through the sanctioned helper. We deliberately
+    // call this once for the contract pipeline AND the booking-confirmed
+    // notification email.
+    const organizerRecipient = await resolveRecipientEmailAndLocale(
+      admin,
+      ctx.organizer_id,
+    );
+    const organizerEmail = organizerRecipient.email;
     const supplier = ctx.suppliers;
 
     if (
@@ -222,12 +277,56 @@ export async function confirmBookingAction(
     }
 
     try {
-      await createNotification({
+      const basePayload = { booking_id: ctx.id, rfq_id: ctx.rfq_id };
+      const inApp = await createNotification({
         supabase: admin,
         user_id: ctx.organizer_id,
         kind: "booking.confirmed",
-        payload: { booking_id: ctx.id, rfq_id: ctx.rfq_id },
+        payload: { ...basePayload, email_delivery: "pending" },
       });
+
+      let emailDelivery: EmailDelivery = "skipped";
+      if (organizerEmail && event && supplier) {
+        emailDelivery = await sendLifecycleEmail({
+          to: organizerEmail,
+          subject: bookingConfirmedStrings[organizerRecipient.locale].preview(
+            supplier.business_name,
+            event.event_type,
+          ),
+          react: BookingConfirmed({
+            locale: organizerRecipient.locale,
+            organizerName: ctx.profiles?.full_name ?? null,
+            supplierBusinessName: supplier.business_name,
+            eventName: event.event_type,
+            eventStartsAtIso: event.starts_at,
+            bookingUrl: `${appUrl()}/organizer/bookings/${ctx.id}`,
+          }),
+          context: { stage: "confirmBooking/booking.confirmed", id: ctx.id },
+        });
+      } else if (!organizerEmail) {
+        console.warn(
+          "[confirmBookingAction] organizer has no email; skipping BookingConfirmed send",
+          { booking_id: ctx.id },
+        );
+      } else {
+        console.warn(
+          "[confirmBookingAction] missing event or supplier ctx; skipping BookingConfirmed send",
+          {
+            booking_id: ctx.id,
+            has_event: Boolean(event),
+            has_supplier: Boolean(supplier),
+          },
+        );
+      }
+
+      if (inApp.ok) {
+        await admin
+          .from("notifications")
+          .update({
+            payload_jsonb: { ...basePayload, email_delivery: emailDelivery },
+          })
+          .eq("id", inApp.id);
+      }
     } catch (e) {
       console.error("[confirmBookingAction] notify failed", e);
     }
@@ -272,29 +371,104 @@ export async function cancelBookingAction(
     return { status: "error", message: messageForBookingError(rpcError) };
   }
 
+  // Mirror the confirm-path SELECT so we have the supplier business_name,
+  // event_type, and organizer profile fields needed for the cancellation
+  // email + in-app notification.
   const { data: bookingRow } = await admin
     .from("bookings")
-    .select("id, organizer_id, rfq_id")
+    .select(
+      `id, organizer_id, rfq_id,
+       profiles:organizer_id ( full_name, language ),
+       suppliers!inner ( business_name ),
+       rfqs!inner ( events ( event_type ) )`,
+    )
     .eq("id", booking_id)
     .maybeSingle();
 
-  const ctx = bookingRow as
-    | { id: string; organizer_id: string; rfq_id: string }
-    | null;
+  type CancelCtxShape = {
+    id: string;
+    organizer_id: string;
+    rfq_id: string;
+    profiles: { full_name: string | null; language: string | null } | null;
+    suppliers:
+      | { business_name: string }
+      | { business_name: string }[]
+      | null;
+    rfqs:
+      | { events: { event_type: string } | { event_type: string }[] | null }
+      | {
+          events: { event_type: string } | { event_type: string }[] | null;
+        }[]
+      | null;
+  };
+
+  const ctx = bookingRow as unknown as CancelCtxShape | null;
 
   if (ctx) {
     try {
-      await createNotification({
+      const suppliersNode = Array.isArray(ctx.suppliers)
+        ? ctx.suppliers[0] ?? null
+        : ctx.suppliers;
+      const rfqsNode = Array.isArray(ctx.rfqs)
+        ? ctx.rfqs[0] ?? null
+        : ctx.rfqs;
+      const eventsNode = Array.isArray(rfqsNode?.events)
+        ? rfqsNode?.events?.[0] ?? null
+        : rfqsNode?.events ?? null;
+      const supplierBusinessName = suppliersNode?.business_name ?? "the supplier";
+      const eventName = eventsNode?.event_type ?? "your event";
+
+      const recipient = await resolveRecipientEmailAndLocale(
+        admin,
+        ctx.organizer_id,
+      );
+
+      const basePayload = {
+        booking_id: ctx.id,
+        rfq_id: ctx.rfq_id,
+        reason,
+        cancelled_by: "supplier" as const,
+      };
+      const inApp = await createNotification({
         supabase: admin,
         user_id: ctx.organizer_id,
         kind: "booking.cancelled",
-        payload: {
-          booking_id: ctx.id,
-          rfq_id: ctx.rfq_id,
-          reason,
-          cancelled_by: "supplier",
-        },
+        payload: { ...basePayload, email_delivery: "pending" },
       });
+
+      let emailDelivery: EmailDelivery = "skipped";
+      if (recipient.email) {
+        emailDelivery = await sendLifecycleEmail({
+          to: recipient.email,
+          subject: bookingCancelledStrings[recipient.locale].preview(
+            supplierBusinessName,
+            eventName,
+          ),
+          react: BookingCancelledBySupplier({
+            locale: recipient.locale,
+            organizerName: ctx.profiles?.full_name ?? null,
+            supplierBusinessName,
+            eventName,
+            rfqUrl: `${appUrl()}/organizer/rfqs/${ctx.rfq_id}`,
+            reason,
+          }),
+          context: { stage: "cancelBooking/booking.cancelled", id: ctx.id },
+        });
+      } else {
+        console.warn(
+          "[cancelBookingAction] organizer has no email; skipping BookingCancelledBySupplier send",
+          { booking_id: ctx.id },
+        );
+      }
+
+      if (inApp.ok) {
+        await admin
+          .from("notifications")
+          .update({
+            payload_jsonb: { ...basePayload, email_delivery: emailDelivery },
+          })
+          .eq("id", inApp.id);
+      }
     } catch (e) {
       console.error("[cancelBookingAction] notify failed", e);
     }

@@ -51,6 +51,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
             <SignInForm
               next={next}
+              showResend={confirm}
               labels={{
                 emailLabel: t("emailLabel"),
                 emailPlaceholder: t("emailPlaceholder"),
@@ -60,6 +61,13 @@ export default async function SignInPage({ searchParams }: PageProps) {
                 submitting: t("submitting"),
                 errorEmailRequired: t("errorEmailRequired"),
                 errorPasswordRequired: t("errorPasswordRequired"),
+                resendCta: t("resendCta"),
+                resendSending: t("resendSending"),
+                resendSuccess: t("resendSuccess"),
+                resendCapReached: t("resendCapReached"),
+                resendCooldown: t("resendCooldown"),
+                resendInvalidEmail: t("resendInvalidEmail"),
+                resendUnknownError: t("resendUnknownError"),
               }}
             />
 

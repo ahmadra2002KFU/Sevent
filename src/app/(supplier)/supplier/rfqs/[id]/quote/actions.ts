@@ -43,7 +43,48 @@ import {
 import { getDistanceKm } from "@/lib/domain/pricing/distance";
 import type { PricingRuleType } from "@/lib/domain/pricing/rules";
 import { createNotification } from "@/lib/notifications/inApp";
+import { sendEmail } from "@/lib/notifications/email";
+import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
+import QuoteReceived from "@/lib/notifications/templates/organizer/QuoteReceived";
+import { strings as quoteReceivedStrings } from "@/lib/notifications/templates/organizer/QuoteReceived.strings";
+import { env } from "@/lib/env";
 import type { ActionState } from "./action-state";
+
+type EmailDelivery = "sent" | "console" | "failed" | "skipped";
+
+function appUrl(): string {
+  return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
+
+async function sendLifecycleEmail(args: {
+  to: string;
+  subject: string;
+  react: Parameters<typeof sendEmail>[0]["react"];
+  context: { stage: string; id: string };
+}): Promise<EmailDelivery> {
+  try {
+    const result = await sendEmail({
+      to: args.to,
+      subject: args.subject,
+      react: args.react,
+    });
+    if (!result.ok) {
+      console.warn("[" + args.context.stage + "] email send failed", {
+        id: args.context.id,
+        error: result.error,
+      });
+      return "failed";
+    }
+    return result.mode === "resend" ? "sent" : "console";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[" + args.context.stage + "] email send threw", {
+      id: args.context.id,
+      message,
+    });
+    return "failed";
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Zod schema — client submission shape.
@@ -269,7 +310,7 @@ export async function sendQuoteAction(
   const { data: rfqRow, error: rfqErr } = await admin
     .from("rfqs")
     .select(
-      "id, event_id, events(id, organizer_id, starts_at, ends_at, guest_count, venue_location)",
+      "id, event_id, events(id, organizer_id, event_type, starts_at, ends_at, guest_count, venue_location)",
     )
     .eq("id", data.rfq_id)
     .maybeSingle();
@@ -281,6 +322,7 @@ export async function sendQuoteAction(
         events: {
           id: string;
           organizer_id: string;
+          event_type: string | null;
           starts_at: string;
           ends_at: string;
           guest_count: number | null;
@@ -534,22 +576,107 @@ export async function sendQuoteAction(
     });
   }
 
-  // 11. Notify organizer. kind depends on revision version.
+  // 11. Notify organizer. kind depends on revision version. Only the first
+  //     version triggers the QuoteReceived email; revised quotes are in-app
+  //     only for now (Phase 2.5 of the Resend rollout).
   const kind = row.version === 1 ? "quote.sent" : "quote.revised";
-  await createNotification({
-    supabase: admin,
-    user_id: event.organizer_id,
-    kind,
-    payload: {
-      supplier_id: data.supplier_id,
-      rfq_id: data.rfq_id,
-      quote_id: row.quote_id,
-      revision_id: row.revision_id,
-      version: row.version,
-      total_halalas: snapshot.total_halalas,
-      expires_at: snapshot.expires_at,
-    },
-  });
+  const baseNotificationPayload = {
+    supplier_id: data.supplier_id,
+    rfq_id: data.rfq_id,
+    quote_id: row.quote_id,
+    revision_id: row.revision_id,
+    version: row.version,
+    total_halalas: snapshot.total_halalas,
+    expires_at: snapshot.expires_at,
+  };
+
+  if (row.version === 1) {
+    try {
+      // Pull supplier business_name and organizer full_name for the email
+      // template props. The recipient (organizer) email + locale comes from
+      // the sanctioned helper.
+      const [supplierRowResp, organizerProfileResp, recipient] =
+        await Promise.all([
+          admin
+            .from("suppliers")
+            .select("business_name")
+            .eq("id", data.supplier_id)
+            .maybeSingle(),
+          admin
+            .from("profiles")
+            .select("full_name")
+            .eq("id", event.organizer_id)
+            .maybeSingle(),
+          resolveRecipientEmailAndLocale(admin, event.organizer_id),
+        ]);
+
+      const supplierBusinessName =
+        (supplierRowResp.data as { business_name?: string } | null)
+          ?.business_name ?? "the supplier";
+      const organizerName =
+        (organizerProfileResp.data as { full_name?: string | null } | null)
+          ?.full_name ?? null;
+      // rfqs has no `title` column today — fall back to events.event_type for
+      // the email subject + body. TODO: revisit if rfqs.title is added.
+      const rfqTitle = event.event_type ?? "your event";
+      const quoteAmountSar = snapshot.total_halalas / 100;
+      const quoteUrl = `${appUrl()}/organizer/rfqs/${data.rfq_id}/quotes/${row.quote_id}`;
+
+      const inApp = await createNotification({
+        supabase: admin,
+        user_id: event.organizer_id,
+        kind,
+        payload: { ...baseNotificationPayload, email_delivery: "pending" },
+      });
+
+      let emailDelivery: EmailDelivery = "skipped";
+      if (recipient.email) {
+        emailDelivery = await sendLifecycleEmail({
+          to: recipient.email,
+          subject: quoteReceivedStrings[recipient.locale].preview(
+            supplierBusinessName,
+            rfqTitle,
+          ),
+          react: QuoteReceived({
+            locale: recipient.locale,
+            organizerName,
+            supplierBusinessName,
+            rfqTitle,
+            quoteAmountSar,
+            quoteUrl,
+          }),
+          context: { stage: "sendQuote/quote.sent", id: row.quote_id },
+        });
+      } else {
+        console.warn(
+          "[sendQuoteAction] organizer has no email; skipping QuoteReceived send",
+          { organizerId: event.organizer_id },
+        );
+      }
+
+      if (inApp.ok) {
+        await admin
+          .from("notifications")
+          .update({
+            payload_jsonb: {
+              ...baseNotificationPayload,
+              email_delivery: emailDelivery,
+            },
+          })
+          .eq("id", inApp.id);
+      }
+    } catch (e) {
+      console.error("[sendQuoteAction] notify+email failed", e);
+    }
+  } else {
+    // Revised quote: in-app only (no email per Phase 2.5 scope).
+    await createNotification({
+      supabase: admin,
+      user_id: event.organizer_id,
+      kind,
+      payload: baseNotificationPayload,
+    });
+  }
 
   // 12. Revalidate both sides of the sent-quote UX, then redirect the supplier
   //     out of the editor to the RFQ list. They land on a fresh page that

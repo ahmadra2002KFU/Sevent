@@ -22,7 +22,50 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
 import { createNotification } from "@/lib/notifications/inApp";
+import { sendEmail } from "@/lib/notifications/email";
+import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
+import QuoteAccepted from "@/lib/notifications/templates/supplier/QuoteAccepted";
+import { strings as quoteAcceptedStrings } from "@/lib/notifications/templates/supplier/QuoteAccepted.strings";
+import BookingCreated from "@/lib/notifications/templates/organizer/BookingCreated";
+import { strings as bookingCreatedStrings } from "@/lib/notifications/templates/organizer/BookingCreated.strings";
+import { env } from "@/lib/env";
 import type { ActionState, RfpRequestActionState } from "./action-state";
+
+type EmailDelivery = "sent" | "console" | "failed" | "skipped";
+
+function appUrl(): string {
+  return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
+
+async function sendLifecycleEmail(args: {
+  to: string;
+  subject: string;
+  react: Parameters<typeof sendEmail>[0]["react"];
+  context: { stage: string; id: string };
+}): Promise<EmailDelivery> {
+  try {
+    const result = await sendEmail({
+      to: args.to,
+      subject: args.subject,
+      react: args.react,
+    });
+    if (!result.ok) {
+      console.warn("[" + args.context.stage + "] email send failed", {
+        id: args.context.id,
+        error: result.error,
+      });
+      return "failed";
+    }
+    return result.mode === "resend" ? "sent" : "console";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[" + args.context.stage + "] email send threw", {
+      id: args.context.id,
+      message,
+    });
+    return "failed";
+  }
+}
 
 const acceptSchema = z.object({
   quote_id: z.string().uuid(),
@@ -131,16 +174,52 @@ export async function acceptQuoteAction(
 
   // Supplier profile_id (suppliers.profile_id → profiles.id). We need the
   // notification to land on the supplier user's profile row, not the supplier
-  // entity id.
+  // entity id. Also pull business_name so the email templates can address the
+  // supplier by their business name.
   let supplierProfileId: string | null = null;
+  let supplierBusinessName: string | null = null;
   if (supplierId) {
     const { data: s } = await gate.admin
       .from("suppliers")
-      .select("profile_id")
+      .select("profile_id, business_name")
       .eq("id", supplierId)
       .maybeSingle();
-    supplierProfileId = (s as { profile_id?: string } | null)?.profile_id ?? null;
+    supplierProfileId =
+      (s as { profile_id?: string } | null)?.profile_id ?? null;
+    supplierBusinessName =
+      (s as { business_name?: string } | null)?.business_name ?? null;
   }
+
+  // Event type — fallback for the event "name" referenced in email templates,
+  // since rfqs has no title column and events.name is not always populated.
+  // Also pull the organizer's full_name for greeting copy in the BookingCreated
+  // email and the supplier's profile row for the QuoteAccepted greeting.
+  const { data: rfqEventRow } = await gate.admin
+    .from("rfqs")
+    .select("id, events ( event_type )")
+    .eq("id", rfq_id)
+    .maybeSingle();
+  type RfqEventShape = {
+    id: string;
+    events:
+      | { event_type: string | null }
+      | { event_type: string | null }[]
+      | null;
+  };
+  const rfqEvent = rfqEventRow as unknown as RfqEventShape | null;
+  const eventsNode = Array.isArray(rfqEvent?.events)
+    ? rfqEvent?.events[0] ?? null
+    : rfqEvent?.events ?? null;
+  const eventName = eventsNode?.event_type ?? "your event";
+
+  const { data: organizerProfileRow } = await gate.admin
+    .from("profiles")
+    .select("full_name")
+    .eq("id", gate.user.id)
+    .maybeSingle();
+  const organizerName =
+    (organizerProfileRow as { full_name?: string | null } | null)?.full_name ??
+    null;
 
   // Siblings: quotes the RPC auto-rejected in the same transaction.
   const { data: rejectedSiblingsRaw } = await gate.admin
@@ -172,20 +251,79 @@ export async function acceptQuoteAction(
   //    already committed at this point; we just want best-effort delivery.
   const notifyTasks: Promise<unknown>[] = [];
 
-  if (supplierProfileId) {
+  // Capture the local copy so the closures below can keep narrowing without
+  // re-checking on each access.
+  const supplierProfileIdLocal = supplierProfileId;
+  if (supplierProfileIdLocal) {
     notifyTasks.push(
       (async () => {
         try {
-          await createNotification({
+          // 1) Resolve recipient (email + locale). This is the sanctioned path
+          //    even when the in-app row is the source of truth; it sidesteps
+          //    the auth.users vs profiles.language gotcha documented in
+          //    recipients.ts.
+          const recipient = await resolveRecipientEmailAndLocale(
+            gate.admin,
+            supplierProfileIdLocal,
+          );
+
+          // 2) Write the in-app notification FIRST (source of truth) with the
+          //    delivery state as `pending`. We update it after the send.
+          const basePayload = {
+            quote_id,
+            rfq_id,
+            booking_id,
+          };
+          const inApp = await createNotification({
             supabase: gate.admin,
-            user_id: supplierProfileId,
+            user_id: supplierProfileIdLocal,
             kind: "quote.accepted",
-            payload: {
-              quote_id,
-              rfq_id,
-              booking_id,
-            },
+            payload: { ...basePayload, email_delivery: "pending" },
           });
+
+          // 3) Best-effort email send. The DB writes are committed; on failure
+          //    we just record the outcome on the notification payload.
+          let emailDelivery: EmailDelivery = "skipped";
+          if (recipient.email && confirmDeadline) {
+            emailDelivery = await sendLifecycleEmail({
+              to: recipient.email,
+              subject: quoteAcceptedStrings[recipient.locale].preview(eventName),
+              react: QuoteAccepted({
+                locale: recipient.locale,
+                supplierBusinessName: supplierBusinessName ?? "your business",
+                eventName,
+                organizerName: organizerName ?? "the organizer",
+                bookingUrl: `${appUrl()}/supplier/bookings/${booking_id}`,
+                expiresAtIso: confirmDeadline,
+              }),
+              context: { stage: "acceptQuote/quote.accepted", id: quote_id },
+            });
+          } else if (!recipient.email) {
+            console.warn(
+              "[acceptQuoteAction] supplier has no email; skipping QuoteAccepted send",
+              { supplierProfileId: supplierProfileIdLocal },
+            );
+            emailDelivery = "skipped";
+          } else {
+            // Missing confirm_deadline — the email template requires an ISO
+            // string for the deadline section. Record as skipped so we can
+            // alert on this in observability if it ever happens.
+            console.warn(
+              "[acceptQuoteAction] confirm_deadline missing; skipping QuoteAccepted send",
+              { booking_id },
+            );
+            emailDelivery = "skipped";
+          }
+
+          // 4) Persist the final email_delivery state on the notification row.
+          if (inApp.ok) {
+            await gate.admin
+              .from("notifications")
+              .update({
+                payload_jsonb: { ...basePayload, email_delivery: emailDelivery },
+              })
+              .eq("id", inApp.id);
+          }
         } catch (e) {
           console.error("[acceptQuoteAction] notify quote.accepted failed", e);
         }
@@ -194,7 +332,7 @@ export async function acceptQuoteAction(
         try {
           await createNotification({
             supabase: gate.admin,
-            user_id: supplierProfileId,
+            user_id: supplierProfileIdLocal,
             kind: "booking.awaiting_supplier",
             payload: {
               booking_id,
@@ -212,20 +350,64 @@ export async function acceptQuoteAction(
     );
   }
 
-  // Self-notify the organizer.
+  // Self-notify the organizer (in-app + email).
   notifyTasks.push(
     (async () => {
       try {
-        await createNotification({
+        const recipient = await resolveRecipientEmailAndLocale(
+          gate.admin,
+          gate.user.id,
+        );
+        const basePayload = {
+          booking_id,
+          rfq_id,
+          quote_id,
+        };
+        const inApp = await createNotification({
           supabase: gate.admin,
           user_id: gate.user.id,
           kind: "booking.created",
-          payload: {
-            booking_id,
-            rfq_id,
-            quote_id,
-          },
+          payload: { ...basePayload, email_delivery: "pending" },
         });
+
+        let emailDelivery: EmailDelivery = "skipped";
+        if (recipient.email && confirmDeadline) {
+          emailDelivery = await sendLifecycleEmail({
+            to: recipient.email,
+            subject: bookingCreatedStrings[recipient.locale].preview(
+              supplierBusinessName ?? "the supplier",
+              eventName,
+            ),
+            react: BookingCreated({
+              locale: recipient.locale,
+              organizerName,
+              supplierBusinessName: supplierBusinessName ?? "the supplier",
+              eventName,
+              supplierConfirmDeadlineIso: confirmDeadline,
+              bookingUrl: `${appUrl()}/organizer/bookings/${booking_id}`,
+            }),
+            context: { stage: "acceptQuote/booking.created", id: booking_id },
+          });
+        } else if (!recipient.email) {
+          console.warn(
+            "[acceptQuoteAction] organizer has no email; skipping BookingCreated send",
+            { organizerId: gate.user.id },
+          );
+        } else {
+          console.warn(
+            "[acceptQuoteAction] confirm_deadline missing; skipping BookingCreated send",
+            { booking_id },
+          );
+        }
+
+        if (inApp.ok) {
+          await gate.admin
+            .from("notifications")
+            .update({
+              payload_jsonb: { ...basePayload, email_delivery: emailDelivery },
+            })
+            .eq("id", inApp.id);
+        }
       } catch (e) {
         console.error("[acceptQuoteAction] notify booking.created failed", e);
       }

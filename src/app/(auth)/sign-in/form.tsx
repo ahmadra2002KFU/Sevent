@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useId, useTransition } from "react";
+import { useActionState, useEffect, useId, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,7 +16,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { signInAction, type AuthState } from "../actions";
+import {
+  resendConfirmationAction,
+  signInAction,
+  type AuthState,
+  type ResendState,
+} from "../actions";
 
 type Labels = {
   emailLabel: string;
@@ -27,9 +32,20 @@ type Labels = {
   submitting: string;
   errorEmailRequired: string;
   errorPasswordRequired: string;
+  // Resend labels (only consumed when `showResend` is true). Required so the
+  // server component owns all i18n; we don't want the client to read message
+  // bundles directly.
+  resendCta: string;
+  resendSending: string;
+  resendSuccess: string;
+  resendCapReached: string;
+  resendCooldown: string;
+  resendInvalidEmail: string;
+  resendUnknownError: string;
 };
 
 const initial: AuthState = { ok: false };
+const initialResend: ResendState = { ok: false };
 
 /**
  * Sign-in form — shadcn Form (react-hook-form + zod) in front of the existing
@@ -37,7 +53,15 @@ const initial: AuthState = { ok: false };
  * on submit we forward the data to `signInAction` via `useActionState` so the
  * existing redirect-by-role flow is preserved.
  */
-export function SignInForm({ next, labels }: { next?: string; labels: Labels }) {
+export function SignInForm({
+  next,
+  showResend = false,
+  labels,
+}: {
+  next?: string;
+  showResend?: boolean;
+  labels: Labels;
+}) {
   const schema = z.object({
     email: z.string().email(labels.errorEmailRequired),
     password: z.string().min(1, labels.errorPasswordRequired),
@@ -51,7 +75,12 @@ export function SignInForm({ next, labels }: { next?: string; labels: Labels }) 
   });
 
   const [state, formAction] = useActionState(signInAction, initial);
+  const [resendState, resendDispatch] = useActionState(
+    resendConfirmationAction,
+    initialResend,
+  );
   const [isPending, startTransition] = useTransition();
+  const [isResending, startResend] = useTransition();
   const formId = useId();
 
   const onSubmit: SubmitHandler<FormValues> = (values) => {
@@ -60,6 +89,17 @@ export function SignInForm({ next, labels }: { next?: string; labels: Labels }) 
     fd.set("password", values.password);
     fd.set("next", next ?? "");
     startTransition(() => formAction(fd));
+  };
+
+  const onResend = () => {
+    const email = form.getValues("email").trim();
+    if (!email) {
+      form.setError("email", { message: labels.errorEmailRequired });
+      return;
+    }
+    const fd = new FormData();
+    fd.set("email", email);
+    startResend(() => resendDispatch(fd));
   };
 
   return (
@@ -138,6 +178,116 @@ export function SignInForm({ next, labels }: { next?: string; labels: Labels }) 
           )}
         </Button>
       </form>
+
+      {showResend ? (
+        <ResendBlock
+          labels={labels}
+          state={resendState}
+          isResending={isResending}
+          onResend={onResend}
+        />
+      ) : null}
     </Form>
   );
+}
+
+function ResendBlock({
+  labels,
+  state,
+  isResending,
+  onResend,
+}: {
+  labels: Labels;
+  state: ResendState;
+  isResending: boolean;
+  onResend: () => void;
+}) {
+  // The cooldown is "live": if the user keeps the tab open across the 1-hour
+  // boundary, the disabled button should re-enable on its own. `now` ticks
+  // every 30s when a retryAt is in effect; otherwise the timer is idle.
+  const cooldownActive = useCooldownActive(state.retryAt);
+  const buttonDisabled = isResending || cooldownActive;
+
+  const resultMessage = (() => {
+    if (state.ok) {
+      return { tone: "success" as const, text: labels.resendSuccess };
+    }
+    if (state.reason === "invalid_email") {
+      return { tone: "error" as const, text: labels.resendInvalidEmail };
+    }
+    if (state.reason === "rate_limited") {
+      return { tone: "error" as const, text: labels.resendCapReached };
+    }
+    if (state.reason === "supabase_error") {
+      return { tone: "error" as const, text: state.error ?? labels.resendUnknownError };
+    }
+    if (state.reason === "unknown") {
+      return { tone: "error" as const, text: labels.resendUnknownError };
+    }
+    return null;
+  })();
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{labels.resendCta}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onResend}
+          disabled={buttonDisabled}
+        >
+          {isResending ? (
+            <>
+              <Loader2 className="size-3 animate-spin" aria-hidden />
+              {labels.resendSending}
+            </>
+          ) : (
+            <>
+              <Mail className="size-3.5" aria-hidden />
+              {labels.resendCta}
+            </>
+          )}
+        </Button>
+      </div>
+
+      {cooldownActive ? (
+        <p className="text-xs text-muted-foreground">{labels.resendCooldown}</p>
+      ) : null}
+
+      {!cooldownActive && resultMessage ? (
+        <p
+          className={
+            resultMessage.tone === "success"
+              ? "flex items-center gap-1.5 text-xs text-semantic-success-500"
+              : "flex items-center gap-1.5 text-xs text-semantic-danger-500"
+          }
+        >
+          {resultMessage.tone === "success" ? (
+            <CheckCircle2 className="size-3.5" aria-hidden />
+          ) : (
+            <AlertCircle className="size-3.5" aria-hidden />
+          )}
+          {resultMessage.text}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Returns true while `retryAtIso` is in the future. Polls every 30s so the
+ * button automatically re-enables when the cooldown expires without requiring
+ * a page reload.
+ */
+function useCooldownActive(retryAtIso: string | undefined): boolean {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!retryAtIso) return;
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, [retryAtIso]);
+  if (!retryAtIso) return false;
+  return new Date(retryAtIso).getTime() > now;
 }

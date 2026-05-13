@@ -12,11 +12,12 @@
  */
 
 export const BRAND = {
-  // Domain / URLs
+  // Domain / URLs — production uses www.seventsa.com for the app and
+  // api.seventsa.com for the Supabase API.
   apex: "seventsa.com",
-  marketingUrl: "https://seventsa.com",
-  privacyUrl: "https://seventsa.com/privacy",
-  termsUrl: "https://seventsa.com/terms",
+  marketingUrl: "https://www.seventsa.com",
+  privacyUrl: "https://www.seventsa.com/privacy",
+  termsUrl: "https://www.seventsa.com/terms",
 
   // Contact
   supportEmail: "support@seventsa.com",
@@ -56,11 +57,13 @@ export const BRAND = {
     dangerSoft: "#f6d7d9",
   },
 
-  // Logo — Next.js serves public/logo.png at this absolute URL once the
-  // marketing site is live. Until then, the preview script post-processes
-  // rendered HTML to rewrite this to `./logo.png` so previews render the
-  // real mark locally.
-  logoUrl: "https://seventsa.com/logo.png",
+  // Logo — Next.js serves public/logo.png at this absolute URL.
+  // Production: https://www.seventsa.com/logo.png. The preview script
+  // rewrites this to `./logo.png` for local rendering inside React Email's
+  // dev server. Supabase auth templates (supabase/templates/*.html) use
+  // GoTrue's `{{ .SiteURL }}` placeholder instead so they also work locally
+  // through Mailpit + the Next.js public asset.
+  logoUrl: "https://www.seventsa.com/logo.png",
 
   // Font stacks. Custom faces don't load reliably across email clients
   // (Outlook strips webfont <link>). The brand name leads; the cascade

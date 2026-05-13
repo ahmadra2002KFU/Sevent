@@ -2612,7 +2612,14 @@
       "newHere": "جديد هنا؟",
       "createAccount": "إنشاء حساب",
       "errorEmailRequired": "أدخل بريدًا إلكترونيًا صحيحًا.",
-      "errorPasswordRequired": "أدخل كلمة المرور."
+      "errorPasswordRequired": "أدخل كلمة المرور.",
+      "resendCta": "إعادة إرسال التأكيد",
+      "resendSending": "جارٍ الإرسال…",
+      "resendSuccess": "تم الإرسال. تحقّق من بريدك.",
+      "resendCapReached": "وصلت إلى حد الإرسال. حاول مجددًا بعد ساعة تقريبًا.",
+      "resendCooldown": "وصلت إلى حد الإرسال. حاول مجددًا بعد ساعة تقريبًا.",
+      "resendInvalidEmail": "أدخل بريدًا صحيحًا في الحقل أعلاه أولًا.",
+      "resendUnknownError": "تعذّر الإرسال الآن. حاول بعد قليل."
     },
     "signUp": {
       "title": "أنشئ حسابك على سِيفِنت",
