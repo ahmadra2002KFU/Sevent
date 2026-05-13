@@ -20,9 +20,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
 
+  // Behind Cloudflare → host → container loopback, `request.url` resolves to
+  // the container's bind address (0.0.0.0:3000) rather than the public host.
+  // Anchor redirects to APP_URL so the Location header keeps the user on the
+  // canonical hostname.
+  const redirectBase = process.env.APP_URL ?? request.url;
+
   if (!code) {
     return NextResponse.redirect(
-      new URL("/sign-in?error=missing_code", request.url),
+      new URL("/sign-in?error=missing_code", redirectBase),
     );
   }
 
@@ -33,7 +39,7 @@ export async function GET(request: Request) {
   if (exchangeError) {
     const msg = encodeURIComponent(exchangeError.message);
     return NextResponse.redirect(
-      new URL(`/sign-in?error=${msg}`, request.url),
+      new URL(`/sign-in?error=${msg}`, redirectBase),
     );
   }
 
@@ -58,19 +64,19 @@ export async function GET(request: Request) {
   switch (role) {
     case "admin":
       return NextResponse.redirect(
-        new URL("/admin/verifications", request.url),
+        new URL("/admin/verifications", redirectBase),
       );
     case "organizer":
       return NextResponse.redirect(
-        new URL("/organizer/dashboard", request.url),
+        new URL("/organizer/dashboard", redirectBase),
       );
     case "supplier":
       return NextResponse.redirect(
-        new URL("/supplier/dashboard", request.url),
+        new URL("/supplier/dashboard", redirectBase),
       );
     default:
       return NextResponse.redirect(
-        new URL("/sign-in?confirmed=1", request.url),
+        new URL("/sign-in?confirmed=1", redirectBase),
       );
   }
 }
