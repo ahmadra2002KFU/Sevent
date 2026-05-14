@@ -25,7 +25,7 @@ type AuthState = { ok: boolean; error?: string };
 
 export type SignUpRole = "organizer" | "supplier";
 
-type Labels = {
+export type SignUpFormLabels = {
   fullNameLabel: string;
   fullNamePlaceholder: string;
   emailLabel: string;
@@ -57,7 +57,7 @@ export function SignUpForm({
   labels,
 }: {
   role?: SignUpRole;
-  labels: Labels;
+  labels: SignUpFormLabels;
 }) {
   const schema = z.object({
     fullName: z

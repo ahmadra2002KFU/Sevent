@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export default function Loading() {
   return (
     <main className="flex min-h-screen bg-neutral-50">
-      <div className="hidden lg:flex lg:w-[44%] lg:flex-col lg:gap-6 lg:bg-brand-navy-900 lg:p-12">
+      <div className="hidden w-[520px] shrink-0 flex-col gap-6 self-stretch bg-brand-navy-900 p-12 lg:flex">
         <Skeleton className="h-8 w-32 bg-white/10" />
         <Skeleton className="h-10 w-3/4 bg-white/10" />
         <Skeleton className="h-4 w-2/3 bg-white/10" />
@@ -29,6 +29,7 @@ export default function Loading() {
               <Skeleton className="h-4 w-72" />
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
+              <Skeleton className="h-9 w-full rounded-lg" />
               <Skeleton className="h-12 w-full rounded-md" />
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-2">
