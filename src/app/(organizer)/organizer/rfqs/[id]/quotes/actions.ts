@@ -417,11 +417,34 @@ export async function acceptQuoteAction(
   // Notify each auto-rejected sibling supplier. Supabase surfaces the
   // one-to-one join as either an object or a single-element array depending on
   // the version; handle both.
+  //
+  // The supplier-side RFQ route is keyed by the supplier's invite id, not the
+  // rfq id — so batch-resolve supplier_id → invite id once before the loop and
+  // build a lookup map. Skip the query entirely when there are no siblings.
+  const inviteMap = new Map<string, string>();
+  if (rejectedSiblings.length > 0) {
+    const { data: siblingInvites } = await gate.admin
+      .from("rfq_invites")
+      .select("id, supplier_id")
+      .eq("rfq_id", rfq_id)
+      .in(
+        "supplier_id",
+        rejectedSiblings.map((sib) => sib.supplier_id),
+      );
+    for (const inv of (siblingInvites ?? []) as {
+      id: string;
+      supplier_id: string;
+    }[]) {
+      if (inv.supplier_id && inv.id) inviteMap.set(inv.supplier_id, inv.id);
+    }
+  }
+
   for (const sib of rejectedSiblings) {
     const sibProfileId = Array.isArray(sib.suppliers)
       ? sib.suppliers[0]?.profile_id ?? null
       : sib.suppliers?.profile_id ?? null;
     if (!sibProfileId) continue;
+    const inviteId = inviteMap.get(sib.supplier_id) ?? null;
     notifyTasks.push(
       (async () => {
         try {
@@ -433,6 +456,10 @@ export async function acceptQuoteAction(
               quote_id: sib.id,
               rfq_id,
               reason: "another_quote_accepted",
+              event_type: eventName,
+              rfq_url: inviteId
+                ? `${appUrl()}/supplier/rfqs/${inviteId}`
+                : `${appUrl()}/supplier/rfqs`,
             },
           });
         } catch (e) {
@@ -508,7 +535,7 @@ export async function requestProposalAction(
     .select(
       `id, supplier_id, rfq_id,
        suppliers ( profile_id ),
-       rfqs ( id, events ( organizer_id ) )`,
+       rfqs ( id, events ( organizer_id, event_type ) )`,
     )
     .eq("id", quote_id)
     .eq("rfq_id", rfq_id)
@@ -524,14 +551,14 @@ export async function requestProposalAction(
     rfqs:
       | {
           events:
-            | { organizer_id: string | null }
-            | { organizer_id: string | null }[]
+            | { organizer_id: string | null; event_type: string | null }
+            | { organizer_id: string | null; event_type: string | null }[]
             | null;
         }
       | {
           events:
-            | { organizer_id: string | null }
-            | { organizer_id: string | null }[]
+            | { organizer_id: string | null; event_type: string | null }
+            | { organizer_id: string | null; event_type: string | null }[]
             | null;
         }[]
       | null;
@@ -545,6 +572,7 @@ export async function requestProposalAction(
     ? rfqsJoin?.events[0] ?? null
     : rfqsJoin?.events ?? null;
   const organizerId = eventsJoin?.organizer_id ?? null;
+  const eventType = eventsJoin?.event_type ?? "your event";
   if (organizerId !== gate.user.id) {
     return {
       status: "error",
@@ -609,6 +637,10 @@ export async function requestProposalAction(
           quote_id,
           rfq_id,
           message,
+          event_type: eventType,
+          quote_url: inviteId
+            ? `${appUrl()}/supplier/rfqs/${inviteId}`
+            : `${appUrl()}/supplier/rfqs`,
           ...(inviteId ? { invite_id: inviteId } : {}),
         },
       });

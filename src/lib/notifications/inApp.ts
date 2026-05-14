@@ -21,6 +21,7 @@ export type NotificationKind =
   | "quote.rejected"
   | "quote.proposal_requested"
   | "quote.proposal_fulfilled"
+  | "rfq.invited" // new opportunity — organizer invited supplier to an RFQ
   | "booking.created"
   | "booking.awaiting_supplier"
   | "booking.confirmed"

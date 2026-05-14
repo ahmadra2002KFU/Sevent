@@ -30,10 +30,16 @@ import {
 import { fetchAutoMatchCandidates } from "@/lib/domain/matching/query";
 import { parseRfqExtension, RfqFormInput, type RfqExtensionKind } from "@/lib/domain/rfq";
 import { requireAccess } from "@/lib/auth/access";
+import { createNotification } from "@/lib/notifications/inApp";
+import { env } from "@/lib/env";
 import {
   createSupabaseServerClient,
   createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
+
+function appUrl(): string {
+  return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
 
 async function requireOrganizerRole(): Promise<
   { userId: string } | { error: string }
@@ -375,6 +381,97 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
         rfq_id: rfqId,
         message: publishErr.message,
       });
+    }
+  }
+
+  // Best-effort: write an `rfq.invited` in-app notification for each invited
+  // supplier. A DB trigger + email worker (built separately) turns each one
+  // into a "new opportunity" email — so the payload keys below become React
+  // component props and must match the agreed contract exactly. The RFQ is
+  // already committed; a notification failure must NEVER fail this action.
+  if (parsed.data.shortlist.length > 0) {
+    try {
+      // Event type — fallback to a generic label if the row is missing.
+      const { data: eventRow } = await admin
+        .from("events")
+        .select("event_type")
+        .eq("id", parsed.data.event_id)
+        .maybeSingle();
+      const eventType =
+        (eventRow as { event_type?: string } | null)?.event_type ?? "your event";
+
+      // Category names (bilingual) for the opportunity email.
+      const { data: categoryRow } = await admin
+        .from("categories")
+        .select("name_en, name_ar")
+        .eq("id", parsed.data.subcategory_id)
+        .maybeSingle();
+      const categoryNameEn =
+        (categoryRow as { name_en?: string } | null)?.name_en ?? "";
+      const categoryNameAr =
+        (categoryRow as { name_ar?: string } | null)?.name_ar ?? "";
+
+      // The invites just created by the RPC — id + supplier_id + due date.
+      const { data: inviteRows } = await admin
+        .from("rfq_invites")
+        .select("id, supplier_id, response_due_at")
+        .eq("rfq_id", rfqId);
+      const invites = (inviteRows ?? []) as Array<{
+        id: string;
+        supplier_id: string;
+        response_due_at: string | null;
+      }>;
+
+      // The notification must land on the supplier user's profile row, not the
+      // supplier entity id — resolve supplier_id → profile_id in one lookup.
+      const supplierProfileMap = new Map<string, string>();
+      if (invites.length > 0) {
+        const { data: supplierRows } = await admin
+          .from("suppliers")
+          .select("id, profile_id")
+          .in(
+            "id",
+            invites.map((inv) => inv.supplier_id),
+          );
+        for (const s of (supplierRows ?? []) as Array<{
+          id: string;
+          profile_id: string | null;
+        }>) {
+          if (s.id && s.profile_id) supplierProfileMap.set(s.id, s.profile_id);
+        }
+      }
+
+      // Fan out the notifications in parallel. Each closure has its own
+      // try/catch so one flaky insert cannot cascade.
+      await Promise.all(
+        invites.map(async (invite) => {
+          const profileId = supplierProfileMap.get(invite.supplier_id);
+          if (!profileId) return;
+          try {
+            await createNotification({
+              supabase: admin,
+              user_id: profileId,
+              kind: "rfq.invited",
+              payload: {
+                rfq_id: rfqId,
+                invite_id: invite.id,
+                event_type: eventType,
+                category_name_en: categoryNameEn,
+                category_name_ar: categoryNameAr,
+                response_due_at: invite.response_due_at,
+                opportunity_url: `${appUrl()}/supplier/rfqs/${invite.id}`,
+              },
+            });
+          } catch (e) {
+            console.error("[sendRfqAction] notify rfq.invited failed", {
+              invite_id: invite.id,
+              error: e,
+            });
+          }
+        }),
+      );
+    } catch (e) {
+      console.error("[sendRfqAction] rfq.invited notification step failed", e);
     }
   }
 

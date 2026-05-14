@@ -110,6 +110,14 @@ const TEMPLATES: Record<string, () => Promise<TemplateModule>> = {
   // QuoteReceived covers the organizer-side "supplier sent you a quote".
   "quote.sent": () =>
     import("./templates/organizer/QuoteReceived") as unknown as Promise<TemplateModule>,
+
+  // Supplier lifecycle — queue-driven (Path B).
+  "quote.rejected": () =>
+    import("./templates/supplier/QuoteRejected") as unknown as Promise<TemplateModule>,
+  "quote.proposal_requested": () =>
+    import("./templates/supplier/QuoteProposalRequested") as unknown as Promise<TemplateModule>,
+  "rfq.invited": () =>
+    import("./templates/supplier/RfqInvited") as unknown as Promise<TemplateModule>,
 };
 
 const BATCH_SIZE_DEFAULT = 10;
