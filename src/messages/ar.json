@@ -1641,6 +1641,7 @@
       "pageTitle": "الرسائل",
       "pageDescription": "محادثات مترابطة مع المستخدمين — ملاحظات ودعم وإعلانات.",
       "compose": "كتابة رسالة",
+      "usersButton": "المستخدمون",
       "empty": "لا توجد محادثات بعد.",
       "errorLoad": "تعذر تحميل المحادثات",
       "filters": {
@@ -1713,10 +1714,10 @@
         "targetTypeUser": "مستخدم محدد",
         "targetTypeRole": "كل من في دور معين",
         "targetTypeAll": "جميع المستخدمين",
-        "userSearch": "ابحث عن مستخدم (بريد إلكتروني أو اسم)",
-        "userSearchPlaceholder": "اكتب للبحث…",
+        "recipientLabel": "المستلم",
         "userSelected": "المختار: {name}",
         "noUserSelected": "لم يتم اختيار مستخدم.",
+        "pickUserCta": "اختر مستخدمًا من قائمة المستخدمين",
         "role": "الدور",
         "subject": "الموضوع",
         "subjectPlaceholder": "عنوان قصير",
@@ -1732,9 +1733,45 @@
         "errorEmpty": "الموضوع والرسالة مطلوبان.",
         "errorNoTarget": "يرجى اختيار مستخدم أو دور.",
         "errorTooMany": "الإرسال الجماعي محدود بـ {limit} مستلمًا لكل حملة.",
+        "errorNotFound": "تعذر العثور على هذا المستخدم.",
         "successSingle": "تم إرسال الرسالة.",
         "successBulk": "أُرسلت إلى {count, plural, one {مستلم واحد} other {# مستلمين}}."
       }
+    },
+    "users": {
+      "title": "المستخدمون",
+      "subtitle": "تصفح المستخدمين، واطّلع على نشاط مراسلاتهم، وأرسل رسالة مباشرة.",
+      "filters": {
+        "role": {
+          "label": "الدور",
+          "all": "كل الأدوار",
+          "supplier": "الموردون",
+          "organizer": "المنظمون",
+          "admin": "المشرفون",
+          "agency": "الوكالات"
+        },
+        "search": {
+          "label": "بحث",
+          "placeholder": "الاسم أو البريد الإلكتروني…"
+        }
+      },
+      "columns": {
+        "user": "المستخدم",
+        "role": "الدور",
+        "joined": "تاريخ الانضمام",
+        "threads": "المحادثات",
+        "lastActivity": "آخر نشاط",
+        "action": "الإجراء"
+      },
+      "row": {
+        "noName": "(بدون اسم)",
+        "noEmail": "(بدون بريد إلكتروني)",
+        "noActivity": "—",
+        "unread": "{count} غير مقروءة",
+        "threadCount": "{count, plural, =0 {لا توجد محادثات} one {محادثة واحدة} other {# محادثات}}"
+      },
+      "sendMessage": "إرسال رسالة",
+      "empty": "لا يوجد مستخدمون مطابقون لهذه المرشحات."
     },
     "monitor": {
       "tabs": {

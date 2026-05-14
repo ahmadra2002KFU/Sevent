@@ -1641,6 +1641,7 @@
       "pageTitle": "Messages",
       "pageDescription": "Threaded conversations with users — feedback, support, and announcements.",
       "compose": "Compose message",
+      "usersButton": "Users",
       "empty": "No conversations yet.",
       "errorLoad": "Failed to load conversations",
       "filters": {
@@ -1713,10 +1714,10 @@
         "targetTypeUser": "A specific user",
         "targetTypeRole": "Everyone in a role",
         "targetTypeAll": "All users",
-        "userSearch": "Find user (email or name)",
-        "userSearchPlaceholder": "Type to search…",
+        "recipientLabel": "Recipient",
         "userSelected": "Selected: {name}",
         "noUserSelected": "No user selected.",
+        "pickUserCta": "Choose a user from the Users list",
         "role": "Role",
         "subject": "Subject",
         "subjectPlaceholder": "Short headline",
@@ -1732,9 +1733,45 @@
         "errorEmpty": "Subject and message are required.",
         "errorNoTarget": "Please pick a target user or role.",
         "errorTooMany": "Bulk sends are limited to {limit} recipients per campaign.",
+        "errorNotFound": "We couldn't find that user.",
         "successSingle": "Message sent.",
         "successBulk": "Sent to {count, plural, one {# recipient} other {# recipients}}."
       }
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Browse users, see their messaging activity, and send a direct message.",
+      "filters": {
+        "role": {
+          "label": "Role",
+          "all": "All roles",
+          "supplier": "Suppliers",
+          "organizer": "Organizers",
+          "admin": "Admins",
+          "agency": "Agencies"
+        },
+        "search": {
+          "label": "Search",
+          "placeholder": "Name or email…"
+        }
+      },
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "joined": "Joined",
+        "threads": "Threads",
+        "lastActivity": "Last activity",
+        "action": "Action"
+      },
+      "row": {
+        "noName": "(no name)",
+        "noEmail": "(no email)",
+        "noActivity": "—",
+        "unread": "{count} unread",
+        "threadCount": "{count, plural, =0 {No threads} one {# thread} other {# threads}}"
+      },
+      "sendMessage": "Send message",
+      "empty": "No users match these filters."
     },
     "monitor": {
       "tabs": {

@@ -18,13 +18,18 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAccess } from "@/lib/auth/access";
+import { env } from "@/lib/env";
 import { composeBulk, composeToUser } from "@/lib/messaging/compose";
 import { notifyMessage } from "@/lib/messaging/notify";
 import type { AppRole } from "@/lib/supabase/server";
 
 const targetSchema = z.enum(["user", "role", "all"]);
 const roleSchema = z.enum(["organizer", "supplier", "admin", "agency"]);
-const emailSchema = z.string().email();
+const uuidSchema = z.string().uuid();
+
+function appUrl(): string {
+  return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
+}
 
 export type ComposeState =
   | { status: "idle" }
@@ -57,27 +62,23 @@ export async function composeAction(
   }
 
   if (tt.data === "user") {
-    const emailParse = emailSchema.safeParse(formData.get("user_email"));
-    if (!emailParse.success) {
-      return { status: "error", message: "invalid email", code: "validation" };
+    // The recipient is picked from /admin/users and arrives as a user_id —
+    // no free-text email resolution anymore. `composeToUser` validates the
+    // profile exists and returns `not_found` if it doesn't.
+    const idParse = uuidSchema.safeParse(formData.get("user_id"));
+    if (!idParse.success) {
+      return { status: "error", message: "invalid user", code: "validation" };
     }
-    // Look up user id by email. Service-role admin auth API.
-    const { data: list } = await gate.admin.auth.admin.listUsers({ page: 1, perPage: 1 });
-    void list;
-    // listUsers doesn't accept a filter — issue a profile-side lookup instead.
-    // We don't store emails in profiles; fall back to listing through pages
-    // is too slow at scale, so we use `auth.admin.getUserByEmail`-style via a
-    // PostgREST view. For v1: just iterate auth.users by email.
-    const { data: matchUsers } = await gate.admin
-      .from("profiles")
-      .select("id")
-      .eq("id", await resolveUserIdByEmail(gate.admin, emailParse.data));
-    const targetId = (matchUsers ?? [])[0]?.id as string | undefined;
-    if (!targetId) {
-      return { status: "error", message: "no user with that email", code: "not_found" };
-    }
+    const targetId = idParse.data;
 
-    const requestId = crypto.randomUUID();
+    // Idempotency: the form mints a stable request_id once per mount, so a
+    // double-click / retry collapses into the same thread via the unique index
+    // on app_feedback.request_id. Fall back to a fresh id if it's missing.
+    const requestIdParse = uuidSchema.safeParse(formData.get("request_id"));
+    const requestId = requestIdParse.success
+      ? requestIdParse.data
+      : crypto.randomUUID();
+
     const result = await composeToUser({
       admin: gate.admin,
       sender_admin_id: gate.user.id,
@@ -90,24 +91,37 @@ export async function composeAction(
       return { status: "error", message: result.error ?? "send failed", code: result.code };
     }
 
-    // Resolve the recipient role for the deep-link.
-    const { data: roleRows } = await gate.admin
-      .from("profiles")
-      .select("role")
-      .eq("id", targetId)
-      .limit(1);
-    const recipRole =
-      ((roleRows ?? [])[0] as { role: string } | undefined)?.role ?? "organizer";
+    // Only fan out a notification + email when this call actually created the
+    // thread. On an idempotent replay (double-click → same request_id,
+    // `created: false`) we skip it — otherwise the bridge would enqueue a
+    // duplicate message.received email keyed on a fresh notification id.
+    if (result.created) {
+      // Resolve the recipient role for the per-recipient notification.
+      const { data: roleRows } = await gate.admin
+        .from("profiles")
+        .select("role")
+        .eq("id", targetId)
+        .limit(1);
+      const recipRole =
+        ((roleRows ?? [])[0] as { role: string } | undefined)?.role ?? "organizer";
 
-    void notifyMessage({
-      admin: gate.admin,
-      kind: "message.received",
-      recipient_user_id: targetId,
-      recipient_role: recipRole as AppRole,
-      thread_id: result.thread_id,
-      sender_role: "admin",
-      body,
-    });
+      // Single-user dedicated compose → notify in-app AND email the recipient.
+      // `email_notify` is the signal the notifications → email_outbox bridge
+      // keys on; bulk broadcasts below intentionally omit it (in-app only).
+      // Awaited, not fire-and-forget: the redirect below would otherwise let
+      // the runtime drop the promise before the enqueue lands.
+      await notifyMessage({
+        admin: gate.admin,
+        kind: "message.received",
+        recipient_user_id: targetId,
+        recipient_role: recipRole as AppRole,
+        thread_id: result.thread_id,
+        sender_role: "admin",
+        body,
+        email_notify: true,
+        thread_url: `${appUrl()}/${recipRole}/messages/${result.thread_id}`,
+      });
+    }
 
     revalidatePath(`/admin/messages/${result.thread_id}`);
     revalidatePath("/admin/messages");
@@ -165,31 +179,4 @@ export async function composeAction(
     recipientCount: result.recipient_count,
     campaignId,
   };
-}
-
-/**
- * Resolve a user id from an email by paging auth.users 1 page at a time.
- * For v1 this is fine — admin compose is a low-volume action and the page
- * size stays small. v2 should add a `profiles_with_email` view.
- */
-async function resolveUserIdByEmail(
-  admin: import("@supabase/supabase-js").SupabaseClient,
-  email: string,
-): Promise<string | undefined> {
-  const PER_PAGE = 200;
-  for (let page = 1; page <= 50 /* hard ceiling */; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({
-      page,
-      perPage: PER_PAGE,
-    });
-    if (error) {
-      console.error("[admin/messages/compose] listUsers err", error);
-      return undefined;
-    }
-    const users = data?.users ?? [];
-    const match = users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (match) return match.id;
-    if (users.length < PER_PAGE) return undefined;
-  }
-  return undefined;
 }

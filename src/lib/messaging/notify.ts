@@ -37,6 +37,15 @@ export type NotifyMessageParams = {
   sender_role: AppRole;
   /** Trimmed message body for the inbox snippet (UI clips to ~140 chars). */
   body: string;
+  /**
+   * When true, the notifications → email_outbox bridge also enqueues an email
+   * for this notification. Set ONLY on the single-user admin compose path
+   * (a new dedicated thread). Bulk broadcasts and replies leave this unset so
+   * they stay in-app only. When set, `thread_url` must also be provided.
+   */
+  email_notify?: boolean;
+  /** Absolute deep link to the thread — used by the MessageReceived email CTA. */
+  thread_url?: string;
 };
 
 const SNIPPET_MAX = 200;
@@ -58,6 +67,11 @@ export async function notifyMessage(
       sender_role: params.sender_role,
       role: params.recipient_role,
       snippet,
+      // Email opt-in: the bridge whitelists message.received only when this
+      // flag is present, so unset notifications stay in-app only.
+      ...(params.email_notify
+        ? { email_notify: true, thread_url: params.thread_url }
+        : {}),
     },
   });
 }

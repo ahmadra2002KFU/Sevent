@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Inbox, MailPlus } from "lucide-react";
+import { Inbox, MailPlus, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar as arLocale, enUS as enLocale } from "date-fns/locale";
 
@@ -117,13 +117,18 @@ export default async function AdminMessagesPage({
   );
   const userEmails = new Map<string, string | null>();
   if (userIds.length > 0) {
-    const results = await Promise.all(
-      userIds.map((id) => admin.auth.admin.getUserById(id)),
-    );
-    results.forEach((res, i) => {
-      const id = userIds[i];
-      userEmails.set(id, res.data.user?.email ?? null);
-    });
+    // One batched read via the admin-only profiles_with_email view, instead of
+    // one auth.admin.getUserById() round-trip per visible thread row.
+    const { data: emailRows } = await admin
+      .from("profiles_with_email")
+      .select("id, email")
+      .in("id", userIds);
+    for (const row of (emailRows ?? []) as {
+      id: string;
+      email: string | null;
+    }[]) {
+      userEmails.set(row.id, row.email ?? null);
+    }
   }
 
   return (
@@ -132,12 +137,20 @@ export default async function AdminMessagesPage({
         title={t("pageTitle")}
         description={t("pageDescription")}
         actions={
-          <Button asChild size="sm">
-            <Link href="/admin/messages/compose">
-              <MailPlus className="me-1 size-4" />
-              {t("compose")}
-            </Link>
-          </Button>
+          <>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/users">
+                <Users className="me-1 size-4" />
+                {t("usersButton")}
+              </Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/admin/messages/compose">
+                <MailPlus className="me-1 size-4" />
+                {t("compose")}
+              </Link>
+            </Button>
+          </>
         }
       />
 

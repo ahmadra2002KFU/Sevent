@@ -49,6 +49,13 @@ export type ComposeUserOk = {
   mode: "user";
   thread_id: string;
   recipient_count: 1;
+  /**
+   * `true` when this call actually inserted a new thread; `false` when it was
+   * an idempotent replay (the `request_id` already existed, e.g. a double
+   * submit). Callers MUST NOT re-fire notifications/emails when `false` —
+   * otherwise a double-click sends duplicate `message.received` emails.
+   */
+  created: boolean;
 };
 
 export type ComposeBulkOk = {
@@ -139,7 +146,13 @@ export async function composeToUser(params: ComposeToUserParams): Promise<Compos
         .limit(1);
       const existing = (existingRows ?? [])[0] as { id: string } | undefined;
       if (existing) {
-        return { ok: true, mode: "user", thread_id: existing.id, recipient_count: 1 };
+        return {
+          ok: true,
+          mode: "user",
+          thread_id: existing.id,
+          recipient_count: 1,
+          created: false,
+        };
       }
     }
     console.error("[messaging/compose] composeToUser thread err", threadErr);
@@ -162,7 +175,13 @@ export async function composeToUser(params: ComposeToUserParams): Promise<Compos
     return { ok: false, code: "error", error: msgErr.message };
   }
 
-  return { ok: true, mode: "user", thread_id: thread.id, recipient_count: 1 };
+  return {
+    ok: true,
+    mode: "user",
+    thread_id: thread.id,
+    recipient_count: 1,
+    created: true,
+  };
 }
 
 // ---------------------------------------------------------------------------

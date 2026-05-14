@@ -118,6 +118,16 @@ const TEMPLATES: Record<string, () => Promise<TemplateModule>> = {
     import("./templates/supplier/QuoteProposalRequested") as unknown as Promise<TemplateModule>,
   "rfq.invited": () =>
     import("./templates/supplier/RfqInvited") as unknown as Promise<TemplateModule>,
+
+  // Messaging — daily nudge for an unread admin→user message (enqueued by the
+  // enqueue_message_reminders() SQL cron, not by a notification row).
+  "message.reminder": () =>
+    import("./templates/messaging/MessageReminder") as unknown as Promise<TemplateModule>,
+  // Messaging — immediate email when an admin starts a new dedicated thread
+  // with a user. Bridged from a message.received notification, but ONLY when
+  // its payload carries email_notify:true (single-user compose path only).
+  "message.received": () =>
+    import("./templates/messaging/MessageReceived") as unknown as Promise<TemplateModule>,
 };
 
 const BATCH_SIZE_DEFAULT = 10;
