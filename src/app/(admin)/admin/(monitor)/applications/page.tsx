@@ -22,6 +22,11 @@ import {
   fmtDateTime as fmtDateTimeHelper,
   type SupportedLocale,
 } from "@/lib/domain/formatDate";
+import {
+  inviteDisplayStatus,
+  type RfqInviteSource,
+  type RfqInviteStatus,
+} from "@/lib/domain/rfq";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
@@ -119,6 +124,7 @@ function parseDateParam(raw: unknown): string {
 function statusPill(status: string): StatusPillStatus {
   switch (status) {
     case "invited":
+    case "applied":
     case "declined":
     case "quoted":
     case "withdrawn":
@@ -475,10 +481,20 @@ export default async function AdminApplicationsPage({
                         {tFilter(`source_${r.source as never}` as never)}
                       </TableCell>
                       <TableCell>
-                        <StatusPill
-                          status={statusPill(r.status)}
-                          label={tRfq(`inviteStatus.${r.status}` as never)}
-                        />
+                        {(() => {
+                          const displayStatus = inviteDisplayStatus(
+                            r.status as RfqInviteStatus,
+                            r.source as RfqInviteSource,
+                          );
+                          return (
+                            <StatusPill
+                              status={statusPill(displayStatus)}
+                              label={tRfq(
+                                `inviteStatus.${displayStatus}` as never,
+                              )}
+                            />
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {fmtDateTime(r.sent_at)}

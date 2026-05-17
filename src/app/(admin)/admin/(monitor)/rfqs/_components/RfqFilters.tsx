@@ -15,6 +15,7 @@ export const RFQ_STATUS_FILTERS = [
   "all",
   "draft",
   "sent",
+  "pending",
   "quoted",
   "booked",
   "expired",

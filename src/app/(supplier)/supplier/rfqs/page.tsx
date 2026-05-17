@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { FileText, Hourglass, Inbox, MapPin, Users } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
-import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import {
+  inviteDisplayStatus,
+  type RfqInviteSource,
+} from "@/lib/domain/rfq";
+import {
+  fmtDateTime,
+  fmtRelative,
+  type SupportedLocale,
+} from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
@@ -29,6 +36,7 @@ type InviteStatus = "invited" | "declined" | "quoted" | "withdrawn";
 type InviteRow = {
   id: string;
   status: InviteStatus;
+  source: RfqInviteSource;
   sent_at: string;
   response_due_at: string;
   responded_at: string | null;
@@ -70,14 +78,6 @@ function countdownTone(responseDueAt: string): "warning" | "danger" | "info" {
   if (hours < 4) return "danger";
   if (hours < 12) return "warning";
   return "info";
-}
-
-function formatSentRelative(iso: string): string {
-  try {
-    return formatDistanceToNowStrict(parseISO(iso), { addSuffix: true });
-  } catch {
-    return "";
-  }
 }
 
 function mapInviteToStatusPill(status: InviteStatus) {
@@ -138,7 +138,7 @@ export default async function SupplierRfqInboxPage({
   const { data: invitesData, count } = await admin
     .from("rfq_invites")
     .select(
-      `id, status, sent_at, response_due_at, responded_at, decline_reason_code,
+      `id, status, source, sent_at, response_due_at, responded_at, decline_reason_code,
        rfqs (
          id, subcategory_id,
          events ( id, city, starts_at, ends_at, guest_count ),
@@ -201,7 +201,9 @@ export default async function SupplierRfqInboxPage({
       invite_id: invite.id,
       requested_at: row.requested_at,
       message: row.message,
-      category_label: categoryName(invite.rfqs?.categories ?? null, locale) || "RFQ",
+      category_label:
+        categoryName(invite.rfqs?.categories ?? null, locale) ||
+        t("fallbackCategoryLabel"),
       city_label: invite.rfqs?.events?.city
         ? cityNameFor(invite.rfqs.events.city, locale)
         : "—",
@@ -270,7 +272,7 @@ export default async function SupplierRfqInboxPage({
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {tRfp("requestedRelative", {
-                          time: formatSentRelative(item.requested_at),
+                          time: fmtRelative(item.requested_at, locale),
                         })}
                       </p>
                     </div>
@@ -311,9 +313,21 @@ export default async function SupplierRfqInboxPage({
                       <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-base font-semibold text-brand-navy-900">
-                            {categoryName(subcategory, locale) || "RFQ"}
+                            {categoryName(subcategory, locale) ||
+                              t("fallbackCategoryLabel")}
                           </h3>
-                          <StatusPill status="invited" label={t("status.invited")} />
+                          {(() => {
+                            const displayStatus = inviteDisplayStatus(
+                              invite.status,
+                              invite.source,
+                            );
+                            return (
+                              <StatusPill
+                                status={displayStatus}
+                                label={t(`status.${displayStatus}`)}
+                              />
+                            );
+                          })()}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
@@ -332,7 +346,7 @@ export default async function SupplierRfqInboxPage({
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {t("sentRelative", {
-                            time: formatSentRelative(invite.sent_at),
+                            time: fmtRelative(invite.sent_at, locale),
                           })}
                         </p>
                       </div>
@@ -363,7 +377,7 @@ export default async function SupplierRfqInboxPage({
 
       {totalPages > 1 ? (
         <nav
-          aria-label="Pagination"
+          aria-label={tPag("ariaLabel")}
           className="flex items-center justify-between gap-3 text-sm"
         >
           {page > 1 ? (
@@ -418,7 +432,8 @@ export default async function SupplierRfqInboxPage({
                         href={`/supplier/rfqs/${invite.id}`}
                         className="font-medium text-foreground hover:underline"
                       >
-                        {categoryName(subcategory, locale) || "RFQ"}
+                        {categoryName(subcategory, locale) ||
+                          t("fallbackCategoryLabel")}
                         {event?.city ? ` · ${cityNameFor(event.city, locale)}` : ""}
                       </Link>
                       {event?.starts_at ? (

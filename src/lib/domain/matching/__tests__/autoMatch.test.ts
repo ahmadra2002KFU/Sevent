@@ -288,12 +288,20 @@ describe("computeAutoMatch — reasons", () => {
   it("attaches at least one reason to every ranked result", () => {
     const result = computeAutoMatch(CTX, [baseCandidate()]);
     expect(result[0].reasons.length).toBeGreaterThan(0);
-    expect(result[0].reasons.every((r) => typeof r === "string" && r.length > 0)).toBe(true);
+    expect(
+      result[0].reasons.every(
+        (r) => typeof r.code === "string" && r.code.length > 0,
+      ),
+    ).toBe(true);
   });
 
   it("includes a same-city reason when base_city matches event city", () => {
     const result = computeAutoMatch(CTX, [baseCandidate({ supplier_id: "sup-rh" })]);
-    expect(result[0].reasons.some((r) => r.includes("Riyadh"))).toBe(true);
+    expect(
+      result[0].reasons.some(
+        (r) => r.code === "sameCity" && r.params?.city === "Riyadh",
+      ),
+    ).toBe(true);
   });
 });
 

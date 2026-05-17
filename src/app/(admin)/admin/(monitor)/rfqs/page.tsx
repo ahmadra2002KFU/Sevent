@@ -22,8 +22,8 @@ import {
   fmtDateTime as fmtDateTimeHelper,
   type SupportedLocale,
 } from "@/lib/domain/formatDate";
-import { segmentNameFor } from "@/lib/domain/segments";
-import { cityNameFor } from "@/lib/domain/cities";
+import { MARKET_SEGMENTS, segmentNameFor } from "@/lib/domain/segments";
+import { KSA_CITIES, cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
 import {
   RFQ_STATUS_FILTERS,
@@ -115,6 +115,37 @@ function sanitizeSearch(raw: string): string {
   return raw.replace(/[,()]/g, " ").trim().slice(0, 80);
 }
 
+/**
+ * Maps a free-text search term (possibly localized Arabic / English display
+ * name, or the raw slug itself) to the set of `event_type` and `city` slugs it
+ * matches. PostgREST stores slugs only in those columns, so Arabic search
+ * terms like "الرياض" would otherwise miss every row. We normalize both sides
+ * to NFC + lower-case and do a substring match against the slug, the English
+ * name, and the Arabic name from `MARKET_SEGMENTS` / `KSA_CITIES`.
+ *
+ * Returns:
+ *   - `eventTypeSlugs`: segment slugs whose en/ar/slug contain the search term.
+ *   - `citySlugs`: city slugs whose en/ar/slug contain the search term.
+ */
+function resolveSlugMatches(q: string): {
+  eventTypeSlugs: string[];
+  citySlugs: string[];
+} {
+  const needle = q.normalize("NFC").toLowerCase();
+  const matches = (haystacks: ReadonlyArray<string | null | undefined>) =>
+    haystacks.some((h) => {
+      if (!h) return false;
+      return h.normalize("NFC").toLowerCase().includes(needle);
+    });
+  const eventTypeSlugs = MARKET_SEGMENTS.filter((s) =>
+    matches([s.slug, s.name_en, s.name_ar]),
+  ).map((s) => s.slug);
+  const citySlugs = KSA_CITIES.filter((c) =>
+    matches([c.slug, c.name_en, c.name_ar]),
+  ).map((c) => c.slug);
+  return { eventTypeSlugs, citySlugs };
+}
+
 export default async function AdminRfqsListPage({
   searchParams,
 }: {
@@ -167,14 +198,32 @@ export default async function AdminRfqsListPage({
   // support cross-table OR filters in a single PostgREST request, so we do a
   // two-step lookup. The 500-cap matches the seeded data scale and avoids
   // unbounded `.in()` payloads.
+  //
+  // PostgREST stores slugs ("riyadh", "private_occasions"), not localized
+  // labels. An Arabic operator searching "الرياض" would miss every row with a
+  // raw ilike. So we normalize the term back to candidate slugs via the
+  // bilingual constants (`MARKET_SEGMENTS`, `KSA_CITIES`) and OR those in
+  // alongside the literal-pattern ilike that still catches operators who type
+  // the slug or English label directly.
   let eventIdFilter: string[] | null = null;
   const q = sanitizeSearch(filterState.q);
   if (q.length > 0) {
     const pattern = `%${q}%`;
+    const { eventTypeSlugs, citySlugs } = resolveSlugMatches(q);
+    const orClauses: string[] = [
+      `event_type.ilike.${pattern}`,
+      `city.ilike.${pattern}`,
+    ];
+    if (eventTypeSlugs.length > 0) {
+      orClauses.push(`event_type.in.(${eventTypeSlugs.join(",")})`);
+    }
+    if (citySlugs.length > 0) {
+      orClauses.push(`city.in.(${citySlugs.join(",")})`);
+    }
     const { data: eventRows } = await admin
       .from("events")
       .select("id")
-      .or(`event_type.ilike.${pattern},city.ilike.${pattern}`)
+      .or(orClauses.join(","))
       .limit(500);
     eventIdFilter = ((eventRows ?? []) as Array<{ id: string }>).map(
       (e) => e.id,
@@ -421,7 +470,7 @@ function Pagination({
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={tPag("ariaLabel")}
       className="flex items-center justify-between gap-3 text-sm"
     >
       {page > 1 ? (

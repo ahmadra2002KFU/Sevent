@@ -21,7 +21,7 @@
  * Tie-break by `supplier_id` ASC after rounding scores to 4 decimal places.
  */
 
-import { reasonsFor } from "./reasons";
+import { reasonsFor, type MatchReason } from "./reasons";
 
 export type AutoMatchContext = {
   event: {
@@ -68,7 +68,7 @@ export type MatchResult = {
   business_name: string;
   slug: string;
   breakdown: MatchBreakdown;
-  reasons: string[];
+  reasons: MatchReason[];
 };
 
 // Locked weights — keep in sync with Claude Docs/state-machines.md.

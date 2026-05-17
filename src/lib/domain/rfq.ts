@@ -32,6 +32,27 @@ export type RfqInviteSource =
 
 export type ResponseDeadlineHours = 24 | 48 | 72;
 
+/**
+ * Display-only status for an invite. `applied` is not a DB enum value — it is
+ * derived for the UI so a supplier who proactively applied via the marketplace
+ * isn't shown as "Invited" (which reads as "the organizer invited me").
+ */
+export type RfqInviteDisplayStatus = RfqInviteStatus | "applied";
+
+/**
+ * Maps an invite's lifecycle `status` to the status we *show*. Provenance lives
+ * on `source`, not `status`: an open invite with `source='self_applied'` is the
+ * same lifecycle position as `invited`, so we only relabel it — the DB value
+ * stays `invited`. Every other status passes through unchanged.
+ */
+export function inviteDisplayStatus(
+  status: RfqInviteStatus,
+  source: RfqInviteSource,
+): RfqInviteDisplayStatus {
+  if (status === "invited" && source === "self_applied") return "applied";
+  return status;
+}
+
 // =============================================================================
 // Extension kinds (requirements_jsonb payload)
 // =============================================================================

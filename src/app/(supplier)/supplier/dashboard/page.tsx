@@ -32,6 +32,10 @@ import type {
   SupplierVerificationStatus,
 } from "@/lib/supabase/types";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  inviteDisplayStatus,
+  type RfqInviteSource,
+} from "@/lib/domain/rfq";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
@@ -83,6 +87,7 @@ function isWithinCelebrationWindow(iso: string | null): boolean {
 type RecentInviteRow = {
   id: string;
   status: RfqInviteStatus;
+  source: RfqInviteSource;
   response_due_at: string;
   rfq: {
     event: {
@@ -99,6 +104,7 @@ type RecentInviteRow = {
 type RecentInviteQueryRow = {
   id: string;
   status: RfqInviteStatus;
+  source: RfqInviteSource;
   response_due_at: string;
   rfqs: Array<{
     events: Array<{
@@ -161,15 +167,19 @@ function verificationStatusPill(
 
 function inviteStatusPill(
   status: RfqInviteStatus,
+  source: RfqInviteSource,
   t: (key: string) => string,
 ) {
-  const key = `status.${status}` as const;
-  switch (status) {
+  const displayStatus = inviteDisplayStatus(status, source);
+  const key = `status.${displayStatus}` as const;
+  switch (displayStatus) {
     case "quoted":
       return <StatusPill status="quoted" label={t(key)} />;
     case "declined":
     case "withdrawn":
       return <StatusPill status="declined" label={t(key)} />;
+    case "applied":
+      return <StatusPill status="applied" label={t(key)} />;
     case "invited":
     default:
       return <StatusPill status="invited" label={t(key)} />;
@@ -193,6 +203,7 @@ function normalizeRecentInvites(rows: RecentInviteQueryRow[]): RecentInviteRow[]
     return {
       id: row.id,
       status: row.status,
+      source: row.source,
       response_due_at: row.response_due_at,
       rfq: rfq
         ? {
@@ -338,7 +349,7 @@ export default async function SupplierDashboardPage() {
     admin
       .from("rfq_invites")
       .select(
-        `id, status, response_due_at,
+        `id, status, source, response_due_at,
          rfqs (
            events ( city, starts_at ),
            categories!rfqs_subcategory_id_fkey ( name_en, name_ar )
@@ -601,7 +612,7 @@ export default async function SupplierDashboardPage() {
                           ) : null}
                         </p>
                       </div>
-                      {inviteStatusPill(invite.status, rfqInboxT)}
+                      {inviteStatusPill(invite.status, invite.source, rfqInboxT)}
                     </Link>
                   </li>
                 ))}
