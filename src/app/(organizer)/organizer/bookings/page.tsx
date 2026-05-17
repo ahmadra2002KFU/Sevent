@@ -104,6 +104,7 @@ function statusLabel(
 
 function formatEventDate(iso: string, locale: string): string {
   try {
+    // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings list); locale-aware date sweep tracked separately
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
@@ -280,6 +281,7 @@ export default async function OrganizerBookingsListPage({
                       {formatDeadlineCell(t, row.confirm_deadline)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-end font-semibold tabular-nums text-brand-navy-900">
+                      {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings list); locale-aware money sweep tracked separately */}
                       {total !== null ? formatHalalas(total) : "—"}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-end">

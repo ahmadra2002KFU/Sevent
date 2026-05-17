@@ -54,6 +54,7 @@ export function PackageCard({
                 {fromLabel}
               </span>
               <span className="text-xl font-bold text-brand-navy-900">
+                {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (public marketing package card); locale-aware money sweep tracked separately */}
                 {formatHalalas(basePriceHalalas)}
               </span>
             </div>

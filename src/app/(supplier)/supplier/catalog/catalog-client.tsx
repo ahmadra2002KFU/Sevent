@@ -206,6 +206,7 @@ export function CatalogClient({
                         </TableCell>
                         <TableCell className="font-medium">
                           {t("priceFrom", {
+                            // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier catalog); locale-aware money sweep tracked separately
                             price: formatHalalas(p.base_price_halalas),
                           })}
                         </TableCell>

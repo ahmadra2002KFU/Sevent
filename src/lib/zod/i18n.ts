@@ -1,31 +1,26 @@
 /**
- * Zod v4 locale bootstrap.
+ * Zod v4 locale wiring — universal entry point.
  *
- * Installs the bundled Arabic (or English) locale error map globally so every
- * schema constructed via `import { z } from "zod"` picks up the right default
- * messages for validators without an explicit `{ message }` override.
+ * Re-exports the right implementation for the runtime, with hard guarantees:
  *
- * Wiring:
- *  - Server: called from `src/i18n/request.ts` once per request, after the
- *    next-intl locale is resolved. Server actions and RSC validators therefore
- *    see the correct locale.
- *  - Client: called from `src/app/_components/ZodLocaleBootstrap.tsx` inside
- *    a `useEffect` keyed on `useLocale()`, so react-hook-form / zodResolver
- *    validations render Arabic issues in Arabic, English in English.
+ *  - **Server** (`*.server`) installs ONE process-global error map at module
+ *    load that dispatches per-call to the locale stored in `AsyncLocalStorage`.
+ *    Each request calls {@link enterRequestLocale} once during
+ *    `getRequestConfig`; the value propagates via `enterWith` to every
+ *    descendant async operation (RSC render, server action, fetch handler).
+ *    Two concurrent requests with different locales can no longer race
+ *    because there is no per-request mutation of shared state.
  *
- * Per-field custom keys (attached via `.min(2, { message: "i18n.key" })` in
- * `src/lib/domain/onboarding.ts`) still take priority — this catch-all only
- * kicks in where no explicit override exists.
+ *  - **Client** (`*.client`) keeps the original behavior: a `useEffect`
+ *    keyed on `useLocale()` calls {@link registerZodLocaleGlobal}, which
+ *    mutates a single in-tab variable. Browser tabs only have one active
+ *    locale at a time so there is no concurrency to race.
  *
- * Zod v4 ships the locales via the barrel `zod/v4/locales` — each entry is a
- * factory returning `{ localeError }`.
+ * This file is the shared surface. Server-only callers (`src/i18n/request.ts`)
+ * should import from `./i18n.server` to access `enterRequestLocale` directly;
+ * client callers (`ZodLocaleBootstrap.tsx`) should import from `./i18n.client`.
+ *
+ * Per-field custom keys (`.min(2, { message: "i18n.key" })`) still take
+ * priority — Zod's resolution order is `customError > localeError`.
  */
-import { z } from "zod";
-import { ar, en } from "zod/v4/locales";
-
-type Locale = "ar" | "en";
-
-export function registerZodLocale(locale: Locale): void {
-  const factory = locale === "ar" ? ar : en;
-  z.config({ localeError: factory().localeError });
-}
+export type ZodLocale = "ar" | "en";

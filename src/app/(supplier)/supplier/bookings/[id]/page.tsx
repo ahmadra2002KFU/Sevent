@@ -354,11 +354,13 @@ function BookingSnapshotBody({
                       {item.label}
                     </div>
                     <div className="text-xs text-muted-foreground">
+                      {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
                       {item.qty} × {formatHalalas(item.unit_price_halalas)}{" "}
                       ({item.unit})
                     </div>
                   </TableCell>
                   <TableCell className="text-end font-medium">
+                    {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
                     {formatHalalas(item.total_halalas)}
                   </TableCell>
                 </TableRow>
@@ -375,23 +377,27 @@ function BookingSnapshotBody({
         <dl className="mt-2 flex flex-col gap-1 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("detail.subtotal")}</dt>
+            {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
             <dd>{formatHalalas(snapshot.subtotal_halalas)}</dd>
           </div>
           {snapshot.travel_fee_halalas > 0 ? (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("detail.travelFee")}</dt>
+              {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
               <dd>{formatHalalas(snapshot.travel_fee_halalas)}</dd>
             </div>
           ) : null}
           {snapshot.setup_fee_halalas > 0 ? (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("detail.setupFee")}</dt>
+              {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
               <dd>{formatHalalas(snapshot.setup_fee_halalas)}</dd>
             </div>
           ) : null}
           {snapshot.teardown_fee_halalas > 0 ? (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("detail.teardownFee")}</dt>
+              {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
               <dd>{formatHalalas(snapshot.teardown_fee_halalas)}</dd>
             </div>
           ) : null}
@@ -400,12 +406,14 @@ function BookingSnapshotBody({
               <dt className="text-muted-foreground">
                 {t("detail.vat", { pct: snapshot.vat_rate_pct })}
               </dt>
+              {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
               <dd>{formatHalalas(snapshot.vat_amount_halalas)}</dd>
             </div>
           ) : null}
           <Separator className="my-2" />
           <div className="flex justify-between text-base font-semibold text-brand-navy-900">
             <dt>{t("detail.total")}</dt>
+            {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings detail); locale-aware money sweep tracked separately */}
             <dd>{formatHalalas(snapshot.total_halalas)}</dd>
           </div>
         </dl>
