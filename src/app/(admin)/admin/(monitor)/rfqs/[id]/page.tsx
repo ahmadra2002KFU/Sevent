@@ -31,8 +31,13 @@ import {
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
-import { RfqExtension } from "@/lib/domain/rfq";
-import { formatHalalas } from "@/lib/domain/money";
+import {
+  RfqExtension,
+  inviteDisplayStatus,
+  type RfqInviteSource,
+  type RfqInviteStatus,
+} from "@/lib/domain/rfq";
+import { formatMoney } from "@/lib/domain/money";
 import { STORAGE_BUCKETS } from "@/lib/supabase/storage";
 
 export const dynamic = "force-dynamic";
@@ -131,6 +136,7 @@ function rfqStatusPill(status: string): StatusPillStatus {
     case "rejected":
     case "withdrawn":
     case "invited":
+    case "applied":
     case "declined":
     case "confirmed":
     case "completed":
@@ -160,6 +166,7 @@ export default async function AdminRfqDetailPage({
   const t = await getTranslations("admin.rfqs");
   const tDetail = await getTranslations("admin.rfqs.detail");
   const tProposalStatus = await getTranslations("admin.proposals.status");
+  const tBooking = await getTranslations("bookingStatus");
 
   const gate = await requireRole("admin");
   if (gate.status === "unauthenticated") {
@@ -323,8 +330,8 @@ export default async function AdminRfqDetailPage({
   const budgetLabel =
     minBudget == null && maxBudget == null
       ? "—"
-      : `${minBudget != null ? formatHalalas(minBudget) : "—"} – ${
-          maxBudget != null ? formatHalalas(maxBudget) : "—"
+      : `${minBudget != null ? formatMoney(minBudget, locale) : "—"} – ${
+          maxBudget != null ? formatMoney(maxBudget, locale) : "—"
         }`;
 
   return (
@@ -433,10 +440,18 @@ export default async function AdminRfqDetailPage({
                       )}
                     </TableCell>
                     <TableCell>
-                      <StatusPill
-                        status={rfqStatusPill(inv.status)}
-                        label={t(`inviteStatus.${inv.status}` as never)}
-                      />
+                      {(() => {
+                        const displayStatus = inviteDisplayStatus(
+                          inv.status as RfqInviteStatus,
+                          inv.source as RfqInviteSource,
+                        );
+                        return (
+                          <StatusPill
+                            status={rfqStatusPill(displayStatus)}
+                            label={t(`inviteStatus.${displayStatus}` as never)}
+                          />
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                       {fmtDateTime(inv.sent_at)}
@@ -652,19 +667,19 @@ export default async function AdminRfqDetailPage({
               <SummaryItem label={tDetail("booking.confirmation")}>
                 <StatusPill
                   status={rfqStatusPill(booking.confirmation_status)}
-                  label={booking.confirmation_status.replace(/_/g, " ")}
+                  label={tBooking(`confirmation.${booking.confirmation_status}`)}
                 />
               </SummaryItem>
               <SummaryItem label={tDetail("booking.payment")}>
                 <StatusPill
                   status={rfqStatusPill(booking.payment_status)}
-                  label={booking.payment_status.replace(/_/g, " ")}
+                  label={tBooking(`payment.${booking.payment_status}`)}
                 />
               </SummaryItem>
               <SummaryItem label={tDetail("booking.service")}>
                 <StatusPill
                   status={rfqStatusPill(booking.service_status)}
-                  label={booking.service_status.replace(/_/g, " ")}
+                  label={tBooking(`service.${booking.service_status}`)}
                 />
               </SummaryItem>
               <SummaryItem label={tDetail("summary.created")}>
@@ -695,6 +710,7 @@ function SummaryItem({
 
 async function RequirementsSection({ payload }: { payload: unknown }) {
   const t = await getTranslations("admin.rfqs.detail.requirements");
+  const tValues = await getTranslations("requirementValues");
 
   const parsed = RfqExtension.safeParse(payload);
 
@@ -714,7 +730,7 @@ async function RequirementsSection({ payload }: { payload: unknown }) {
             </pre>
           </>
         ) : (
-          <RequirementsBody value={parsed.data} t={t} />
+          <RequirementsBody value={parsed.data} t={t} tValues={tValues} />
         )}
       </CardContent>
     </Card>
@@ -724,31 +740,50 @@ async function RequirementsSection({ payload }: { payload: unknown }) {
 function RequirementsBody({
   value,
   t,
+  tValues,
 }: {
   value: import("@/lib/domain/rfq").RfqExtension;
   t: Awaited<ReturnType<typeof getTranslations>>;
+  tValues: Awaited<ReturnType<typeof getTranslations>>;
 }) {
   const yn = (b: boolean) => (b ? t("yes") : t("no"));
   const fields: Array<{ label: string; node: React.ReactNode }> = [
-    { label: t("field.kind"), node: value.kind },
+    { label: t("field.kind"), node: tValues(`kind.${value.kind}`) },
   ];
   switch (value.kind) {
     case "venues":
       fields.push(
-        { label: t("field.seating_style"), node: value.seating_style },
-        { label: t("field.indoor_outdoor"), node: value.indoor_outdoor },
+        {
+          label: t("field.seating_style"),
+          node: tValues(`seating_style.${value.seating_style}`),
+        },
+        {
+          label: t("field.indoor_outdoor"),
+          node: tValues(`indoor_outdoor.${value.indoor_outdoor}`),
+        },
         { label: t("field.needs_parking"), node: yn(value.needs_parking) },
         { label: t("field.needs_kitchen"), node: yn(value.needs_kitchen) },
       );
       break;
     case "catering":
       fields.push(
-        { label: t("field.meal_type"), node: value.meal_type },
+        {
+          label: t("field.meal_type"),
+          node: tValues(`meal_type.${value.meal_type}`),
+        },
         {
           label: t("field.dietary"),
-          node: value.dietary.length > 0 ? value.dietary.join(", ") : "—",
+          node:
+            value.dietary.length > 0
+              ? value.dietary
+                  .map((d) => tValues(`dietary.${d}`))
+                  .join(", ")
+              : "—",
         },
-        { label: t("field.service_style"), node: value.service_style },
+        {
+          label: t("field.service_style"),
+          node: tValues(`service_style.${value.service_style}`),
+        },
       );
       break;
     case "photography":
@@ -756,7 +791,9 @@ function RequirementsBody({
         { label: t("field.coverage_hours"), node: value.coverage_hours },
         {
           label: t("field.deliverables"),
-          node: value.deliverables.join(", "),
+          node: value.deliverables
+            .map((d) => tValues(`deliverables.${d}`))
+            .join(", "),
         },
         { label: t("field.crew_size"), node: value.crew_size },
       );

@@ -21,6 +21,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { createNotification } from "@/lib/notifications/inApp";
 import { sendEmail } from "@/lib/notifications/email";
 import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
@@ -78,42 +79,44 @@ const SOFT_HOLD_MINUTES = 2880;
 type PgError = { code?: string; message?: string } | null | undefined;
 
 /**
- * Map the raise-code prefix carried in `message` (shape: "code:detail") back
- * to a user-facing string. The RPC always uses the `P000x` code slot for the
- * taxonomy, but some codes carry structured detail after the colon — we
- * extract and interpolate that detail (e.g. rfq_not_bookable:<status>) where
- * it's useful, and discard it otherwise.
+ * Map the structured `P000x` raise code (and the detail carried after the
+ * colon in `message`, shape "code:detail") to a stable error-code key under
+ * `organizer.quote.*` plus any interpolation params. The render boundary
+ * (QuoteComparisonGrid) turns this into localized copy — server actions never
+ * return user-facing prose or leak raw `error.message`.
  */
-function messageForError(err: PgError): string {
-  if (!err) return "We couldn't accept this quote. Please try again.";
+function errorForRpc(err: PgError): {
+  code: string;
+  params?: Record<string, string | number>;
+} {
+  if (!err) return { code: "acceptErrorUnknown" };
   const code = err.code ?? "";
   const raw = err.message ?? "";
 
   switch (code) {
     case "P0002":
-      return "Quote not found.";
+      return { code: "acceptErrorNotFound" };
     case "P0003":
-      return "This quote has already been accepted.";
+      return { code: "acceptErrorAlreadyAccepted" };
     case "P0004":
-      return "Quote is no longer in sendable state.";
+      return { code: "acceptErrorNotSendable" };
     case "P0005":
-      return "Quote is missing a revision — ask the supplier to re-send.";
+      return { code: "acceptErrorMissingRevision" };
     case "P0006":
-      return "You are not the organizer of this RFQ.";
+      return { code: "acceptErrorOrganizerMismatch" };
     case "P0007":
-      return "Supplier no longer available — date conflict.";
+      return { code: "acceptErrorSupplierUnavailable" };
     case "P0010": {
       // Message shape: "rfq_not_bookable:<status>"
       const idx = raw.lastIndexOf(":");
       const status = idx >= 0 ? raw.slice(idx + 1).trim() : "";
-      return status
-        ? `This RFQ is no longer bookable (${status}).`
-        : "This RFQ is no longer bookable.";
+      return {
+        code: "acceptErrorRfqTerminal",
+        params: { status: status || "—" },
+      };
     }
-    case "P0012":
-      return "Internal error — invalid soft-hold duration. Contact support.";
     default:
-      return "We couldn't accept this quote. Please try again.";
+      return { code: "acceptErrorUnknown" };
   }
 }
 
@@ -130,7 +133,7 @@ export async function acceptQuoteAction(
     rfq_id: formData.get("rfq_id"),
   });
   if (!parse.success) {
-    return { status: "error", message: "Invalid quote id." };
+    return { status: "error", code: "acceptErrorUnknown" };
   }
   const { quote_id, rfq_id } = parse.data;
 
@@ -147,7 +150,7 @@ export async function acceptQuoteAction(
   );
 
   if (rpcError) {
-    return { status: "error", message: messageForError(rpcError) };
+    return { status: "error", ...errorForRpc(rpcError) };
   }
 
   // The RPC returns `table(booking_id uuid, block_id uuid)` — supabase-js
@@ -156,10 +159,7 @@ export async function acceptQuoteAction(
   const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
   const booking_id: string | undefined = row?.booking_id;
   if (!booking_id) {
-    return {
-      status: "error",
-      message: "Booking created but no id returned — contact support.",
-    };
+    return { status: "error", code: "acceptErrorUnknown" };
   }
 
   // 4. Resolve notification context. Service-role read; ownership was enforced
@@ -210,7 +210,19 @@ export async function acceptQuoteAction(
   const eventsNode = Array.isArray(rfqEvent?.events)
     ? rfqEvent?.events[0] ?? null
     : rfqEvent?.events ?? null;
-  const eventName = eventsNode?.event_type ?? "your event";
+  // Resolve the event_type SLUG (e.g. `private_occasions`) to a localized
+  // display name per recipient locale below. Passing the raw slug to the
+  // notification template would surface text like "private_occasions" in the
+  // email body. Falls back to a localized "your event" / "فعاليتك" when no
+  // segment matches.
+  const eventTypeSlug = eventsNode?.event_type ?? null;
+  const eventSegment = eventTypeSlug ? getSegmentBySlug(eventTypeSlug) : null;
+  const localizedEventName = (locale: "en" | "ar"): string => {
+    if (eventSegment) {
+      return locale === "ar" ? eventSegment.name_ar : eventSegment.name_en;
+    }
+    return locale === "ar" ? "فعاليتك" : "your event";
+  };
 
   const { data: organizerProfileRow } = await gate.admin
     .from("profiles")
@@ -285,13 +297,14 @@ export async function acceptQuoteAction(
           //    we just record the outcome on the notification payload.
           let emailDelivery: EmailDelivery = "skipped";
           if (recipient.email && confirmDeadline) {
+            const localEventName = localizedEventName(recipient.locale);
             emailDelivery = await sendLifecycleEmail({
               to: recipient.email,
-              subject: quoteAcceptedStrings[recipient.locale].preview(eventName),
+              subject: quoteAcceptedStrings[recipient.locale].preview(localEventName),
               react: QuoteAccepted({
                 locale: recipient.locale,
                 supplierBusinessName: supplierBusinessName ?? "your business",
-                eventName,
+                eventName: localEventName,
                 organizerName: organizerName ?? "the organizer",
                 bookingUrl: `${appUrl()}/supplier/bookings/${booking_id}`,
                 expiresAtIso: confirmDeadline,
@@ -372,17 +385,18 @@ export async function acceptQuoteAction(
 
         let emailDelivery: EmailDelivery = "skipped";
         if (recipient.email && confirmDeadline) {
+          const localEventName = localizedEventName(recipient.locale);
           emailDelivery = await sendLifecycleEmail({
             to: recipient.email,
             subject: bookingCreatedStrings[recipient.locale].preview(
               supplierBusinessName ?? "the supplier",
-              eventName,
+              localEventName,
             ),
             react: BookingCreated({
               locale: recipient.locale,
               organizerName,
               supplierBusinessName: supplierBusinessName ?? "the supplier",
-              eventName,
+              eventName: localEventName,
               supplierConfirmDeadlineIso: confirmDeadline,
               bookingUrl: `${appUrl()}/organizer/bookings/${booking_id}`,
             }),
@@ -456,7 +470,9 @@ export async function acceptQuoteAction(
               quote_id: sib.id,
               rfq_id,
               reason: "another_quote_accepted",
-              event_type: eventName,
+              // Pass the event_type SLUG (not the resolved name) so the
+              // QuoteRejected template can render the supplier-locale label.
+              event_type: eventTypeSlug ?? "",
               rfq_url: inviteId
                 ? `${appUrl()}/supplier/rfqs/${inviteId}`
                 : `${appUrl()}/supplier/rfqs`,
@@ -523,7 +539,7 @@ export async function requestProposalAction(
     message: formData.get("message") ?? undefined,
   });
   if (!parse.success) {
-    return { status: "error", message: "Invalid request." };
+    return { status: "error", code: "invalidRequest" };
   }
   const { quote_id, rfq_id, message } = parse.data;
 
@@ -565,19 +581,19 @@ export async function requestProposalAction(
   };
   const row = ownership as unknown as OwnershipRow | null;
   if (!row) {
-    return { status: "error", message: "Quote not found." };
+    return { status: "error", code: "quoteNotFound" };
   }
   const rfqsJoin = Array.isArray(row.rfqs) ? row.rfqs[0] ?? null : row.rfqs;
   const eventsJoin = Array.isArray(rfqsJoin?.events)
     ? rfqsJoin?.events[0] ?? null
     : rfqsJoin?.events ?? null;
   const organizerId = eventsJoin?.organizer_id ?? null;
-  const eventType = eventsJoin?.event_type ?? "your event";
+  // Pass the SLUG to QuoteProposalRequested — the template resolves it to a
+  // recipient-locale display name (with a localized "your event" fallback)
+  // so the email never leaks an English literal into Arabic.
+  const eventType = eventsJoin?.event_type ?? "";
   if (organizerId !== gate.user.id) {
-    return {
-      status: "error",
-      message: "You are not the organizer of this RFQ.",
-    };
+    return { status: "error", code: "organizerMismatch" };
   }
 
   // Insert the row. If a pending request already exists, the unique partial
@@ -593,16 +609,10 @@ export async function requestProposalAction(
 
   if (insertErr) {
     if ((insertErr as { code?: string }).code === "23505") {
-      return {
-        status: "error",
-        message: "A proposal request is already pending for this supplier.",
-      };
+      return { status: "error", code: "alreadyPending" };
     }
     console.error("[requestProposalAction] insert failed", insertErr);
-    return {
-      status: "error",
-      message: "We couldn't send the request. Please try again.",
-    };
+    return { status: "error", code: "sendFailed" };
   }
 
   // Best-effort notification to supplier. Find profile id off the join.
@@ -678,7 +688,7 @@ export async function cancelProposalRequestAction(
     rfq_id: formData.get("rfq_id"),
   });
   if (!parse.success) {
-    return { status: "error", message: "Invalid request." };
+    return { status: "error", code: "invalidRequest" };
   }
   const { request_id, rfq_id } = parse.data;
 
@@ -710,13 +720,10 @@ export async function cancelProposalRequestAction(
   };
   const r = reqRow as unknown as ReqOwnership | null;
   if (!r) {
-    return { status: "error", message: "Request not found." };
+    return { status: "error", code: "requestNotFound" };
   }
   if (r.status !== "pending") {
-    return {
-      status: "error",
-      message: "This request is no longer pending.",
-    };
+    return { status: "error", code: "requestNotPending" };
   }
   const quotesNode = Array.isArray(r.quotes) ? r.quotes[0] : r.quotes;
   const rfqsNode = Array.isArray(quotesNode?.rfqs)
@@ -727,10 +734,7 @@ export async function cancelProposalRequestAction(
     : rfqsNode?.events;
   const organizerId = eventsNode?.organizer_id ?? null;
   if (organizerId !== gate.user.id) {
-    return {
-      status: "error",
-      message: "You are not the organizer of this RFQ.",
-    };
+    return { status: "error", code: "organizerMismatch" };
   }
 
   // `.select("id")` so a 0-row UPDATE (e.g. another organizer tab cancelled or
@@ -745,16 +749,10 @@ export async function cancelProposalRequestAction(
 
   if (updErr) {
     console.error("[cancelProposalRequestAction] update failed", updErr);
-    return {
-      status: "error",
-      message: "We couldn't cancel the request. Please try again.",
-    };
+    return { status: "error", code: "cancelFailed" };
   }
   if (!updRows || updRows.length !== 1) {
-    return {
-      status: "error",
-      message: "This request is no longer pending. Please refresh.",
-    };
+    return { status: "error", code: "cancelRaced" };
   }
 
   revalidatePath(`/organizer/rfqs/${rfq_id}/quotes`);

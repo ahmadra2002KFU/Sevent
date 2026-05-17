@@ -10,8 +10,12 @@ import {
   MapPin,
 } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  inviteDisplayStatus,
+  type RfqInviteSource,
+} from "@/lib/domain/rfq";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { formatHalalas } from "@/lib/domain/money";
+import { formatMoney } from "@/lib/domain/money";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { cityNameFor } from "@/lib/domain/cities";
 import { categoryName } from "@/lib/domain/taxonomy";
@@ -22,6 +26,7 @@ import {
 } from "@/lib/domain/quote";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
+import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
 import {
   Card,
   CardContent,
@@ -45,6 +50,7 @@ type DetailRow = {
   id: string;
   supplier_id: string;
   status: "invited" | "declined" | "quoted" | "withdrawn";
+  source: RfqInviteSource;
   sent_at: string;
   response_due_at: string;
   responded_at: string | null;
@@ -115,96 +121,6 @@ function Field({
   );
 }
 
-function RequirementsBlock({
-  requirements,
-  t,
-}: {
-  requirements: unknown;
-  t: (key: string, values?: Record<string, string | number>) => string;
-}) {
-  if (!requirements || typeof requirements !== "object") {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {t("noStructuredRequirements")}
-      </p>
-    );
-  }
-  const r = requirements as { kind?: string } & Record<string, unknown>;
-  const rows: Array<{ label: string; value: string }> = [];
-
-  switch (r.kind) {
-    case "venues": {
-      const seating = r.seating_style as string | undefined;
-      const io = r.indoor_outdoor as string | undefined;
-      const parking = r.needs_parking as boolean | undefined;
-      const kitchen = r.needs_kitchen as boolean | undefined;
-      if (seating) rows.push({ label: t("requirements.seatingStyle"), value: seating });
-      if (io) rows.push({ label: t("requirements.indoorOutdoor"), value: io });
-      rows.push({
-        label: t("requirements.needsParking"),
-        value: parking ? t("requirements.yes") : t("requirements.no"),
-      });
-      rows.push({
-        label: t("requirements.needsKitchen"),
-        value: kitchen ? t("requirements.yes") : t("requirements.no"),
-      });
-      break;
-    }
-    case "catering": {
-      const meal = r.meal_type as string | undefined;
-      const dietary = r.dietary as string[] | undefined;
-      const style = r.service_style as string | undefined;
-      if (meal) rows.push({ label: t("requirements.mealType"), value: meal });
-      if (dietary && dietary.length > 0)
-        rows.push({ label: t("requirements.dietary"), value: dietary.join(", ") });
-      if (style) rows.push({ label: t("requirements.serviceStyle"), value: style });
-      break;
-    }
-    case "photography": {
-      const hours = r.coverage_hours as number | undefined;
-      const deliverables = r.deliverables as string[] | undefined;
-      const crew = r.crew_size as number | undefined;
-      if (hours != null)
-        rows.push({ label: t("requirements.coverageHours"), value: String(hours) });
-      if (deliverables && deliverables.length > 0)
-        rows.push({
-          label: t("requirements.deliverables"),
-          value: deliverables.join(", "),
-        });
-      if (crew != null)
-        rows.push({ label: t("requirements.crewSize"), value: String(crew) });
-      break;
-    }
-    case "generic": {
-      const notes = r.notes as string | undefined;
-      if (notes) rows.push({ label: t("requirements.notes"), value: notes });
-      break;
-    }
-    default:
-      return (
-        <p className="text-sm text-muted-foreground">
-          {t("unknownRequirements")}
-        </p>
-      );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {t("noStructuredRequirements")}
-      </p>
-    );
-  }
-
-  return (
-    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {rows.map((row) => (
-        <Field key={row.label} label={row.label} value={row.value} />
-      ))}
-    </dl>
-  );
-}
-
 export default async function SupplierRfqDetailPage({
   params,
   searchParams,
@@ -216,6 +132,7 @@ export default async function SupplierRfqDetailPage({
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.rfqInbox");
   const tRfp = await getTranslations("supplier.rfp");
+  const tQuoteStatus = await getTranslations("quoteStatus");
 
   const formatDate = (iso: string | null | undefined): string =>
     fmtDateTime(iso ?? null, locale) || "—";
@@ -227,7 +144,7 @@ export default async function SupplierRfqDetailPage({
   const { data: inviteData } = await admin
     .from("rfq_invites")
     .select(
-      `id, supplier_id, status, sent_at, response_due_at, responded_at, decline_reason_code,
+      `id, supplier_id, status, source, sent_at, response_due_at, responded_at, decline_reason_code,
        rfqs (
          id, subcategory_id, requirements_jsonb,
          events (
@@ -304,19 +221,12 @@ export default async function SupplierRfqDetailPage({
     );
   }
 
+  const displayStatus = inviteDisplayStatus(invite.status, invite.source);
   const headerActions = (
     <div className="flex flex-wrap items-center gap-2">
       <StatusPill
-        status={
-          invite.status === "invited"
-            ? "invited"
-            : invite.status === "quoted"
-              ? "quoted"
-              : invite.status === "declined"
-                ? "declined"
-                : "withdrawn"
-        }
-        label={t(`status.${invite.status}`)}
+        status={displayStatus}
+        label={t(`status.${displayStatus}`)}
       />
     </div>
   );
@@ -413,16 +323,14 @@ export default async function SupplierRfqDetailPage({
           <CardTitle>{t("requirementsHeading")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <RequirementsBlock requirements={rfq?.requirements_jsonb} t={t} />
+          <RfqRequirementsView payload={rfq?.requirements_jsonb} />
         </CardContent>
       </Card>
 
       {snapshotCorrupt ? (
         <Alert variant="destructive">
           <FileText aria-hidden />
-          <AlertDescription>
-            This quote&apos;s data is corrupt — ask the supplier to re-send.
-          </AlertDescription>
+          <AlertDescription>{t("quoteCorrupt")}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -448,7 +356,7 @@ export default async function SupplierRfqDetailPage({
                 label={t("totalLabel")}
                 value={
                   <span className="text-lg font-semibold text-brand-navy-900">
-                    {formatHalalas(snapshot.total_halalas)}
+                    {formatMoney(snapshot.total_halalas, locale)}
                   </span>
                 }
               />
@@ -473,7 +381,9 @@ export default async function SupplierRfqDetailPage({
           <CardHeader>
             <CardTitle>{t("yourQuoteTitle")}</CardTitle>
             <CardDescription>
-              {t("terminalStatus", { status: quote.status })}
+              {t("terminalStatus", {
+                status: tQuoteStatus(quote.status),
+              })}
             </CardDescription>
           </CardHeader>
         </Card>
