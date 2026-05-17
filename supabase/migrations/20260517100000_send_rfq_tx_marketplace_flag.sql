@@ -117,3 +117,25 @@ begin
   return query select v_rfq_id, v_invite_count;
 end
 $$;
+
+-- =============================================================================
+-- Privilege lockdown.
+--
+-- Postgres treats `send_rfq_tx(...,boolean)` (this migration's 8-arg signature)
+-- as a NEW function overload, distinct from the 7-arg `send_rfq_tx(...)` that
+-- earlier migrations explicitly locked down (see 20260420060000). Without the
+-- two grant DDL statements below, the new overload inherits the Postgres
+-- default `EXECUTE TO PUBLIC` and becomes callable directly via PostgREST by
+-- the `anon` / `authenticated` roles. Combined with `security definer` and a
+-- caller-supplied `p_organizer_id` (no `auth.uid()` check inside the function),
+-- that would let any signed-in user forge RFQs for any organizer whose
+-- event_id they can guess.
+--
+-- The 7-arg overload is dropped here because the single caller (sendRfqAction)
+-- has been migrated to the 8-arg signature; leaving both overloads would also
+-- create PostgREST resolution ambiguity (which is precisely what migration
+-- 20260420060000 fixed for the prior overloads).
+-- =============================================================================
+drop function if exists public.send_rfq_tx(uuid, uuid, uuid, uuid, jsonb, int, jsonb);
+revoke all on function public.send_rfq_tx(uuid, uuid, uuid, uuid, jsonb, int, jsonb, boolean) from public;
+grant execute on function public.send_rfq_tx(uuid, uuid, uuid, uuid, jsonb, int, jsonb, boolean) to service_role;
