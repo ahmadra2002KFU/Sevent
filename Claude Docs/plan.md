@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated and superseded. Treat this as the original pilot plan, not current architecture; stack, pricing, i18n, and distance assumptions have changed.
+
 # Sevent — First-Stage Pilot Implementation Plan (v2, Codex-reviewed)
 
 > This is a repo-local mirror of `C:\Users\Ahmad\.claude\plans\cached-inventing-pine.md`. See that file for the authoritative plan.

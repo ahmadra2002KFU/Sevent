@@ -1,0 +1,376 @@
+Implementation status (2026-05-17): Partially implemented. RFQs, quotes, bookings, contracts, reviews, disputes, messaging, admin, and public profiles exist; commission/subscription and some portfolio/video claims remain planned business features.
+
+==============================================================
+ SEVENT — Your Gateway to the Events World
+ What the Platform Is, Who It Serves, and How It Works
+==============================================================
+ A plain-language overview for colleagues and management.
+ No technical detail — just what Sevent is and why it matters.
+ Prepared: 2026-05-14
+==============================================================
+
+
+--------------------------------------------------------------
+ 1. IN ONE PARAGRAPH
+--------------------------------------------------------------
+
+Sevent is a Saudi digital marketplace for the events
+industry. It connects the people who organize events with the
+suppliers who service them — sound and lighting, catering,
+photography, staging, equipment rental, and more — in one
+trusted, transparent place. Instead of chasing vendors through
+WhatsApp, personal contacts, and word of mouth, an organizer
+posts what they need once, receives competing quotes from
+verified suppliers, compares them side by side, and books — all
+on a single platform with a clear record of every step.
+
+
+--------------------------------------------------------------
+ 2. THE PROBLEM SEVENT SOLVES
+--------------------------------------------------------------
+
+The Saudi events sector is large and growing fast, but the way
+buyers and suppliers find each other is still fragmented and
+informal. Today:
+
+  - HARD TO FIND THE RIGHT SUPPLIER. There is no single trusted
+    reference that lists vendors with verified credentials,
+    real ratings, and clear scope.
+
+  - NO PRICE TRANSPARENCY. Prices depend on who you know.
+    The same service can cost very different amounts depending
+    on the relationship, which opens the door to favoritism
+    and inconsistency.
+
+  - WASTED TIME. Organizers spend weeks sourcing vendors for a
+    single event — time that should go into planning and
+    creativity, not phone tag.
+
+  - QUALITY IS A GAMBLE. With no reliable review system, bad
+    experiences repeat themselves and suppliers are never truly
+    held accountable.
+
+Sevent replaces that scattered, relationship-driven process
+with a structured, accountable one.
+
+
+--------------------------------------------------------------
+ 3. THE MARKET CONTEXT
+--------------------------------------------------------------
+
+Saudi Arabia's events and entertainment sector is expanding
+rapidly under Vision 2030 — through seasons and festivals,
+business and cultural events, tourism growth, and major
+upcoming international events. This creates two pressures at
+once:
+
+  - More events every year means more demand for organizers
+    to source suppliers quickly and reliably.
+  - A national push toward formal, digital business means the
+    informal, offline way of doing events is increasingly out
+    of step with how the rest of the economy works.
+
+Sevent is positioned in that gap: a local, Arabic-first
+platform built specifically for how the Saudi events market
+actually operates.
+
+(Note: this section is market context, not a financial
+projection. Sizing and forecasts are out of scope for this
+document.)
+
+
+--------------------------------------------------------------
+ 4. WHO SEVENT SERVES
+--------------------------------------------------------------
+
+Sevent is a TWO-SIDED platform. Today it focuses on the
+business-to-business side; serving individual consumers
+directly is a planned future expansion.
+
+  A) EVENT ORGANIZERS (the buyers) — TODAY
+     Professional event planners, companies, and teams that
+     run events and need to source services for them. They
+     want one trusted reference instead of a hundred separate
+     conversations, clear pricing, and a single place to track
+     all their events.
+
+  B) SERVICE SUPPLIERS / VENDORS (the sellers) — TODAY
+     Event-service businesses and freelancers — equipment
+     rental, catering, photography, staging, and the rest.
+     Many are small or medium businesses with strong work but
+     weak digital visibility. They want a professional profile,
+     a steady stream of qualified requests, and an easier way
+     to manage their bookings and calendar.
+
+  C) INDIVIDUAL ORGANIZERS (the public) — PLANNED
+     Individuals planning personal events such as weddings and
+     family occasions. This consumer-facing experience is a
+     planned next stage, not part of the current platform.
+
+  D) THE SEVENT TEAM (administrators)
+     An internal admin layer reviews and verifies suppliers,
+     monitors activity, handles feedback, and keeps the
+     marketplace trustworthy.
+
+
+--------------------------------------------------------------
+ 5. WHY SEVENT — THE TRADITIONAL WAY vs. SEVENT
+--------------------------------------------------------------
+
+  TRADITIONAL WAY                 ON SEVENT
+  ---------------------------     ---------------------------
+  Weeks of searching through      Post one request, reach many
+  contacts and chat apps          verified suppliers at once
+
+  Unclear, negotiable prices      Clear, structured quotes you
+                                  can compare side by side
+
+  Informal, verbal agreements     A recorded request-to-booking
+                                  trail for every event
+
+  Word-of-mouth reputation        Verified profiles and reviews
+                                  tied to real bookings
+
+  No central view of your work    One dashboard for every event,
+                                  quote, and booking
+
+  Unverified vendors              Suppliers checked and approved
+                                  before they can be booked
+
+
+--------------------------------------------------------------
+ 6. HOW THE PLATFORM WORKS — THE CORE JOURNEY
+--------------------------------------------------------------
+
+The heart of Sevent is a clear, repeatable journey from
+"I need something" to "it's booked and reviewed."
+
+  STEP 1 — CREATE THE EVENT
+  The organizer sets up their event (type, city, venue,
+  dates, budget) as the home for everything related to it.
+
+  STEP 2 — REQUEST QUOTES (THE RFQ)
+  For each service the event needs, the organizer creates a
+  Request for Quote describing exactly what they want. They
+  can invite specific suppliers, let the platform suggest
+  good matches, or both.
+
+  STEP 3 — SUPPLIERS RESPOND
+  Invited suppliers submit quotes. Suppliers can also
+  discover open requests themselves through a marketplace of
+  opportunities and apply directly. Where needed, an
+  organizer can ask a supplier for a fuller technical
+  proposal.
+
+  STEP 4 — COMPARE AND CHOOSE
+  The organizer sees all quotes for a request in one
+  comparison view — price, scope, and supplier rating
+  together — and can export or print it for internal review.
+
+  STEP 5 — BOOK AND CONFIRM
+  The organizer accepts a quote, which creates a booking.
+  The supplier confirms (or declines), and the booking
+  becomes the shared record of the agreement.
+
+  STEP 6 — DELIVER AND REVIEW
+  After the event, organizer and supplier review each other.
+  Reviews are tied to real bookings, so a supplier's
+  reputation on Sevent is earned, not claimed.
+
+Throughout the journey, both sides get in-app notifications
+and email updates, and can message each other and the Sevent
+support team.
+
+
+--------------------------------------------------------------
+ 7. WHAT SUPPLIERS GET
+--------------------------------------------------------------
+
+  - GUIDED ONBOARDING. A step-by-step setup for business
+    details, service categories, and documents — with a
+    path for both freelancers and registered companies.
+
+  - VERIFICATION BADGE. Suppliers submit official documents
+    (commercial registration, VAT, banking, address, company
+    profile). Once the Sevent team approves them, they are
+    marked as verified — which builds buyer trust.
+
+  - A PROFESSIONAL PUBLIC PROFILE. A complete, customizable
+    page showing services, packages, pricing, a photo and
+    video portfolio, location, and reviews.
+
+  - A SERVICE CATALOG. Suppliers build packages and pricing
+    rules so quoting is fast and consistent.
+
+  - QUALIFIED REQUESTS. Instead of cold leads, suppliers
+    receive structured requests that match their category
+    and area — plus a marketplace of open opportunities they
+    can pursue.
+
+  - A QUOTE BUILDER. Suppliers respond with clear, itemized
+    quotes; every version sent is kept as a record.
+
+  - BOOKINGS AND CALENDAR. An availability calendar and
+    booking management, so suppliers can track what is held,
+    confirmed, or open.
+
+  - A DASHBOARD THAT GROWS WITH THEM. The supplier's home
+    screen adapts to where they are — onboarding, pending
+    review, or fully approved and active.
+
+
+--------------------------------------------------------------
+ 8. WHAT ORGANIZERS GET
+--------------------------------------------------------------
+
+  - DISCOVERY AND SEARCH. Browse suppliers by service
+    category and explore verified, published profiles.
+
+  - ONE REQUEST, MANY SUPPLIERS. Send a single structured
+    request and reach multiple verified suppliers at once.
+
+  - SIDE-BY-SIDE COMPARISON. Evaluate all quotes for a
+    request together, with export and print options for
+    internal sign-off.
+
+  - EVENT MANAGEMENT IN ONE PLACE. Track every event, every
+    request, and every booking from one dashboard.
+
+  - VERIFIED, ACCOUNTABLE SUPPLIERS. Every bookable supplier
+    has been checked, and reviews come only from real
+    bookings.
+
+  - A RECORD OF EVERYTHING. The full request-to-booking trail
+    is kept, so agreements and decisions are documented.
+
+
+--------------------------------------------------------------
+ 9. SERVICE CATEGORIES
+--------------------------------------------------------------
+
+Sevent organizes the events market into a clear, browsable
+set of categories and sub-categories — covering the full
+range of what an event needs, such as sound and lighting,
+photography and video, catering and hospitality, staging and
+structures, furniture and equipment, entertainment,
+transport and logistics, decor, and more.
+
+This shared taxonomy is what makes search, matching, and
+comparison work consistently across the whole platform.
+
+
+--------------------------------------------------------------
+ 10. TRUST AND ACCOUNTABILITY
+--------------------------------------------------------------
+
+Trust is the product. Sevent builds it through several
+layers working together:
+
+  - SUPPLIER VERIFICATION before anyone can be booked.
+  - REVIEWS TIED TO REAL BOOKINGS — no fake or anonymous
+    ratings.
+  - A DOCUMENTED TRAIL from request to quote to booking.
+  - ADMIN OVERSIGHT — a dedicated team reviewing suppliers,
+    monitoring activity, and handling feedback and disputes.
+  - ARABIC-FIRST, BILINGUAL EXPERIENCE — the platform works
+    fully in Arabic and English, built for the local market.
+
+
+--------------------------------------------------------------
+ 11. THE BUSINESS MODEL
+--------------------------------------------------------------
+
+Sevent's revenue model is built on two main streams:
+
+  1) COMMISSION ON BOOKINGS
+     Sevent earns a percentage on confirmed bookings made
+     through the platform. This ties Sevent's revenue
+     directly to the value it creates: it only earns when a
+     real deal happens between an organizer and a supplier.
+
+  2) SUPPLIER SUBSCRIPTIONS
+     Suppliers can pay for subscription tiers that give them
+     more visibility, higher limits, and added features —
+     recurring revenue that grows as the supplier base grows.
+
+Together these create a model with more than one income
+source, where both the transaction side and the recurring
+side reinforce each other: more suppliers attract more
+organizers, more organizers generate more bookings, and more
+bookings make subscriptions more valuable.
+
+(Additional streams — such as featured listings or
+enterprise arrangements — may be considered later but are
+not part of the core model today.)
+
+
+--------------------------------------------------------------
+ 12. GROWTH PATH
+--------------------------------------------------------------
+
+The natural growth path for Sevent follows the structure of
+the market itself:
+
+  - DEEPEN THE TWO-SIDED MARKETPLACE — keep growing the
+    verified supplier base and the organizer base in the
+    cities where activity is highest.
+
+  - EXPAND GEOGRAPHICALLY across the Kingdom's main event
+    centers.
+
+  - OPEN UP THE CONSUMER SIDE (B2C) — bring individuals
+    planning personal events onto the platform once the
+    professional marketplace is solid.
+
+The strength of a marketplace is that it compounds: every
+new supplier makes the platform more useful to organizers,
+and every new organizer makes it more attractive to
+suppliers.
+
+
+--------------------------------------------------------------
+ 13. WHY NOW
+--------------------------------------------------------------
+
+  - The Saudi events sector is growing quickly, with more
+    events and more spending every year.
+  - The national direction is toward formal, digital
+    business — and the events sector is still largely
+    informal and offline.
+  - There is no dominant local, Arabic-first platform built
+    specifically for this market.
+  - A new generation of organizers and suppliers expects an
+    online, app-style experience for everything they do.
+
+Sevent is built for that moment.
+
+
+--------------------------------------------------------------
+ 14. IN SHORT
+--------------------------------------------------------------
+
+  WHAT IT IS    A Saudi digital marketplace for the events
+                industry.
+
+  WHO IT SERVES Event organizers and service suppliers today;
+                individual consumers planned next.
+
+  THE PROBLEM   A fragmented, informal market with no trusted
+                reference, no price transparency, and no real
+                accountability.
+
+  THE SOLUTION  One trusted platform to discover suppliers,
+                request and compare quotes, book, and review —
+                with verified suppliers and a full record of
+                every step.
+
+  HOW IT EARNS  Commission on confirmed bookings, plus
+                supplier subscriptions.
+
+  THE EDGE      Local and Arabic-first, built specifically for
+                the Saudi events market, with verification and
+                real reviews at its core.
+
+==============================================================
+ Sevent — Your Gateway to the Events World
+==============================================================

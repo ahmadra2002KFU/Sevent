@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. The frontend performance work is present, but the noted production Supabase image remote pattern gap still needs closure.
+
 # Deploy Note — 2026-04-30 — Frontend perf & UX hardening
 
 ## Database / Supabase changes

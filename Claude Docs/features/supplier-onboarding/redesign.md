@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. The supplier sign-up track, path picker, wizard, terms consent, and approval celebration exist; category caps and some verification checklist assumptions diverge from code.
+
 # Supplier Onboarding Redesign — Path A (Restrained / product)
 
 **Status:** Planned · not yet executed

@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical planning reference. Useful for original decisions, but several answers drifted after later implementation work.
+
 # Sevent — Planning Q&A Log
 
 Date: 2026-04-15

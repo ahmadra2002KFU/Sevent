@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Implemented and ready. The documented RFQ/i18n remediation stages match current code, including shared requirements rendering, locale helpers, Zod locale wiring, Accept-Language negotiation, ESLint fences, tests, and atomic marketplace publishing.
+
 # RFQ Surface — Language Leakage: Master Remediation Plan
 
 **Date:** 2026-05-14

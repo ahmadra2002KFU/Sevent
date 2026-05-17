@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Implemented and ready. Fake Wathq/checklist display, pending/rejected states, category cap handling, and review notes have been addressed; keep this as a completed investigation.
+
 # Pending Review Screen — Fix Plan
 
 **Scope:** Supplier dashboard pending-review experience (`/supplier/dashboard` when `verification_status in ('pending','rejected')`).

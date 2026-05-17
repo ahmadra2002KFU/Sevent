@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Locale helpers, lint guardrails, and tests exist; remaining raw date/name fallback exceptions mean this remains an in-progress sweep.
+
 # i18n — Locale-Aware Rendering Sweep
 
 **Status:** Planned · not yet executed

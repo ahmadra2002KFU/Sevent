@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. The planned cron, contracts, reviews, and disputes slices are present now, but the file still reflects the dated execution plan.
+
 # Sprint Plan — Pilot Closure: Features (2026-05-12 → 2026-05-25)
 
 > **Status:** FINAL — Phase 1 + Phase 2 review folded in. Scope decision locked: **Slice 5 (mutual payment-state) is cut from this sprint** at user's direction. Pilot will track payments manually until a follow-up sprint.

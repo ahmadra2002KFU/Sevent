@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. Superseded by the RFQ master remediation plan; response-side i18n fixes largely landed.
+
 # RFQ Response Path Analysis & Language Leakage Audit
 
 **Report Date:** 2026-05-14

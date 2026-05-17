@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated. The original sprint sequencing no longer matches the current codebase or remaining production hardening work.
+
 # Sevent — Sprint Breakdown (6 × 2 weeks, solo dev)
 
 Start date: **2026-04-20 (Monday)**. Target pilot-ready: **~2026-07-13**. Each sprint is 10 working days.

@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. Superseded by the RFQ master remediation plan; most i18n leakage findings were fixed, while remaining notes are design debt.
+
 # RFQ Authoring Analysis: Architecture & Language Leakage Audit
 
 **Date**: 2026-05-14  

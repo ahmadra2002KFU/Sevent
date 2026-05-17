@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. Session log only; later implementation may supersede the listed follow-ups.
+
 # Session summary — 2026-04-26
 
 Concise log of every change shipped in this session, in order. Use this to retrace decisions or verify we didn't miss a follow-up.

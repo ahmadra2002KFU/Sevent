@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Core color tokens and status pills align with code, but typography documentation is stale versus the current local Inter and Almarai setup.
+
 # Sevent Design Tokens
 
 Source of truth for the Sevent visual system. Every new UI surface should consume these tokens rather than hardcoding values. Tokens are exposed both as CSS custom properties in `src/app/globals.css` and as Tailwind v4 `@theme` variables usable as utility classes (e.g. `bg-brand-navy-900`, `text-brand-cobalt-500`).

@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. This dated weekly report is preserved for provenance and no longer reflects the current implementation state.
+
 # Sevent — Weekly Progress Report
 
 **Project:** Sevent — the Saudi event marketplace

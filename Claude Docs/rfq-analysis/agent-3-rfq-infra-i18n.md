@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. This pre-remediation audit was consolidated into the master plan and is no longer the active tracker.
+
 # RFQ + i18n Infrastructure Language Leakage Audit
 
 **Date:** 2026-05-14  

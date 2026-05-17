@@ -1,3 +1,5 @@
+Document status (2026-05-17): Historical reference. Raw audit transcript with stale RFQ/i18n findings; keep only for provenance.
+
 [0m
 > plan · gpt-5.4
 [0m

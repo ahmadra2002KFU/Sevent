@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. This is explicitly a legacy taxonomy snapshot and is superseded by the current canonical taxonomy model.
+
 # Taxonomy — legacy snapshot (pre 2026-04-21)
 
 This document captures the placeholder taxonomy that shipped with Sprints 1–3. It was replaced on **2026-04-21** by the canonical Saudi events taxonomy (5 market segments + 12 service categories with sub-items) defined in `src/lib/domain/taxonomy.ts`.

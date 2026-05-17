@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated. The scenarios remain useful conceptually, but setup details and auth/email/profile assumptions need updating against current code.
+
 # Access Control — Integration Test Plan
 
 **Reader:** AI agent performing end-to-end verification.

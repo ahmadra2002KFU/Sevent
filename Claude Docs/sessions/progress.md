@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated and superseded. It stops around Sprint 3 while current code includes later pricing, quotes, bookings, contracts, reviews, disputes, email, and messaging work.
+
 # Sevent — Progress log
 
 Running record of build progress against the sprint plan in `sprints.md`.

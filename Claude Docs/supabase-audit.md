@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical audit reference. It predates later P0/P1 remediation migrations and pooler/config work; do not use it as the current tracker.
+
 # Supabase / Postgres Audit — Sevent (local stack)
 
 **Date:** 2026-04-27

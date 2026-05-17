@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical research reference. It contains strategic marketplace ideas such as escrow and payment flows that are not implemented in the current pilot.
+
 # Sevent Marketplace Mechanics Deep Research
 
 ## What “owning the workflow” means in event services marketplaces
