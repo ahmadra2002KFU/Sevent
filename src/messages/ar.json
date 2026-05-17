@@ -85,7 +85,8 @@
   "pagination": {
     "previous": "السابق",
     "next": "التالي",
-    "pageOf": "الصفحة {page} من {totalPages}"
+    "pageOf": "الصفحة {page} من {totalPages}",
+    "ariaLabel": "ترقيم الصفحات"
   },
   "feedback": {
     "menuItem": "إرسال ملاحظات",
@@ -1106,11 +1107,14 @@
       "terminalStatus": "العرض {status}",
       "status": {
         "invited": "مدعو",
+        "applied": "تم التقديم",
         "declined": "مرفوض",
         "quoted": "تم التسعير",
         "withdrawn": "مسحوب"
       },
-      "expired": "منتهي"
+      "expired": "منتهي",
+      "fallbackCategoryLabel": "طلب عرض سعر",
+      "quoteCorrupt": "بيانات هذا العرض تالفة — يرجى إعادة إرسال عرضك."
     },
     "rfp": {
       "bannerTitle": "المنظّم يطلب ملفًا فنيًا",
@@ -1191,7 +1195,30 @@
         "replace": "استبدال",
         "errorType": "يجب أن يكون الملف الفني بصيغة PDF.",
         "errorSize": "حجم الملف الفني يجب ألا يتجاوز 10 ميجابايت."
-      }
+      },
+      "errors": {
+        "supplierProfileNotFound": "لم يُعثر على ملف المورّد.",
+        "invalidSubmission": "بعض الحقول ناقصة أو غير صحيحة. راجع الحقول المميّزة وحاول مرة أخرى.",
+        "technicalProposalTooLarge": "يجب ألّا يتجاوز حجم العرض الفني 10 ميغابايت.",
+        "technicalProposalNotPdf": "يجب أن يكون العرض الفني بصيغة PDF.",
+        "supplierMismatch": "لا يُسمح لك بتقديم عرض نيابة عن هذا المورّد.",
+        "inviteLookupFailed": "تعذّر التحقق من دعوتك. حاول مرة أخرى.",
+        "rfqNotOpen": "لم يعد طلب السعر هذا مفتوحاً للتسعير.",
+        "rfqLookupFailed": "تعذّر تحميل طلب السعر هذا. حاول مرة أخرى.",
+        "rfqOrEventNotFound": "لم يُعثر على طلب السعر أو الفعالية المرتبطة به.",
+        "quoteNotEditable": "لم يعد بالإمكان تعديل هذا العرض لأنه بلغ حالة نهائية.",
+        "packageRequired": "تتطلّب عروض محرّك القواعد اختيار باقة.",
+        "packageLookupFailed": "تعذّر تحميل الباقة المختارة. حاول مرة أخرى.",
+        "packageNotFound": "لم يُعثر على الباقة لهذا المورّد.",
+        "packageInactive": "الباقة المختارة غير مفعّلة.",
+        "rulesLookupFailed": "تعذّر تحميل قواعد التسعير الخاصة بك. حاول مرة أخرى.",
+        "rpcNoRow": "لم يُحفظ العرض. حاول مرة أخرى.",
+        "rpcFailed": "تعذّر حفظ هذا العرض. حاول مرة أخرى.",
+        "unknown": "حدث خطأ ما. حاول مرة أخرى.",
+        "positiveAmountRequired": "أدخل مبلغاً موجباً بالريال (حتى منزلتين عشريتين).",
+        "requiredField": "هذا الحقل مطلوب."
+      },
+      "removeLineItemAriaLabel": "إزالة البند"
     },
     "opportunities": {
       "title": "فرص السوق",
@@ -1411,6 +1438,28 @@
           "desc": "حدِّد أسعارك بذكاء"
         }
       ]
+    },
+    "proposalUpload": {
+      "errors": {
+        "supplierProfileNotFound": "لم يُعثر على ملف المورّد.",
+        "invalidRequest": "طلب غير صالح.",
+        "fileRequired": "الرجاء اختيار ملف PDF للرفع.",
+        "fileTooLarge": "يجب ألّا يتجاوز حجم الملف 10 ميغابايت.",
+        "fileNotPdf": "يجب أن يكون الملف بصيغة PDF.",
+        "inviteNotFound": "لم يُعثر على الدعوة.",
+        "quoteRequired": "لم تقدّم عرضاً بعد لطلب السعر هذا — قدّم عرضاً أولاً.",
+        "noActiveRequest": "لا يوجد طلب عرض فني نشط لهذا العرض.",
+        "uploadFailed": "فشل الرفع. حاول مرة أخرى.",
+        "saveFailed": "تعذّر حفظ عرضك. حاول مرة أخرى.",
+        "requestNoLongerPending": "لم يعد طلب العرض الفني هذا معلّقاً. حدّث الصفحة وحاول مرة أخرى."
+      }
+    },
+    "decline": {
+      "errors": {
+        "invalidSubmission": "بيانات الرفض غير صالحة.",
+        "supplierProfileNotFound": "لم يُعثر على ملف المورّد.",
+        "declineFailed": "تعذّر تسجيل رفضك. حاول مرة أخرى."
+      }
     }
   },
   "admin": {
@@ -1840,7 +1889,8 @@
         "publishedYes": "الفرص فقط",
         "publishedNo": "الدعوات المباشرة فقط",
         "dateFrom": "من",
-        "dateTo": "إلى"
+        "dateTo": "إلى",
+        "pending": "قيد الانتظار"
       },
       "search": {
         "placeholder": "ابحث حسب نوع الفعالية أو المدينة…",
@@ -1969,10 +2019,12 @@
         "quoted": "وصل عرض",
         "expired": "منتهي",
         "booked": "محجوز",
-        "cancelled": "ملغى"
+        "cancelled": "ملغى",
+        "pending": "قيد الانتظار"
       },
       "inviteStatus": {
         "invited": "مدعو",
+        "applied": "تم التقديم",
         "declined": "رفض",
         "quoted": "أرسل عرضًا",
         "withdrawn": "انسحب"
@@ -2197,7 +2249,8 @@
         "quoted": "تم التسعير",
         "expired": "منتهي",
         "booked": "محجوز",
-        "cancelled": "ملغي"
+        "cancelled": "ملغي",
+        "pending": "قيد الانتظار"
       },
       "inviteStatus": {
         "invited": "مدعو",
@@ -2234,7 +2287,17 @@
       },
       "source": {
         "auto_match": "مطابقة تلقائية",
-        "organizer_picked": "اختيار يدوي"
+        "organizer_picked": "اختيار يدوي",
+        "self_applied": "تقدّم عبر السوق",
+        "unknown": "مصدر غير معروف"
+      },
+      "titleFallback": "طلب عرض سعر",
+      "declineReason": {
+        "too_busy": "المورّد محجوز بالكامل",
+        "out_of_area": "خارج نطاق الخدمة",
+        "price_mismatch": "عدم توافق الميزانية",
+        "other": "أخرى",
+        "unknown": "غير محدّد"
       }
     },
     "rfqWizard": {
@@ -2372,6 +2435,19 @@
           "notesLabel": "ملاحظات",
           "notesPlaceholder": "صف ما تحتاجه من هذا المورد - النطاق، الأساسيات، التفضيلات."
         }
+      },
+      "errors": {
+        "invalidSubmission": "بيانات طلب السعر غير صالحة.",
+        "invalidRequirements": "بيانات المتطلبات غير صالحة.",
+        "forbidden": "لا تملك صلاحية إرسال طلب السعر هذا.",
+        "invalidDeadline": "مهلة الردّ غير صالحة — اختر 24 أو 48 أو 72 ساعة.",
+        "inviteListMalformed": "قائمة الدعوات غير صحيحة.",
+        "shortlistEmpty": "القائمة المختصرة فارغة — اختر مورّداً واحداً على الأقل.",
+        "shortlistTooLarge": "عدد المورّدين في القائمة المختصرة كبير جداً (الحد الأقصى 20).",
+        "eventNotFound": "لم يُعثر على الفعالية أو لا يمكن الوصول إليها.",
+        "invalidInviteSource": "مصدر دعوة غير صالح في القائمة المختصرة.",
+        "rfqCreateNoId": "لم يُرجِع إنشاء طلب السعر معرّفاً. حاول مرة أخرى.",
+        "unknown": "تعذّر إرسال طلب السعر. حاول مرة أخرى."
       }
     },
     "shortlist": {
@@ -2405,7 +2481,9 @@
         "packagesInRange": "باقاته تناسب {guests} ضيف",
         "respondsWithin": "عادةً يرد خلال {hours} ساعة",
         "availableDate": "متاح في {date}",
-        "rotating": "مورد جديد ضمن الترتيب"
+        "rotating": "مورد جديد ضمن الترتيب",
+        "offersInCategory": "يقدّم باقات في هذه الفئة",
+        "newToSevent": "جديد على سيڤنت"
       }
     },
     "quote": {
@@ -2536,7 +2614,8 @@
           "fulfilled": "تم الإرسال"
         },
         "printTitle": "مقارنة العروض",
-        "printMeta": "{city} · {starts} – {ends}"
+        "printMeta": "{city} · {starts} – {ends}",
+        "conflictMark": "⚠ تعارض"
       },
       "rfp": {
         "requestCta": "طلب ملف فني",
@@ -2557,6 +2636,60 @@
         "detailCancelledTitle": "تم إلغاء طلب الملف الفني",
         "detailCancelledSubtitle": "أُلغي في {date}",
         "manageOnGrid": "الإدارة في صفحة المقارنة"
+      },
+      "quoteCorrupt": "بيانات هذا العرض تالفة — اطلب من المورّد إعادة إرساله.",
+      "totalsHeading": "الإجماليات",
+      "vatWithRate": "ضريبة القيمة المضافة ({pct}%)",
+      "csv": {
+        "criterion": "البند",
+        "location": "الموقع",
+        "inviteSource": "مصدر الدعوة",
+        "dateConflict": "تعارض في التاريخ",
+        "total": "الإجمالي (ر.س)",
+        "subtotal": "الإجمالي الفرعي (ر.س)",
+        "setupFee": "رسوم التجهيز (ر.س)",
+        "travelFee": "رسوم التنقل (ر.س)",
+        "teardownFee": "رسوم الإزالة (ر.س)",
+        "vatPct": "نسبة ضريبة القيمة المضافة",
+        "vatAmount": "مبلغ ضريبة القيمة المضافة (ر.س)",
+        "depositPct": "نسبة العربون",
+        "paymentSchedule": "جدول الدفع",
+        "cancellation": "سياسة الإلغاء",
+        "inclusions": "يشمل",
+        "exclusions": "لا يشمل",
+        "lineItems": "البنود",
+        "notes": "ملاحظات",
+        "expires": "تنتهي الصلاحية",
+        "submitted": "تاريخ الإرسال",
+        "techProposal": "العرض الفني",
+        "rfpStatus": "حالة طلب العرض الفني",
+        "verified": "(موثّق)",
+        "yes": "نعم",
+        "no": "لا",
+        "attached": "مرفق",
+        "truncatedSuffix": "… (تم اقتطاع {count} بند؛ افتح التطبيق للاطلاع الكامل)",
+        "lineItem": "{label} (الكمية {qty}، {unitPrice}/للوحدة، الإجمالي {total})",
+        "source": {
+          "self_applied": "تقدّم عبر السوق",
+          "auto_match": "مطابقة تلقائية",
+          "organizer_picked": "اختيار المنظّم"
+        },
+        "rfp": {
+          "requested": "تم الطلب",
+          "fulfilled": "تم التنفيذ",
+          "cancelled": "ملغي"
+        }
+      },
+      "rfpErrors": {
+        "invalidRequest": "طلب غير صالح.",
+        "quoteNotFound": "لم يُعثر على العرض.",
+        "organizerMismatch": "أنت لست منظّم طلب السعر هذا.",
+        "alreadyPending": "يوجد طلب عرض فني معلّق بالفعل لهذا المورّد.",
+        "sendFailed": "تعذّر إرسال الطلب. حاول مرة أخرى.",
+        "requestNotFound": "لم يُعثر على الطلب.",
+        "requestNotPending": "لم يعد هذا الطلب معلّقاً.",
+        "cancelFailed": "تعذّر إلغاء الطلب. حاول مرة أخرى.",
+        "cancelRaced": "لم يعد هذا الطلب معلّقاً. حدّث الصفحة."
       }
     },
     "common": {
@@ -3012,6 +3145,107 @@
       "errorMissingFile": "اختر ملفاً أولاً.",
       "errorTooLarge": "الملف كبير جداً (الحد 25 ميجابايت).",
       "errorGeneric": "تعذر حفظ الدليل. حاول مرة أخرى."
+    }
+  },
+  "requirementValues": {
+    "seating_style": {
+      "rounds": "طاولات دائرية",
+      "theatre": "ترتيب مسرحي",
+      "classroom": "ترتيب فصل دراسي",
+      "cocktail": "كوكتيل",
+      "majlis": "مجلس"
+    },
+    "indoor_outdoor": {
+      "indoor": "داخلي",
+      "outdoor": "خارجي",
+      "either": "داخلي أو خارجي"
+    },
+    "meal_type": {
+      "buffet": "بوفيه",
+      "plated": "تقديم على الطاولة",
+      "coffee_break": "استراحة قهوة",
+      "cocktail": "حفل كوكتيل"
+    },
+    "dietary": {
+      "halal_only": "حلال فقط",
+      "vegetarian": "نباتي",
+      "vegan": "نباتي صرف",
+      "gluten_free": "خالٍ من الجلوتين",
+      "nut_free": "خالٍ من المكسرات"
+    },
+    "service_style": {
+      "self_serve": "خدمة ذاتية",
+      "served": "خدمة كاملة",
+      "mixed": "مختلط"
+    },
+    "deliverables": {
+      "photos": "صور",
+      "video": "فيديو",
+      "drone": "تصوير جوي بالدرون",
+      "same_day_edit": "مونتاج في نفس اليوم",
+      "printed_album": "ألبوم مطبوع"
+    },
+    "kind": {
+      "venues": "قاعة",
+      "catering": "ضيافة",
+      "photography": "تصوير",
+      "generic": "عام"
+    }
+  },
+  "lineItemKind": {
+    "package": "باقة",
+    "qty_discount": "خصم الكمية",
+    "date_surcharge": "رسوم إضافية حسب التاريخ",
+    "distance_fee": "رسوم المسافة",
+    "duration_multiplier": "تعديل حسب المدة",
+    "free_form": "بند مخصص"
+  },
+  "quoteStatus": {
+    "draft": "مسودة",
+    "sent": "مُرسل",
+    "accepted": "مقبول",
+    "rejected": "مرفوض",
+    "expired": "منتهي الصلاحية",
+    "withdrawn": "مسحوب"
+  },
+  "bookingStatus": {
+    "confirmation": {
+      "awaiting_supplier": "بانتظار المورّد",
+      "confirmed": "مؤكّد",
+      "cancelled": "ملغي"
+    },
+    "payment": {
+      "unpaid": "غير مدفوع",
+      "deposit_paid": "العربون مدفوع",
+      "balance_paid": "الرصيد مدفوع",
+      "paid": "مدفوع بالكامل"
+    },
+    "service": {
+      "scheduled": "مجدول",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "disputed": "محل نزاع"
+    }
+  },
+  "rfqRequirements": {
+    "unknownKind": "هذه المتطلبات بصيغة لا تتعرّف عليها هذه الواجهة.",
+    "noStructuredRequirements": "لم تُقدَّم متطلبات منظَّمة.",
+    "yes": "نعم",
+    "no": "لا",
+    "field": {
+      "kind": "نوع الفئة",
+      "seating_style": "نمط الجلوس",
+      "indoor_outdoor": "داخلي / خارجي",
+      "needs_parking": "يلزم موقف سيارات",
+      "needs_kitchen": "يلزم مطبخ",
+      "meal_type": "نوع الوجبة",
+      "dietary": "المتطلبات الغذائية",
+      "service_style": "نمط الخدمة",
+      "coverage_hours": "ساعات التغطية",
+      "deliverables": "المُخرجات",
+      "crew_size": "عدد أفراد الطاقم",
+      "qty": "الكمية",
+      "notes": "ملاحظات"
     }
   }
 }

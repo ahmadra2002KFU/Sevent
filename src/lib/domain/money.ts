@@ -14,6 +14,23 @@ export type Halalas = number;
 
 const HALALAS_PER_SAR = 100;
 
+/**
+ * Locale-aware money formatter — the helper UI code should call instead of
+ * `formatHalalas` directly. Takes the app locale (`"en" | "ar"`) and routes
+ * through the shared `intlLocaleFor` decision so Arabic pages get Arabic-Indic
+ * digits + Arabic currency placement instead of the `en-SA` default.
+ */
+export function formatMoney(
+  halalas: Halalas,
+  locale: "en" | "ar",
+  opts: { withCurrency?: boolean } = {},
+): string {
+  return formatHalalas(halalas, {
+    locale: locale === "ar" ? "ar-SA" : "en-SA",
+    withCurrency: opts.withCurrency ?? true,
+  });
+}
+
 /** Coerces a user-entered SAR string/number into integer halalas. */
 export function sarToHalalas(sar: number | string): Halalas {
   const value = typeof sar === "string" ? Number(sar.replace(/[,\s]/g, "")) : sar;
