@@ -24,6 +24,14 @@ const SKIPLIST_EXACT = new Set<string>([
   "auth.signUp.supplier.phonePlaceholder",
   // `{count}/{max}` numeric bio char counter — locale-neutral format.
   "supplier.onboarding.wizard.bioCharCounter",
+  // `{count}/{max}` again on the profile customizer — same locale-neutral format.
+  "supplier.profile.customizer.bio.counter",
+  // `PNG · JPG · WebP · PDF` — file-format wordmarks, locale-neutral.
+  "supplier.portfolio.upload.types",
+  // `PDF` — file-format acronym, locale-neutral.
+  "supplier.portfolio.item.documentTag",
+  // `{city} · {starts} – {ends}` — pure interpolation template, no words.
+  "organizer.quote.compare.printMeta",
   // Locale-name self-reference: "English" in the EN file, "العربية" in the AR file;
   // they are compared independently and their EN string (e.g. "English") is what
   // appears on both sides of the equality check only for the `en` key. The `ar`

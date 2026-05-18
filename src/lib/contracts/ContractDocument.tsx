@@ -24,7 +24,16 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
+// Contract PDFs are intentionally English-only per legal-document policy
+// (see file-level docblock). Wrap `formatHalalas` once here under a
+// distinct name so the `no-restricted-syntax` deprecation fence (which
+// steers RFQ-surface code to `formatMoney(halalas, locale)`) doesn't have
+// to be disabled at every call site below. Migrate to a locale-aware
+// variant the day the contract template goes bilingual.
 import { formatHalalas } from "@/lib/domain/money";
+
+// eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (contracts PDF; English-only by design until the bilingual contract sprint)
+const formatHalalasEn = (halalas: number): string => formatHalalas(halalas);
 
 export type ContractDocumentInput = {
   booking: {
@@ -159,6 +168,7 @@ const styles = StyleSheet.create({
 function formatDateTime(iso: string): string {
   try {
     const d = new Date(iso);
+    // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (contracts PDF rendered server-side; PDF is always English per legal-document policy); not part of the RFQ localization sweep
     return d.toLocaleString("en-GB", {
       year: "numeric",
       month: "short",
@@ -245,12 +255,12 @@ export function ContractDocument(input: ContractDocumentInput) {
               <View style={styles.tableCol1}>
                 <Text>{item.label}</Text>
                 <Text style={{ color: "#5B6770", fontSize: 9 }}>
-                  {item.qty} × {formatHalalas(item.unit_price_halalas)}{" "}
+                  {item.qty} × {formatHalalasEn(item.unit_price_halalas)}{" "}
                   ({item.unit})
                 </Text>
               </View>
               <Text style={styles.tableCol2}>
-                {formatHalalas(item.total_halalas)}
+                {formatHalalasEn(item.total_halalas)}
               </Text>
             </View>
           ))}
@@ -259,24 +269,24 @@ export function ContractDocument(input: ContractDocumentInput) {
         <Text style={styles.sectionHeader}>Totals</Text>
         <View style={styles.totalsRow}>
           <Text style={styles.rowLabel}>Subtotal</Text>
-          <Text>{formatHalalas(snapshot.subtotal_halalas)}</Text>
+          <Text>{formatHalalasEn(snapshot.subtotal_halalas)}</Text>
         </View>
         {snapshot.travel_fee_halalas > 0 ? (
           <View style={styles.totalsRow}>
             <Text style={styles.rowLabel}>Travel fee</Text>
-            <Text>{formatHalalas(snapshot.travel_fee_halalas)}</Text>
+            <Text>{formatHalalasEn(snapshot.travel_fee_halalas)}</Text>
           </View>
         ) : null}
         {snapshot.setup_fee_halalas > 0 ? (
           <View style={styles.totalsRow}>
             <Text style={styles.rowLabel}>Setup fee</Text>
-            <Text>{formatHalalas(snapshot.setup_fee_halalas)}</Text>
+            <Text>{formatHalalasEn(snapshot.setup_fee_halalas)}</Text>
           </View>
         ) : null}
         {snapshot.teardown_fee_halalas > 0 ? (
           <View style={styles.totalsRow}>
             <Text style={styles.rowLabel}>Teardown fee</Text>
-            <Text>{formatHalalas(snapshot.teardown_fee_halalas)}</Text>
+            <Text>{formatHalalasEn(snapshot.teardown_fee_halalas)}</Text>
           </View>
         ) : null}
         {snapshot.vat_amount_halalas > 0 ? (
@@ -285,12 +295,12 @@ export function ContractDocument(input: ContractDocumentInput) {
               VAT ({snapshot.vat_rate_pct}%)
               {snapshot.prices_include_vat ? " (inclusive)" : ""}
             </Text>
-            <Text>{formatHalalas(snapshot.vat_amount_halalas)}</Text>
+            <Text>{formatHalalasEn(snapshot.vat_amount_halalas)}</Text>
           </View>
         ) : null}
         <View style={styles.totalsRowGrand}>
           <Text>Total ({snapshot.currency})</Text>
-          <Text>{formatHalalas(snapshot.total_halalas)}</Text>
+          <Text>{formatHalalasEn(snapshot.total_halalas)}</Text>
         </View>
 
         <Text style={styles.sectionHeader}>Payment</Text>

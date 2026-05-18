@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Local Supabase and backup commands are usable, but production compose, health checks, cron names, and safe-stop behavior need a refresh.
+
 # Sevent — Runbook (early version)
 
 Operational procedures for the Ubuntu pilot host. Sprint 1 ships the local-dev

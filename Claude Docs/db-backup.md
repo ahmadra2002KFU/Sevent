@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Implemented and ready. Backup and safe-stop scripts plus package commands align with the current Supabase setup; add offsite restore proof when production storage is configured.
+
 # Sevent DB backups
 
 We back up the local self-hosted Supabase Postgres because we lost data once

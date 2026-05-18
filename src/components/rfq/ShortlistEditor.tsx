@@ -23,8 +23,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, Search, X } from "lucide-react";
+import { cityNameFor } from "@/lib/domain/cities";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -89,6 +91,7 @@ export function ShortlistEditor({
   onSearchSuppliers,
 }: Props) {
   const t = useTranslations("organizer.shortlist");
+  const locale = useLocale() as SupportedLocale;
   const [query, setQuery] = useState("");
   const [rawSuggestions, setRawSuggestions] = useState<ShortlistSupplier[]>([]);
   const [searching, setSearching] = useState(false);
@@ -200,10 +203,10 @@ export function ShortlistEditor({
                         <div className="flex flex-wrap gap-1.5">
                           {m.reasons.map((reason) => (
                             <span
-                              key={reason}
+                              key={reason.code}
                               className="inline-flex items-center rounded-full bg-brand-cobalt-100 px-2 py-0.5 text-xs font-medium text-brand-cobalt-500"
                             >
-                              {reason}
+                              {t(`reasons.${reason.code}`, reason.params)}
                             </span>
                           ))}
                         </div>
@@ -293,7 +296,7 @@ export function ShortlistEditor({
                               {s.business_name}
                             </span>
                             <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                              {s.base_city}
+                              {cityNameFor(s.base_city, locale)}
                               {s.out_of_subcategory ? (
                                 <span className="inline-flex items-center rounded-full bg-semantic-warning-100 px-1.5 py-0.5 text-[11px] font-medium text-semantic-warning-500">
                                   {t("outOfSubcategoryShort")}
@@ -340,7 +343,7 @@ export function ShortlistEditor({
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                        {s.base_city}
+                        {cityNameFor(s.base_city, locale)}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-end">
                         <Tooltip>

@@ -44,9 +44,14 @@ import {
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
-import { formatHalalas } from "@/lib/domain/money";
-import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
-import type { QuoteLineItem } from "@/lib/domain/quote";
+import { formatMoney } from "@/lib/domain/money";
+import {
+  fmtDateTime,
+  fmtNumber,
+  fmtPercent,
+  type SupportedLocale,
+} from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
 
 export const dynamic = "force-dynamic";
 
@@ -84,22 +89,6 @@ function fmt(
   return formatted || "—";
 }
 
-function unitLabel(unit: QuoteLineItem["unit"]): string {
-  switch (unit) {
-    case "event":
-      return "per event";
-    case "hour":
-      return "per hour";
-    case "day":
-      return "per day";
-    case "person":
-      return "per person";
-    case "unit":
-    default:
-      return "per unit";
-  }
-}
-
 function toPillStatus(raw: string): StatusPillStatus {
   const allowed: StatusPillStatus[] = [
     "draft",
@@ -130,6 +119,9 @@ export default async function OrganizerQuoteDetailPage({
 }: PageProps) {
   const { id, quoteId } = await params;
   const locale = (await getLocale()) as SupportedLocale;
+  const t = await getTranslations("organizer.quote");
+  const tKind = await getTranslations("lineItemKind");
+  const tStatus = await getTranslations("quoteStatus");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -161,12 +153,10 @@ export default async function OrganizerQuoteDetailPage({
   if (!quote.current_revision_id) {
     return (
       <section className="flex flex-col gap-6">
-        <PageHeader title="Quote snapshot" />
+        <PageHeader title={t("snapshotHeading")} />
         <Alert variant="destructive">
           <ClockAlert aria-hidden />
-          <AlertDescription>
-            This quote is missing a revision — ask the supplier to re-send.
-          </AlertDescription>
+          <AlertDescription>{t("missingRevision")}</AlertDescription>
         </Alert>
       </section>
     );
@@ -205,12 +195,10 @@ export default async function OrganizerQuoteDetailPage({
     });
     return (
       <section className="flex flex-col gap-6">
-        <PageHeader title="Quote snapshot" />
+        <PageHeader title={t("snapshotHeading")} />
         <Alert variant="destructive">
           <ClockAlert aria-hidden />
-          <AlertDescription>
-            This quote&apos;s data is corrupt — ask the supplier to re-send.
-          </AlertDescription>
+          <AlertDescription>{t("quoteCorrupt")}</AlertDescription>
         </Alert>
       </section>
     );
@@ -259,19 +247,28 @@ export default async function OrganizerQuoteDetailPage({
       <Button variant="ghost" size="sm" className="w-fit" asChild>
         <Link href={`/organizer/rfqs/${id}/quotes`}>
           <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          Back to compare
+          {t("backToCompare")}
         </Link>
       </Button>
 
       <PageHeader
-        title={quote.suppliers?.business_name ?? "Quote snapshot"}
+        title={quote.suppliers?.business_name ?? t("snapshotHeading")}
         description={`${
-          quote.suppliers?.base_city ? `${quote.suppliers.base_city} · ` : ""
-        }Revision v${revision.version} · Submitted ${fmt(quote.sent_at, locale)}`}
+          quote.suppliers?.base_city
+            ? `${cityNameFor(quote.suppliers.base_city, locale)} · `
+            : ""
+        }${t("revisionLabel", {
+          version: revision.version,
+          submittedAt: fmt(quote.sent_at, locale),
+        })}`}
         actions={
           <StatusPill
             status={toPillStatus(quote.status)}
-            label={quote.status.replace(/_/g, " ")}
+            label={
+              tStatus.has(quote.status)
+                ? tStatus(quote.status)
+                : quote.status
+            }
           />
         }
       />
@@ -280,7 +277,9 @@ export default async function OrganizerQuoteDetailPage({
         <Alert>
           <ClockAlert aria-hidden />
           <AlertDescription>
-            Valid until <strong>{fmt(snap.expires_at, locale)}</strong>
+            {t("snapshotExpiresAt", {
+              expiresAt: fmt(snap.expires_at, locale),
+            })}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -376,7 +375,7 @@ export default async function OrganizerQuoteDetailPage({
 
       <Card>
         <CardHeader className="border-b pb-4">
-          <CardTitle className="text-lg">Line items</CardTitle>
+          <CardTitle className="text-lg">{t("snapshotLineItems")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {snap.line_items.length === 0 ? (
@@ -387,10 +386,12 @@ export default async function OrganizerQuoteDetailPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="px-4">Item</TableHead>
-                  <TableHead className="px-4">Qty</TableHead>
-                  <TableHead className="px-4">Unit price</TableHead>
-                  <TableHead className="px-4 text-end">Total</TableHead>
+                  <TableHead className="px-4">{t("item")}</TableHead>
+                  <TableHead className="px-4">{t("qty")}</TableHead>
+                  <TableHead className="px-4">{t("unitPrice")}</TableHead>
+                  <TableHead className="px-4 text-end">
+                    {t("lineTotal")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -400,21 +401,23 @@ export default async function OrganizerQuoteDetailPage({
                       <div className="flex flex-col">
                         <span className="font-medium">{item.label}</span>
                         <span className="text-xs text-muted-foreground">
-                          {item.kind.replace(/_/g, " ")}
+                          {tKind.has(item.kind)
+                            ? tKind(item.kind)
+                            : item.kind}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 whitespace-nowrap">
-                      {item.qty}{" "}
+                      {fmtNumber(item.qty, locale)}{" "}
                       <span className="text-xs text-muted-foreground">
-                        {unitLabel(item.unit)}
+                        {t(`unit_${item.unit}`)}
                       </span>
                     </TableCell>
                     <TableCell className="px-4 py-3 whitespace-nowrap tabular-nums">
-                      {formatHalalas(item.unit_price_halalas)}
+                      {formatMoney(item.unit_price_halalas, locale)}
                     </TableCell>
                     <TableCell className="px-4 py-3 whitespace-nowrap text-end font-medium tabular-nums">
-                      {formatHalalas(item.total_halalas)}
+                      {formatMoney(item.total_halalas, locale)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -426,41 +429,46 @@ export default async function OrganizerQuoteDetailPage({
 
       <Card>
         <CardHeader className="border-b pb-4">
-          <CardTitle className="text-lg">Totals</CardTitle>
+          <CardTitle className="text-lg">{t("totalsHeading")}</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <dl className="flex flex-col gap-2">
             <Row
-              label="Subtotal"
-              value={formatHalalas(snap.subtotal_halalas)}
+              label={t("snapshotSubtotal")}
+              value={formatMoney(snap.subtotal_halalas, locale)}
             />
             <Row
-              label="Travel"
-              value={formatHalalas(snap.travel_fee_halalas)}
+              label={t("snapshotTravel")}
+              value={formatMoney(snap.travel_fee_halalas, locale)}
             />
             <Row
-              label="Setup"
-              value={formatHalalas(snap.setup_fee_halalas)}
+              label={t("snapshotSetup")}
+              value={formatMoney(snap.setup_fee_halalas, locale)}
             />
             <Row
-              label="Teardown"
-              value={formatHalalas(snap.teardown_fee_halalas)}
+              label={t("snapshotTeardown")}
+              value={formatMoney(snap.teardown_fee_halalas, locale)}
             />
             <Row
-              label={`VAT (${snap.vat_rate_pct}%)`}
-              value={formatHalalas(snap.vat_amount_halalas)}
+              label={t("vatWithRate", {
+                pct: fmtNumber(snap.vat_rate_pct, locale),
+              })}
+              value={formatMoney(snap.vat_amount_halalas, locale)}
             />
             <div className="mt-1 flex items-baseline justify-between gap-4 border-t pt-3">
               <dt className="text-base font-semibold text-brand-navy-900">
-                Total
+                {t("snapshotTotal")}
               </dt>
               <dd className="text-lg font-semibold text-brand-navy-900 tabular-nums">
-                {formatHalalas(snap.total_halalas)}
+                {formatMoney(snap.total_halalas, locale)}
               </dd>
             </div>
-            <Row label="Deposit" value={`${snap.deposit_pct}%`} />
             <Row
-              label="Payment schedule"
+              label={t("deposit")}
+              value={fmtPercent(snap.deposit_pct, locale)}
+            />
+            <Row
+              label={t("paymentSchedule")}
               value={snap.payment_schedule || "—"}
             />
           </dl>
@@ -469,7 +477,9 @@ export default async function OrganizerQuoteDetailPage({
 
       <Card>
         <CardHeader className="border-b pb-4">
-          <CardTitle className="text-lg">Cancellation terms</CardTitle>
+          <CardTitle className="text-lg">
+            {t("snapshotCancellation")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <p className="whitespace-pre-line text-sm">
@@ -481,7 +491,9 @@ export default async function OrganizerQuoteDetailPage({
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="border-b pb-4">
-            <CardTitle className="text-lg">Inclusions</CardTitle>
+            <CardTitle className="text-lg">
+              {t("snapshotInclusions")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {snap.inclusions.length === 0 ? (
@@ -497,7 +509,9 @@ export default async function OrganizerQuoteDetailPage({
         </Card>
         <Card>
           <CardHeader className="border-b pb-4">
-            <CardTitle className="text-lg">Exclusions</CardTitle>
+            <CardTitle className="text-lg">
+              {t("snapshotExclusions")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {snap.exclusions.length === 0 ? (
@@ -516,7 +530,7 @@ export default async function OrganizerQuoteDetailPage({
       {snap.notes ? (
         <Card>
           <CardHeader className="border-b pb-4">
-            <CardTitle className="text-lg">Notes</CardTitle>
+            <CardTitle className="text-lg">{t("snapshotNotes")}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="whitespace-pre-line text-sm">{snap.notes}</p>

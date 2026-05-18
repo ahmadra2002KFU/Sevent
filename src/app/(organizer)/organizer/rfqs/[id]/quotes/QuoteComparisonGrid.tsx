@@ -44,8 +44,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatHalalas } from "@/lib/domain/money";
-import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
+import { formatMoney } from "@/lib/domain/money";
+import {
+  fmtDateTime,
+  fmtNumber,
+  fmtPercent,
+  type SupportedLocale,
+} from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
 import {
   acceptQuoteAction,
   cancelProposalRequestAction,
@@ -131,6 +137,7 @@ function AcceptForm({
   quoteId: string;
 }) {
   const t = useTranslations("organizer.quote.compare");
+  const tQuote = useTranslations("organizer.quote");
   const [state, action] = useActionState<ActionState, FormData>(
     acceptQuoteAction,
     initialActionState,
@@ -146,7 +153,7 @@ function AcceptForm({
         <Alert variant="destructive" className="px-2 py-1.5">
           <AlertTriangle className="size-3.5" aria-hidden />
           <AlertDescription className="text-xs">
-            {state.message}
+            {tQuote(state.code as never, state.params as never)}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -188,6 +195,7 @@ function RfpCell({
 }) {
   const t = useTranslations("organizer.quote.rfp");
   const tCompare = useTranslations("organizer.quote.compare");
+  const tRfpErrors = useTranslations("organizer.quote.rfpErrors");
   const [requestState, requestFn] = useActionState<
     RfpRequestActionState,
     FormData
@@ -199,9 +207,9 @@ function RfpCell({
 
   const errorMessage =
     requestState.status === "error"
-      ? requestState.message
+      ? tRfpErrors(requestState.code as never)
       : cancelState.status === "error"
-        ? cancelState.message
+        ? tRfpErrors(cancelState.code as never)
         : null;
 
   // Success branch flips the cell back to the request form (cancel) or to a
@@ -315,6 +323,7 @@ function CancelRfpButton({ label }: { label: string }) {
 function SupplierCardCell({ col }: { col: QuoteColumn }) {
   const tSrc = useTranslations("organizer.quote.sourceBadge");
   const t = useTranslations("organizer.quote.compare");
+  const locale = useLocale() as SupportedLocale;
   const sourceLabel =
     col.invite_source === "self_applied"
       ? tSrc("self_applied")
@@ -355,7 +364,7 @@ function SupplierCardCell({ col }: { col: QuoteColumn }) {
           )}
           {col.supplier.base_city ? (
             <span className="text-xs text-muted-foreground">
-              {col.supplier.base_city}
+              {cityNameFor(col.supplier.base_city, locale)}
             </span>
           ) : null}
         </div>
@@ -583,7 +592,7 @@ export function QuoteComparisonGrid({ data }: Props) {
                 cols={visibleColumns}
                 cell={(c) => (
                   <span className="font-semibold tabular-nums text-brand-navy-900">
-                    {formatHalalas(c.snapshot.total_halalas)}
+                    {formatMoney(c.snapshot.total_halalas, locale)}
                   </span>
                 )}
               />
@@ -593,7 +602,7 @@ export function QuoteComparisonGrid({ data }: Props) {
                 muted
                 cell={(c) => (
                   <span className="tabular-nums">
-                    {formatHalalas(c.snapshot.subtotal_halalas)}
+                    {formatMoney(c.snapshot.subtotal_halalas, locale)}
                   </span>
                 )}
               />
@@ -603,7 +612,7 @@ export function QuoteComparisonGrid({ data }: Props) {
                 muted
                 cell={(c) => (
                   <span className="tabular-nums">
-                    {formatHalalas(c.snapshot.setup_fee_halalas)}
+                    {formatMoney(c.snapshot.setup_fee_halalas, locale)}
                   </span>
                 )}
               />
@@ -613,7 +622,7 @@ export function QuoteComparisonGrid({ data }: Props) {
                 muted
                 cell={(c) => (
                   <span className="tabular-nums">
-                    {formatHalalas(c.snapshot.travel_fee_halalas)}
+                    {formatMoney(c.snapshot.travel_fee_halalas, locale)}
                   </span>
                 )}
               />
@@ -623,7 +632,7 @@ export function QuoteComparisonGrid({ data }: Props) {
                 muted
                 cell={(c) => (
                   <span className="tabular-nums">
-                    {formatHalalas(c.snapshot.teardown_fee_halalas)}
+                    {formatMoney(c.snapshot.teardown_fee_halalas, locale)}
                   </span>
                 )}
               />
@@ -633,14 +642,15 @@ export function QuoteComparisonGrid({ data }: Props) {
                 muted
                 cell={(c) => (
                   <span className="tabular-nums">
-                    {c.snapshot.vat_rate_pct}% — {formatHalalas(c.snapshot.vat_amount_halalas)}
+                    {fmtPercent(c.snapshot.vat_rate_pct, locale)} —{" "}
+                    {formatMoney(c.snapshot.vat_amount_halalas, locale)}
                   </span>
                 )}
               />
               <Row
                 label={t("deposit")}
                 cols={visibleColumns}
-                cell={(c) => `${c.snapshot.deposit_pct}%`}
+                cell={(c) => fmtPercent(c.snapshot.deposit_pct, locale)}
               />
               <Row
                 label={t("paymentSchedule")}
@@ -713,8 +723,9 @@ export function QuoteComparisonGrid({ data }: Props) {
                         >
                           <span className="font-medium">{li.label}</span>
                           <span className="text-muted-foreground">
-                            {li.qty} × {formatHalalas(li.unit_price_halalas)} ={" "}
-                            {formatHalalas(li.total_halalas)}
+                            {fmtNumber(li.qty, locale)} ×{" "}
+                            {formatMoney(li.unit_price_halalas, locale)} ={" "}
+                            {formatMoney(li.total_halalas, locale)}
                           </span>
                         </li>
                       ))}

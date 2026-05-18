@@ -16,6 +16,7 @@ import {
 
 export function ProposalUploadForm({ inviteId }: { inviteId: string }) {
   const t = useTranslations("supplier.rfp");
+  const tErrors = useTranslations("supplier.proposalUpload.errors");
   const [state, action] = useActionState<ProposalUploadActionState, FormData>(
     respondToProposalRequestAction,
     initialProposalUploadActionState,
@@ -38,7 +39,9 @@ export function ProposalUploadForm({ inviteId }: { inviteId: string }) {
       {state.status === "error" ? (
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
-          <AlertDescription>{state.message}</AlertDescription>
+          <AlertDescription>
+            {tErrors(state.code as never)}
+          </AlertDescription>
         </Alert>
       ) : null}
       <SubmitButton label={t("uploadCta")} pendingLabel={t("uploading")} />

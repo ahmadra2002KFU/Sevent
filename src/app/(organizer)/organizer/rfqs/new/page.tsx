@@ -60,31 +60,13 @@ import {
   ShortlistEditor,
   type ShortlistSupplier,
 } from "@/components/rfq/ShortlistEditor";
+import { buildRfqRequirementRows } from "@/components/rfq/requirementRows";
 import { cityNameFor } from "@/lib/domain/cities";
 import { segmentNameFor } from "@/lib/domain/segments";
+import { categoryName } from "@/lib/domain/taxonomy";
+import { fmtDate } from "@/lib/domain/formatDate";
 import type { RfqExtension, RfqExtensionKind } from "@/lib/domain/rfq";
 import type { MatchResult } from "@/lib/domain/matching/autoMatch";
-
-function fmtDateShort(iso: string, locale: "en" | "ar"): string {
-  try {
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
-
-function categoryName(
-  c: { name_en: string; name_ar?: string | null } | null | undefined,
-  locale: "en" | "ar",
-): string {
-  if (!c) return "";
-  if (locale === "ar" && c.name_ar) return c.name_ar;
-  return c.name_en;
-}
 import {
   listCategoriesAction,
   listMyEventsAction,
@@ -96,12 +78,7 @@ import {
   type OrganizerEventSummary,
 } from "../actions";
 
-function kindFromParentSlug(slug: string | undefined): RfqExtensionKind {
-  if (slug === "venues") return "venues";
-  if (slug === "catering") return "catering";
-  if (slug === "photography") return "photography";
-  return "generic";
-}
+import { kindFromParentSlug } from "./kindFromParentSlug";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -240,6 +217,8 @@ export default function NewRfqWizardPage() {
   const [categories, setCategories] = useState<CategoriesBundle | null>(null);
   const [loadingMatches, startMatchTransition] = useTransition();
   const [sending, startSendTransition] = useTransition();
+  // Holds a stable error *code* (key under `organizer.rfqWizard.errors.*`),
+  // not user-facing prose — Step4 translates it at the render boundary.
   const [sendError, setSendError] = useState<string | null>(null);
 
   // Prefetch events + categories on mount.
@@ -383,7 +362,7 @@ export default function NewRfqWizardPage() {
       if (result.ok) {
         router.push(`/organizer/rfqs/${result.rfq_id}`);
       } else {
-        setSendError(result.error);
+        setSendError(result.code);
       }
     });
   }, [
@@ -716,7 +695,7 @@ function Step1({
                     {segmentNameFor(evt.event_type, locale)}
                     {evt.client_name ? ` · ${evt.client_name}` : ""} ·{" "}
                     {cityNameFor(evt.city, locale)} ·{" "}
-                    {fmtDateShort(evt.starts_at, locale)}
+                    {fmtDate(evt.starts_at, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -943,9 +922,13 @@ function Step4({
   error: string | null;
 }) {
   const t = useTranslations("organizer.rfqWizard");
+  const tReq = useTranslations("rfqRequirements");
+  const tReqValues = useTranslations("requirementValues");
   const locale = useLocale() as "en" | "ar";
-  const reqEntries = Object.entries(state.requirements).filter(
-    ([k]) => k !== "kind",
+  const requirementRows = buildRfqRequirementRows(
+    state.requirements,
+    tReq,
+    tReqValues,
   );
   // Shortlist can be empty when the RFQ is published — marketplace suppliers
   // take the place of a hand-picked list. Keep the upper bound either way.
@@ -976,7 +959,7 @@ function Step4({
                 {" · "}
                 {cityNameFor(selectedEvent.city, locale)}
                 {" · "}
-                {fmtDateShort(selectedEvent.starts_at, locale)}
+                {fmtDate(selectedEvent.starts_at, locale)}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">—</p>
@@ -990,22 +973,18 @@ function Step4({
             </p>
           </ReviewSection>
 
-          <ReviewSection title={t("reviewRequirements", { kind: state.kind })}>
+          <ReviewSection
+            title={t("reviewRequirements", {
+              kind: tReqValues(`kind.${state.kind}`),
+            })}
+          >
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-              {reqEntries.map(([k, v]) => (
-                <div key={k} className="flex flex-col">
-                  <dt className="text-xs text-muted-foreground">{k}</dt>
-                  <dd className="text-sm">
-                    {Array.isArray(v)
-                      ? v.join(", ") || "—"
-                      : typeof v === "boolean"
-                        ? v
-                          ? t("yes")
-                          : t("no")
-                        : v === null || v === undefined || v === ""
-                          ? "—"
-                          : String(v)}
-                  </dd>
+              {requirementRows.map((row) => (
+                <div key={row.label} className="flex flex-col">
+                  <dt className="text-xs text-muted-foreground">
+                    {row.label}
+                  </dt>
+                  <dd className="text-sm">{row.value}</dd>
                 </div>
               ))}
             </dl>
@@ -1118,7 +1097,9 @@ function Step4({
             <Alert variant="destructive">
               <AlertCircle aria-hidden />
               <AlertTitle>{t("sendErrorTitle")}</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {t(`errors.${error}` as never)}
+              </AlertDescription>
             </Alert>
           ) : null}
 

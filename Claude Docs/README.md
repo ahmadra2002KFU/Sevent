@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Current index. Ready as a navigation map for the docs folder; individual implementation readiness is tracked in each document.
+
 # Claude Docs — Index
 
 This folder is the documentation, planning, and deliverables hub for the Sevent platform. It is organized by **purpose**, not by date.

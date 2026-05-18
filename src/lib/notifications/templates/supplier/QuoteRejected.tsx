@@ -3,6 +3,7 @@ import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
 import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { strings } from "./QuoteRejected.strings";
 
 export { strings } from "./QuoteRejected.strings";
@@ -12,6 +13,9 @@ export type QuoteRejectedProps = {
   quote_id?: string;
   rfq_id?: string;
   reason?: string;
+  /** Market-segment slug (e.g. `private_occasions`). Resolved to a localized
+   * display name inside the template — never pass the rendered English
+   * name. */
   event_type?: string;
   rfq_url?: string;
 };
@@ -19,7 +23,7 @@ export type QuoteRejectedProps = {
 export default function QuoteRejected({
   locale = "en",
   reason = "another_quote_accepted",
-  event_type = "your event",
+  event_type = "",
   rfq_url = BRAND.marketingUrl,
 }: QuoteRejectedProps) {
   const effectiveLocale: Locale = locale ?? "en";
@@ -28,15 +32,22 @@ export default function QuoteRejected({
   const align = textAlignStart(effectiveLocale);
   const font = fontFor(effectiveLocale);
 
+  const segment = getSegmentBySlug(event_type);
+  const eventTypeDisplay = segment
+    ? effectiveLocale === "ar"
+      ? segment.name_ar
+      : segment.name_en
+    : s.genericEventFallback;
+
   const reasonLine =
     reason === "another_quote_accepted"
-      ? s.reason.another_quote_accepted(event_type)
-      : s.reason.generic(event_type);
+      ? s.reason.another_quote_accepted(eventTypeDisplay)
+      : s.reason.generic(eventTypeDisplay);
 
   return (
     <BrandShell
       locale={effectiveLocale}
-      preview={s.preheader(event_type)}
+      preview={s.preheader(eventTypeDisplay)}
       eyebrow={s.eyebrow}
     >
       <Heading

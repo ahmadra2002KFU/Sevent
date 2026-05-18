@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. This April testing log is preserved for traceability; later taxonomy, auth, email, and lifecycle work supersede it.
+
 # Sevent — Sprint 1+2+3 intensive testing log
 
 **Date:** 2026-04-16

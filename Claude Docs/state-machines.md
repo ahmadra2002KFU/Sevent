@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Core booking, dispute, review, and cron flows exist; hold release, capacity, and supplier-cancel behavior need reconciliation with migrations/tests.
+
 # Sevent — Core state machines
 
 Source of truth for booking, review, and dispute flow logic. Both the SQL schema

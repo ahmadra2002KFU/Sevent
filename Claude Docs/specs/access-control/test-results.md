@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. April access-control test results are preserved for traceability; several failures or pending fixes are now resolved.
+
 # Access Control Test — Results
 
 **Date:** 2026-04-22 16:05

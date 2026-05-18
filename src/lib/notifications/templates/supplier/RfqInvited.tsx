@@ -2,7 +2,14 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
-import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import {
+  dirFor,
+  fontFor,
+  formatEmailDateTime,
+  textAlignStart,
+  type Locale,
+} from "../_shared/i18n";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { strings } from "./RfqInvited.strings";
 
 export { strings } from "./RfqInvited.strings";
@@ -11,6 +18,10 @@ export type RfqInvitedProps = {
   locale?: Locale;
   rfq_id?: string;
   invite_id?: string;
+  /** Market-segment slug (e.g. `private_occasions`). Resolved to a localized
+   * display name inside the template via `segmentNameFor`. Pass the slug, not
+   * the rendered English name — otherwise the English name leaks into the
+   * Arabic email. */
   event_type?: string;
   category_name_en?: string;
   category_name_ar?: string;
@@ -19,23 +30,15 @@ export type RfqInvitedProps = {
 };
 
 function formatDeadline(iso: string, locale: Locale): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const tag = locale === "ar" ? "ar-SA" : "en-GB";
-  try {
-    return new Intl.DateTimeFormat(tag, {
-      dateStyle: "full",
-      timeStyle: "short",
-      timeZone: "Asia/Riyadh",
-    }).format(date);
-  } catch {
-    return date.toISOString();
-  }
+  return formatEmailDateTime(iso, locale, {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
 }
 
 export default function RfqInvited({
   locale = "en",
-  event_type = "your event",
+  event_type = "",
   category_name_en = "",
   category_name_ar = "",
   response_due_at = "",
@@ -47,10 +50,22 @@ export default function RfqInvited({
   const align = textAlignStart(effectiveLocale);
   const font = fontFor(effectiveLocale);
 
+  // Resolve the event_type SLUG to a locale-specific display name. If the
+  // value isn't a known segment slug (empty, legacy English literal like
+  // "your event", etc.) fall back to the localized fallback so the email
+  // never leaks the opposite-locale phrase.
+  const segment = getSegmentBySlug(event_type);
+  const eventTypeDisplay = segment
+    ? effectiveLocale === "ar"
+      ? segment.name_ar
+      : segment.name_en
+    : s.genericEventFallback;
+
+  // Locale-pure category: never fall back across locales. If the field for
+  // the active locale is empty, show nothing rather than the wrong-language
+  // category name.
   const category =
-    effectiveLocale === "ar"
-      ? category_name_ar || category_name_en || ""
-      : category_name_en || category_name_ar || "";
+    effectiveLocale === "ar" ? category_name_ar : category_name_en;
 
   const hasDeadline = typeof response_due_at === "string" && response_due_at.trim().length > 0;
   const formattedDeadline = hasDeadline
@@ -60,7 +75,7 @@ export default function RfqInvited({
   return (
     <BrandShell
       locale={effectiveLocale}
-      preview={s.preheader(event_type)}
+      preview={s.preheader(eventTypeDisplay)}
       eyebrow={s.eyebrow}
     >
       <Heading
@@ -91,7 +106,7 @@ export default function RfqInvited({
           direction: dir,
         }}
       >
-        {s.body(event_type, category)}
+        {s.body(eventTypeDisplay, category)}
       </Text>
 
       {hasDeadline ? (

@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical research reference. It is useful strategy context, but Tap/Wathq/Nafath/ZATCA-style integrations are not current pilot functionality.
+
 # Marketplace mechanics for Sevent: a complete strategic blueprint
 
 **Sevent enters a $2.59 billion Saudi event market with no dominant marketplace competitor — and the structural conditions to build one are finally in place.** Vision 2030 has created explosive demand (FIFA 2034, Expo 2030, Riyadh Season's 20 million visitors), Saudi Arabia's digital payment infrastructure now supports marketplace escrow through SAMA-licensed providers like Tap Payments, and commercial registration verification is available via government APIs. The opportunity is real, but event marketplaces have historically been among the hardest verticals to build — low repeat purchase frequency, high customization needs, and aggressive disintermediation have killed well-funded attempts. This report maps every mechanical decision Sevent must get right, benchmarked against 25+ global platforms and tailored to Saudi market realities.

@@ -432,10 +432,12 @@ function BookingSnapshotBody({
                     <div className="font-medium">{item.label}</div>
                     <div className="text-xs text-muted-foreground">
                       {item.qty} ×{" "}
+                      {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately */}
                       {formatHalalas(item.unit_price_halalas)} ({item.unit})
                     </div>
                   </TableCell>
                   <TableCell className="py-2.5 text-end font-medium tabular-nums">
+                    {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately */}
                     {formatHalalas(item.total_halalas)}
                   </TableCell>
                 </TableRow>
@@ -452,29 +454,34 @@ function BookingSnapshotBody({
         <dl className="flex flex-col gap-1.5 text-sm">
           <TotalRow
             label={t("detail.subtotal")}
+            // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately
             value={formatHalalas(snapshot.subtotal_halalas)}
           />
           {snapshot.travel_fee_halalas > 0 ? (
             <TotalRow
               label={t("detail.travelFee")}
+              // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately
               value={formatHalalas(snapshot.travel_fee_halalas)}
             />
           ) : null}
           {snapshot.setup_fee_halalas > 0 ? (
             <TotalRow
               label={t("detail.setupFee")}
+              // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately
               value={formatHalalas(snapshot.setup_fee_halalas)}
             />
           ) : null}
           {snapshot.teardown_fee_halalas > 0 ? (
             <TotalRow
               label={t("detail.teardownFee")}
+              // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately
               value={formatHalalas(snapshot.teardown_fee_halalas)}
             />
           ) : null}
           {snapshot.vat_amount_halalas > 0 ? (
             <TotalRow
               label={t("detail.vat", { pct: snapshot.vat_rate_pct })}
+              // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately
               value={formatHalalas(snapshot.vat_amount_halalas)}
             />
           ) : null}
@@ -483,6 +490,7 @@ function BookingSnapshotBody({
               {t("detail.total")}
             </dt>
             <dd className="text-lg font-semibold tabular-nums text-brand-navy-900">
+              {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer bookings detail); locale-aware money sweep tracked separately */}
               {formatHalalas(snapshot.total_halalas)}
             </dd>
           </div>

@@ -5,39 +5,31 @@
  */
 
 import { getLocale, getTranslations } from "next-intl/server";
-import { halalasToSar } from "@/lib/domain/money";
-import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
-import { loadQuotesComparison, type QuoteColumn } from "../loader";
+import { formatMoney } from "@/lib/domain/money";
+import {
+  fmtDateTime,
+  fmtNumber,
+  fmtPercent,
+  type SupportedLocale,
+} from "@/lib/domain/formatDate";
+import { cityNameFor } from "@/lib/domain/cities";
+import { loadQuotesComparison } from "../loader";
 import { AutoPrint } from "./AutoPrint";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 
-function fmtSar(halalas: number): string {
-  return `${halalasToSar(halalas).toFixed(2)} SAR`;
-}
-
-function inviteSourceLabel(s: QuoteColumn["invite_source"]): string {
-  switch (s) {
-    case "self_applied":
-      return "self-applied";
-    case "auto_match":
-      return "auto-matched";
-    case "organizer_picked":
-      return "organizer-picked";
-    default:
-      return "—";
-  }
-}
-
 export default async function PrintComparisonPage({ params }: PageProps) {
   const { id } = await params;
   const data = await loadQuotesComparison(id);
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.quote.compare");
+  const tSource = await getTranslations("organizer.rfqs.source");
 
   const cols = data.columns;
+  const inviteSourceLabel = (s: string | null): string =>
+    s && tSource.has(s) ? tSource(s) : "—";
 
   return (
     <main className="print-page p-6 text-[11pt]">
@@ -66,7 +58,7 @@ export default async function PrintComparisonPage({ params }: PageProps) {
       <h1>{t("printTitle")}</h1>
       <p className="meta">
         {t("printMeta", {
-          city: data.event.city,
+          city: cityNameFor(data.event.city, locale),
           starts: fmtDateTime(data.event.starts_at, locale) || data.event.starts_at,
           ends: fmtDateTime(data.event.ends_at, locale) || data.event.ends_at,
         })}
@@ -89,7 +81,7 @@ export default async function PrintComparisonPage({ params }: PageProps) {
                   <div>{c.supplier.business_name}</div>
                   {c.supplier.base_city ? (
                     <div style={{ fontWeight: 400, color: "#666" }}>
-                      {c.supplier.base_city}
+                      {cityNameFor(c.supplier.base_city, locale)}
                     </div>
                   ) : null}
                 </th>
@@ -106,51 +98,66 @@ export default async function PrintComparisonPage({ params }: PageProps) {
             <tr>
               <th>{t("dateConflict")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{c.has_conflict ? "⚠ conflict" : "—"}</td>
+                <td key={c.quote_id}>
+                  {c.has_conflict ? t("conflictMark") : "—"}
+                </td>
               ))}
             </tr>
             <tr className="total">
               <th>{t("total")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{fmtSar(c.snapshot.total_halalas)}</td>
+                <td key={c.quote_id}>
+                  {formatMoney(c.snapshot.total_halalas, locale)}
+                </td>
               ))}
             </tr>
             <tr className="muted">
               <th>{t("subtotal")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{fmtSar(c.snapshot.subtotal_halalas)}</td>
+                <td key={c.quote_id}>
+                  {formatMoney(c.snapshot.subtotal_halalas, locale)}
+                </td>
               ))}
             </tr>
             <tr className="muted">
               <th>{t("setupFee")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{fmtSar(c.snapshot.setup_fee_halalas)}</td>
+                <td key={c.quote_id}>
+                  {formatMoney(c.snapshot.setup_fee_halalas, locale)}
+                </td>
               ))}
             </tr>
             <tr className="muted">
               <th>{t("travelFee")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{fmtSar(c.snapshot.travel_fee_halalas)}</td>
+                <td key={c.quote_id}>
+                  {formatMoney(c.snapshot.travel_fee_halalas, locale)}
+                </td>
               ))}
             </tr>
             <tr className="muted">
               <th>{t("teardownFee")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{fmtSar(c.snapshot.teardown_fee_halalas)}</td>
+                <td key={c.quote_id}>
+                  {formatMoney(c.snapshot.teardown_fee_halalas, locale)}
+                </td>
               ))}
             </tr>
             <tr className="muted">
               <th>{t("vatRow")}</th>
               {cols.map((c) => (
                 <td key={c.quote_id}>
-                  {c.snapshot.vat_rate_pct}% — {fmtSar(c.snapshot.vat_amount_halalas)}
+                  {fmtPercent(c.snapshot.vat_rate_pct, locale)} —{" "}
+                  {formatMoney(c.snapshot.vat_amount_halalas, locale)}
                 </td>
               ))}
             </tr>
             <tr>
               <th>{t("deposit")}</th>
               {cols.map((c) => (
-                <td key={c.quote_id}>{c.snapshot.deposit_pct}%</td>
+                <td key={c.quote_id}>
+                  {fmtPercent(c.snapshot.deposit_pct, locale)}
+                </td>
               ))}
             </tr>
             <tr>
@@ -207,8 +214,9 @@ export default async function PrintComparisonPage({ params }: PageProps) {
                     <ul style={{ margin: 0, paddingInlineStart: 16 }}>
                       {c.snapshot.line_items.map((li, idx) => (
                         <li key={idx}>
-                          {li.label} — {li.qty} × {fmtSar(li.unit_price_halalas)}{" "}
-                          = {fmtSar(li.total_halalas)}
+                          {li.label} — {fmtNumber(li.qty, locale)} ×{" "}
+                          {formatMoney(li.unit_price_halalas, locale)} ={" "}
+                          {formatMoney(li.total_halalas, locale)}
                         </li>
                       ))}
                     </ul>

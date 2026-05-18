@@ -3,14 +3,31 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
-import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import {
+  dirFor,
+  fontFor,
+  formatEmailNumber,
+  textAlignStart,
+  type Locale,
+} from "../_shared/i18n";
 import { strings } from "./QuoteReceived.strings";
+
+/**
+ * Bilingual title shape — callers should pass `{ en, ar }` so the organizer's
+ * locale dictates which language renders; a plain string is still accepted
+ * for backwards compatibility but produces the same value in both locales.
+ */
+export type BilingualText = string | { en: string; ar: string };
+
+function pickBilingual(value: BilingualText, locale: Locale): string {
+  return typeof value === "string" ? value : value[locale];
+}
 
 export type QuoteReceivedProps = {
   locale: Locale;
   organizerName?: string | null;
   supplierBusinessName: string;
-  rfqTitle: string;
+  rfqTitle: BilingualText;
   quoteAmountSar: number;
   quoteUrl: string;
   appUrl?: string;
@@ -28,16 +45,18 @@ export default function QuoteReceived({
   const dir = dirFor(locale);
   const align = textAlignStart(locale);
   const font = fontFor(locale);
+  const localizedRfqTitle = pickBilingual(rfqTitle, locale);
 
-  const formattedAmount = new Intl.NumberFormat(
-    locale === "ar" ? "ar-SA" : "en-US",
-    { style: "currency", currency: "SAR", maximumFractionDigits: 2 },
-  ).format(quoteAmountSar);
+  const formattedAmount = formatEmailNumber(quoteAmountSar, locale, {
+    style: "currency",
+    currency: "SAR",
+    maximumFractionDigits: 2,
+  });
 
   return (
     <BrandShell
       locale={locale}
-      preview={s.preview(supplierBusinessName, rfqTitle)}
+      preview={s.preview(supplierBusinessName, localizedRfqTitle)}
       eyebrow={s.eyebrow}
     >
       <Heading
@@ -84,7 +103,7 @@ export default function QuoteReceived({
           direction: dir,
         }}
       >
-        {s.body(rfqTitle, formattedAmount)}
+        {s.body(localizedRfqTitle, formattedAmount)}
       </Text>
 
       <Section

@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Seed and cleanup scripts exist, but seeded capacity/categories diverge from current booking trigger and taxonomy assumptions.
+
 # Stress-seed: 100 Riyadh suppliers
 
 ## Why this exists

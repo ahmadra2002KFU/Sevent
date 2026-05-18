@@ -19,6 +19,7 @@ import {
   getMarketplaceOpportunity,
 } from "@/lib/domain/marketplace";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
 import {
   Card,
   CardContent,
@@ -123,10 +124,7 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
           <CardTitle className="text-lg">{t("detail.requirements")}</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <RequirementsBlock
-            requirements={opportunity.requirements_jsonb}
-            emDash={t("detail.noRequirements")}
-          />
+          <RfqRequirementsView payload={opportunity.requirements_jsonb} />
         </CardContent>
       </Card>
 
@@ -166,43 +164,6 @@ function InfoTile({
       </div>
     </div>
   );
-}
-
-function RequirementsBlock({
-  requirements,
-  emDash,
-}: {
-  requirements: unknown;
-  emDash: string;
-}) {
-  if (!requirements || typeof requirements !== "object") {
-    return <p className="text-sm text-muted-foreground">{emDash}</p>;
-  }
-  const entries = Object.entries(requirements as Record<string, unknown>).filter(
-    // `qty` is surfaced as a prominent info tile above; suppress it here so the
-    // requirements block stays focused on free-text/structured organizer notes.
-    ([k]) => k !== "kind" && k !== "qty",
-  );
-  if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">{emDash}</p>;
-  }
-  return (
-    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-      {entries.map(([k, v]) => (
-        <div key={k} className="flex flex-col">
-          <dt className="text-xs text-muted-foreground">{k}</dt>
-          <dd className="text-sm">{renderRequirementValue(v)}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function renderRequirementValue(v: unknown): string {
-  if (v === null || v === undefined || v === "") return "—";
-  if (Array.isArray(v)) return v.map(String).join(", ") || "—";
-  if (typeof v === "boolean") return v ? "✓" : "—";
-  return String(v);
 }
 
 function readQty(requirements: unknown): number {

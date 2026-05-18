@@ -92,6 +92,7 @@ function statusPillFor(
 
 function formatEventDate(iso: string, locale: string): string {
   try {
+    // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings list); locale-aware date sweep tracked separately
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
@@ -266,6 +267,7 @@ export default async function SupplierBookingsListPage({
                       {formatDeadlineCell(t, row.confirm_deadline)}
                     </TableCell>
                     <TableCell className="font-medium">
+                      {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (supplier bookings list); locale-aware money sweep tracked separately */}
                       {total !== null ? formatHalalas(total) : "—"}
                     </TableCell>
                     <TableCell className="text-end">

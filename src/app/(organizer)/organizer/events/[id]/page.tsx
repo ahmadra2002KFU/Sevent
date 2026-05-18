@@ -65,6 +65,7 @@ type EventRfq = {
 
 function fmtDateTime(iso: string, locale: string): string {
   try {
+    // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer events detail); locale-aware date sweep tracked separately
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
@@ -79,6 +80,7 @@ function fmtDateTime(iso: string, locale: string): string {
 
 function fmtDate(iso: string, locale: string): string {
   try {
+    // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer events detail); locale-aware date sweep tracked separately
     return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA" : "en-SA", {
       year: "numeric",
       month: "short",
@@ -170,7 +172,8 @@ export default async function EventDetailPage({ params }: PageProps) {
   const budget =
     event.budget_range_min_halalas !== null ||
     event.budget_range_max_halalas !== null
-      ? `${event.budget_range_min_halalas !== null ? formatHalalas(event.budget_range_min_halalas) : "—"} – ${event.budget_range_max_halalas !== null ? formatHalalas(event.budget_range_max_halalas) : "—"}`
+      ? // eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (organizer events detail budget label); locale-aware money sweep tracked separately
+        `${event.budget_range_min_halalas !== null ? formatHalalas(event.budget_range_min_halalas) : "—"} – ${event.budget_range_max_halalas !== null ? formatHalalas(event.budget_range_max_halalas) : "—"}`
       : null;
 
   const title = `${segmentNameFor(event.event_type, locale)}${

@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. The proposed shared access resolver architecture has since been implemented; this is not the current access-control tracker.
+
 # Access Control Analysis — Auth, Onboarding & Routing
 
 **Status:** Forensic analysis only. No code changes. Proposed architecture at the end awaits approval.

@@ -2,7 +2,13 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
-import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import {
+  dirFor,
+  fontFor,
+  formatEmailDateTime,
+  textAlignStart,
+  type Locale,
+} from "../_shared/i18n";
 import { strings } from "./PasswordChanged.strings";
 
 export type PasswordChangedProps = {
@@ -13,21 +19,13 @@ export type PasswordChangedProps = {
 };
 
 function formatChangedAt(iso: string, locale: Locale): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const tag = locale === "ar" ? "ar-SA" : "en-GB";
-  try {
-    return new Intl.DateTimeFormat(tag, {
-      timeZone: "Asia/Riyadh",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  } catch {
-    return date.toISOString();
-  }
+  return formatEmailDateTime(iso, locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function PasswordChanged({

@@ -4,9 +4,17 @@
  * Same loader, same ownership gate as the page. Returns one column per
  * supplier with criteria as rows. UTF-8 BOM-prefixed so Excel/Numbers parse
  * Arabic and the SAR formatting cleanly.
+ *
+ * Headers and enum/status labels are localized via next-intl
+ * (`organizer.quote.csv.*`). Money values are kept as plain Latin-digit
+ * decimals on purpose — Arabic-Indic digits would break `=SUM()` in
+ * spreadsheets — so only the column labels switch language, not the numbers.
  */
 
+import { getLocale, getTranslations } from "next-intl/server";
 import { halalasToSar } from "@/lib/domain/money";
+import { cityNameFor } from "@/lib/domain/cities";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 import { loadQuotesComparison, type QuoteColumn } from "../loader";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +25,12 @@ const ENCODING_BOM = "﻿";
 
 const CELL_CAP = 30000;
 
-function capCell(s: string, items: number): string {
+function capCell(
+  s: string,
+  items: number,
+  suffixTemplate: (n: number) => string,
+): string {
   if (s.length <= CELL_CAP) return s;
-  const suffixTemplate = (n: number) =>
-    `… (${n} items truncated; open in app for full)`;
   // Trim by item boundary (" | ") so we never cut mid-token.
   const parts = s.split(" | ");
   let kept = 0;
@@ -55,32 +65,6 @@ function fmtSar(halalas: number): string {
   return halalasToSar(halalas).toFixed(2);
 }
 
-function inviteSourceLabel(s: QuoteColumn["invite_source"]): string {
-  switch (s) {
-    case "self_applied":
-      return "self-applied";
-    case "auto_match":
-      return "auto-matched";
-    case "organizer_picked":
-      return "organizer-picked";
-    default:
-      return "";
-  }
-}
-
-function rfpStatusLabel(s: QuoteColumn["rfp"]["status"]): string {
-  switch (s) {
-    case "pending":
-      return "requested";
-    case "fulfilled":
-      return "fulfilled";
-    case "cancelled":
-      return "cancelled";
-    default:
-      return "";
-  }
-}
-
 export async function GET(_req: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
   let data: Awaited<ReturnType<typeof loadQuotesComparison>>;
@@ -91,31 +75,44 @@ export async function GET(_req: Request, ctx: RouteContext) {
     // which throws a `NEXT_REDIRECT`-tagged error. If we let that bubble up
     // here, the framework would respond with a 307 to /sign-in mid-download
     // and the browser would save the sign-in HTML as the user's CSV file.
-    // Instead, surface a plain 401 so the download fails cleanly.
+    // Instead, surface a plain locale-neutral 401 so the download fails
+    // cleanly without leaking an English error body into an Arabic session.
     const digest = (error as { digest?: unknown } | null)?.digest;
     if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) {
-      return new Response("Unauthorized", {
-        status: 401,
-        headers: { "Content-Type": "text/plain" },
-      });
+      return new Response(null, { status: 401 });
     }
     throw error;
   }
 
+  const locale = (await getLocale()) as SupportedLocale;
+  const t = await getTranslations("organizer.quote.csv");
+
+  const inviteSourceLabel = (s: QuoteColumn["invite_source"]): string =>
+    t.has(`source.${s}`) ? t(`source.${s}`) : "";
+  const rfpStatusLabel = (s: QuoteColumn["rfp"]["status"]): string => {
+    if (s === "pending") return t("rfp.requested");
+    if (s === "fulfilled") return t("rfp.fulfilled");
+    if (s === "cancelled") return t("rfp.cancelled");
+    return "";
+  };
+  const truncatedSuffix = (n: number) => t("truncatedSuffix", { count: n });
+
   const cols = data.columns;
-  const headers = ["Criterion", ...cols.map((c) => c.supplier.business_name)];
+  const headers = [t("criterion"), ...cols.map((c) => c.supplier.business_name)];
 
   const lines: string[] = [];
   lines.push(row(headers));
 
-  // City + verification + source + conflict combined into a header-context row
+  // City + verification combined into a header-context row.
   lines.push(
     row([
-      "Location",
+      t("location"),
       ...cols.map((c) =>
         [
-          c.supplier.base_city ?? "",
-          c.supplier.verification_status === "approved" ? "(verified)" : "",
+          c.supplier.base_city
+            ? cityNameFor(c.supplier.base_city, locale)
+            : "",
+          c.supplier.verification_status === "approved" ? t("verified") : "",
         ]
           .filter(Boolean)
           .join(" "),
@@ -124,125 +121,132 @@ export async function GET(_req: Request, ctx: RouteContext) {
   );
   lines.push(
     row([
-      "Invite source",
+      t("inviteSource"),
       ...cols.map((c) => inviteSourceLabel(c.invite_source)),
     ]),
   );
   lines.push(
     row([
-      "Date conflict",
-      ...cols.map((c) => (c.has_conflict ? "yes" : "no")),
+      t("dateConflict"),
+      ...cols.map((c) => (c.has_conflict ? t("yes") : t("no"))),
     ]),
   );
 
   // Money rows in SAR (numeric, no currency symbol — easier in spreadsheets).
   lines.push(
-    row(["Total (SAR)", ...cols.map((c) => fmtSar(c.snapshot.total_halalas))]),
+    row([t("total"), ...cols.map((c) => fmtSar(c.snapshot.total_halalas))]),
   );
   lines.push(
     row([
-      "Subtotal (SAR)",
+      t("subtotal"),
       ...cols.map((c) => fmtSar(c.snapshot.subtotal_halalas)),
     ]),
   );
   lines.push(
     row([
-      "Setup fee (SAR)",
+      t("setupFee"),
       ...cols.map((c) => fmtSar(c.snapshot.setup_fee_halalas)),
     ]),
   );
   lines.push(
     row([
-      "Travel fee (SAR)",
+      t("travelFee"),
       ...cols.map((c) => fmtSar(c.snapshot.travel_fee_halalas)),
     ]),
   );
   lines.push(
     row([
-      "Teardown fee (SAR)",
+      t("teardownFee"),
       ...cols.map((c) => fmtSar(c.snapshot.teardown_fee_halalas)),
     ]),
   );
   lines.push(
-    row([
-      "VAT %",
-      ...cols.map((c) => c.snapshot.vat_rate_pct),
-    ]),
+    row([t("vatPct"), ...cols.map((c) => c.snapshot.vat_rate_pct)]),
   );
   lines.push(
     row([
-      "VAT amount (SAR)",
+      t("vatAmount"),
       ...cols.map((c) => fmtSar(c.snapshot.vat_amount_halalas)),
     ]),
   );
   lines.push(
-    row(["Deposit %", ...cols.map((c) => c.snapshot.deposit_pct)]),
+    row([t("depositPct"), ...cols.map((c) => c.snapshot.deposit_pct)]),
   );
   lines.push(
     row([
-      "Payment schedule",
+      t("paymentSchedule"),
       ...cols.map((c) => c.snapshot.payment_schedule || ""),
     ]),
   );
   lines.push(
     row([
-      "Cancellation",
+      t("cancellation"),
       ...cols.map((c) => c.snapshot.cancellation_terms || ""),
     ]),
   );
   lines.push(
     row([
-      "Inclusions",
-      ...cols.map((c) =>
-        capCell(c.snapshot.inclusions.join(" | "), c.snapshot.inclusions.length),
-      ),
-    ]),
-  );
-  lines.push(
-    row([
-      "Exclusions",
-      ...cols.map((c) =>
-        capCell(c.snapshot.exclusions.join(" | "), c.snapshot.exclusions.length),
-      ),
-    ]),
-  );
-  lines.push(
-    row([
-      "Line items",
+      t("inclusions"),
       ...cols.map((c) =>
         capCell(
-          c.snapshot.line_items
-            .map(
-              (li) =>
-                `${li.label} (qty ${li.qty}, ${fmtSar(li.unit_price_halalas)}/u, total ${fmtSar(li.total_halalas)})`,
-            )
-            .join(" | "),
-          c.snapshot.line_items.length,
+          c.snapshot.inclusions.join(" | "),
+          c.snapshot.inclusions.length,
+          truncatedSuffix,
         ),
       ),
     ]),
   );
   lines.push(
     row([
-      "Notes",
-      ...cols.map((c) => c.snapshot.notes ?? ""),
-    ]),
-  );
-  lines.push(
-    row(["Expires", ...cols.map((c) => c.snapshot.expires_at ?? "")]),
-  );
-  lines.push(
-    row(["Submitted", ...cols.map((c) => c.submitted_at ?? "")]),
-  );
-  lines.push(
-    row([
-      "Technical proposal",
-      ...cols.map((c) => (c.tech_proposal_url ? "attached" : "")),
+      t("exclusions"),
+      ...cols.map((c) =>
+        capCell(
+          c.snapshot.exclusions.join(" | "),
+          c.snapshot.exclusions.length,
+          truncatedSuffix,
+        ),
+      ),
     ]),
   );
   lines.push(
     row([
-      "RFP status",
+      t("lineItems"),
+      ...cols.map((c) =>
+        capCell(
+          c.snapshot.line_items
+            .map((li) =>
+              t("lineItem", {
+                label: li.label,
+                qty: li.qty,
+                unitPrice: fmtSar(li.unit_price_halalas),
+                total: fmtSar(li.total_halalas),
+              }),
+            )
+            .join(" | "),
+          c.snapshot.line_items.length,
+          truncatedSuffix,
+        ),
+      ),
+    ]),
+  );
+  lines.push(
+    row([t("notes"), ...cols.map((c) => c.snapshot.notes ?? "")]),
+  );
+  lines.push(
+    row([t("expires"), ...cols.map((c) => c.snapshot.expires_at ?? "")]),
+  );
+  lines.push(
+    row([t("submitted"), ...cols.map((c) => c.submitted_at ?? "")]),
+  );
+  lines.push(
+    row([
+      t("techProposal"),
+      ...cols.map((c) => (c.tech_proposal_url ? t("attached") : "")),
+    ]),
+  );
+  lines.push(
+    row([
+      t("rfpStatus"),
       ...cols.map((c) => rfpStatusLabel(c.rfp.status)),
     ]),
   );

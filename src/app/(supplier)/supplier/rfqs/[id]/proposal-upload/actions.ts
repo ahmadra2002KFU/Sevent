@@ -47,14 +47,14 @@ export async function respondToProposalRequestAction(
   const { decision, admin } = await requireAccess("supplier.rfqs.view");
   const supplierId = decision.supplierId;
   if (!supplierId) {
-    return { status: "error", message: "Supplier profile not found." };
+    return { status: "error", code: "supplierProfileNotFound" };
   }
 
   const parse = inputSchema.safeParse({
     invite_id: formData.get("invite_id"),
   });
   if (!parse.success) {
-    return { status: "error", message: "Invalid request." };
+    return { status: "error", code: "invalidRequest" };
   }
   const { invite_id } = parse.data;
 
@@ -62,16 +62,13 @@ export async function respondToProposalRequestAction(
   const file =
     fileRaw instanceof Blob && fileRaw.size > 0 ? (fileRaw as File) : null;
   if (!file) {
-    return { status: "error", message: "Please choose a PDF to upload." };
+    return { status: "error", code: "fileRequired" };
   }
   if (file.size > TECHNICAL_PROPOSAL_MAX_BYTES) {
-    return {
-      status: "error",
-      message: "File must be 10 MB or smaller.",
-    };
+    return { status: "error", code: "fileTooLarge" };
   }
   if (file.type && file.type !== "application/pdf") {
-    return { status: "error", message: "File must be a PDF." };
+    return { status: "error", code: "fileNotPdf" };
   }
 
   // Resolve invite → quote → pending request. Service-role read; RLS would
@@ -88,7 +85,7 @@ export async function respondToProposalRequestAction(
     rfq_id: string;
   } | null;
   if (!invite || invite.supplier_id !== supplierId) {
-    return { status: "error", message: "Invite not found." };
+    return { status: "error", code: "inviteNotFound" };
   }
 
   const { data: quoteRow } = await admin
@@ -99,11 +96,7 @@ export async function respondToProposalRequestAction(
     .maybeSingle();
   const quote = quoteRow as { id: string; supplier_id: string } | null;
   if (!quote) {
-    return {
-      status: "error",
-      message:
-        "You haven't submitted a quote yet for this RFQ — submit one first.",
-    };
+    return { status: "error", code: "quoteRequired" };
   }
 
   const { data: reqRow } = await admin
@@ -118,11 +111,7 @@ export async function respondToProposalRequestAction(
     response_file_path: string | null;
   } | null;
   if (!request) {
-    return {
-      status: "error",
-      message:
-        "There is no active proposal request for this quote.",
-    };
+    return { status: "error", code: "noActiveRequest" };
   }
 
   // Upload the PDF.
@@ -143,10 +132,11 @@ export async function respondToProposalRequestAction(
       upsert: false,
     });
   if (upErr) {
-    return {
-      status: "error",
-      message: `Upload failed: ${upErr.message}`,
-    };
+    console.warn("[respondToProposalRequest] upload failed", {
+      invite_id,
+      message: upErr.message,
+    });
+    return { status: "error", code: "uploadFailed" };
   }
 
   // Flip the request to fulfilled. `.select("id")` so a 0-row UPDATE (organizer
@@ -168,16 +158,13 @@ export async function respondToProposalRequestAction(
     // Best-effort cleanup of the uploaded blob.
     await admin.storage.from(STORAGE_BUCKETS.docs).remove([path]);
     if (updErr) {
-      return {
-        status: "error",
-        message: `We couldn't save your proposal: ${updErr.message}`,
-      };
+      console.warn("[respondToProposalRequest] update failed", {
+        request_id: request.id,
+        message: updErr.message,
+      });
+      return { status: "error", code: "saveFailed" };
     }
-    return {
-      status: "error",
-      message:
-        "This proposal request is no longer pending. Please refresh and try again.",
-    };
+    return { status: "error", code: "requestNoLongerPending" };
   }
 
   // Best-effort notification to organizer.

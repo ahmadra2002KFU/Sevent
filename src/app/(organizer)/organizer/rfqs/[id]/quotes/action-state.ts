@@ -3,10 +3,18 @@
 // "use server" files. Success is usually surfaced via redirect(); the "error"
 // branch is what useActionState will render when the RPC refuses.
 
+// The "error" branch carries a stable `code` mapped to a localized string at
+// the render boundary (see QuoteComparisonGrid). `message` stays as an
+// optional non-localized fallback; UI must prefer `code`.
 export type ActionState =
   | { status: "idle" }
   | { status: "success"; message: string }
-  | { status: "error"; message: string };
+  | {
+      status: "error";
+      code: string;
+      params?: Record<string, string | number>;
+      message?: string;
+    };
 
 export const initialActionState: ActionState = { status: "idle" };
 
@@ -16,7 +24,12 @@ export const initialActionState: ActionState = { status: "idle" };
 export type RfpRequestActionState =
   | { status: "idle" }
   | { status: "success"; message: string }
-  | { status: "error"; message: string };
+  | {
+      status: "error";
+      code: string;
+      params?: Record<string, string | number>;
+      message?: string;
+    };
 
 export const initialRfpRequestActionState: RfpRequestActionState = {
   status: "idle",

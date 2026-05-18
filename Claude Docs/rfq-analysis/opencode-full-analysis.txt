@@ -1,0 +1,330 @@
+Document status (2026-05-17): Historical reference. Raw audit transcript with stale RFQ/i18n findings; keep only for provenance.
+
+[0m
+> plan · gpt-5.4
+[0m
+Success criteria:
+1. Inspect the scoped organizer/admin/i18n files plus the existing `Claude Docs/i18n-locale-aware-rendering-sweep.md`.
+2. Enumerate concrete language leakage issues with file/line/code/why/fix.
+3. Assess architecture weaknesses across rendering/export/monitor/i18n layers, then reconcile what the existing doc got right, missed, or is now stale.
+[0m# [0mTodos
+[ ] Inspect scoped organizer/admin RFQ surfaces and document quote comparison/print/export architecture
+[ ] Inspect i18n infrastructure, domain helpers, and en/ar message parity
+[ ] Audit language leakage patterns and reconcile with existing i18n sweep doc
+[0m
+First pass is mapping the scoped files and existing audit doc so I can trace the actual rendering and translation paths before judging leakage.
+[0m✱ [0mGlob "src/app/(organizer)/organizer/rfqs/[id]/quotes/**/*"[90m in . · 0 matches[0m
+[0m✱ [0mGlob "src/app/(admin)/admin/(monitor)/rfqs/**/*"[90m in . · 3 matches[0m
+[0m→ [0mRead Claude Docs\i18n-locale-aware-rendering-sweep.md[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\i18n\request.ts[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\lib\zod\i18n.ts[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\lib\domain\segments.ts[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\lib\domain\cities.ts[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\lib\domain\formatDate.ts[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\lib\domain\taxonomy.ts[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\messages\en.json[90m [offset=1, limit=300][0m
+[0m→ [0mRead src\messages\ar.json[90m [offset=1, limit=300][0m
+[0m✱ [0mGlob "src/lib/notifications/templates/**/*Rfq*"[90m in . · 2 matches[0m
+[0m✱ [0mGlob "src/lib/notifications/templates/**/*Quote*"[90m in . · 8 matches[0m
+[0m✱ [0mGrep ""organizer\.rfqs|"admin\.rfqs|"quotes|"rfq|"print|"export|"csv|"compare"[90m in src\messages · 60 matches[0m
+[0m✱ [0mGrep "name_en|name_ar|Intl\.DateTimeFormat|segmentNameFor|cityNameFor|categoryName\(|t\(|useTranslations|getTranslations|getLocale|useLocale|csv|print|export|header|quote|quotes|status|accepted|rejected"[90m in src\app\(admin)\admin\(monitor)\rfqs · 236 matches[0m
+[0m✱ [0mGrep "name_en|name_ar|Intl\.DateTimeFormat|subject|preview|title|body|label|status|quote|rfq|accepted|rejected"[90m in src\lib\notifications\templates · 191 matches[0m
+[0m✱ [0mGrep "name_en|name_ar|Intl\.DateTimeFormat|eventFormT\(|segmentNameFor|cityNameFor|categoryName\(|t\(|useTranslations|getTranslations|getLocale|useLocale|csv|print|export|header|quote|quotes|status|accepted|rejected"[90m in src\app\(organizer)\organizer\rfqs · 705 matches[0m
+[0m✱ [0mGlob "src/app/(organizer)/organizer/rfqs/**/*"[90m in . · 18 matches[0m
+The existing sweep doc is partly implemented already: `formatDate.ts`, `categoryName()`, `request.ts`, and the admin list page have moved to locale-aware helpers. Now I’m reading the actual quote comparison/print/export/admin detail code to see what still leaks and where the doc is stale.
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\page.tsx[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\QuoteComparisonGrid.tsx[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\loader.ts[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\export.csv\route.ts[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(admin)\admin\(monitor)\rfqs\page.tsx[90m [offset=1, limit=420][0m
+[0m→ [0mRead src\app\(admin)\admin\(monitor)\rfqs\_components\RfqFilters.tsx[90m [offset=1, limit=260][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\print\page.tsx[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\print\AutoPrint.tsx[90m [offset=1, limit=200][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\actions.ts[90m [offset=1, limit=420][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\[quoteId]\page.tsx[90m [offset=1, limit=400][0m
+[0m→ [0mRead src\app\(admin)\admin\(monitor)\rfqs\[id]\page.tsx[90m [offset=1, limit=500][0m
+[0m→ [0mRead src\messages\en.json[90m [offset=2400, limit=180][0m
+[0m→ [0mRead src\messages\ar.json[90m [offset=2400, limit=180][0m
+I have enough context to split the audit: one branch for the organizer quote surfaces, one for admin/infra/messages parity, and one for notification templates. That should catch both direct leaks and stale findings from the prior doc.
+[0m• [0mAudit organizer quotes[90m Explore Agent[0m
+[0m• [0mAudit admin infra[90m Explore Agent[0m
+[0m• [0mAudit notifications[90m Explore Agent[0m
+[0m✓ [0mAudit notifications[90m Explore Agent[0m
+[0m✓ [0mAudit organizer quotes[90m Explore Agent[0m
+[0m✓ [0mAudit admin infra[90m Explore Agent[0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\QuoteComparisonGrid.tsx[90m [offset=330, limit=260][0m
+[0m→ [0mRead src\app\(admin)\admin\(monitor)\rfqs\page.tsx[90m [offset=420, limit=90][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\QuoteComparisonGrid.tsx[90m [offset=590, limit=220][0m
+[0m→ [0mRead src\app\(admin)\admin\(monitor)\rfqs\[id]\page.tsx[90m [offset=500, limit=320][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\[quoteId]\page.tsx[90m [offset=257, limit=280][0m
+[0m→ [0mRead src\messages\en.json[90m [offset=1820, limit=200][0m
+[0m→ [0mRead src\messages\ar.json[90m [offset=1820, limit=200][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteRejected.tsx[90m [offset=1, limit=220][0m
+[0m→ [0mRead src\lib\notifications\templates\organizer\QuoteReceived.tsx[90m [offset=1, limit=220][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\RfqInvited.tsx[90m [offset=1, limit=220][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteProposalRequested.tsx[90m [offset=1, limit=220][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteAccepted.tsx[90m [offset=1, limit=220][0m
+[0m✱ [0mGrep "\.name_en|\.name_ar|Intl\.DateTimeFormat\(|Intl\.NumberFormat\(|replace\(/_\\g, " "\)|base_city|event_type\s*=\s*"your event"|aria-label="Pagination"|formatHalalas\(|city\)|event\.city|supplier\.base_city|response_due_at|rfqTitle: string"[90m in src · 330 matches[0m
+[0m
+[0m$ [0mnode -e "const fs=require('fs'); const path=require('path'); const base='D:/Mufeed/Sevent/Code/src/messages'; const en=JSON.parse(fs.readFileSync(path.join(base,'en.json'),'utf8')); const ar=JSON.parse(fs.readFileSync(path.join(base,'ar.json'),'utf8')); function get(obj,p){return p.split('.').reduce((a,k)=>a&&a[k],obj)} const keys=['admin.rfqs.status.pending','admin.rfqs.filter.pending','admin.rfqs.detail.booking.status','admin.rfqs.detail.requirements.value','organizer.quote.compare.printMeta','organizer.quote.compare.export.csv']; for(const k of keys){console.log(k, 'EN=', JSON.stringify(get(en,k)), 'AR=', JSON.stringify(get(ar,k)));}"
+admin.rfqs.status.pending EN= undefined AR= undefined
+admin.rfqs.filter.pending EN= undefined AR= undefined
+admin.rfqs.detail.booking.status EN= undefined AR= undefined
+admin.rfqs.detail.requirements.value EN= undefined AR= undefined
+organizer.quote.compare.printMeta EN= "{city} · {starts} – {ends}" AR= "{city} · {starts} – {ends}"
+organizer.quote.compare.export.csv EN= "Export CSV" AR= "تصدير CSV"
+[0m
+[0m$ [0mnode -e "const fs=require('fs'); const path=require('path'); const base='D:/Mufeed/Sevent/Code/src/messages'; const en=JSON.parse(fs.readFileSync(path.join(base,'en.json'),'utf8')); const ar=JSON.parse(fs.readFileSync(path.join(base,'ar.json'),'utf8')); const flat=(obj,prefix='')=>Object.entries(obj).flatMap(([k,v])=>v&&typeof v==='object'&&!Array.isArray(v)?flat(v,prefix?prefix+'.'+k:k):[prefix?prefix+'.'+k:k]); const enKeys=flat(en); const arKeys=flat(ar); const onlyEn=enKeys.filter(k=>!arKeys.includes(k)); const onlyAr=arKeys.filter(k=>!enKeys.includes(k)); console.log('ONLY_EN', onlyEn.length); if(onlyEn.length) console.log(onlyEn.join('\n')); console.log('ONLY_AR', onlyAr.length); if(onlyAr.length) console.log(onlyAr.join('\n'));"
+ONLY_EN 0
+ONLY_AR 0
+[0m
+[0m→ [0mRead src\lib\domain\money.ts[90m [offset=1, limit=220][0m
+[0m→ [0mRead src\lib\notifications\templates\_shared\i18n.ts[90m [offset=1, limit=220][0m
+[0m✱ [0mGrep "export function formatHalalas|new Intl\.NumberFormat|locale\s*="[90m in src\lib\domain · 3 matches[0m
+[0m
+[0m$ [0mnode -e "const fs=require('fs'); const path=require('path'); const src='D:/Mufeed/Sevent/Code/src'; const files=[]; function walk(d){for(const ent of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,ent.name); if(ent.isDirectory()) walk(p); else if(/\.(ts|tsx)$/.test(ent.name)) files.push(p)}} walk(src); const text=files.map(f=>({f,txt:fs.readFileSync(f,'utf8')})); const keys=[]; const re=/\b(?:t|tDetail|tRfp|tTech|tPag|tProposalStatus)\(\s*["'`]([^"'`$]+)["'`]/g; for(const {f,txt} of text){let m; while((m=re.exec(txt))) keys.push({f,key:m[1]});} console.log(JSON.stringify(keys.filter(x=>x.f.includes('src\\app\\(admin)\\admin\\(monitor)\\rfqs')||x.f.includes('src\\app\\(organizer)\\organizer\\rfqs\\[id]\\quotes')).slice(0,500),null,2));"
+/usr/bin/bash: -c: line 1: syntax error near unexpected token `('
+/usr/bin/bash: -c: line 1: `node -e "const fs=require('fs'); const path=require('path'); const src='D:/Mufeed/Sevent/Code/src'; const files=[]; function walk(d){for(const ent of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,ent.name); if(ent.isDirectory()) walk(p); else if(/\.(ts|tsx)$/.test(ent.name)) files.push(p)}} walk(src); const text=files.map(f=>({f,txt:fs.readFileSync(f,'utf8')})); const keys=[]; const re=/\b(?:t|tDetail|tRfp|tTech|tPag|tProposalStatus)\(\s*["'`]([^"'`$]+)["'`]/g; for(const {f,txt} of text){let m; while((m=re.exec(txt))) keys.push({f,key:m[1]});} console.log(JSON.stringify(keys.filter(x=>x.f.includes('src\app\(admin)\admin\(monitor)\rfqs')||x.f.includes('src\app\(organizer)\organizer\rfqs\[id]\quotes')).slice(0,500),null,2));"'
+[0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\RfqInvited.strings.ts[90m [offset=1, limit=120][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteRejected.strings.ts[90m [offset=1, limit=120][0m
+[0m→ [0mRead src\lib\notifications\templates\organizer\QuoteReceived.strings.ts[90m [offset=1, limit=140][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteProposalRequested.strings.ts[90m [offset=1, limit=120][0m
+[0m→ [0mRead src\lib\notifications\templates\supplier\QuoteAccepted.strings.ts[90m [offset=1, limit=120][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\[quoteId]\page.tsx[90m [offset=150, limit=110][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\actions.ts[90m [offset=120, limit=120][0m
+[0m→ [0mRead src\app\(organizer)\organizer\rfqs\[id]\quotes\actions.ts[90m [offset=520, limit=260][0m
+[0m✱ [0mGrep "status\.pending|filter\.pending|booking\.[a-z]+\)|requirements\.value|invites\.source\.|quoteStatus\.|inviteStatus\."[90m in src\app\(admin)\admin\(monitor)\rfqs · 3 matches[0m
+[0m✱ [0mGrep "organizer\.quote\.(compareTitle|compareIntro|emptyList|supplierCol|totalCol|expiresAtCol|submittedCol|actionsCol|viewSnapshot|acceptCta|accepting|acceptedAt|rejectedAutomatically|conflictBadge|conflictHelp|snapshotHeading|snapshotLineItems|snapshotSubtotal|snapshotTravel|snapshotSetup|snapshotTeardown|snapshotVat|snapshotTotal|snapshotCancellation|snapshotInclusions|snapshotExclusions|snapshotNotes|snapshotExpiresAt|unitPrice|item|qty|lineTotal|unit_event|unit_hour|unit_day|unit_person|unit_unit|deposit|paymentSchedule|backToCompare|revisionLabel|missingRevision)"[90m in src · 0 matches[0m
+I’ve validated the big picture: message-file key parity is structurally clean, but code-to-message parity is not. The remaining work is mostly cataloging the concrete leak points and separating already-fixed items from the old doc’s still-open assumptions.
+[0m
+[0m$ [0mrg -n "organizer\.quote\.(compareTitle|compareIntro|emptyList|supplierCol|totalCol|expiresAtCol|submittedCol|actionsCol|acceptedAt|rejectedAutomatically|conflictBadge|conflictHelp|snapshotHeading|snapshotLineItems|snapshotSubtotal|snapshotTravel|snapshotSetup|snapshotTeardown|snapshotVat|snapshotTotal|snapshotCancellation|snapshotInclusions|snapshotExclusions|snapshotNotes|snapshotExpiresAt|unitPrice|item|qty|lineTotal|unit_event|unit_hour|unit_day|unit_person|unit_unit|deposit|paymentSchedule|backToCompare|revisionLabel|missingRevision)" "src"
+/usr/bin/bash: line 1: rg: command not found
+[0m
+[0m$ [0mrg -n "formatHalalas\(|Intl\.DateTimeFormat\(|Intl\.NumberFormat\(|replace\(/_/g, \" \"\)|base_city\}|event_type = \"your event\"|rfqTitle: string|aria-label=\"Pagination\"|pending" "src/app/(organizer)/organizer/rfqs/[id]/quotes" "src/app/(admin)/admin/(monitor)/rfqs" "src/lib/notifications/templates"
+/usr/bin/bash: line 1: rg: command not found
+[0m
+[0m$ [0mrg -n "admin\.rfqs\.(status|filter)\.pending|booking\.(confirmation|payment|service)|requirements\.(field|yes|no)" "src/messages/en.json" "src/messages/ar.json"
+/usr/bin/bash: line 1: rg: command not found
+[0m
+[0m# [0mTodos
+[x] Inspect scoped organizer/admin RFQ surfaces and document quote comparison/print/export architecture
+[x] Inspect i18n infrastructure, domain helpers, and en/ar message parity
+[x] Audit language leakage patterns and reconcile with existing i18n sweep doc
+[0m
+**Findings**
+1. High: `src/i18n/request.ts:26-33`, `src/lib/zod/i18n.ts:28-30`
+   Code: `await registerZodLocale(locale)` -> `z.config({ localeError: ... })`
+   Why it leaks: Zod locale is process-global, so concurrent `en` and `ar` requests can overwrite each other.
+   Exact fix: stop mutating Zod globally per request; use request-scoped error maps or wrapper validators.
+
+2. High: `src/i18n/request.ts:18-21`
+   Code: `const first = accept.split(",")[0]?.split("-")[0];`
+   Why it leaks: locale resolution only checks the first `Accept-Language` token, so `fr,ar;q=0.9` falls back to English instead of Arabic.
+   Exact fix: use proper best-match negotiation across `["en","ar"]`.
+
+3. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/export.csv/route.ts:106-246`
+   Code: `"Criterion"`, `"Location"`, `"Invite source"`, `"Date conflict"`, `"Total (SAR)"`, `"Payment schedule"`, `"RFP status"`, `"attached"`, `"yes"`, `"no"`, `"requested"`, `"fulfilled"`, `"cancelled"`
+   Why it leaks: the whole CSV surface is fixed English.
+   Exact fix: give the route locale access, translate every row/header/status, and centralize labels in messages.
+
+4. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/export.csv/route.ts:114-118`
+   Code: `c.supplier.base_city ?? ""`, `"(verified)"`
+   Why it leaks: raw supplier city slug plus fixed English badge text.
+   Exact fix: `cityNameFor(c.supplier.base_city, locale)` and translated verified label.
+
+5. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/export.csv/route.ts:20-24`, `:40`
+   Code: `… (${n} items truncated; open in app for full)`
+   Why it leaks: fixed English truncation suffix inside exported cells.
+   Exact fix: translate via message key.
+
+6. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/export.csv/route.ts:97`
+   Code: `"Unauthorized"`
+   Why it leaks: Arabic downloads get an English error body.
+   Exact fix: localize it or return a locale-neutral empty 401.
+
+7. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/print/page.tsx:21-31`
+   Code: `"self-applied"`, `"auto-matched"`, `"organizer-picked"`
+   Why it leaks: fixed English print labels.
+   Exact fix: reuse translated source-badge labels.
+
+8. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/print/page.tsx:68-72`
+   Code: `city: data.event.city`
+   Why it leaks: print meta interpolates the raw city slug.
+   Exact fix: `cityNameFor(data.event.city, locale)`.
+
+9. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/print/page.tsx:90-93`
+   Code: `{c.supplier.base_city}`
+   Why it leaks: raw supplier city slug in print header.
+   Exact fix: `cityNameFor(c.supplier.base_city, locale)`.
+
+10. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/print/page.tsx:109`
+    Code: `"⚠ conflict"`
+    Why it leaks: fixed English print string.
+    Exact fix: translate or reuse `t("dateConflict")`.
+
+11. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/[quoteId]/page.tsx:164-169`, `:208-213`, `:262`, `:267`, `:283`, `:379`, `:390-393`, `:429-463`, `:472`, `:484`, `:500`, `:519`
+    Code: `"Quote snapshot"`, `"This quote is missing a revision..."`, `"This quote's data is corrupt..."`, `"Back to compare"`, `"Valid until"`, `"Line items"`, `"Item"`, `"Qty"`, `"Unit price"`, `"Totals"`, `"Subtotal"`, `"Travel"`, `"Setup"`, `"Teardown"`, `"Total"`, `"Deposit"`, `"Payment schedule"`, `"Cancellation terms"`, `"Inclusions"`, `"Exclusions"`, `"Notes"`
+    Why it leaks: large parts of the detail page bypass translations entirely.
+    Exact fix: route all these through existing `organizer.quote.*` keys.
+
+12. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/[quoteId]/page.tsx:269-270`
+    Code: `` `${quote.suppliers?.base_city ? `${quote.suppliers.base_city} · ` : ""}Revision v${revision.version} · Submitted ${fmt(...)}` ``
+    Why it leaks: raw city slug plus fixed English sentence.
+    Exact fix: `cityNameFor(...)` and use `revisionLabel`.
+
+13. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/[quoteId]/page.tsx:274`
+    Code: `quote.status.replace(/_/g, " ")`
+    Why it leaks: raw enum slug rendered as pseudo-English.
+    Exact fix: map quote statuses through translation keys.
+
+14. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/[quoteId]/page.tsx:403`
+    Code: `item.kind.replace(/_/g, " ")`
+    Why it leaks: raw enum slug rendered directly.
+    Exact fix: add translated line-item-kind labels.
+
+15. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/actions.ts:87-117`, `:133`, `:161`, `:526`, `:568`, `:579`, `:598`, `:604`, `:661`, `:681`, `:713`, `:718`, `:732`, `:750`, `:756`, `:764`
+    Code: fixed English action/error/success strings.
+    Why it leaks: server actions return English UI copy directly.
+    Exact fix: return stable error codes/status codes and translate at the render boundary.
+
+16. High: `src/app/(organizer)/organizer/rfqs/[id]/quotes/actions.ts:213`, `:575`, `:640`
+    Code: `const eventName = eventsNode?.event_type ?? "your event";`, `const eventType = eventsJoin?.event_type ?? "your event";`, payload `event_type: eventType`
+    Why it leaks: raw event-type slug is treated as human copy, with English fallback.
+    Exact fix: carry `event_type_slug`, then localize via `segmentNameFor(..., recipient.locale)` when rendering notifications.
+
+17. High: `src/app/(admin)/admin/(monitor)/rfqs/[id]/page.tsx:653-667`
+    Code: `booking.confirmation_status.replace(/_/g, " ")`, same for payment/service
+    Why it leaks: raw booking status slugs render directly.
+    Exact fix: add booking-status translation maps and render those.
+
+18. High: `src/app/(admin)/admin/(monitor)/rfqs/[id]/page.tsx:733-759`
+    Code: `value.kind`, `value.seating_style`, `value.indoor_outdoor`, `value.meal_type`, `value.dietary.join(", ")`, `value.service_style`, `value.deliverables.join(", ")`
+    Why it leaks: requirement enum values/slugs are rendered raw.
+    Exact fix: add translated value maps for each enum/array item; use localized list formatting.
+
+19. Medium: `src/app/(admin)/admin/(monitor)/rfqs/page.tsx:352-355`, `src/app/(admin)/admin/(monitor)/rfqs/[id]/page.tsx:355-358`
+    Code: `t(\`status.${r.status}\`)`
+    Why it leaks: `pending` is renderable in code, but `admin.rfqs.status.pending` is missing in both message files.
+    Exact fix: add `status.pending` to `en.json` and `ar.json`.
+
+20. Medium: `src/app/(admin)/admin/(monitor)/rfqs/_components/RfqFilters.tsx:14-22`
+    Code: `RFQ_STATUS_FILTERS = ["all","draft","sent","quoted","booked","expired","cancelled"]`
+    Why it leaks: `pending` exists in runtime RFQ state but cannot be filtered, and `filter.pending` is also missing.
+    Exact fix: add `pending` to filters and both locale files.
+
+21. Medium: `src/app/(admin)/admin/(monitor)/rfqs/page.tsx:423-425`
+    Code: `aria-label="Pagination"`
+    Why it leaks: English-only accessibility label.
+    Exact fix: translate it from `pagination`.
+
+22. Medium: `src/app/(admin)/admin/(monitor)/rfqs/page.tsx:165-177`
+    Code: search against `events.event_type` and `events.city`
+    Why it leaks: Arabic admins searching localized labels can miss matches because search is slug/storage-value based.
+    Exact fix: normalize localized search terms to known segment/city slugs before querying.
+
+23. Medium: `src/app/(organizer)/organizer/rfqs/[id]/quotes/QuoteComparisonGrid.tsx:356-358`
+    Code: `{col.supplier.base_city}`
+    Why it leaks: raw supplier city slug.
+    Exact fix: `cityNameFor(col.supplier.base_city, locale)`.
+
+24. Medium: `src/lib/notifications/templates/supplier/RfqInvited.tsx:38`
+    Code: `event_type = "your event"`
+    Why it leaks: English fallback inside Arabic email.
+    Exact fix: use localized fallback from strings, not a hardcoded English default.
+
+25. Medium: `src/lib/notifications/templates/supplier/RfqInvited.tsx:50-53`
+    Code: `category_name_ar || category_name_en`, and inverse for English
+    Why it leaks: cross-language fallback can show English in Arabic email and Arabic in English email.
+    Exact fix: do not fall back across locales; use only the active locale field.
+
+26. Medium: `src/lib/notifications/templates/supplier/RfqInvited.tsx:24`, `src/lib/notifications/templates/supplier/QuoteAccepted.tsx:21`, `src/lib/notifications/templates/organizer/QuoteReceived.tsx:32-34`
+    Code: inline `"ar-SA"`, `"en-GB"`, `"en-US"`
+    Why it leaks: hardcoded Intl locales are duplicated and inconsistent.
+    Exact fix: add one shared notification `intlLocaleFor(locale)` helper and use it everywhere.
+
+27. Medium: `src/lib/notifications/templates/supplier/QuoteRejected.tsx:22`, `src/lib/notifications/templates/supplier/QuoteProposalRequested.tsx:23`
+    Code: `event_type = "your event"`
+    Why it leaks: English fallback in localized emails.
+    Exact fix: use localized fallback strings.
+
+28. Medium: `src/lib/notifications/templates/supplier/QuoteAccepted.tsx:11`, `src/lib/notifications/templates/organizer/QuoteReceived.tsx:13`
+    Code: `eventName: string`, `rfqTitle: string`
+    Why it leaks: template contracts accept only one language value, so localized copy can interpolate the wrong-language title/name.
+    Exact fix: pass `{ en, ar }` or a slug + locale-aware formatter.
+
+29. Medium: `src/app/(organizer)/organizer/rfqs/[id]/quotes/QuoteComparisonGrid.tsx:586-717`, `print/page.tsx:17-19,115-211`, `[quoteId]/page.tsx:414-458`, `src/app/(admin)/admin/(monitor)/rfqs/[id]/page.tsx:326-327`
+    Code: `formatHalalas(...)`, manual `SAR`
+    Why it leaks: `formatHalalas` defaults to `en-SA`, so Arabic still gets English-style money/digits.
+    Exact fix: require locale everywhere or wrap with locale-aware money helper.
+
+30. Medium: `QuoteComparisonGrid.tsx:636,643,716`, `print/page.tsx:146,153,210`, `[quoteId]/page.tsx:408,450,461`
+    Code: raw `%`, `qty`, numeric interpolation
+    Why it leaks: locale-insensitive digits in Arabic.
+    Exact fix: shared `fmtNumber`/`fmtPercent`.
+
+**Not Found**
+- No structural `en.json` vs `ar.json` key-set mismatch in the scoped files: `0` keys only in English, `0` only in Arabic.
+- No direct `.name_en` / `.name_ar` render remains in the scoped organizer/admin surfaces. The prior sweep appears to have fixed that class here.
+- I did not find the old `eventFormT(\`eventType.${...}\`)` dead lookup in this scope.
+
+**Architecture**
+- Quote comparison/print/export:
+  - Good: `quotes/page.tsx`, `print/page.tsx`, and `export.csv/route.ts` all share `loadQuotesComparison()`, so auth and data math are centralized.
+  - Weakness: localization is not centralized. The loader returns raw slugs/statuses, then page/print/CSV each invent their own formatting.
+  - Weakness: the detail page `[quoteId]/page.tsx` is a separate presentation stack and reintroduces hardcoded English.
+  - Weakness: server actions in `quotes/actions.ts` own user-facing copy and notification payload shaping, which makes i18n regressions easy.
+
+- Admin RFQ monitor:
+  - Good: list/detail already use `segmentNameFor`, `cityNameFor`, `categoryName`, and `formatDate` helpers.
+  - Weakness: status translation is incomplete (`pending`, booking states).
+  - Weakness: requirements values are not modeled as locale-aware domain labels.
+  - Weakness: search operates on raw storage slugs, not localized search terms.
+
+- i18n infrastructure:
+  - Good: `src/i18n/request.ts` centralizes locale and message loading.
+  - Good: domain helpers are pure locale-in/value-out.
+  - Weakness: Zod locale registration is global and race-prone.
+  - Weakness: locale typing is duplicated across files.
+  - Weakness: there is no shared helper tier for money, generic numbers, lists, enum labels, or notification Intl locale tags.
+
+- Notification templates:
+  - Good: the `.strings.ts` files are bilingual.
+  - Weakness: template prop contracts are not bilingual, so localized strings still interpolate single-language values.
+  - Weakness: locale-tag decisions are duplicated inline.
+
+**Guardrails**
+- `no-restricted-syntax` rules should ban:
+  - `new Intl.DateTimeFormat(...)` and `new Intl.NumberFormat(...)` outside approved helpers.
+  - `formatHalalas(...)` without an explicit locale.
+  - `.replace(/_/g, " ")` on status/enum fields in JSX.
+  - direct JSX renders of `.city`, `.base_city`, `.event_type`, and requirement enum fields outside domain helpers.
+  - mixed-locale fallbacks like `name_ar || name_en` and `name_en || name_ar`.
+
+- Add tests for:
+  - every runtime RFQ status having a translation key.
+  - every booking status having a translation key.
+  - every requirement enum value having a translation key.
+  - notification template props using localized display data, not raw slugs.
+
+**Existing Doc**
+- `Claude Docs/i18n-locale-aware-rendering-sweep.md` is partly stale:
+  - Already implemented: `src/lib/domain/formatDate.ts`, `categoryName()` in `taxonomy.ts`, helper usage in admin RFQ pages.
+  - The doc’s status line `Planned · not yet executed` is no longer accurate.
+
+- What the doc got right:
+  - raw slugs, `name_en`, and hardcoded locale formatters are real leak classes.
+  - helper-based localization is the right architecture.
+
+- What the doc missed:
+  - supplier `base_city` leaks in quote comparison/print/detail.
+  - hardcoded English in quote detail, print, CSV, and server actions.
+  - admin booking-status and requirements-value leakage.
+  - Zod global locale race.
+  - locale-unaware admin search.
+  - notification template data-contract issues.
+
+- What is no longer true in this scope:
+  - the admin RFQ monitor is not still on raw `name_en`/raw date formatting; that part has already been migrated.
+
+If you want, I can turn this into a remediation checklist ordered by blast radius and verification steps, without changing code.

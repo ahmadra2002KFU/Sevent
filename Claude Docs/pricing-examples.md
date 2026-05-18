@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated. Pricing engine tests exist, but this spec still reflects older VAT, case totals, priority semantics, and distance-source assumptions.
+
 # Sevent — Pricing engine test cases
 
 Deterministic examples for `composePrice(ctx, rules)` at `src/lib/domain/pricing/engine.ts`.

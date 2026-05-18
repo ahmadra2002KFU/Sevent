@@ -1,70 +1,79 @@
 /**
  * Sevent auto-match — reason builder.
  *
- * Translates a `MatchResult` + the originating context into the short
- * human-readable chip strings displayed next to each suggested supplier.
- *
- * NOTE: Plain English strings only. Real i18n lookup (organizer.shortlist.*
- * message keys) is wired at the UI layer once the organizer shortlist panel
- * lands in Lane 3. TODO(sprint6): swap the dict below for message keys and
- * let the caller resolve via `getTranslations()`.
+ * Builds the structured reason chips displayed next to each suggested
+ * supplier. Each entry is a stable `code` (plus optional interpolation
+ * `params`) — NOT a pre-rendered string. The UI layer
+ * (`ShortlistEditor`) resolves `code` → localized text via the
+ * `organizer.shortlist.reasons.*` message namespace, so the chips render
+ * correctly in both Arabic and English.
  */
 
 import type { AutoMatchContext, MatchResult } from "./autoMatch";
 
-const REASON_TEXT = {
-  same_city: (city: string) => `Based in ${city}`,
-  service_area: (city: string) => `Serves ${city} (service area)`,
-  capability_full: "Packages match guest count",
-  capability_partial: "Offers packages in this category",
-  responds_fast: "Responds within 24h",
-  responds_unknown: "New to Sevent",
-  rotating_in: "Rotating in new opportunity",
-  verified: "Verified supplier",
-} as const;
+/**
+ * A localization-ready match reason. `code` maps to a key under
+ * `organizer.shortlist.reasons.*`; `params` carries any interpolation values
+ * that key expects (city name, guest count, response-window hours).
+ */
+export type MatchReason = {
+  code:
+    | "verified"
+    | "sameCity"
+    | "serviceArea"
+    | "packagesInRange"
+    | "offersInCategory"
+    | "respondsWithin"
+    | "newToSevent"
+    | "rotating";
+  params?: Record<string, string | number>;
+};
 
 /**
  * Pick a compact list of reason chips (3–5 entries) for a given match.
- * Pure function of `match.breakdown` + `ctx` — no DB lookups.
+ * Pure function of `match.breakdown` + `ctx` — no DB lookups, no i18n.
  */
 export function reasonsFor(
   match: MatchResult,
   ctx: AutoMatchContext,
-): string[] {
-  const reasons: string[] = [];
+): MatchReason[] {
+  const reasons: MatchReason[] = [];
   const b = match.breakdown;
 
   // Every candidate has passed the approval/publish hard filter in query.ts,
   // so "Verified supplier" is universally true.
-  reasons.push(REASON_TEXT.verified);
+  reasons.push({ code: "verified" });
 
   // Travel — either same city or service-area only (out-of-area = 0 but such
   // candidates never survive the hard filter so we only branch on 1 vs 0.5).
   if (b.travel >= 1) {
-    reasons.push(REASON_TEXT.same_city(ctx.event.city));
+    reasons.push({ code: "sameCity", params: { city: ctx.event.city } });
   } else if (b.travel > 0) {
-    reasons.push(REASON_TEXT.service_area(ctx.event.city));
+    reasons.push({ code: "serviceArea", params: { city: ctx.event.city } });
   }
 
   // Capability — 1.0 = qty fits, 0.5 = packages exist but qty mismatch.
   if (b.capability >= 1) {
-    reasons.push(REASON_TEXT.capability_full);
+    reasons.push({
+      code: "packagesInRange",
+      params: { guests: ctx.event.guest_count ?? 0 },
+    });
   } else if (b.capability > 0) {
-    reasons.push(REASON_TEXT.capability_partial);
+    reasons.push({ code: "offersInCategory" });
   }
 
   // Responsiveness — only surface strong positives/unknowns, stay silent on
   // the neutral 0.5 default so we don't mis-advertise behaviour.
   if (b.responsiveness >= 0.8) {
-    reasons.push(REASON_TEXT.responds_fast);
+    reasons.push({ code: "respondsWithin", params: { hours: 24 } });
   } else if (b.responsiveness === 0.5) {
-    reasons.push(REASON_TEXT.responds_unknown);
+    reasons.push({ code: "newToSevent" });
   }
 
   // Rotation — highlight under-invited suppliers so organizers understand
   // why a lower-scored candidate ranks up.
   if (b.rotation >= 1) {
-    reasons.push(REASON_TEXT.rotating_in);
+    reasons.push({ code: "rotating" });
   }
 
   return reasons;

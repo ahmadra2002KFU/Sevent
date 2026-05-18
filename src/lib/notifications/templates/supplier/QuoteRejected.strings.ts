@@ -18,6 +18,7 @@ export const strings = {
       "New requests come in regularly. Keep an eye on your RFQs so you're ready to respond to the next opportunity.",
     cta: "View your RFQs",
     note: "Replies to this email reach the Sevent operations team if you have any questions.",
+    genericEventFallback: "your event",
   },
   ar: {
     subject: "تحديث بخصوص عرض سعرك",
@@ -36,5 +37,6 @@ export const strings = {
       "تصل طلبات جديدة باستمرار. تابع طلباتك لتكون جاهزًا للرد على الفرصة القادمة.",
     cta: "عرض طلباتك",
     note: "تصل الردود على هذه الرسالة إلى فريق عمليات سيڤنت إن كان لديك أي استفسار.",
+    genericEventFallback: "فعاليتك",
   },
 } as const;

@@ -3,10 +3,12 @@
 // "use server" files. Success is conveyed via redirect(); the "error" branch
 // is what useActionState renders.
 
+// The "error" branch carries a stable `code` that the form maps to a localized
+// string via `t("supplier.proposalUpload.errors.<code>")`.
 export type ProposalUploadActionState =
   | { status: "idle" }
   | { status: "success"; message: string }
-  | { status: "error"; message: string };
+  | { status: "error"; code: string; message?: string };
 
 export const initialProposalUploadActionState: ProposalUploadActionState = {
   status: "idle",

@@ -11,6 +11,7 @@ export const strings = {
     messageLabel: "Note from the organizer",
     cta: "Upload proposal",
     note: "Replies to this email reach the Sevent operations team if you need help.",
+    genericEventFallback: "your event",
   },
   ar: {
     subject: "تم طلب عرض فني",
@@ -23,5 +24,6 @@ export const strings = {
     messageLabel: "ملاحظة من المنظِّم",
     cta: "رفع العرض الفني",
     note: "تصل الردود على هذه الرسالة إلى فريق عمليات سيڤنت إن احتجت للمساعدة.",
+    genericEventFallback: "فعاليتك",
   },
 } as const;

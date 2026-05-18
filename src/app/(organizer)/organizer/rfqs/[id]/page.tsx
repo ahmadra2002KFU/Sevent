@@ -26,6 +26,7 @@ import {
   StatusPill,
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
+import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
 import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
@@ -98,52 +99,12 @@ function toPillStatus(raw: string): StatusPillStatus {
     : "draft";
 }
 
-function PrettyRequirements({ req }: { req: unknown }) {
-  if (!req || typeof req !== "object")
-    return <p className="text-sm">—</p>;
-  const obj = req as Record<string, unknown>;
-  const kind = typeof obj.kind === "string" ? obj.kind : "unknown";
-
-  const rows: Array<[string, string]> = [];
-  for (const [key, value] of Object.entries(obj)) {
-    if (key === "kind") continue;
-    let display: string;
-    if (Array.isArray(value)) {
-      display = value.length === 0 ? "—" : value.join(", ");
-    } else if (typeof value === "boolean") {
-      display = value ? "Yes" : "No";
-    } else if (value === null || value === undefined || value === "") {
-      display = "—";
-    } else {
-      display = String(value);
-    }
-    rows.push([key, display]);
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <span className="inline-flex w-fit items-center rounded-full bg-brand-cobalt-100 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-brand-cobalt-500">
-        {kind}
-      </span>
-      <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex flex-col">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {k}
-            </dt>
-            <dd className="text-sm">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
 export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const { id } = await params;
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.rfqs");
   const tSource = await getTranslations("organizer.quote.sourceBadge");
+  const tDecline = await getTranslations("supplier.rfqInbox.declineReason");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -197,7 +158,9 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
 
   const parentLabel = categoryName(rfq.parent, locale);
   const subLabel = categoryName(rfq.sub, locale);
-  const title = `${parentLabel || "RFQ"}${subLabel ? ` · ${subLabel}` : ""}`;
+  const title = `${parentLabel || t("titleFallback")}${
+    subLabel ? ` · ${subLabel}` : ""
+  }`;
 
   return (
     <section className="flex flex-col gap-6">
@@ -248,7 +211,7 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <PrettyRequirements req={rfq.requirements_jsonb} />
+          <RfqRequirementsView payload={rfq.requirements_jsonb} />
         </CardContent>
       </Card>
 
@@ -308,7 +271,7 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
                       inv.source === "organizer_picked" ||
                       inv.source === "self_applied"
                         ? tSource(inv.source)
-                        : inv.source}
+                        : t("source.unknown")}
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <StatusPill
@@ -326,7 +289,11 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
                       {fmt(inv.responded_at, locale)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm">
-                      {inv.decline_reason_code ?? "—"}
+                      {inv.decline_reason_code
+                        ? tDecline.has(inv.decline_reason_code)
+                          ? tDecline(inv.decline_reason_code)
+                          : inv.decline_reason_code
+                        : "—"}
                     </TableCell>
                   </TableRow>
                 ))}

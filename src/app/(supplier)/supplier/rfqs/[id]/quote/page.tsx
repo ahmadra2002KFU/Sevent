@@ -120,6 +120,7 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
   const { id: inviteId } = await params;
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.quote");
+  const tInbox = await getTranslations("supplier.rfqInbox");
 
   // 1. Gate — only approved suppliers can respond to RFQs.
   const { decision, admin } = await requireAccess("supplier.rfqs.respond");
@@ -282,7 +283,10 @@ export default async function SupplierQuoteBuilderPage({ params }: PageProps) {
     <section className="flex flex-col gap-6">
       <PageHeader
         title={t("title")}
-        description={`${categoryName(rfq.categories, locale) || "RFQ"} · ${cityNameFor(
+        description={`${
+          categoryName(rfq.categories, locale) ||
+          tInbox("fallbackCategoryLabel")
+        } · ${cityNameFor(
           event.city,
           locale,
         )} · ${fmtDateTime(event.starts_at, locale)} → ${fmtDateTime(

@@ -230,7 +230,9 @@ export default async function AdminDisputeDetailPage({ params }: PageProps) {
               {d.bookings.quote_revisions?.version ?? "—"}
               {snapshot ? (
                 <span className="ms-1 text-foreground">
-                  · {formatHalalas(snapshot.total_halalas)}
+                  ·{" "}
+                  {/* eslint-disable-next-line no-restricted-syntax -- out of RFQ scope (admin dispute detail); locale-aware money sweep tracked separately */}
+                  {formatHalalas(snapshot.total_halalas)}
                 </span>
               ) : null}
             </p>

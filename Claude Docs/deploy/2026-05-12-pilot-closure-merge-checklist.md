@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical reference. This was a May 12 merge checklist; current production readiness now requires the newer hardening and deployment checks.
+
 # Pilot-closure sprint — production merge checklist
 
 **Branch:** `dev/pilot-closure-sprint` → `main`

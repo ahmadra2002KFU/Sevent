@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated. Domain, env names, Postgres version, email-confirmation behavior, Resend posture, and deploy steps drift from the current code/config.
+
 # Sevent — Deployment Handoff
 
 You are deploying **Sevent** to a VPS owned by the user. Domain is exposed via a Cloudflare Tunnel (`cloudflared`) that is already running. This doc is the single source of truth — follow it top-to-bottom.

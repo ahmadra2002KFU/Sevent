@@ -16,7 +16,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocale, useTranslations } from "next-intl";
 import { FileText, Trash2, Upload } from "lucide-react";
-import { formatHalalas, halalasToSar, sarToHalalas } from "@/lib/domain/money";
+import { formatMoney, halalasToSar, sarToHalalas } from "@/lib/domain/money";
+import type { SupportedLocale } from "@/lib/domain/formatDate";
 import type { QuoteLineItemKind, QuoteSnapshot } from "@/lib/domain/quote";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { sendQuoteAction } from "./actions";
 import type { ActionState } from "./action-state";
 import { initialActionState } from "./action-state";
@@ -50,16 +50,19 @@ const KINDS: readonly QuoteLineItemKind[] = [
   "free_form",
 ] as const;
 
+// Validation messages are emitted as supplier.quote.errors.* translation
+// KEYS — ErrorText/LabeledField translate them on render so the Zod schema
+// stays module-level + locale-agnostic.
 const moneyStringSchema = z
   .string()
   .trim()
   .refine((v) => v === "" || /^\d+(\.\d{1,2})?$/.test(v), {
-    message: "Must be a positive SAR amount (max 2 decimals).",
+    message: "positiveAmountRequired",
   });
 
 const lineItemSchema = z.object({
   kind: z.enum(KINDS as unknown as readonly [QuoteLineItemKind, ...QuoteLineItemKind[]]),
-  label: z.string().trim().min(1, "Required").max(200),
+  label: z.string().trim().min(1, "requiredField").max(200),
   qty: z.coerce.number().int().positive(),
   unit: z.enum(UNITS),
   unit_price_sar: moneyStringSchema,
@@ -105,7 +108,7 @@ const TECHNICAL_PROPOSAL_MAX_BYTES = 10 * 1024 * 1024;
 
 export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
   const t = useTranslations("supplier.quote");
-  const locale = useLocale();
+  const locale = useLocale() as SupportedLocale;
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     sendQuoteAction,
     initialActionState,
@@ -268,13 +271,17 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 
       <ActionBanner state={state} />
 
-      {props.locked ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {t("sendBlockedTerminal", { status: props.initialSnapshot.source })}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      {/*
+        I-25: The terminal-status banner branch that used to live here is
+        dead — the parent quote `page.tsx` calls `redirect()` whenever
+        `quote.status` is in TERMINAL_STATUSES, so this form only renders for
+        non-terminal quotes (`props.locked` is always `false` in practice).
+        The previous branch also misused `initialSnapshot.source`
+        (free_form / rule_engine / mixed) as if it were a quote status, which
+        would produce "This quote is already free_form" — meaningless copy.
+        The `props.locked` prop is kept as a defensive `disabled` guard on the
+        submit button (line below) in case the redirect ever races.
+      */}
 
       {/* Line items */}
       <section className="flex flex-col gap-3">
@@ -515,7 +522,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
           <div className="flex items-center justify-between text-muted-foreground">
             <dt>{t("subtotalBeforeVat")}</dt>
             <dd className="tabular-nums">
-              {formatHalalas(liveBeforeVatHalalas)}
+              {formatMoney(liveBeforeVatHalalas, locale)}
             </dd>
           </div>
           <div className="flex items-center justify-between text-muted-foreground">
@@ -524,12 +531,12 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
                 ? t("vatOfWhich", { rate: VAT_RATE_PCT })
                 : t("vatLine", { rate: VAT_RATE_PCT })}
             </dt>
-            <dd className="tabular-nums">{formatHalalas(liveVatHalalas)}</dd>
+            <dd className="tabular-nums">{formatMoney(liveVatHalalas, locale)}</dd>
           </div>
           <div className="mt-1 flex items-center justify-between border-t pt-2.5">
             <dt className="font-medium text-foreground">{t("total")}</dt>
             <dd className="text-lg font-semibold text-brand-navy-900 tabular-nums">
-              {formatHalalas(liveTotalHalalas)}
+              {formatMoney(liveTotalHalalas, locale)}
             </dd>
           </div>
         </dl>
@@ -624,6 +631,7 @@ export function QuoteBuilderForm(props: QuoteBuilderFormProps) {
 // ---------------------------------------------------------------------------
 
 function ActionBanner({ state }: { state: ActionState }) {
+  const tErrors = useTranslations("supplier.quote.errors");
   if (state.status === "idle") return null;
   const isError = state.status === "error";
   return (
@@ -635,7 +643,9 @@ function ActionBanner({ state }: { state: ActionState }) {
           : "rounded-lg border border-semantic-success-100 bg-semantic-success-100/60 px-3 py-2 text-sm text-semantic-success-500"
       }
     >
-      {state.message}
+      {state.status === "error"
+        ? tErrors(state.code as never)
+        : state.message}
     </div>
   );
 }
@@ -666,8 +676,13 @@ function LabeledField({
 }
 
 function ErrorText({ msg }: { msg?: string }) {
+  const tErrors = useTranslations("supplier.quote.errors");
   if (!msg) return null;
-  return <span className="text-xs text-semantic-danger-500">{msg}</span>;
+  // Schema messages are translation keys (positiveAmountRequired,
+  // requiredField, …) — translate when known, fall back to the raw string
+  // for messages we don't recognize (e.g. backend pass-throughs).
+  const text = tErrors.has(msg as never) ? tErrors(msg as never) : msg;
+  return <span className="text-xs text-semantic-danger-500">{text}</span>;
 }
 
 // ---------------------------------------------------------------------------

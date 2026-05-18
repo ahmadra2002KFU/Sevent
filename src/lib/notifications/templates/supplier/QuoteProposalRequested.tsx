@@ -3,6 +3,7 @@ import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
 import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { strings } from "./QuoteProposalRequested.strings";
 
 export { strings } from "./QuoteProposalRequested.strings";
@@ -13,6 +14,7 @@ export type QuoteProposalRequestedProps = {
   rfq_id?: string;
   message?: string | null;
   invite_id?: string;
+  /** Market-segment slug — resolved to a localized display name in-template. */
   event_type?: string;
   quote_url?: string;
 };
@@ -20,7 +22,7 @@ export type QuoteProposalRequestedProps = {
 export default function QuoteProposalRequested({
   locale = "en",
   message = null,
-  event_type = "your event",
+  event_type = "",
   quote_url = BRAND.marketingUrl,
 }: QuoteProposalRequestedProps) {
   const effectiveLocale: Locale = locale ?? "en";
@@ -32,10 +34,17 @@ export default function QuoteProposalRequested({
   const trimmedMessage = typeof message === "string" ? message.trim() : "";
   const hasMessage = trimmedMessage.length > 0;
 
+  const segment = getSegmentBySlug(event_type);
+  const eventTypeDisplay = segment
+    ? effectiveLocale === "ar"
+      ? segment.name_ar
+      : segment.name_en
+    : s.genericEventFallback;
+
   return (
     <BrandShell
       locale={effectiveLocale}
-      preview={s.preheader(event_type)}
+      preview={s.preheader(eventTypeDisplay)}
       eyebrow={s.eyebrow}
     >
       <Heading
@@ -66,7 +75,7 @@ export default function QuoteProposalRequested({
           direction: dir,
         }}
       >
-        {s.body(event_type)}
+        {s.body(eventTypeDisplay)}
       </Text>
 
       {hasMessage ? (

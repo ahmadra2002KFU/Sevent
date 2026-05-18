@@ -2,13 +2,30 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
-import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import {
+  dirFor,
+  fontFor,
+  formatEmailDateTime,
+  textAlignStart,
+  type Locale,
+} from "../_shared/i18n";
 import { strings } from "./QuoteAccepted.strings";
+
+/**
+ * Bilingual event-name shape. Callers should ideally pass `{ en, ar }` so the
+ * template can pick the recipient-locale version; legacy callers passing a
+ * single string still work — the template uses it for both locales.
+ */
+export type BilingualText = string | { en: string; ar: string };
+
+function pickBilingual(value: BilingualText, locale: Locale): string {
+  return typeof value === "string" ? value : value[locale];
+}
 
 export type QuoteAcceptedProps = {
   locale?: Locale;
   supplierBusinessName: string;
-  eventName: string;
+  eventName: BilingualText;
   organizerName: string;
   bookingUrl: string;
   expiresAtIso: string;
@@ -16,18 +33,10 @@ export type QuoteAcceptedProps = {
 };
 
 function formatDeadline(iso: string, locale: Locale): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const tag = locale === "ar" ? "ar-SA" : "en-GB";
-  try {
-    return new Intl.DateTimeFormat(tag, {
-      dateStyle: "full",
-      timeStyle: "short",
-      timeZone: "Asia/Riyadh",
-    }).format(date);
-  } catch {
-    return date.toISOString();
-  }
+  return formatEmailDateTime(iso, locale, {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
 }
 
 export default function QuoteAccepted({
@@ -43,9 +52,10 @@ export default function QuoteAccepted({
   const align = textAlignStart(effectiveLocale);
   const font = fontFor(effectiveLocale);
   const formattedDeadline = formatDeadline(expiresAtIso, effectiveLocale);
+  const localizedEventName = pickBilingual(eventName, effectiveLocale);
 
   return (
-    <BrandShell locale={effectiveLocale} preview={s.preview(eventName)} eyebrow={s.eyebrow}>
+    <BrandShell locale={effectiveLocale} preview={s.preview(localizedEventName)} eyebrow={s.eyebrow}>
       <Heading
         as="h1"
         style={{
@@ -74,7 +84,7 @@ export default function QuoteAccepted({
           direction: dir,
         }}
       >
-        {s.body(organizerName, eventName)}
+        {s.body(organizerName, localizedEventName)}
       </Text>
 
       <Section

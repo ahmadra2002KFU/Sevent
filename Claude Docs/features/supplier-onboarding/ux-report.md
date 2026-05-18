@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Core onboarding UX and localization work landed, but some server-action and database-wrapper errors can still surface English text.
+
 # Supplier Onboarding UX & Logical Evaluation
 
 **Date:** 2026-04-22

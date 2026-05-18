@@ -3,7 +3,13 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
-import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
+import {
+  dirFor,
+  fontFor,
+  formatEmailDateTime,
+  textAlignStart,
+  type Locale,
+} from "../_shared/i18n";
 import { strings } from "./BookingConfirmed.strings";
 
 export type BookingConfirmedProps = {
@@ -29,15 +35,15 @@ export default function BookingConfirmed({
   const align = textAlignStart(locale);
   const font = fontFor(locale);
 
-  const formattedStart = new Intl.DateTimeFormat(
-    locale === "ar" ? "ar-SA" : "en-GB",
+  const formattedStart = formatEmailDateTime(
+    eventStartsAtIso,
+    locale,
     {
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: "Asia/Riyadh",
     },
-  ).format(new Date(eventStartsAtIso));
+  );
 
   return (
     <BrandShell

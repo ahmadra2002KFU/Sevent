@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Several UX issues were fixed, including auth callback/resend confirmation and pending-review cleanup, but some product gaps and file citations remain stale.
+
 # Sevent — UX/Workflow Analysis
 
 **Author:** UX Research pass

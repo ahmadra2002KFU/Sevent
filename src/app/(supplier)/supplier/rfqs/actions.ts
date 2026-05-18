@@ -19,7 +19,10 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
   });
 
   if (!parsed.success) {
-    throw new Error("Invalid decline submission");
+    // Stable code, not prose — the decline flow still uses throw+redirect
+    // (tracked as design debt); these codes match
+    // `supplier.decline.errors.*` for when it migrates to action-state.
+    throw new Error("decline:invalidSubmission");
   }
 
   // Gate: only approved suppliers can respond to RFQs. Resolver stamps
@@ -27,7 +30,7 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
   const { decision, admin } = await requireAccess("supplier.rfqs.respond");
   const supplierId = decision.supplierId;
   if (!supplierId) {
-    throw new Error("Supplier profile not found");
+    throw new Error("decline:supplierProfileNotFound");
   }
 
   // Route the UPDATE through the service-role client. The RLS policies on
@@ -48,7 +51,12 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to decline invite: ${error.message}`);
+    // Never interpolate the raw Postgres message into a user-facing throw.
+    console.error("[declineInviteAction] decline update failed", {
+      invite_id: parsed.data.invite_id,
+      message: error.message,
+    });
+    throw new Error("decline:declineFailed");
   }
 
   // Best-effort organizer notification. Failure does not roll back the decline —

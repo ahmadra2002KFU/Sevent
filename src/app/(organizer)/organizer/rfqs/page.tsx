@@ -241,7 +241,7 @@ export default async function OrganizerRfqsPage({ searchParams }: PageProps) {
 
       {totalPages > 1 ? (
         <nav
-          aria-label="Pagination"
+          aria-label={tPag("ariaLabel")}
           className="flex items-center justify-between gap-3 text-sm"
         >
           {page > 1 ? (

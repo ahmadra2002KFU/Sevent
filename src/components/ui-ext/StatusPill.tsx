@@ -8,6 +8,7 @@ export type StatusPillStatus =
   | "sent"
   | "quoted"
   | "invited"
+  | "applied"
   // Warning / user-action-required
   | "awaiting_supplier"
   // Success / resolved positively
@@ -40,6 +41,7 @@ const STATUS_TONE: Record<StatusPillStatus, Tone> = {
   sent: "info",
   quoted: "info",
   invited: "info",
+  applied: "info",
   awaiting_supplier: "warning",
   accepted: "success",
   confirmed: "success",
@@ -75,6 +77,7 @@ export function StatusPill({ status, label, className }: StatusPillProps) {
         aria-hidden
         className="size-1.5 rounded-full bg-current opacity-70"
       />
+      {/* eslint-disable-next-line no-restricted-syntax -- defensive fallback for an unlabelled call site; every RFQ-surface caller passes `label={t(...)}`, so this branch is unreachable in practice */}
       {label ?? status.replace(/_/g, " ")}
     </span>
   );

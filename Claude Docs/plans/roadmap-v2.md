@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Historical backlog reference. Most items here remain intentionally deferred and are not part of the current MVP readiness baseline.
+
 # Sevent — v2 Roadmap (deferred features captured during 2026-04-21 plan pass)
 
 These are features the boss mentioned or that surfaced during planning but are explicitly out of scope for the current pass. Capture intent + approach so we don't lose context when we pick them up later.

@@ -85,7 +85,8 @@
   "pagination": {
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {page} of {totalPages}"
+    "pageOf": "Page {page} of {totalPages}",
+    "ariaLabel": "Pagination"
   },
   "feedback": {
     "menuItem": "Send feedback",
@@ -1106,11 +1107,14 @@
       "terminalStatus": "Quote {status}",
       "status": {
         "invited": "Invited",
+        "applied": "Applied",
         "declined": "Declined",
         "quoted": "Quoted",
         "withdrawn": "Withdrawn"
       },
-      "expired": "Expired"
+      "expired": "Expired",
+      "fallbackCategoryLabel": "RFQ",
+      "quoteCorrupt": "This quote's data is corrupt — please re-send your quote."
     },
     "rfp": {
       "bannerTitle": "Organizer requested a technical proposal",
@@ -1191,7 +1195,30 @@
         "replace": "Replace",
         "errorType": "Technical proposal must be a PDF.",
         "errorSize": "Technical proposal must be 10 MB or smaller."
-      }
+      },
+      "errors": {
+        "supplierProfileNotFound": "Supplier profile not found.",
+        "invalidSubmission": "Some fields are missing or invalid. Please review the highlighted fields and try again.",
+        "technicalProposalTooLarge": "Technical proposal must be 10 MB or smaller.",
+        "technicalProposalNotPdf": "Technical proposal must be a PDF.",
+        "supplierMismatch": "You are not allowed to quote for this supplier.",
+        "inviteLookupFailed": "We couldn't verify your invite. Please try again.",
+        "rfqNotOpen": "This RFQ is no longer open for quoting.",
+        "rfqLookupFailed": "We couldn't load this RFQ. Please try again.",
+        "rfqOrEventNotFound": "RFQ or linked event not found.",
+        "quoteNotEditable": "This quote can no longer be edited because it has reached a final state.",
+        "packageRequired": "Rule-engine quotes require a package selection.",
+        "packageLookupFailed": "We couldn't load the selected package. Please try again.",
+        "packageNotFound": "Package not found for this supplier.",
+        "packageInactive": "The selected package is inactive.",
+        "rulesLookupFailed": "We couldn't load your pricing rules. Please try again.",
+        "rpcNoRow": "The quote was not saved. Please try again.",
+        "rpcFailed": "We couldn't save this quote. Please try again.",
+        "unknown": "Something went wrong. Please try again.",
+        "positiveAmountRequired": "Enter a positive SAR amount (up to 2 decimals).",
+        "requiredField": "This field is required."
+      },
+      "removeLineItemAriaLabel": "Remove line item"
     },
     "opportunities": {
       "title": "Marketplace opportunities",
@@ -1411,6 +1438,28 @@
           "desc": "Set your prices smartly"
         }
       ]
+    },
+    "proposalUpload": {
+      "errors": {
+        "supplierProfileNotFound": "Supplier profile not found.",
+        "invalidRequest": "Invalid request.",
+        "fileRequired": "Please choose a PDF to upload.",
+        "fileTooLarge": "File must be 10 MB or smaller.",
+        "fileNotPdf": "File must be a PDF.",
+        "inviteNotFound": "Invite not found.",
+        "quoteRequired": "You haven't submitted a quote yet for this RFQ — submit one first.",
+        "noActiveRequest": "There is no active proposal request for this quote.",
+        "uploadFailed": "Upload failed. Please try again.",
+        "saveFailed": "We couldn't save your proposal. Please try again.",
+        "requestNoLongerPending": "This proposal request is no longer pending. Please refresh and try again."
+      }
+    },
+    "decline": {
+      "errors": {
+        "invalidSubmission": "Invalid decline submission.",
+        "supplierProfileNotFound": "Supplier profile not found.",
+        "declineFailed": "We couldn't record your decline. Please try again."
+      }
     }
   },
   "admin": {
@@ -1840,7 +1889,8 @@
         "publishedYes": "Opportunities only",
         "publishedNo": "Direct invites only",
         "dateFrom": "From",
-        "dateTo": "To"
+        "dateTo": "To",
+        "pending": "Pending"
       },
       "search": {
         "placeholder": "Search by event type or city…",
@@ -1969,10 +2019,12 @@
         "quoted": "Quoted",
         "expired": "Expired",
         "booked": "Booked",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "pending": "Pending"
       },
       "inviteStatus": {
         "invited": "Invited",
+        "applied": "Applied",
         "declined": "Declined",
         "quoted": "Quoted",
         "withdrawn": "Withdrawn"
@@ -2197,7 +2249,8 @@
         "quoted": "Quoted",
         "expired": "Expired",
         "booked": "Booked",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "pending": "Pending"
       },
       "inviteStatus": {
         "invited": "Invited",
@@ -2234,7 +2287,17 @@
       },
       "source": {
         "auto_match": "Auto-match",
-        "organizer_picked": "Picked manually"
+        "organizer_picked": "Picked manually",
+        "self_applied": "Applied via marketplace",
+        "unknown": "Unknown source"
+      },
+      "titleFallback": "RFQ",
+      "declineReason": {
+        "too_busy": "Supplier is fully booked",
+        "out_of_area": "Outside service area",
+        "price_mismatch": "Budget mismatch",
+        "other": "Other",
+        "unknown": "Not specified"
       }
     },
     "rfqWizard": {
@@ -2372,7 +2435,20 @@
       "deadline48hDesc": "Balanced default.",
       "deadline72hDesc": "Roomy - good for complex RFQs.",
       "sendErrorTitle": "Could not send RFQ",
-      "stepperAriaLabel": "Wizard steps"
+      "stepperAriaLabel": "Wizard steps",
+      "errors": {
+        "invalidSubmission": "Invalid RFQ submission.",
+        "invalidRequirements": "Invalid requirements payload.",
+        "forbidden": "You don't have permission to send this RFQ.",
+        "invalidDeadline": "Invalid response deadline — choose 24h, 48h, or 72h.",
+        "inviteListMalformed": "The invite list is malformed.",
+        "shortlistEmpty": "Shortlist is empty — pick at least one supplier.",
+        "shortlistTooLarge": "Too many suppliers on the shortlist (max 20).",
+        "eventNotFound": "Event not found or not accessible.",
+        "invalidInviteSource": "Invalid invite source in the shortlist.",
+        "rfqCreateNoId": "RFQ creation returned no id. Please try again.",
+        "unknown": "We couldn't send the RFQ. Please try again."
+      }
     },
     "shortlist": {
       "heading": "Suggested matches",
@@ -2405,7 +2481,9 @@
         "packagesInRange": "Packages match {guests} guests",
         "respondsWithin": "Usually responds within {hours}h",
         "availableDate": "Available on {date}",
-        "rotating": "Rotating in new supplier"
+        "rotating": "Rotating in new supplier",
+        "offersInCategory": "Offers packages in this category",
+        "newToSevent": "New to Sevent"
       }
     },
     "quote": {
@@ -2536,7 +2614,8 @@
           "fulfilled": "Fulfilled"
         },
         "printTitle": "Quote comparison",
-        "printMeta": "{city} · {starts} – {ends}"
+        "printMeta": "{city} · {starts} – {ends}",
+        "conflictMark": "⚠ Conflict"
       },
       "rfp": {
         "requestCta": "Request for proposal",
@@ -2557,6 +2636,60 @@
         "detailCancelledTitle": "Proposal request cancelled",
         "detailCancelledSubtitle": "Cancelled {date}",
         "manageOnGrid": "Manage on comparison"
+      },
+      "quoteCorrupt": "This quote's data is corrupt — ask the supplier to re-send.",
+      "totalsHeading": "Totals",
+      "vatWithRate": "VAT ({pct}%)",
+      "csv": {
+        "criterion": "Criterion",
+        "location": "Location",
+        "inviteSource": "Invite source",
+        "dateConflict": "Date conflict",
+        "total": "Total (SAR)",
+        "subtotal": "Subtotal (SAR)",
+        "setupFee": "Setup fee (SAR)",
+        "travelFee": "Travel fee (SAR)",
+        "teardownFee": "Teardown fee (SAR)",
+        "vatPct": "VAT %",
+        "vatAmount": "VAT amount (SAR)",
+        "depositPct": "Deposit %",
+        "paymentSchedule": "Payment schedule",
+        "cancellation": "Cancellation",
+        "inclusions": "Inclusions",
+        "exclusions": "Exclusions",
+        "lineItems": "Line items",
+        "notes": "Notes",
+        "expires": "Expires",
+        "submitted": "Submitted",
+        "techProposal": "Technical proposal",
+        "rfpStatus": "Proposal request status",
+        "verified": "(verified)",
+        "yes": "yes",
+        "no": "no",
+        "attached": "attached",
+        "truncatedSuffix": "… ({count} items truncated; open in app for full)",
+        "lineItem": "{label} (qty {qty}, {unitPrice}/u, total {total})",
+        "source": {
+          "self_applied": "Applied via marketplace",
+          "auto_match": "Auto-matched",
+          "organizer_picked": "Organizer-picked"
+        },
+        "rfp": {
+          "requested": "Requested",
+          "fulfilled": "Fulfilled",
+          "cancelled": "Cancelled"
+        }
+      },
+      "rfpErrors": {
+        "invalidRequest": "Invalid request.",
+        "quoteNotFound": "Quote not found.",
+        "organizerMismatch": "You are not the organizer of this RFQ.",
+        "alreadyPending": "A proposal request is already pending for this supplier.",
+        "sendFailed": "We couldn't send the request. Please try again.",
+        "requestNotFound": "Request not found.",
+        "requestNotPending": "This request is no longer pending.",
+        "cancelFailed": "We couldn't cancel the request. Please try again.",
+        "cancelRaced": "This request is no longer pending. Please refresh."
       }
     },
     "common": {
@@ -3012,6 +3145,107 @@
       "errorMissingFile": "Pick a file first.",
       "errorTooLarge": "File is too large (25 MB max).",
       "errorGeneric": "Couldn't save evidence. Try again."
+    }
+  },
+  "requirementValues": {
+    "seating_style": {
+      "rounds": "Round tables",
+      "theatre": "Theatre",
+      "classroom": "Classroom",
+      "cocktail": "Cocktail",
+      "majlis": "Majlis"
+    },
+    "indoor_outdoor": {
+      "indoor": "Indoor",
+      "outdoor": "Outdoor",
+      "either": "Indoor or outdoor"
+    },
+    "meal_type": {
+      "buffet": "Buffet",
+      "plated": "Plated service",
+      "coffee_break": "Coffee break",
+      "cocktail": "Cocktail reception"
+    },
+    "dietary": {
+      "halal_only": "Halal only",
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "gluten_free": "Gluten-free",
+      "nut_free": "Nut-free"
+    },
+    "service_style": {
+      "self_serve": "Self-serve",
+      "served": "Full service",
+      "mixed": "Mixed"
+    },
+    "deliverables": {
+      "photos": "Photos",
+      "video": "Video",
+      "drone": "Drone footage",
+      "same_day_edit": "Same-day edit",
+      "printed_album": "Printed album"
+    },
+    "kind": {
+      "venues": "Venue",
+      "catering": "Catering",
+      "photography": "Photography",
+      "generic": "General"
+    }
+  },
+  "lineItemKind": {
+    "package": "Package",
+    "qty_discount": "Quantity discount",
+    "date_surcharge": "Date surcharge",
+    "distance_fee": "Distance fee",
+    "duration_multiplier": "Duration adjustment",
+    "free_form": "Custom item"
+  },
+  "quoteStatus": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "expired": "Expired",
+    "withdrawn": "Withdrawn"
+  },
+  "bookingStatus": {
+    "confirmation": {
+      "awaiting_supplier": "Awaiting supplier",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "payment": {
+      "unpaid": "Unpaid",
+      "deposit_paid": "Deposit paid",
+      "balance_paid": "Balance paid",
+      "paid": "Paid in full"
+    },
+    "service": {
+      "scheduled": "Scheduled",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "disputed": "Disputed"
+    }
+  },
+  "rfqRequirements": {
+    "unknownKind": "These requirements use a format this view doesn't recognize.",
+    "noStructuredRequirements": "No structured requirements were provided.",
+    "yes": "Yes",
+    "no": "No",
+    "field": {
+      "kind": "Category type",
+      "seating_style": "Seating style",
+      "indoor_outdoor": "Indoor / outdoor",
+      "needs_parking": "Parking needed",
+      "needs_kitchen": "Kitchen needed",
+      "meal_type": "Meal type",
+      "dietary": "Dietary requirements",
+      "service_style": "Service style",
+      "coverage_hours": "Coverage hours",
+      "deliverables": "Deliverables",
+      "crew_size": "Crew size",
+      "qty": "Quantity",
+      "notes": "Notes"
     }
   }
 }

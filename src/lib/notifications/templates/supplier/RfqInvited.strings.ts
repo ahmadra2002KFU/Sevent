@@ -13,6 +13,9 @@ export const strings = {
     deadlineLabel: "Respond by",
     cta: "View opportunity",
     note: "Replies to this email reach the Sevent operations team if you need help.",
+    // Fallback when the event_type slug is missing or unrecognized — keeps the
+    // copy locale-pure instead of dropping an English literal into Arabic.
+    genericEventFallback: "your event",
   },
   ar: {
     subject: "تمت دعوتك إلى فرصة جديدة",
@@ -26,5 +29,6 @@ export const strings = {
     deadlineLabel: "الرد قبل",
     cta: "عرض الفرصة",
     note: "تصل الردود على هذه الرسالة إلى فريق عمليات سيڤنت إن احتجت للمساعدة.",
+    genericEventFallback: "فعاليتك",
   },
 } as const;

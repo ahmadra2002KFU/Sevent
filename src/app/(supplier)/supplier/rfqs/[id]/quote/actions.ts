@@ -22,6 +22,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAccess } from "@/lib/auth/access";
+import { getSegmentBySlug } from "@/lib/domain/segments";
 import { sarToHalalas } from "@/lib/domain/money";
 import { STORAGE_BUCKETS, supplierScopedPath } from "@/lib/supabase/storage";
 import {
@@ -181,7 +182,9 @@ function parseJsonField<T>(formData: FormData, key: string, fallback: T): T {
   }
 }
 
-function readSubmission(formData: FormData): QuoteSubmissionParsed | { error: string } {
+function readSubmission(
+  formData: FormData,
+): QuoteSubmissionParsed | { errorCode: string } {
   const payload = {
     rfq_id: formData.get("rfq_id"),
     supplier_id: formData.get("supplier_id"),
@@ -204,30 +207,23 @@ function readSubmission(formData: FormData): QuoteSubmissionParsed | { error: st
   const parsed = submissionSchema.safeParse(payload);
   if (!parsed.success) {
     // Don't leak the raw zod path/message to the banner — RHF on the client
-    // surfaces field-level errors inline. This message is the server-side
+    // surfaces field-level errors inline. This code is the server-side
     // fallback for when something slips past the client gate.
-    return {
-      error:
-        "Some fields are missing or invalid. Please review the highlighted fields and try again.",
-    };
+    return { errorCode: "invalidSubmission" };
   }
   return parsed.data;
 }
 
 /**
- * Translate `upsert_quote_revision_tx` raise codes into a user-facing message.
- * Only P0011 (`quote_revision_not_editable:<status>`) is expected here; other
- * codes would indicate a migration mismatch.
+ * Translate `upsert_quote_revision_tx` raise codes into a stable error-code
+ * key under `supplier.quote.errors.*`. Only P0011
+ * (`quote_revision_not_editable:<status>`) is expected here; other codes would
+ * indicate a migration mismatch and fall through to a generic code — we never
+ * surface the raw Postgres `message` to the supplier.
  */
-function mapRpcError(code: string | null | undefined, message: string): string {
-  if (!code && !message) return "Supabase RPC failed with no error detail.";
-  if (code === "P0011") {
-    // message shape: "quote_revision_not_editable:<status>"
-    const m = /quote_revision_not_editable:([a-z_]+)/i.exec(message);
-    const status = m?.[1] ?? "terminal";
-    return `This quote can no longer be edited (status: ${status}).`;
-  }
-  return message || `RPC failed (${code ?? "unknown"}).`;
+function mapRpcErrorCode(code: string | null | undefined): string {
+  if (code === "P0011") return "quoteNotEditable";
+  return "rpcFailed";
 }
 
 // ---------------------------------------------------------------------------
@@ -248,12 +244,14 @@ export async function sendQuoteAction(
   );
   const supplierId = decision.supplierId;
   if (!supplierId) {
-    return { status: "error", message: "Supplier profile not found." };
+    return { status: "error", code: "supplierProfileNotFound" };
   }
 
   // 2. Parse + validate.
   const parsed = readSubmission(formData);
-  if ("error" in parsed) return { status: "error", message: parsed.error };
+  if ("errorCode" in parsed) {
+    return { status: "error", code: parsed.errorCode };
+  }
   const data = parsed;
 
   // Optional technical-proposal PDF (ملف فني). Extracted here so we can
@@ -263,26 +261,17 @@ export async function sendQuoteAction(
     techRaw instanceof Blob && techRaw.size > 0 ? (techRaw as File) : null;
   if (technicalFile) {
     if (technicalFile.size > TECHNICAL_PROPOSAL_MAX_BYTES) {
-      return {
-        status: "error",
-        message: "Technical proposal must be 10 MB or smaller.",
-      };
+      return { status: "error", code: "technicalProposalTooLarge" };
     }
     if (technicalFile.type && technicalFile.type !== "application/pdf") {
-      return {
-        status: "error",
-        message: "Technical proposal must be a PDF.",
-      };
+      return { status: "error", code: "technicalProposalNotPdf" };
     }
   }
 
   // 3. Ownership check — the client-submitted supplier_id must match the
   // caller's row; otherwise a crafted form could target a different supplier.
   if (data.supplier_id !== supplierId) {
-    return {
-      status: "error",
-      message: "You are not allowed to quote for this supplier.",
-    };
+    return { status: "error", code: "supplierMismatch" };
   }
 
   // 4. Active invite check — (rfq_id, supplier_id) with status ∈ {invited, quoted}.
@@ -293,16 +282,17 @@ export async function sendQuoteAction(
     .eq("supplier_id", data.supplier_id)
     .maybeSingle();
   if (inviteErr) {
-    return { status: "error", message: `Invite lookup failed: ${inviteErr.message}` };
+    console.warn("[sendQuoteAction] invite lookup failed", {
+      rfq_id: data.rfq_id,
+      message: inviteErr.message,
+    });
+    return { status: "error", code: "inviteLookupFailed" };
   }
   const invite = inviteRow as
     | { id: string; rfq_id: string; supplier_id: string; status: string }
     | null;
   if (!invite || (invite.status !== "invited" && invite.status !== "quoted")) {
-    return {
-      status: "error",
-      message: "This RFQ is no longer open for quoting.",
-    };
+    return { status: "error", code: "rfqNotOpen" };
   }
 
   // 5. Load RFQ + event so we have pricing context + organizer target for the
@@ -314,7 +304,13 @@ export async function sendQuoteAction(
     )
     .eq("id", data.rfq_id)
     .maybeSingle();
-  if (rfqErr) return { status: "error", message: `RFQ lookup failed: ${rfqErr.message}` };
+  if (rfqErr) {
+    console.warn("[sendQuoteAction] RFQ lookup failed", {
+      rfq_id: data.rfq_id,
+      message: rfqErr.message,
+    });
+    return { status: "error", code: "rfqLookupFailed" };
+  }
   const rfq = rfqRow as
     | {
         id: string;
@@ -331,7 +327,7 @@ export async function sendQuoteAction(
       }
     | null;
   if (!rfq || !rfq.events) {
-    return { status: "error", message: "RFQ or linked event not found." };
+    return { status: "error", code: "rfqOrEventNotFound" };
   }
   const event = rfq.events;
 
@@ -353,10 +349,7 @@ export async function sendQuoteAction(
     .maybeSingle();
   const existingQuote = existingQuoteRow as { id: string; status: string } | null;
   if (existingQuote && !["draft", "sent"].includes(existingQuote.status)) {
-    return {
-      status: "error",
-      message: `This quote can no longer be edited (status: ${existingQuote.status}).`,
-    };
+    return { status: "error", code: "quoteNotEditable" };
   }
 
   // 7. Build the snapshot. Two paths: zero-trust recompute (rule_engine, mixed)
@@ -372,16 +365,17 @@ export async function sendQuoteAction(
     // Re-fetch the active rules + package from DB. Client-submitted numbers
     // are ignored; composePrice is the authority.
     if (!data.package_id) {
-      return {
-        status: "error",
-        message: "Rule-engine quotes require a package selection.",
-      };
+      return { status: "error", code: "packageRequired" };
     }
     const pkg = await loadPackage(admin, data.supplier_id, data.package_id);
-    if ("error" in pkg) return { status: "error", message: pkg.error };
+    if ("errorCode" in pkg) {
+      return { status: "error", code: pkg.errorCode };
+    }
 
     const rules = await loadActiveRules(admin, data.supplier_id, data.package_id);
-    if ("error" in rules) return { status: "error", message: rules.error };
+    if ("errorCode" in rules) {
+      return { status: "error", code: rules.errorCode };
+    }
 
     const distance_km = await safeDistanceKm(admin, {
       supplier_id: data.supplier_id,
@@ -492,9 +486,14 @@ export async function sendQuoteAction(
     p_source: data.source as QuoteSource,
   });
   if (rpcErr) {
+    console.warn("[sendQuoteAction] upsert_quote_revision_tx failed", {
+      rfq_id: data.rfq_id,
+      code: (rpcErr as { code?: string }).code ?? null,
+      message: rpcErr.message,
+    });
     return {
       status: "error",
-      message: mapRpcError((rpcErr as { code?: string }).code ?? null, rpcErr.message),
+      code: mapRpcErrorCode((rpcErr as { code?: string }).code ?? null),
     };
   }
   const rpcResult = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
@@ -502,10 +501,7 @@ export async function sendQuoteAction(
     | { quote_id: string; revision_id: string; version: number }
     | null;
   if (!row) {
-    return {
-      status: "error",
-      message: "Supabase RPC returned no row — quote was not saved.",
-    };
+    return { status: "error", code: "rpcNoRow" };
   }
 
   // 10a. Technical proposal upload (optional). Runs AFTER the RPC so we know
@@ -617,8 +613,16 @@ export async function sendQuoteAction(
         (organizerProfileResp.data as { full_name?: string | null } | null)
           ?.full_name ?? null;
       // rfqs has no `title` column today — fall back to events.event_type for
-      // the email subject + body. TODO: revisit if rfqs.title is added.
-      const rfqTitle = event.event_type ?? "your event";
+      // the email subject + body. The template accepts a bilingual `{en,ar}`
+      // value so the organizer's locale picks the right name (raw slug would
+      // surface text like "private_occasions" otherwise).
+      const eventSegment = event.event_type
+        ? getSegmentBySlug(event.event_type)
+        : null;
+      const rfqTitleBilingual = eventSegment
+        ? { en: eventSegment.name_en, ar: eventSegment.name_ar }
+        : { en: "your event", ar: "فعاليتك" };
+      const rfqTitleForRecipient = rfqTitleBilingual[recipient.locale];
       const quoteAmountSar = snapshot.total_halalas / 100;
       const quoteUrl = `${appUrl()}/organizer/rfqs/${data.rfq_id}/quotes/${row.quote_id}`;
 
@@ -635,13 +639,13 @@ export async function sendQuoteAction(
           to: recipient.email,
           subject: quoteReceivedStrings[recipient.locale].preview(
             supplierBusinessName,
-            rfqTitle,
+            rfqTitleForRecipient,
           ),
           react: QuoteReceived({
             locale: recipient.locale,
             organizerName,
             supplierBusinessName,
-            rfqTitle,
+            rfqTitle: rfqTitleBilingual,
             quoteAmountSar,
             quoteUrl,
           }),
@@ -702,15 +706,15 @@ async function loadPackage(
   admin: AdminClient,
   supplier_id: string,
   package_id: string,
-): Promise<{ data: PricingPackageInput } | { error: string }> {
+): Promise<{ data: PricingPackageInput } | { errorCode: string }> {
   const { data, error } = await admin
     .from("packages")
     .select("id, name, base_price_halalas, unit, min_qty, max_qty, supplier_id, is_active")
     .eq("id", package_id)
     .eq("supplier_id", supplier_id)
     .maybeSingle();
-  if (error) return { error: `Package lookup failed: ${error.message}` };
-  if (!data) return { error: "Package not found for this supplier." };
+  if (error) return { errorCode: "packageLookupFailed" };
+  if (!data) return { errorCode: "packageNotFound" };
   const row = data as {
     id: string;
     name: string;
@@ -721,7 +725,7 @@ async function loadPackage(
     is_active: boolean;
   };
   if (!row.is_active) {
-    return { error: "The selected package is inactive." };
+    return { errorCode: "packageInactive" };
   }
   return {
     data: {
@@ -739,7 +743,7 @@ async function loadActiveRules(
   admin: AdminClient,
   supplier_id: string,
   package_id: string,
-): Promise<{ data: PricingRuleInput[] } | { error: string }> {
+): Promise<{ data: PricingRuleInput[] } | { errorCode: string }> {
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const { data, error } = await admin
     .from("pricing_rules")
@@ -747,7 +751,7 @@ async function loadActiveRules(
     .eq("supplier_id", supplier_id)
     .eq("is_active", true)
     .or(`package_id.is.null,package_id.eq.${package_id}`);
-  if (error) return { error: `Rules lookup failed: ${error.message}` };
+  if (error) return { errorCode: "rulesLookupFailed" };
 
   const rows = (data ?? []) as Array<{
     id: string;

@@ -1,3 +1,5 @@
+> **Implementation status (2026-05-17):** Partially implemented. Alert dialog, datetime-local validation, and global Zod locale wiring exist; some onboarding/domain schemas still contain hardcoded English custom messages.
+
 # Bug Fix Plan — P3-01, P3-02, UX-ZOD
 
 **Date:** 2026-04-22

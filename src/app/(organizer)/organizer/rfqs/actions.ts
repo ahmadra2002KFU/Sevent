@@ -288,16 +288,20 @@ const SendRfqInput = RfqFormInput.extend({
   }
 });
 
+// The failure branch carries a stable `code` (mapped at the render boundary to
+// `organizer.rfqWizard.errors.*`) — never user-facing prose. `issues` is the
+// Zod path:message detail kept for client-side debugging only; it is not shown
+// to users.
 export type SendRfqResult =
   | { ok: true; rfq_id: string }
-  | { ok: false; error: string; issues?: string[] };
+  | { ok: false; code: string; issues?: string[] };
 
 export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
   const parsed = SendRfqInput.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Invalid RFQ submission.",
+      code: "invalidSubmission",
       issues: parsed.error.issues.map((i) =>
         i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message,
       ),
@@ -305,7 +309,7 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
   }
 
   const gate = await requireOrganizerRole();
-  if ("error" in gate) return { ok: false, error: gate.error };
+  if ("error" in gate) return { ok: false, code: "forbidden" };
 
   // Re-parse the requirements payload with the discriminated-union schema.
   // `parseRfqExtension` throws ZodError on bad shape — translate to a result.
@@ -317,19 +321,28 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     if (err instanceof ZodError) {
       return {
         ok: false,
-        error: "Invalid requirements payload.",
+        code: "invalidRequirements",
         issues: err.issues.map((i) =>
           i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message,
         ),
       };
     }
-    return { ok: false, error: err instanceof Error ? err.message : "Invalid requirements." };
+    // Never surface a raw thrown message — fold to the stable code.
+    return { ok: false, code: "invalidRequirements" };
   }
 
   // Route the transactional write through the `send_rfq_tx` RPC so the
-  // rfqs insert and the rfq_invites fan-out commit or roll back together.
-  // Event ownership is re-verified inside the function (service-role
-  // bypasses RLS, so the RPC itself is the enforcement boundary).
+  // rfqs insert (including the marketplace visibility flag) and the
+  // rfq_invites fan-out commit or roll back together. Event ownership is
+  // re-verified inside the function (service-role bypasses RLS, so the
+  // RPC itself is the enforcement boundary).
+  //
+  // Pre-Stage-4 the marketplace flag was flipped via a separate UPDATE
+  // AFTER the RPC succeeded; if that UPDATE failed (transient error / RLS
+  // regression / lock timeout) the RFQ existed in the wrong visibility
+  // state with no atomic recovery. The 20260517100000 migration added
+  // `p_is_published_to_marketplace` to the RPC signature so the value is
+  // set on the insert itself.
   const admin = createSupabaseServiceRoleClient();
 
   const { data: rpcData, error: rpcErr } = await admin.rpc("send_rfq_tx", {
@@ -340,21 +353,27 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     p_requirements: validatedRequirements,
     p_response_deadline_hours: parsed.data.response_deadline_hours,
     p_invites: parsed.data.shortlist,
+    p_is_published_to_marketplace: parsed.data.publish_to_marketplace,
   });
 
   if (rpcErr) {
-    // Map the structured raise codes to user-facing messages. Unknown codes
-    // surface the raw message so Postgres errors aren't silently swallowed.
-    const code = rpcErr.code as string | undefined;
-    const message = rpcErr.message ?? "unknown error";
-    let friendly = `Failed to send RFQ: ${message}`;
-    if (code === "P0020") friendly = "Invalid response deadline — choose 24h, 48h, or 72h.";
-    else if (code === "P0021") friendly = "Invite list is malformed.";
-    else if (code === "P0022") friendly = "Shortlist is empty — pick at least one supplier.";
-    else if (code === "P0023") friendly = "Too many suppliers on the shortlist (max 20).";
-    else if (code === "P0024") friendly = "Event not found or not accessible.";
-    else if (code === "P0025") friendly = "Invalid invite source in shortlist.";
-    return { ok: false, error: friendly };
+    // Map the structured raise codes to stable error-code keys. Unknown codes
+    // fold to `unknown` — we never surface the raw Postgres message.
+    const pgCode = rpcErr.code as string | undefined;
+    let code = "unknown";
+    if (pgCode === "P0020") code = "invalidDeadline";
+    else if (pgCode === "P0021") code = "inviteListMalformed";
+    else if (pgCode === "P0022") code = "shortlistEmpty";
+    else if (pgCode === "P0023") code = "shortlistTooLarge";
+    else if (pgCode === "P0024") code = "eventNotFound";
+    else if (pgCode === "P0025") code = "invalidInviteSource";
+    else {
+      console.error("[sendRfqAction] send_rfq_tx failed", {
+        code: pgCode ?? null,
+        message: rpcErr.message,
+      });
+    }
+    return { ok: false, code };
   }
 
   // Note: RETURNS TABLE columns are `out_rfq_id` / `out_invite_count`
@@ -363,26 +382,15 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
   const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
   const rfqId = (row as { out_rfq_id?: string } | null)?.out_rfq_id;
   if (!rfqId) {
-    return { ok: false, error: "RFQ creation returned no id." };
+    return { ok: false, code: "rfqCreateNoId" };
   }
 
-  // Marketplace publish flag — the DB default is true so we only need to
-  // UPDATE when the organizer explicitly unticked the toggle. Keeps the RPC
-  // signature (which doesn't know about the new column) untouched.
-  if (!parsed.data.publish_to_marketplace) {
-    const { error: publishErr } = await admin
-      .from("rfqs")
-      .update({ is_published_to_marketplace: false })
-      .eq("id", rfqId);
-    if (publishErr) {
-      // Non-fatal: the RFQ was created and invites were fanned out. We just
-      // couldn't mark it private. Log so operators can backfill if needed.
-      console.warn("[sendRfqAction] failed to unset is_published_to_marketplace", {
-        rfq_id: rfqId,
-        message: publishErr.message,
-      });
-    }
-  }
+  // Marketplace publish flag is now set atomically inside `send_rfq_tx`
+  // (see the 20260517100000 migration). The follow-up UPDATE was removed
+  // because a failure there would have left the RFQ in the wrong
+  // visibility state after a successful RPC, with no rollback. Anything
+  // touching `is_published_to_marketplace` post-create must go through a
+  // dedicated mutation action that revalidates the path on success.
 
   // Best-effort: write an `rfq.invited` in-app notification for each invited
   // supplier. A DB trigger + email worker (built separately) turns each one

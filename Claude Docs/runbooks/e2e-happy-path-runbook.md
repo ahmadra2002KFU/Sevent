@@ -1,3 +1,5 @@
+> **Document status (2026-05-17):** Outdated. The manual flow uses old taxonomy slugs, auth/email assumptions, and booking fields; current E2E automation remains scaffolded and partial.
+
 # E2E Happy-Path Runbook — "Sign-up → Accept Quote"
 
 > **Audience.** An AI agent driving a real browser (Chrome automation, Playwright, etc.) against the local dev build, plus a human reading along to follow the story.
