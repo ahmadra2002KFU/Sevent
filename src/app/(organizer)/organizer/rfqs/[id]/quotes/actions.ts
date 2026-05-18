@@ -137,15 +137,20 @@ export async function acceptQuoteAction(
   }
   const { quote_id, rfq_id } = parse.data;
 
-  // 3. Invoke the atomic RPC. Passes `p_organizer_id = gate.user.id` — the RPC
-  //    re-checks this against events.organizer_id so a spoofed claim would be
-  //    caught as P0006 rather than silently creating a booking for someone else.
+  // 3. Invoke the atomic RPC (v2). Passes `p_organizer_id = gate.user.id` —
+  //    the RPC re-checks this against events.organizer_id (for individuals)
+  //    OR events.company_id + membership (for companies) so a spoofed claim
+  //    would be caught as P0006 rather than silently creating a booking for
+  //    someone else. For PR 2 the feature flag is OFF and p_company_id is
+  //    NULL; PR 3 wires it to gate.decision.activeCompanyId.
   const { data: rpcData, error: rpcError } = await gate.admin.rpc(
-    "accept_quote_tx",
+    "accept_quote_tx_v2",
     {
       p_quote_id: quote_id,
       p_organizer_id: gate.user.id,
       p_soft_hold_minutes: SOFT_HOLD_MINUTES,
+      p_company_id: null,
+      p_actor_profile_id: gate.user.id,
     },
   );
 
@@ -306,6 +311,10 @@ export async function acceptQuoteAction(
                 supplierBusinessName: supplierBusinessName ?? "your business",
                 eventName: localEventName,
                 organizerName: organizerName ?? "the organizer",
+                // PR 2: feature flag is OFF so the actor IS the organizer.
+                // PR 3+ will resolve organizers[company_id].name when the
+                // booking has a non-null company_id.
+                organizerCompanyName: null,
                 bookingUrl: `${appUrl()}/supplier/bookings/${booking_id}`,
                 expiresAtIso: confirmDeadline,
               }),
@@ -395,6 +404,9 @@ export async function acceptQuoteAction(
             react: BookingCreated({
               locale: recipient.locale,
               organizerName,
+              // PR 2: passive null. PR 3+ wires the company display when the
+              // organizer was acting on behalf of a company.
+              organizerCompanyName: null,
               supplierBusinessName: supplierBusinessName ?? "the supplier",
               eventName: localEventName,
               supplierConfirmDeadlineIso: confirmDeadline,

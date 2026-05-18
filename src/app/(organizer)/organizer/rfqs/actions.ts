@@ -331,21 +331,22 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     return { ok: false, code: "invalidRequirements" };
   }
 
-  // Route the transactional write through the `send_rfq_tx` RPC so the
-  // rfqs insert (including the marketplace visibility flag) and the
-  // rfq_invites fan-out commit or roll back together. Event ownership is
-  // re-verified inside the function (service-role bypasses RLS, so the
-  // RPC itself is the enforcement boundary).
+  // Route the transactional write through the `send_rfq_tx_v2` RPC so the
+  // rfqs insert (including the marketplace visibility flag, company_id, and
+  // actor_profile_id) and the rfq_invites fan-out commit or roll back
+  // together. Event ownership is re-verified inside the function
+  // (service-role bypasses RLS, so the RPC itself is the enforcement
+  // boundary).
   //
-  // Pre-Stage-4 the marketplace flag was flipped via a separate UPDATE
-  // AFTER the RPC succeeded; if that UPDATE failed (transient error / RLS
-  // regression / lock timeout) the RFQ existed in the wrong visibility
-  // state with no atomic recovery. The 20260517100000 migration added
-  // `p_is_published_to_marketplace` to the RPC signature so the value is
-  // set on the insert itself.
+  // v2 vs v1: v2 takes the two extra args (p_company_id, p_actor_profile_id)
+  // and stamps them on the new rfqs.company_id / rfqs.actor_profile_id
+  // columns. For individual organizers in this PR, p_company_id is NULL
+  // (feature flag is off; activeCompanyId resolves to null) and the
+  // ownership predicate falls back to the v1 organizer_id path. See
+  // migration 20260518150000_send_rfq_tx_v2.sql for the full predicate.
   const admin = createSupabaseServiceRoleClient();
 
-  const { data: rpcData, error: rpcErr } = await admin.rpc("send_rfq_tx", {
+  const { data: rpcData, error: rpcErr } = await admin.rpc("send_rfq_tx_v2", {
     p_organizer_id: gate.userId,
     p_event_id: parsed.data.event_id,
     p_category_id: parsed.data.category_id,
@@ -354,6 +355,8 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     p_response_deadline_hours: parsed.data.response_deadline_hours,
     p_invites: parsed.data.shortlist,
     p_is_published_to_marketplace: parsed.data.publish_to_marketplace,
+    p_company_id: null,
+    p_actor_profile_id: gate.userId,
   });
 
   if (rpcErr) {

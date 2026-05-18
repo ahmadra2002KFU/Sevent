@@ -36,6 +36,10 @@ export type ResolveOpenDisputeContextOk = {
     supplier_profile_id: string;
     service_status: ServiceStatus;
     completed_at: string | null;
+    // Propagated to disputes.company_id so the new row carries the same
+    // company scope as the parent booking. NULL for individual organizers
+    // and for any booking created before the company-organizer refactor.
+    company_id: string | null;
   };
   role: DisputeRole;
   raiser_profile_id: string;
@@ -80,7 +84,7 @@ export async function resolveOpenDisputeContext(
   const { data: bookingRow } = await admin
     .from("bookings")
     .select(
-      `id, organizer_id, supplier_id, service_status, completed_at,
+      `id, organizer_id, supplier_id, service_status, completed_at, company_id,
        suppliers ( id, profile_id )`,
     )
     .eq("id", bookingId)
@@ -92,6 +96,7 @@ export async function resolveOpenDisputeContext(
     supplier_id: string;
     service_status: ServiceStatus;
     completed_at: string | null;
+    company_id: string | null;
     suppliers: { id: string; profile_id: string } | null;
   };
   const row = bookingRow as unknown as Row | null;
@@ -151,6 +156,7 @@ export async function resolveOpenDisputeContext(
       supplier_profile_id: supplierProfileId,
       service_status: row.service_status,
       completed_at: row.completed_at,
+      company_id: row.company_id,
     },
     role,
     raiser_profile_id: viewerProfileId,

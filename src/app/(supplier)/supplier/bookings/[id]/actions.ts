@@ -296,6 +296,9 @@ export async function confirmBookingAction(
           react: BookingConfirmed({
             locale: organizerRecipient.locale,
             organizerName: ctx.profiles?.full_name ?? null,
+            // PR 2: passive null. PR 3+ resolves from bookings.company_id
+            // joined to organizer_companies.name when present.
+            organizerCompanyName: null,
             supplierBusinessName: supplier.business_name,
             eventName: event.event_type,
             eventStartsAtIso: event.starts_at,
@@ -447,6 +450,8 @@ export async function cancelBookingAction(
           react: BookingCancelledBySupplier({
             locale: recipient.locale,
             organizerName: ctx.profiles?.full_name ?? null,
+            // PR 2: passive null. PR 3+ resolves from bookings.company_id.
+            organizerCompanyName: null,
             supplierBusinessName,
             eventName,
             rfqUrl: `${appUrl()}/organizer/rfqs/${ctx.rfq_id}`,

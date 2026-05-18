@@ -9,6 +9,12 @@ import { strings } from "./BookingCancelledBySupplier.strings";
 export type BookingCancelledBySupplierProps = {
   locale: Locale;
   organizerName?: string | null;
+  /**
+   * Company name when the organizer acted on behalf of a company organizer.
+   * Currently passive — accepted so senders can pass it through PR 2 without
+   * a template-side change later. Visible rendering lands in PR 3+.
+   */
+  organizerCompanyName?: string | null;
   supplierBusinessName: string;
   eventName: string;
   rfqUrl: string;

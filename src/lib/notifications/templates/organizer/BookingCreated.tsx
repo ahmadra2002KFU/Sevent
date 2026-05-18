@@ -15,6 +15,13 @@ import { strings } from "./BookingCreated.strings";
 export type BookingCreatedProps = {
   locale: Locale;
   organizerName?: string | null;
+  /**
+   * Company name when the organizer acted on behalf of a company organizer.
+   * Currently passive — accepted so senders can pass it through PR 2 without
+   * a template-side change later. Visible rendering ("on behalf of Acme Co.")
+   * lands in PR 3+ once the company UI surfaces are live.
+   */
+  organizerCompanyName?: string | null;
   supplierBusinessName: string;
   eventName: string;
   supplierConfirmDeadlineIso: string;

@@ -644,6 +644,9 @@ export async function sendQuoteAction(
           react: QuoteReceived({
             locale: recipient.locale,
             organizerName,
+            // PR 2: passive null. PR 3+ resolves from rfqs.company_id joined
+            // to organizer_companies.name when present.
+            organizerCompanyName: null,
             supplierBusinessName,
             rfqTitle: rfqTitleBilingual,
             quoteAmountSar,

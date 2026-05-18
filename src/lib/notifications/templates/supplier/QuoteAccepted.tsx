@@ -9,6 +9,7 @@ import {
   textAlignStart,
   type Locale,
 } from "../_shared/i18n";
+import { formatOrganizerIdentity } from "../_shared/organizerIdentity";
 import { strings } from "./QuoteAccepted.strings";
 
 /**
@@ -27,6 +28,13 @@ export type QuoteAcceptedProps = {
   supplierBusinessName: string;
   eventName: BilingualText;
   organizerName: string;
+  /**
+   * Company name when the organizer acted on behalf of a company organizer.
+   * When non-null, the supplier-facing body renders
+   * "Acme Co. — via Yara" instead of just "Yara". NULL for individual
+   * organizers (the only state until PR 3 wires the company UI on).
+   */
+  organizerCompanyName?: string | null;
   bookingUrl: string;
   expiresAtIso: string;
   appUrl?: string;
@@ -43,6 +51,7 @@ export default function QuoteAccepted({
   locale = "en",
   eventName,
   organizerName,
+  organizerCompanyName,
   bookingUrl,
   expiresAtIso,
 }: QuoteAcceptedProps) {
@@ -53,6 +62,14 @@ export default function QuoteAccepted({
   const font = fontFor(effectiveLocale);
   const formattedDeadline = formatDeadline(expiresAtIso, effectiveLocale);
   const localizedEventName = pickBilingual(eventName, effectiveLocale);
+  // Body copy uses "Company — via Actor" when a company is present; otherwise
+  // just the actor's name. The strings function takes a single display name
+  // so the bilingual `via` preposition is baked into the formatter.
+  const organizerDisplay = formatOrganizerIdentity(
+    organizerName,
+    organizerCompanyName,
+    effectiveLocale,
+  );
 
   return (
     <BrandShell locale={effectiveLocale} preview={s.preview(localizedEventName)} eyebrow={s.eyebrow}>
@@ -84,7 +101,7 @@ export default function QuoteAccepted({
           direction: dir,
         }}
       >
-        {s.body(organizerName, localizedEventName)}
+        {s.body(organizerDisplay, localizedEventName)}
       </Text>
 
       <Section

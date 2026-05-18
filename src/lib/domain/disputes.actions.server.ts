@@ -117,6 +117,11 @@ export async function openDispute(
       description: parsed.data.description,
       // `status` defaults to 'open' in the schema; explicit for clarity.
       status: "open",
+      // Propagate the parent booking's company scope. NULL for individuals,
+      // which is the only path observed today (feature flag is OFF until
+      // PR 3+). The composite FK `disputes_actor_is_company_member_fk` is
+      // the DB-level backstop on the (company_id, raised_by) pair.
+      company_id: ctx.booking.company_id,
     })
     .select("id")
     .single();

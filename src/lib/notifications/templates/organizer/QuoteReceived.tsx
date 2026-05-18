@@ -26,6 +26,12 @@ function pickBilingual(value: BilingualText, locale: Locale): string {
 export type QuoteReceivedProps = {
   locale: Locale;
   organizerName?: string | null;
+  /**
+   * Company name when the organizer acted on behalf of a company organizer.
+   * Currently passive — accepted so senders can pass it through PR 2 without
+   * a template-side change later. Visible rendering lands in PR 3+.
+   */
+  organizerCompanyName?: string | null;
   supplierBusinessName: string;
   rfqTitle: BilingualText;
   quoteAmountSar: number;
