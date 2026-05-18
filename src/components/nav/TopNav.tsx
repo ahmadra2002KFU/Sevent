@@ -178,15 +178,41 @@ export async function TopNav({ role }: { role: Role }) {
 
   let displayName: string | null = null;
   let email: string | null = null;
+  let companies: Array<{ id: string; name: string }> = [];
   if (user) {
     email = user.email ?? null;
     const admin = createSupabaseServiceRoleClient();
-    const { data } = await admin
+    const profilePromise = admin
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
       .maybeSingle();
-    displayName = (data as { full_name?: string } | null)?.full_name ?? null;
+    const ids = decision.availableCompanyIds;
+    const companiesPromise =
+      ids.length > 1
+        ? admin
+            .from("organizer_companies")
+            .select("id, name")
+            .in("id", ids)
+        : Promise.resolve({ data: null as Array<{ id: string; name: string }> | null });
+    const [{ data: profileData }, { data: companyRows }] = await Promise.all([
+      profilePromise,
+      companiesPromise,
+    ]);
+    displayName = (profileData as { full_name?: string } | null)?.full_name ?? null;
+    if (companyRows) {
+      const byId = new Map(
+        (companyRows as Array<{ id: string; name: string }>).map((r) => [
+          r.id,
+          r.name,
+        ]),
+      );
+      // Preserve resolver order (most-recently-joined last) so the switcher
+      // list matches the ordering decisions in resolveActiveCompanyForRequest.
+      companies = ids
+        .map((id) => ({ id, name: byId.get(id) ?? "" }))
+        .filter((c) => c.name.length > 0);
+    }
   }
 
   const tone = ROLE_TONE[role];
@@ -264,6 +290,9 @@ export async function TopNav({ role }: { role: Role }) {
               email={email ?? ""}
               displayName={displayName}
               tone={tone}
+              companies={companies}
+              activeCompanyId={decision.activeCompanyId}
+              companySwitcherLabel={nav("companySwitcher")}
             />
           ) : null}
         </nav>

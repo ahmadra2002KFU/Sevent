@@ -14,11 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FeedbackMenuItem } from "@/components/feedback/FeedbackMenuItem";
+import { CompanySwitcher, type CompanyOption } from "./CompanySwitcher";
 
 type UserMenuProps = {
   email: string;
   displayName: string | null;
   tone?: "light" | "dark";
+  /** When the caller is an organizer with more than one membership, the
+   *  CompanySwitcher submenu is rendered between the email row and the
+   *  feedback / sign-out actions. Pass an empty array (or omit) to hide. */
+  companies?: CompanyOption[];
+  activeCompanyId?: string | null;
+  companySwitcherLabel?: string;
 };
 
 function initials(source: string): string {
@@ -28,7 +35,14 @@ function initials(source: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function UserMenu({ email, displayName, tone = "light" }: UserMenuProps) {
+export function UserMenu({
+  email,
+  displayName,
+  tone = "light",
+  companies = [],
+  activeCompanyId = null,
+  companySwitcherLabel = "Switch company",
+}: UserMenuProps) {
   const label = displayName || email;
   return (
     <DropdownMenu>
@@ -50,7 +64,7 @@ export function UserMenu({ email, displayName, tone = "light" }: UserMenuProps) 
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
             {displayName ? (
@@ -63,6 +77,11 @@ export function UserMenu({ email, displayName, tone = "light" }: UserMenuProps) 
             </span>
           </div>
         </DropdownMenuLabel>
+        <CompanySwitcher
+          companies={companies}
+          activeCompanyId={activeCompanyId}
+          label={companySwitcherLabel}
+        />
         <DropdownMenuSeparator />
         <FeedbackMenuItem />
         <DropdownMenuSeparator />

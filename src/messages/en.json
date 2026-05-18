@@ -14,6 +14,7 @@
     "signUpAsOrganizerHint": "Find and book suppliers for your event",
     "signUpAsSupplier": "I'm a supplier",
     "signUpAsSupplierHint": "Offer your services to organizers",
+    "companySwitcher": "Switch company",
     "role": {
       "organizer": "Organizer",
       "supplier": "Supplier",
