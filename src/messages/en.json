@@ -2187,6 +2187,39 @@
         }
       }
     },
+    "invite": {
+      "title": "Join {company}",
+      "description": "You're invited as {role}. Accept to start managing events and bookings on their behalf.",
+      "unknownCompany": "A company",
+      "roleLine": "You'll join as a {role}.",
+      "expiresOn": "This invite expires {date}.",
+      "acceptCta": "Accept invite",
+      "acceptPending": "Accepting…",
+      "notFoundTitle": "Invite not found",
+      "notFoundDescription": "This invite link doesn't match any pending invite. Ask your admin to send a new one.",
+      "wrongRoleError": "This invite is for an organizer account. Sign in with an organizer or open it from a different account.",
+      "emailMismatchWarning": "You're signed in as {signedIn} but the invite was sent to {invited}. You can still accept, but the join will record your current account.",
+      "role": {
+        "admin": "admin",
+        "member": "member"
+      },
+      "status": {
+        "pending": "This invite is ready to accept.",
+        "accepted": "This invite has already been accepted.",
+        "revoked": "This invite was revoked by the company admin.",
+        "expired": "This invite has expired. Ask your admin to send a new one."
+      },
+      "errors": {
+        "unauthenticated": "Sign in first, then come back to this link.",
+        "wrongRole": "Use an organizer account to accept this invite.",
+        "tokenInvalid": "The invite link is invalid or has been tampered with.",
+        "notFound": "We couldn't find that invite.",
+        "expired": "This invite has expired.",
+        "revoked": "This invite was revoked.",
+        "alreadyMember": "You're already a member of this company.",
+        "acceptFailed": "Couldn't accept the invite. Please try again."
+      }
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Manage your company profile, teammates, and invites.",
@@ -2255,6 +2288,28 @@
           "selfTransfer": "You can't transfer ownership to yourself.",
           "transferTargetMissing": "Pick a current member to transfer ownership to.",
           "mutationFailed": "Couldn't save the change. Please try again."
+        },
+        "audit": {
+          "title": "Recent activity",
+          "subtitle": "Membership and invite changes, newest first.",
+          "empty": "No activity yet.",
+          "unknownActor": "Someone",
+          "unknownTarget": "a teammate",
+          "role": {
+            "owner": "owner",
+            "admin": "admin",
+            "member": "member"
+          },
+          "describe": {
+            "joined": "{actor} joined the company.",
+            "left": "{actor} left the company.",
+            "removed": "{actor} removed {target}.",
+            "roleChanged": "{actor} changed {target}'s role from {from} to {to}.",
+            "ownershipTransferred": "{actor} transferred ownership to {target}.",
+            "invited": "{actor} invited {target} as {role}.",
+            "inviteRevoked": "{actor} revoked the invite for {target}.",
+            "inviteAccepted": "{actor} accepted their invite."
+          }
         }
       },
       "invites": {

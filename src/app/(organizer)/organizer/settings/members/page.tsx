@@ -4,6 +4,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { MembersTable, type MemberRow } from "./members-table";
+import {
+  MembershipAuditLog,
+  type AuditEventRow,
+} from "./membership-audit-log";
 
 export const dynamic = "force-dynamic";
 
@@ -102,11 +106,79 @@ export default async function OrganizerMembersSettingsPage() {
     };
   });
 
+  // Audit log — last 50 events for this company. Render below the active
+  // members table so admins can see recent invite/role/remove activity
+  // without leaving the page. Actor + target names are resolved by
+  // joining through profiles in a follow-up batch (some events have
+  // target_profile_id=null, e.g. plain `invited` rows where the invitee
+  // doesn't have a profile yet).
+  const { data: eventRows } = await admin
+    .from("organizer_membership_events")
+    .select(
+      "id, action, actor_profile_id, target_profile_id, from_role, to_role, metadata, created_at",
+    )
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const rawEvents = (eventRows ?? []) as Array<{
+    id: string;
+    action: AuditEventRow["action"];
+    actor_profile_id: string | null;
+    target_profile_id: string | null;
+    from_role: AuditEventRow["from_role"];
+    to_role: AuditEventRow["to_role"];
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+  }>;
+
+  const eventProfileIds = Array.from(
+    new Set(
+      rawEvents
+        .flatMap((e) => [e.actor_profile_id, e.target_profile_id])
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  const profileNames = new Map<string, string | null>();
+  if (eventProfileIds.length > 0) {
+    const { data: profileRows } = await admin
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", eventProfileIds);
+    for (const p of (profileRows ?? []) as Array<{
+      id: string;
+      full_name: string | null;
+    }>) {
+      profileNames.set(p.id, p.full_name);
+    }
+  }
+
+  const events: AuditEventRow[] = rawEvents.map((e) => ({
+    id: e.id,
+    action: e.action,
+    actor_profile_id: e.actor_profile_id,
+    target_profile_id: e.target_profile_id,
+    from_role: e.from_role,
+    to_role: e.to_role,
+    metadata: e.metadata ?? {},
+    created_at: e.created_at,
+    actorName: e.actor_profile_id
+      ? profileNames.get(e.actor_profile_id) ?? null
+      : null,
+    targetName: e.target_profile_id
+      ? profileNames.get(e.target_profile_id) ?? null
+      : null,
+  }));
+
   return (
-    <MembersTable
-      members={members}
-      viewerRole={decision.companyRole}
-      viewerProfileId={user.id}
-    />
+    <div className="flex flex-col gap-8">
+      <MembersTable
+        members={members}
+        viewerRole={decision.companyRole}
+        viewerProfileId={user.id}
+      />
+      <MembershipAuditLog events={events} />
+    </div>
   );
 }
