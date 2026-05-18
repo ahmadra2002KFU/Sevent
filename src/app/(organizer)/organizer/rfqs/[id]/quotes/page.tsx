@@ -6,11 +6,9 @@
  * print and CSV-export routes so all three views render the same numbers.
  */
 
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import { QuoteComparisonGrid } from "./QuoteComparisonGrid";
 import { loadQuotesComparison } from "./loader";
 
@@ -27,12 +25,7 @@ export default async function OrganizerQuotesComparisonPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link href={`/organizer/rfqs/${id}`}>
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("backToRfq")}
-        </Link>
-      </Button>
+      <BackLink href={`/organizer/rfqs/${id}`} label={t("backToRfq")} />
 
       <PageHeader title={t("pageTitle")} description={t("pageDescription")} />
 

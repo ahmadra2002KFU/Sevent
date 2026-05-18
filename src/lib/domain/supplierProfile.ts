@@ -115,6 +115,25 @@ export async function getPublicSupplierBySlugUncached(
 ): Promise<PublicSupplierProfile | null> {
   if (!slug || typeof slug !== "string") return null;
 
+  // Next.js 16.2.3 hands the page body the raw percent-encoded slug for
+  // non-ASCII URLs (e.g. `%D9%85%D9%81%D9%8A%D8%AF-%D8%AC%D8%AF%D9%8A%D8%AF`
+  // instead of `مفيد-جديد`), while `generateMetadata` for the same request
+  // receives the decoded form. The DB stores the decoded slug, so the
+  // encoded comparison silently misses → notFound() — meanwhile the title
+  // tag already shows the supplier's real name because metadata succeeded.
+  // Decode defensively here so the loader is robust to either form, and
+  // any future caller (route handler, server action, etc.) gets the same
+  // behavior. `decodeURIComponent` is a no-op on already-decoded strings;
+  // we catch malformed sequences and fall back to the raw input rather
+  // than crashing the route.
+  let normalizedSlug = slug;
+  try {
+    normalizedSlug = decodeURIComponent(slug);
+  } catch {
+    // Malformed URI — leave the raw slug as-is so the query returns null
+    // and the caller renders a normal 404 instead of throwing.
+  }
+
   const supabase = await createSupabaseServerClient();
 
   const { data: supplier, error: supplierErr } = await supabase
@@ -122,7 +141,7 @@ export async function getPublicSupplierBySlugUncached(
     .select(
       "id, profile_id, slug, business_name, bio, base_city, service_area_cities, serves_all_ksa, languages, verification_status, is_published, logo_path, accent_color, profile_sections_order, website_url",
     )
-    .eq("slug", slug)
+    .eq("slug", normalizedSlug)
     .eq("is_published", true)
     .eq("verification_status", "approved")
     .maybeSingle();

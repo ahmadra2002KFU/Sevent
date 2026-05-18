@@ -1,9 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import {
   fmtDateTime as fmtDateTimeHelper,
   type SupportedLocale,
@@ -190,12 +188,7 @@ export default async function AdminDisputeDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Button asChild variant="ghost" size="sm" className="w-fit">
-        <Link href="/admin/disputes">
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("detail.backToList")}
-        </Link>
-      </Button>
+      <BackLink href="/admin/disputes" label={t("detail.backToList")} />
 
       <PageHeader
         title={`${t("detail.title")} — ${d.bookings.suppliers?.business_name ?? "—"}`}
