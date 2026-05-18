@@ -2187,6 +2187,116 @@
         }
       }
     },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Manage your company profile, teammates, and invites.",
+      "nav": {
+        "company": "Company",
+        "members": "Members",
+        "invites": "Invites"
+      },
+      "company": {
+        "loadError": "Couldn't load company details. Please try again.",
+        "nameLabel": "Company name",
+        "nameArLabel": "Company name (Arabic)",
+        "nameArHint": "Optional — used on Arabic-language RFQs and emails.",
+        "slugLabel": "URL slug",
+        "slugHint": "Locked after creation. Contact support to change.",
+        "crLabel": "CR number",
+        "crHint": "10-digit Saudi commercial registration.",
+        "vatLabel": "VAT number",
+        "vatHint": "15-digit Saudi VAT, starts with 3.",
+        "billingEmailLabel": "Billing email",
+        "billingEmailHint": "Invoices and account notices go here.",
+        "defaultLanguageLabel": "Default language",
+        "defaultLanguageEn": "English",
+        "defaultLanguageAr": "Arabic",
+        "submit": "Save changes",
+        "submitting": "Saving...",
+        "savedToast": "Company details saved.",
+        "memberReadonlyHint": "Only company owners and admins can edit these details.",
+        "errors": {
+          "notAdmin": "Only owners and admins can update the company profile.",
+          "companyMissing": "No active company is selected.",
+          "nameRequired": "Company name is required.",
+          "nameTooLong": "Name is too long (max 120 characters).",
+          "crInvalid": "CR must be exactly 10 digits.",
+          "vatInvalid": "VAT must be 15 digits and start with 3.",
+          "billingEmailRequired": "Billing email is required.",
+          "billingEmailInvalid": "That email doesn't look right.",
+          "updateFailed": "Couldn't save changes. Please try again."
+        }
+      },
+      "members": {
+        "loadError": "Couldn't load members. Please try again.",
+        "unnamedMember": "(no name)",
+        "selfBadge": "You",
+        "joinedOn": "Joined {date}",
+        "transferOwnership": "Transfer ownership",
+        "removeMember": "Remove",
+        "leaveCompany": "Leave team",
+        "role": {
+          "owner": "Owner",
+          "admin": "Admin",
+          "member": "Member"
+        },
+        "success": {
+          "role": "Role updated.",
+          "remove": "Member removed.",
+          "transfer": "Ownership transferred."
+        },
+        "errors": {
+          "notAdmin": "Only owners and admins can manage members.",
+          "companyMissing": "No active company is selected.",
+          "memberNotFound": "That member is no longer part of the company.",
+          "cannotChangeOwner": "Use the transfer-ownership flow to change the owner.",
+          "cannotRemoveSoleOwner": "Transfer ownership before removing the last owner.",
+          "invalidRole": "Pick a role between admin and member.",
+          "selfTransfer": "You can't transfer ownership to yourself.",
+          "transferTargetMissing": "Pick a current member to transfer ownership to.",
+          "mutationFailed": "Couldn't save the change. Please try again."
+        }
+      },
+      "invites": {
+        "loadError": "Couldn't load invites. Please try again.",
+        "emailLabel": "Email address",
+        "emailPlaceholder": "name@company.com",
+        "roleLabel": "Role",
+        "submit": "Send invite",
+        "resend": "Resend",
+        "revoke": "Revoke",
+        "empty": "No invites yet. Invite a teammate to get started.",
+        "expiresOn": "Expires {date}",
+        "acceptedOn": "Accepted {date}",
+        "revokedOn": "Revoked {date}",
+        "createdOn": "Sent {date}",
+        "role": {
+          "admin": "admin",
+          "member": "member"
+        },
+        "status": {
+          "pending": "Pending",
+          "accepted": "Accepted",
+          "revoked": "Revoked",
+          "expired": "Expired"
+        },
+        "success": {
+          "create": "Invite sent.",
+          "revoke": "Invite revoked.",
+          "resend": "Invite resent."
+        },
+        "errors": {
+          "notAdmin": "Only owners and admins can manage invites.",
+          "companyMissing": "No active company is selected.",
+          "emailInvalid": "That email doesn't look right.",
+          "roleInvalid": "Pick admin or member.",
+          "alreadyPending": "That address already has a pending invite. Resend or revoke it first.",
+          "inviteNotFound": "That invite couldn't be found.",
+          "inviteResolved": "That invite is no longer pending.",
+          "mutationFailed": "Couldn't update the invite. Please try again."
+        }
+      }
+    },
     "events": {
       "title": "Events",
       "subtitle": "Every event you are planning on Sevent.",

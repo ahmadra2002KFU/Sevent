@@ -2187,6 +2187,116 @@
         }
       }
     },
+    "settings": {
+      "title": "الإعدادات",
+      "subtitle": "إدارة ملف الشركة والأعضاء والدعوات.",
+      "nav": {
+        "company": "الشركة",
+        "members": "الأعضاء",
+        "invites": "الدعوات"
+      },
+      "company": {
+        "loadError": "ما قدرنا نحمّل بيانات الشركة. حاول مرة أخرى.",
+        "nameLabel": "اسم الشركة",
+        "nameArLabel": "اسم الشركة بالعربية",
+        "nameArHint": "اختياري — يُستخدم على طلبات الأسعار والإيميلات العربية.",
+        "slugLabel": "المعرّف في الرابط",
+        "slugHint": "المعرّف ثابت بعد الإنشاء. تواصل مع الدعم لتغييره.",
+        "crLabel": "السجل التجاري",
+        "crHint": "رقم السجل التجاري السعودي بـ 10 أرقام.",
+        "vatLabel": "الرقم الضريبي",
+        "vatHint": "15 رقماً يبدأ بـ 3.",
+        "billingEmailLabel": "بريد الفواتير",
+        "billingEmailHint": "الفواتير وإشعارات الحساب تُرسل هنا.",
+        "defaultLanguageLabel": "اللغة الافتراضية",
+        "defaultLanguageEn": "الإنجليزية",
+        "defaultLanguageAr": "العربية",
+        "submit": "حفظ التغييرات",
+        "submitting": "جارٍ الحفظ...",
+        "savedToast": "تم حفظ بيانات الشركة.",
+        "memberReadonlyHint": "يقدر المالك والمشرفون فقط تعديل هذه البيانات.",
+        "errors": {
+          "notAdmin": "يقدر المالك والمشرفون فقط تعديل ملف الشركة.",
+          "companyMissing": "لا توجد شركة مفعّلة حالياً.",
+          "nameRequired": "اسم الشركة مطلوب.",
+          "nameTooLong": "الاسم طويل جداً (الحد الأقصى 120 حرفاً).",
+          "crInvalid": "السجل التجاري لازم يكون 10 أرقام بالضبط.",
+          "vatInvalid": "الرقم الضريبي لازم يكون 15 رقماً ويبدأ بـ 3.",
+          "billingEmailRequired": "بريد الفواتير مطلوب.",
+          "billingEmailInvalid": "صيغة البريد ما تبدو صحيحة.",
+          "updateFailed": "ما قدرنا نحفظ التغييرات. حاول مرة أخرى."
+        }
+      },
+      "members": {
+        "loadError": "ما قدرنا نحمّل قائمة الأعضاء. حاول مرة أخرى.",
+        "unnamedMember": "(بدون اسم)",
+        "selfBadge": "أنت",
+        "joinedOn": "انضمّ في {date}",
+        "transferOwnership": "نقل الملكية",
+        "removeMember": "إزالة",
+        "leaveCompany": "مغادرة الفريق",
+        "role": {
+          "owner": "مالك",
+          "admin": "مشرف",
+          "member": "عضو"
+        },
+        "success": {
+          "role": "تم تحديث الصلاحية.",
+          "remove": "تمت إزالة العضو.",
+          "transfer": "تم نقل الملكية."
+        },
+        "errors": {
+          "notAdmin": "يقدر المالك والمشرفون فقط إدارة الأعضاء.",
+          "companyMissing": "لا توجد شركة مفعّلة حالياً.",
+          "memberNotFound": "هذا العضو لم يعد ضمن الشركة.",
+          "cannotChangeOwner": "استخدم مسار نقل الملكية لتغيير المالك.",
+          "cannotRemoveSoleOwner": "انقل الملكية قبل إزالة آخر مالك.",
+          "invalidRole": "اختر صلاحية مشرف أو عضو.",
+          "selfTransfer": "ما تقدر تنقل الملكية لنفسك.",
+          "transferTargetMissing": "اختر عضواً حالياً لنقل الملكية إليه.",
+          "mutationFailed": "ما قدرنا نحفظ التغيير. حاول مرة أخرى."
+        }
+      },
+      "invites": {
+        "loadError": "ما قدرنا نحمّل الدعوات. حاول مرة أخرى.",
+        "emailLabel": "البريد الإلكتروني",
+        "emailPlaceholder": "name@company.com",
+        "roleLabel": "الصلاحية",
+        "submit": "إرسال الدعوة",
+        "resend": "إعادة إرسال",
+        "revoke": "إلغاء",
+        "empty": "لا توجد دعوات بعد. ادعُ زميلاً للبدء.",
+        "expiresOn": "تنتهي في {date}",
+        "acceptedOn": "قُبلت في {date}",
+        "revokedOn": "أُلغيت في {date}",
+        "createdOn": "أُرسلت في {date}",
+        "role": {
+          "admin": "مشرف",
+          "member": "عضو"
+        },
+        "status": {
+          "pending": "قيد الانتظار",
+          "accepted": "مقبولة",
+          "revoked": "ملغاة",
+          "expired": "منتهية"
+        },
+        "success": {
+          "create": "تم إرسال الدعوة.",
+          "revoke": "تم إلغاء الدعوة.",
+          "resend": "تم إعادة إرسال الدعوة."
+        },
+        "errors": {
+          "notAdmin": "يقدر المالك والمشرفون فقط إدارة الدعوات.",
+          "companyMissing": "لا توجد شركة مفعّلة حالياً.",
+          "emailInvalid": "صيغة البريد ما تبدو صحيحة.",
+          "roleInvalid": "اختر مشرف أو عضو.",
+          "alreadyPending": "هذا البريد عنده دعوة قيد الانتظار. أعد إرسالها أو ألغها أولاً.",
+          "inviteNotFound": "ما قدرنا نلقى هذه الدعوة.",
+          "inviteResolved": "هذه الدعوة لم تعد قيد الانتظار.",
+          "mutationFailed": "ما قدرنا نحدّث الدعوة. حاول مرة أخرى."
+        }
+      }
+    },
     "events": {
       "title": "الفعاليات",
       "subtitle": "جميع الفعاليات التي تخطط لها على Sevent.",

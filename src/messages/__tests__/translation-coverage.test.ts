@@ -41,6 +41,9 @@ const SKIPLIST_EXACT = new Set<string>([
   "organizer.onboarding.company.nameArPlaceholder",
   "organizer.onboarding.company.slugPlaceholder",
   "organizer.onboarding.company.billingEmailPlaceholder",
+  // Invite-form email placeholder — `name@company.com` is a literal example
+  // that reads identically in both locales.
+  "organizer.settings.invites.emailPlaceholder",
   // Locale-name self-reference: "English" in the EN file, "العربية" in the AR file;
   // they are compared independently and their EN string (e.g. "English") is what
   // appears on both sides of the equality check only for the `en` key. The `ar`

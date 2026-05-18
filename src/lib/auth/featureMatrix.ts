@@ -49,7 +49,13 @@ export type OrganizerFeature =
   // organizer can pick "I'm setting up a company") AND `organizer.no_company`
   // (so a company-declared user with no membership yet can finish the setup
   // form without bouncing to bestDestination).
-  | "organizer.onboarding";
+  | "organizer.onboarding"
+  // Company settings tabs — only granted in `organizer.active`. Pages
+  // additionally short-circuit to /organizer/dashboard when
+  // decision.activeCompanyId is null (individual organizers) so the
+  // feature flag stays a coarse route-prefix check and individual
+  // organizers never see a "Settings" link they cannot use.
+  | "organizer.settings";
 
 export type AdminFeature =
   | "admin.console"
@@ -114,6 +120,7 @@ const ORGANIZER_FEATURES: FeatureSet = {
   "organizer.rfqs": true,
   "organizer.bookings": true,
   "organizer.onboarding": true,
+  "organizer.settings": true,
 };
 
 const ADMIN_FEATURES: FeatureSet = {

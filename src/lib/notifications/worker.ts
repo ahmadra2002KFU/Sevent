@@ -110,6 +110,12 @@ const TEMPLATES: Record<string, () => Promise<TemplateModule>> = {
   // QuoteReceived covers the organizer-side "supplier sent you a quote".
   "quote.sent": () =>
     import("./templates/organizer/QuoteReceived") as unknown as Promise<TemplateModule>,
+  // Organizer-company invite — sent by createInviteAction /
+  // resendInviteAction on /organizer/settings/invites. Recipient is keyed
+  // by `recipient_email` (not profile id) because the invitee may not have
+  // a Sevent account yet.
+  "organizer.invite_sent": () =>
+    import("./templates/organizer/OrganizerInviteSent") as unknown as Promise<TemplateModule>,
 
   // Supplier lifecycle — queue-driven (Path B).
   "quote.rejected": () =>
