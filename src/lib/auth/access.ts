@@ -123,7 +123,17 @@ function isCompanyFeaturesEnabled(): boolean {
  */
 export async function resolveAccessForUserUncached(
   userId: string | null,
-  opts?: { admin?: AdminClient },
+  opts?: {
+    admin?: AdminClient;
+    /**
+     * Already-verified active company id from a `?company=` signed param.
+     * Set by middleware (proxy.ts) after async HMAC verification — the
+     * resolver itself runs synchronously on the RSC hot path and cannot
+     * re-verify on Edge. Used as the highest-priority signal in the
+     * active-company resolution chain.
+     */
+    preVerifiedCompanyId?: string | null;
+  },
 ): Promise<AccessDecision> {
   if (!userId) {
     return buildDecision("unauthenticated", null, null, null);
@@ -169,7 +179,12 @@ export async function resolveAccessForUserUncached(
   }
 
   if (role === "organizer") {
-    return await buildOrganizerDecision(userId, profile, membershipsRes.data);
+    return await buildOrganizerDecision(
+      userId,
+      profile,
+      membershipsRes.data,
+      opts?.preVerifiedCompanyId ?? null,
+    );
   }
 
   if (role === "agency") {
@@ -224,6 +239,7 @@ async function buildOrganizerDecision(
   userId: string,
   profile: OrganizerProfileRow | null,
   membershipsRaw: MembershipRow[] | null,
+  preVerifiedCompanyId: string | null,
 ): Promise<AccessDecision> {
   // Kill-switch: behave like an individual organizer in every code path.
   // We deliberately ignore both organizer_legal_type and the memberships
@@ -265,10 +281,13 @@ async function buildOrganizerDecision(
   const { activeCompanyId, companyRole } = resolveActiveCompanyForRequest(
     memberships,
     {
-      // PR 1: signed query param is parsed but always resolves to null in the
-      // sync resolver path (see verifyActiveCompanyParamSync). Email-callback
-      // flows that need the param land in PR 5.
-      signedQueryParam: null,
+      // PR 1.5: signed `?company=` param verification runs in middleware
+      // (proxy.ts) where async Web Crypto is available, and the verified
+      // id is forwarded here. A non-null value still has to pass the
+      // membership check inside resolveActiveCompanyForRequest, so a
+      // forged-but-correctly-signed id for a company the caller has been
+      // removed from will still drop to the next signal.
+      preVerifiedCompanyId,
       cookieValue,
       lastActiveCompanyId: profile?.last_active_company_id ?? null,
     },

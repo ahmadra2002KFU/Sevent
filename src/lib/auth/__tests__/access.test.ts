@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { resolveAccessForUserUncached } from "../access";
+import { resolveActiveCompanyForRequest } from "../activeCompany";
 
 type AdminClient = ReturnType<typeof createSupabaseServiceRoleClient>;
 
@@ -11,7 +12,13 @@ type AdminClient = ReturnType<typeof createSupabaseServiceRoleClient>;
 // canned rows + counts without spinning up a real DB.
 // ---------------------------------------------------------------------------
 
-type ProfileRow = { role: string } | null;
+type ProfileRow =
+  | {
+      role: string;
+      organizer_legal_type?: "individual" | "company" | null;
+      last_active_company_id?: string | null;
+    }
+  | null;
 type SupplierRow = {
   id: string;
   legal_type: string | null;
@@ -259,6 +266,222 @@ describe("resolveAccessForUserUncached", () => {
     expect(decision.features["supplier.profile.customize"]).toBe(true);
     // Path picker remains locked for approved users.
     expect(decision.features["supplier.onboarding.path"]).toBeFalsy();
+  });
+
+  // -----------------------------------------------------------------------
+  // Company-organizer resolver branches (IS_COMPANY_FEATURES_ENABLED=true).
+  //
+  // These tests exercise the post-PR1 paths in buildOrganizerDecision that
+  // the original suite never touched. Each test scopes the env flag with
+  // before/after rather than a nested describe so we don't grow the file's
+  // top-level structure.
+  // -----------------------------------------------------------------------
+
+  describe("organizer.* with company features enabled", () => {
+    const orig = process.env.IS_COMPANY_FEATURES_ENABLED;
+    beforeEach(() => {
+      process.env.IS_COMPANY_FEATURES_ENABLED = "true";
+    });
+    afterEach(() => {
+      if (orig === undefined) {
+        delete process.env.IS_COMPANY_FEATURES_ENABLED;
+      } else {
+        process.env.IS_COMPANY_FEATURES_ENABLED = orig;
+      }
+    });
+
+    it("organizer.no_company when legal_type=company AND no memberships", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "company",
+            last_active_company_id: null,
+          },
+        },
+        memberships: { "user-1": [] },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", { admin });
+      expect(decision.state).toBe("organizer.no_company");
+      expect(decision.activeCompanyId).toBeNull();
+      expect(decision.availableCompanyIds).toEqual([]);
+    });
+
+    it("auto-resolves a single membership", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "company",
+            last_active_company_id: null,
+          },
+        },
+        memberships: {
+          "user-1": [
+            {
+              company_id: "c-only",
+              role: "owner",
+              joined_at: "2026-01-01T00:00:00Z",
+            },
+          ],
+        },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", { admin });
+      expect(decision.state).toBe("organizer.active");
+      expect(decision.activeCompanyId).toBe("c-only");
+      expect(decision.companyRole).toBe("owner");
+      expect(decision.availableCompanyIds).toEqual(["c-only"]);
+    });
+
+    it("picks most-recently-joined when multi-company and no signal", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "company",
+            last_active_company_id: null,
+          },
+        },
+        memberships: {
+          "user-1": [
+            {
+              company_id: "c-old",
+              role: "member",
+              joined_at: "2026-01-01T00:00:00Z",
+            },
+            {
+              company_id: "c-new",
+              role: "admin",
+              joined_at: "2026-05-01T00:00:00Z",
+            },
+          ],
+        },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", { admin });
+      expect(decision.activeCompanyId).toBe("c-new");
+      expect(decision.companyRole).toBe("admin");
+      expect(decision.availableCompanyIds.sort()).toEqual(["c-new", "c-old"]);
+    });
+
+    it("preVerifiedCompanyId wins over auto-resolve when caller is a member", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "company",
+            last_active_company_id: null,
+          },
+        },
+        memberships: {
+          "user-1": [
+            {
+              company_id: "c-default",
+              role: "owner",
+              joined_at: "2026-05-01T00:00:00Z",
+            },
+            {
+              company_id: "c-target",
+              role: "member",
+              joined_at: "2026-01-01T00:00:00Z",
+            },
+          ],
+        },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", {
+        admin,
+        preVerifiedCompanyId: "c-target",
+      });
+      expect(decision.activeCompanyId).toBe("c-target");
+      expect(decision.companyRole).toBe("member");
+    });
+
+    it("drops stale preVerifiedCompanyId when caller is not a current member", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "company",
+            last_active_company_id: null,
+          },
+        },
+        memberships: {
+          "user-1": [
+            {
+              company_id: "c-only",
+              role: "owner",
+              joined_at: "2026-01-01T00:00:00Z",
+            },
+          ],
+        },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", {
+        admin,
+        preVerifiedCompanyId: "c-removed",
+      });
+      expect(decision.activeCompanyId).toBe("c-only");
+      expect(decision.companyRole).toBe("owner");
+    });
+
+    it("individual legal_type with no memberships → organizer.active, no company", async () => {
+      const admin = createMockAdmin({
+        profiles: {
+          "user-1": {
+            role: "organizer",
+            organizer_legal_type: "individual",
+            last_active_company_id: null,
+          },
+        },
+        memberships: { "user-1": [] },
+      });
+      const decision = await resolveAccessForUserUncached("user-1", { admin });
+      expect(decision.state).toBe("organizer.active");
+      expect(decision.activeCompanyId).toBeNull();
+      expect(decision.availableCompanyIds).toEqual([]);
+    });
+  });
+
+  // Pure resolver — direct tests for cookie / last_active fallback behavior
+  // and removed-member staleness. Avoids the next/headers cookies() mock.
+  describe("resolveActiveCompanyForRequest", () => {
+    const memberships = [
+      {
+        company_id: "c-1",
+        role: "owner" as const,
+        joined_at: "2026-01-01T00:00:00Z",
+      },
+      {
+        company_id: "c-2",
+        role: "member" as const,
+        joined_at: "2026-02-01T00:00:00Z",
+      },
+    ];
+
+    it("drops cookie referencing a non-member company", () => {
+      const out = resolveActiveCompanyForRequest(memberships, {
+        cookieValue: "c-removed",
+      });
+      // Falls through to most-recently-joined (c-2).
+      expect(out.activeCompanyId).toBe("c-2");
+    });
+
+    it("falls back to last_active when cookie is missing", () => {
+      const out = resolveActiveCompanyForRequest(memberships, {
+        cookieValue: null,
+        lastActiveCompanyId: "c-1",
+      });
+      expect(out.activeCompanyId).toBe("c-1");
+      expect(out.companyRole).toBe("owner");
+    });
+
+    it("returns null/null when no memberships at all", () => {
+      const out = resolveActiveCompanyForRequest([], {
+        preVerifiedCompanyId: "c-1",
+        cookieValue: "c-1",
+        lastActiveCompanyId: "c-1",
+      });
+      expect(out.activeCompanyId).toBeNull();
+      expect(out.companyRole).toBeNull();
+    });
   });
 
   it("supplier rejected → dashboard + wizard only", async () => {

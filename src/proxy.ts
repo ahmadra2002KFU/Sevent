@@ -5,7 +5,16 @@ import {
   resolveAccessForUser,
   signAccessPayload,
 } from "@/lib/auth/access";
+import {
+  ACTIVE_COMPANY_COOKIE_NAME,
+  verifyActiveCompanyParam,
+} from "@/lib/auth/activeCompany";
 import { isRouteAllowed } from "@/lib/auth/featureMatrix";
+
+/** 30 days. Mirrors activeCompany.ts ACTIVE_COMPANY_COOKIE_MAX_AGE_SECONDS;
+ * duplicated here because the cookie helpers in that file use the next/headers
+ * cookies() API which isn't available in the Edge middleware runtime. */
+const ACTIVE_COMPANY_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 const ROLE_PREFIXES = ["/organizer", "/supplier", "/admin"] as const;
 const PAGE_GATED_PREFIXES = ["/supplier/onboarding"] as const;
@@ -59,7 +68,21 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const decision = await resolveAccessForUser(user.id);
+  // Honor signed `?company=` (HMAC-signed, 60s TTL) before resolving access.
+  // This is the email-callback path: an invite acceptance link or a
+  // notification deeplink that arrived before the user had a cookie. The
+  // verifier is async (Web Crypto on Edge), so we run it here rather than
+  // inside the sync resolver. resolveAccessForUser still re-checks that the
+  // verified id is in the caller's membership list — a stale-but-validly-
+  // signed param for a removed company drops to the next signal.
+  const rawCompanyParam = request.nextUrl.searchParams.get("company");
+  const preVerifiedCompanyId = rawCompanyParam
+    ? await verifyActiveCompanyParam(rawCompanyParam)
+    : null;
+
+  const decision = await resolveAccessForUser(user.id, {
+    preVerifiedCompanyId,
+  });
 
   if (!isRouteAllowed(pathname, decision.allowedRoutePrefixes)) {
     return NextResponse.redirect(
@@ -110,6 +133,26 @@ export async function proxy(request: NextRequest) {
   for (const cookie of response.cookies.getAll()) {
     finalResponse.cookies.set(cookie);
   }
+
+  // If the `?company=` param verified AND the resolver actually used it
+  // (meaning the caller is still a member of that company), persist the
+  // active-company cookie so subsequent navigations without the param keep
+  // the same active company. The resolver returns activeCompanyId from the
+  // verified value when valid; we only set the cookie on a match to avoid
+  // pinning a company id the caller can't actually use.
+  if (
+    preVerifiedCompanyId &&
+    decision.activeCompanyId === preVerifiedCompanyId
+  ) {
+    finalResponse.cookies.set(ACTIVE_COMPANY_COOKIE_NAME, preVerifiedCompanyId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: ACTIVE_COMPANY_COOKIE_MAX_AGE_SECONDS,
+    });
+  }
+
   return finalResponse;
 }
 

@@ -49,8 +49,16 @@ export type ActiveCompanyResolution = {
 };
 
 export type ActiveCompanySignals = {
-  /** Raw `<companyId>:<timestamp>:<sig>` value from the `?company=` query param. */
-  signedQueryParam?: string | null;
+  /**
+   * Already-verified company id from the `?company=` query param.
+   *
+   * The HMAC verification happens in middleware (`src/proxy.ts`) where the
+   * Edge runtime can run Web Crypto's async `subtle.verify`. This resolver
+   * stays synchronous (it's on the RSC hot path) and trusts the value here
+   * was checked by the caller — re-verification of HMAC signatures inside
+   * a sync resolver is not possible on Edge.
+   */
+  preVerifiedCompanyId?: string | null;
   /** Plain company id read from the `sevent_active_company` cookie. */
   cookieValue?: string | null;
   /** `profiles.last_active_company_id`. */
@@ -109,12 +117,10 @@ export function resolveActiveCompanyForRequest(
     return { activeCompanyId: candidate, companyRole: role };
   };
 
-  // 1. Signed query param wins.
-  if (opts.signedQueryParam) {
-    const verified = verifyActiveCompanyParamSync(opts.signedQueryParam);
-    const hit = verify(verified);
-    if (hit) return hit;
-  }
+  // 1. Pre-verified `?company=` param wins. Caller (middleware) is
+  //    responsible for HMAC verification before passing the id here.
+  const paramHit = verify(opts.preVerifiedCompanyId);
+  if (paramHit) return paramHit;
 
   // 2. Cookie.
   const cookieHit = verify(opts.cookieValue);
@@ -200,28 +206,6 @@ function parseActiveCompanyParam(param: string): ParsedParam | null {
   const tsMs = Number.parseInt(ts, 10);
   if (!Number.isFinite(tsMs) || tsMs <= 0) return null;
   return { companyId, ts, tsMs, sig };
-}
-
-/**
- * Synchronous verification for use inside the resolver hot path.
- *
- * NOTE: Web Crypto's `crypto.subtle.sign` is async-only on the Edge runtime.
- * To avoid making the resolver async-recursive we drop param-based resolution
- * to null in the sync path and rely on the cookie / last_active / auto-resolve
- * fallbacks. Callers that NEED the query-param path (e.g. an invite-accept
- * server action) should call `verifyActiveCompanyParam` directly and pass the
- * result into the resolver via `opts.lastActiveCompanyId` or by setting the
- * cookie before re-rendering.
- *
- * In practice the only consumer that resolves on the param-only path is the
- * email-callback URL handler, which is implemented in PR 5 and runs in a
- * server action context where the async verifier is reachable.
- */
-function verifyActiveCompanyParamSync(_param: string): string | null {
-  // PR 1: no synchronous HMAC; param-based resolution defers to the server
-  // action layer (PR 5). Returning null here is a sound default — the cookie
-  // + DB fallback chain still produces a correct decision.
-  return null;
 }
 
 // ---------------------------------------------------------------------------
