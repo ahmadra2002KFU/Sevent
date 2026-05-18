@@ -83,6 +83,14 @@ export async function proxy(request: NextRequest) {
     allowedRoutePrefixes: decision.allowedRoutePrefixes,
     features: decision.features,
     supplierId: decision.supplierId,
+    // Forward the company-aware fields so `requireAccess` on the page render
+    // can skip a duplicate DB round-trip. verifyAccessPayload enforces a 15s
+    // TTL on these specifically (vs 60s for the rest of the payload), so a
+    // mid-session membership removal invalidates the cached company context
+    // quickly even when the role-level header is still valid.
+    activeCompanyId: decision.activeCompanyId,
+    companyRole: decision.companyRole,
+    availableCompanyIds: decision.availableCompanyIds,
     iat: Date.now(),
   });
 

@@ -18,11 +18,18 @@ type SupplierRow = {
   verification_status: "pending" | "approved" | "rejected";
 } | null;
 
+type MembershipRow = {
+  company_id: string;
+  role: "owner" | "admin" | "member";
+  joined_at: string;
+};
+
 type Fixtures = {
   profiles: Record<string, ProfileRow>; // keyed by user id
   suppliers?: Record<string, SupplierRow>; // keyed by profile_id
   supplierDocs?: Record<string, number>; // keyed by supplier_id → count
   supplierCategories?: Record<string, number>; // keyed by supplier_id → count
+  memberships?: Record<string, MembershipRow[]>; // keyed by profile_id
 };
 
 type EqArgs = { column: string; value: string };
@@ -34,10 +41,18 @@ function createMockAdmin(fx: Fixtures) {
         select(_cols: string, opts?: { count?: string; head?: boolean }) {
           const eqs: EqArgs[] = [];
           const isCount = opts?.count === "exact" && opts?.head === true;
+          let isFiltered = false;
 
           const chain = {
             eq(column: string, value: string) {
               eqs.push({ column, value });
+              return chain;
+            },
+            is(_column: string, _value: unknown) {
+              // Tracked but not used by current fixtures — the only `.is()`
+              // call today is `is("removed_at", null)` on the memberships
+              // query, which is implicitly the only path returning rows here.
+              isFiltered = true;
               return chain;
             },
             async maybeSingle() {
@@ -51,11 +66,24 @@ function createMockAdmin(fx: Fixtures) {
               return { data: null, error: null };
             },
             then(
-              onFulfilled?: (v: { count: number | null; error: null }) => unknown,
+              onFulfilled?: (
+                v:
+                  | { count: number | null; error: null }
+                  | { data: MembershipRow[]; error: null },
+              ) => unknown,
             ) {
-              // Used by count-style queries which await the select().eq() chain
-              // without calling maybeSingle(). Only relevant for head:true.
+              // Used by:
+              //   * count-style queries (`{count:"exact", head:true}`) on
+              //     supplier_docs / supplier_categories.
+              //   * list-style queries on `organizer_memberships` which are
+              //     awaited directly without calling .maybeSingle().
               const key = eqs[0]?.value ?? "";
+              if (table === "organizer_memberships") {
+                const rows = (fx.memberships ?? {})[key] ?? [];
+                return Promise.resolve({ data: rows, error: null }).then(
+                  onFulfilled,
+                );
+              }
               const count = isCount
                 ? table === "supplier_docs"
                   ? (fx.supplierDocs ?? {})[key] ?? 0
@@ -66,6 +94,11 @@ function createMockAdmin(fx: Fixtures) {
               return Promise.resolve({ count, error: null }).then(onFulfilled);
             },
           };
+          // Reference isFiltered to avoid "declared but not used" once we add
+          // assertions on it in a later PR. The current behavior is that an
+          // .is() call simply marks the chain as having a non-eq filter; the
+          // mock does not validate the column/value pair yet.
+          void isFiltered;
           return chain;
         },
       };

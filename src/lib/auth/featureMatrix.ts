@@ -12,6 +12,7 @@ export type AccessState =
   | "unauthenticated"
   | "forbidden"
   | "organizer.active"
+  | "organizer.no_company"
   | "agency.active"
   | "admin.active"
   | "supplier.no_row"
@@ -134,6 +135,22 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     bestDestination: "/organizer/dashboard",
     allowedRoutePrefixes: ["/organizer"],
     features: ORGANIZER_FEATURES,
+  },
+  // Emitted when profiles.organizer_legal_type='company' but the user has
+  // zero active memberships. Route-gating only: no organizer features are
+  // granted until the user creates a company or accepts an invite. /auth and
+  // /sign-out are allowed so the user can switch accounts without being
+  // trapped on the onboarding page.
+  "organizer.no_company": {
+    bestDestination: "/organizer/onboarding/company",
+    allowedRoutePrefixes: [
+      "/organizer/onboarding/company",
+      "/auth",
+      "/sign-out",
+    ],
+    features: {
+      ...SHARED_AUTH_FEATURES,
+    },
   },
   "agency.active": {
     // Agencies act on organizers' behalf and get the same surface today.
