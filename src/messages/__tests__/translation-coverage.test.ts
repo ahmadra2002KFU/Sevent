@@ -32,6 +32,15 @@ const SKIPLIST_EXACT = new Set<string>([
   "supplier.portfolio.item.documentTag",
   // `{city} · {starts} – {ends}` — pure interpolation template, no words.
   "organizer.quote.compare.printMeta",
+  // Company-onboarding placeholders — locale-neutral form examples.
+  // `Acme Events Co.` (brand wordmark), `شركة أكمي للفعاليات` (Arabic
+  // form-field example shown verbatim regardless of UI locale because the
+  // field itself is the Arabic-name slot), `acme-events` (URL slug),
+  // `billing@acme-events.com` (email literal).
+  "organizer.onboarding.company.namePlaceholder",
+  "organizer.onboarding.company.nameArPlaceholder",
+  "organizer.onboarding.company.slugPlaceholder",
+  "organizer.onboarding.company.billingEmailPlaceholder",
   // Locale-name self-reference: "English" in the EN file, "العربية" in the AR file;
   // they are compared independently and their EN string (e.g. "English") is what
   // appears on both sides of the equality check only for the `en` key. The `ar`

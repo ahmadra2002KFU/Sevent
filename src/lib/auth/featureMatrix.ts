@@ -44,7 +44,12 @@ export type OrganizerFeature =
   | "organizer.dashboard"
   | "organizer.events"
   | "organizer.rfqs"
-  | "organizer.bookings";
+  | "organizer.bookings"
+  // Onboarding surfaces — granted in both `organizer.active` (so a brand-new
+  // organizer can pick "I'm setting up a company") AND `organizer.no_company`
+  // (so a company-declared user with no membership yet can finish the setup
+  // form without bouncing to bestDestination).
+  | "organizer.onboarding";
 
 export type AdminFeature =
   | "admin.console"
@@ -108,6 +113,7 @@ const ORGANIZER_FEATURES: FeatureSet = {
   "organizer.events": true,
   "organizer.rfqs": true,
   "organizer.bookings": true,
+  "organizer.onboarding": true,
 };
 
 const ADMIN_FEATURES: FeatureSet = {
@@ -150,6 +156,10 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     ],
     features: {
       ...SHARED_AUTH_FEATURES,
+      // The company-creation page calls `requireAccess("organizer.onboarding")`
+      // to gate its render; without this grant the no_company user would be
+      // redirected back to bestDestination by requireAccess in a loop.
+      "organizer.onboarding": true,
     },
   },
   "agency.active": {
