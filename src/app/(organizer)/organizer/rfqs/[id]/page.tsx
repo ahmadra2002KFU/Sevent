@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, FileCheck } from "lucide-react";
+import { FileCheck } from "lucide-react";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import {
   StatusPill,
   type StatusPillStatus,
@@ -164,18 +165,14 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link
-          href={
-            rfq.events
-              ? `/organizer/events/${rfq.events.id}`
-              : "/organizer/rfqs"
-          }
-        >
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {rfq.events ? t("backToEvent") : t("backToRfqs")}
-        </Link>
-      </Button>
+      <BackLink
+        href={
+          rfq.events
+            ? `/organizer/events/${rfq.events.id}`
+            : "/organizer/rfqs"
+        }
+        label={rfq.events ? t("backToEvent") : t("backToRfqs")}
+      />
 
       <PageHeader
         title={title}

@@ -21,8 +21,9 @@ import type { EventType } from "@/lib/supabase/types";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -210,9 +211,14 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
   const categoryLabel = categoryName(op.category, locale);
   const subLabel = categoryName(op.subcategory, locale);
   const cityLabel = cityNameFor(op.event.city, locale);
+  // Screen-reader label for the stretched link — picks up the row's most
+  // identifying bits so the announced target isn't just the CTA verb.
+  const ariaLabel = [tLabels.applyCta, categoryLabel, subLabel, cityLabel]
+    .filter(Boolean)
+    .join(" — ");
 
   return (
-    <Card>
+    <Card className="group/op-card relative transition-[box-shadow,background-color,border-color] duration-200 ease-out hover:bg-background hover:ring-primary/35 hover:shadow-brand-md focus-within:ring-2 focus-within:ring-ring/50 focus-within:shadow-brand-md motion-reduce:transition-none">
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -250,13 +256,62 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
             </p>
           ) : null}
         </div>
-        <Button asChild size="sm" className="shrink-0">
-          <Link href={`/supplier/opportunities/${op.rfq_id}`}>
+        {/* Decorative CTA — the whole card is the stretched-link click
+            target, so this stays a non-interactive <span> with
+            `pointer-events-none`. The animation is driven by the parent
+            card's `group/op-card` (hover) and `focus-within` (keyboard
+            tab landing on the sibling stretched Link below), so mouse
+            and keyboard users get the same motion. Mirrors `BackLink`'s
+            visual language so the two CTAs feel like one family. */}
+        <span
+          aria-hidden
+          className={cn(
+            buttonVariants({ size: "sm", variant: "outline" }),
+            "pointer-events-none relative shrink-0 overflow-hidden border-primary/35 text-primary",
+          )}
+        >
+          {/* Cobalt ink — collapsed at the inline-start edge, sweeps
+              across on parent hover or focus-within. */}
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-0 origin-left scale-x-0 bg-primary",
+              "transition-transform duration-300 ease-out",
+              "group-hover/op-card:scale-x-100 group-focus-within/op-card:scale-x-100",
+              "rtl:origin-right",
+              "motion-reduce:transition-none",
+            )}
+          />
+          <span
+            className={cn(
+              "relative transition-colors duration-200 ease-out",
+              "group-hover/op-card:text-primary-foreground group-focus-within/op-card:text-primary-foreground",
+              "motion-reduce:transition-none",
+            )}
+          >
             {tLabels.applyCta}
-            <ArrowRight className="rtl:rotate-180" aria-hidden />
-          </Link>
-        </Button>
+          </span>
+          <ArrowRight
+            aria-hidden
+            className={cn(
+              "relative rtl:rotate-180",
+              "transition-[transform,color] duration-300 ease-out",
+              "group-hover/op-card:translate-x-1.5 group-hover/op-card:scale-110 group-hover/op-card:text-primary-foreground",
+              "group-focus-within/op-card:translate-x-1.5 group-focus-within/op-card:scale-110 group-focus-within/op-card:text-primary-foreground",
+              "rtl:group-hover/op-card:-translate-x-1.5 rtl:group-focus-within/op-card:-translate-x-1.5",
+              "motion-reduce:transition-none",
+            )}
+          />
+        </span>
       </CardContent>
+      {/* Stretched link — overlays the whole card so the entire row is the
+          hit target. Card has `overflow-hidden rounded-xl`, so this is
+          clipped to the rounded corners. */}
+      <Link
+        href={`/supplier/opportunities/${op.rfq_id}`}
+        aria-label={ariaLabel}
+        className="absolute inset-0 rounded-xl focus:outline-none"
+      />
     </Card>
   );
 }

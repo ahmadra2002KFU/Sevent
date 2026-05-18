@@ -12,7 +12,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, ClockAlert, FileText, Hourglass } from "lucide-react";
+import { ClockAlert, FileText, Hourglass } from "lucide-react";
 import {
   STORAGE_BUCKETS,
   createSignedDownloadUrl,
@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import {
   StatusPill,
   type StatusPillStatus,
@@ -244,12 +245,10 @@ export default async function OrganizerQuoteDetailPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link href={`/organizer/rfqs/${id}/quotes`}>
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("backToCompare")}
-        </Link>
-      </Button>
+      <BackLink
+        href={`/organizer/rfqs/${id}/quotes`}
+        label={t("backToCompare")}
+      />
 
       <PageHeader
         title={quote.suppliers?.business_name ?? t("snapshotHeading")}

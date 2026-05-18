@@ -3,7 +3,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ArrowLeft,
   AlertCircle,
   CalendarDays,
   MapPin,
@@ -25,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import {
   StatusPill,
   type StatusPillStatus,
@@ -233,12 +233,7 @@ export default async function OrganizerBookingDetailPage({
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link href="/organizer/bookings">
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("detail.backToList")}
-        </Link>
-      </Button>
+      <BackLink href="/organizer/bookings" label={t("detail.backToList")} />
 
       <PageHeader
         title={t("detailTitle")}

@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
-  ArrowLeft,
   CalendarDays,
   ClockAlert,
   Hash,
@@ -19,6 +17,7 @@ import {
   getMarketplaceOpportunity,
 } from "@/lib/domain/marketplace";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
 import {
   Card,
@@ -26,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { applyToOpportunity } from "./apply";
 import { ApplySubmitButton } from "./apply-submit-button";
@@ -63,12 +61,7 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link href="/supplier/opportunities">
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("backToList")}
-        </Link>
-      </Button>
+      <BackLink href="/supplier/opportunities" label={t("backToList")} />
 
       <PageHeader
         title={categoryLabel || t("detail.fallbackTitle")}

@@ -2,13 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
-  ArrowLeft,
   CalendarDays,
   MapPin,
   Users,
   FileText,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { AddBandDialog } from "./AddBandDialog";
 import {
   Card,
@@ -18,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import {
   StatusPill,
   type StatusPillStatus,
@@ -182,12 +181,7 @@ export default async function EventDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Button variant="ghost" size="sm" className="w-fit" asChild>
-        <Link href="/organizer/events">
-          <ArrowLeft className="rtl:rotate-180" aria-hidden />
-          {t("backToEvents")}
-        </Link>
-      </Button>
+      <BackLink href="/organizer/events" label={t("backToEvents")} />
 
       <PageHeader
         title={title}

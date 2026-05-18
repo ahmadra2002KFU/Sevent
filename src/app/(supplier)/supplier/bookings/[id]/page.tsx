@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarClock, ReceiptText, Users } from "lucide-react";
+import { CalendarClock, ReceiptText, Users } from "lucide-react";
 import {
   formatConfirmDeadline,
   type ConfirmationStatus,
@@ -13,6 +13,7 @@ import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
 import { requireAccess } from "@/lib/auth/access";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
+import { BackLink } from "@/components/ui-ext/BackLink";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import {
   Card,
@@ -199,12 +200,7 @@ export default async function SupplierBookingDetailPage({ params }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <Button asChild variant="ghost" size="sm" className="w-fit">
-        <Link href="/supplier/bookings">
-          <ArrowLeft className="rtl:rotate-180" />
-          {t("detail.backToList")}
-        </Link>
-      </Button>
+      <BackLink href="/supplier/bookings" label={t("detail.backToList")} />
 
       <PageHeader
         title={t("detailTitle")}
