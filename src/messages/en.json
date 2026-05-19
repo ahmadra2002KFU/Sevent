@@ -2133,7 +2133,29 @@
       "browseSuppliers": "Browse suppliers",
       "bookings": "Bookings",
       "notifications": "Notifications",
-      "invitesCount": "{count, plural, one {# invite} other {# invites}}"
+      "invitesCount": "{count, plural, one {# invite} other {# invites}}",
+      "onboardingBanner": {
+        "title": "Welcome to Sevent — pick how you'll work",
+        "subtitle": "This affects how teammates and billing show up. We'll remember your choice.",
+        "companyLabel": "Set up a company",
+        "companyHint": "Multiple teammates · CR / VAT on bookings",
+        "individualLabel": "Continue solo",
+        "individualHint": "Plan events as an individual organizer"
+      },
+      "companyMeta": {
+        "teammates": "{count, plural, one {# teammate} other {# teammates}}",
+        "role": {
+          "owner": "Owner",
+          "admin": "Admin",
+          "member": "Member"
+        }
+      },
+      "inviteTeammates": {
+        "title": "Bring your team in",
+        "subtitleOwner": "Sevent companies work best with 2+ people. Invite an admin or member.",
+        "subtitleAdmin": "Add a teammate so the workload can be shared.",
+        "cta": "Invite a teammate"
+      }
     },
     "onboarding": {
       "companyChoice": {

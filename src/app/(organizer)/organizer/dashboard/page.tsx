@@ -20,6 +20,9 @@ import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill, type StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
+import { OrganizerOnboardingBanner } from "./OrganizerOnboardingBanner";
+import { CompanyMetaLine } from "./CompanyMetaLine";
+import { InviteTeammatesPrompt } from "./InviteTeammatesPrompt";
 
 export const dynamic = "force-dynamic";
 
@@ -72,44 +75,122 @@ export default async function OrganizerDashboardPage() {
   const t = await getTranslations("organizer.dashboard");
   const rfqT = await getTranslations("organizer.rfqs");
 
-  const { user, admin } = await requireAccess("organizer.dashboard");
+  const { user, admin, decision } = await requireAccess("organizer.dashboard");
 
   const nowIso = new Date().toISOString();
+  const activeCompanyId = decision.activeCompanyId;
+  const companyRole = decision.companyRole;
 
-  const [eventsCountRes, rfqStatusRes, confirmedRes, latestRes, upcomingRes] =
-    await Promise.all([
-      admin
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("organizer_id", user.id),
-      admin
-        .from("rfqs")
-        .select("id, status, events!inner(organizer_id)")
-        .eq("events.organizer_id", user.id),
-      admin
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .eq("organizer_id", user.id)
-        .eq("confirmation_status", "confirmed"),
-      admin
-        .from("rfqs")
-        .select(
-          `id, status, sent_at, created_at,
-           events!inner ( id, city, organizer_id ),
+  // Profile-side onboarding state: surface the choice banner when the user
+  // hasn't declared a legal_type yet. One small extra round-trip; cached
+  // inside the same RSC pass via `Promise.all`.
+  const profilePromise = admin
+    .from("profiles")
+    .select("organizer_legal_type")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // Active-company metadata (name + member count) for the meta-line strip.
+  // Skipped for individual viewers to avoid the extra queries.
+  const companyMetaPromise = activeCompanyId
+    ? Promise.all([
+        admin
+          .from("organizer_companies")
+          .select("name")
+          .eq("id", activeCompanyId)
+          .maybeSingle(),
+        admin
+          .from("organizer_memberships")
+          .select("profile_id", { count: "exact", head: true })
+          .eq("company_id", activeCompanyId)
+          .is("removed_at", null),
+      ])
+    : Promise.resolve(null);
+
+  // Dashboard activity queries — when an active company is pinned, scope
+  // everything to that company so any current member sees the full team's
+  // events / RFQs / bookings (not just rows they personally created).
+  // Individual organizers keep the legacy `organizer_id = user.id` filter
+  // with an explicit `company_id IS NULL` guard so a member acting as
+  // company_id=NULL doesn't bleed into the individual view.
+  const eventsCountQ = admin
+    .from("events")
+    .select("id", { count: "exact", head: true });
+  const rfqsStatusQ = admin
+    .from("rfqs")
+    .select("id, status");
+  const bookingsConfirmedQ = admin
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("confirmation_status", "confirmed");
+  const latestRfqsQ = admin
+    .from("rfqs")
+    .select(
+      `id, status, sent_at, created_at,
+           events!inner ( id, city ),
            sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar ),
            rfq_invites ( id )`,
-        )
-        .eq("events.organizer_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(5),
-      admin
-        .from("events")
-        .select("id, event_type, client_name, city, starts_at, ends_at")
-        .eq("organizer_id", user.id)
-        .gt("starts_at", nowIso)
-        .order("starts_at", { ascending: true })
-        .limit(3),
-    ]);
+    )
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const upcomingEventsQ = admin
+    .from("events")
+    .select("id, event_type, client_name, city, starts_at, ends_at")
+    .gt("starts_at", nowIso)
+    .order("starts_at", { ascending: true })
+    .limit(3);
+
+  if (activeCompanyId) {
+    eventsCountQ.eq("company_id", activeCompanyId);
+    rfqsStatusQ.eq("company_id", activeCompanyId);
+    bookingsConfirmedQ.eq("company_id", activeCompanyId);
+    latestRfqsQ.eq("company_id", activeCompanyId);
+    upcomingEventsQ.eq("company_id", activeCompanyId);
+  } else {
+    eventsCountQ.eq("organizer_id", user.id).is("company_id", null);
+    bookingsConfirmedQ.eq("organizer_id", user.id).is("company_id", null);
+    // rfqs.company_id is null for the legacy path, but ownership is via the
+    // joined event's organizer_id — keep the original predicate.
+    rfqsStatusQ.is("company_id", null);
+    latestRfqsQ.is("company_id", null);
+    upcomingEventsQ.eq("organizer_id", user.id).is("company_id", null);
+  }
+
+  const [
+    profileRes,
+    companyMetaRes,
+    eventsCountRes,
+    rfqStatusRes,
+    confirmedRes,
+    latestRes,
+    upcomingRes,
+  ] = await Promise.all([
+    profilePromise,
+    companyMetaPromise,
+    eventsCountQ,
+    rfqsStatusQ,
+    bookingsConfirmedQ,
+    latestRfqsQ,
+    upcomingEventsQ,
+  ]);
+
+  const legalType =
+    (profileRes.data as { organizer_legal_type?: string | null } | null)
+      ?.organizer_legal_type ?? null;
+  const showOnboardingBanner = legalType === null;
+
+  let companyName: string | null = null;
+  let memberCount = 0;
+  if (companyMetaRes) {
+    const [companyRow, membershipsRow] = companyMetaRes;
+    companyName =
+      (companyRow.data as { name?: string } | null)?.name ?? null;
+    memberCount = membershipsRow.count ?? 0;
+  }
+  const showInvitePrompt =
+    activeCompanyId !== null &&
+    (companyRole === "owner" || companyRole === "admin") &&
+    memberCount <= 1;
 
   const totalEvents = eventsCountRes.count ?? 0;
   const allRfqs = (rfqStatusRes.data ?? []) as Array<{
@@ -140,6 +221,20 @@ export default async function OrganizerDashboardPage() {
           </Button>
         }
       />
+
+      {activeCompanyId && companyName && companyRole ? (
+        <CompanyMetaLine
+          companyName={companyName}
+          memberCount={memberCount}
+          role={companyRole}
+        />
+      ) : null}
+
+      {showOnboardingBanner ? <OrganizerOnboardingBanner /> : null}
+
+      {showInvitePrompt && (companyRole === "owner" || companyRole === "admin") ? (
+        <InviteTeammatesPrompt role={companyRole} />
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard

@@ -2133,7 +2133,29 @@
       "browseSuppliers": "تصفح الموردين",
       "bookings": "الحجوزات",
       "notifications": "الإشعارات",
-      "invitesCount": "{count, plural, zero {لا يوجد دعوات} one {دعوة واحدة} two {دعوتان} few {# دعوات} many {# دعوة} other {# دعوة}}"
+      "invitesCount": "{count, plural, zero {لا يوجد دعوات} one {دعوة واحدة} two {دعوتان} few {# دعوات} many {# دعوة} other {# دعوة}}",
+      "onboardingBanner": {
+        "title": "أهلًا بك في سيڤنت — اختر طريقة عملك",
+        "subtitle": "هذا يحدّد كيف يظهر الزملاء والفوترة. سنتذكّر اختيارك.",
+        "companyLabel": "تأسيس شركة",
+        "companyHint": "زملاء متعددون · سجل تجاري وضريبي على الحجوزات",
+        "individualLabel": "متابعة كفرد",
+        "individualHint": "خطّط للفعاليات كمنظّم فردي"
+      },
+      "companyMeta": {
+        "teammates": "{count, plural, zero {لا يوجد زملاء} one {زميل واحد} two {زميلان} few {# زملاء} many {# زميلاً} other {# زميل}}",
+        "role": {
+          "owner": "مالك",
+          "admin": "مشرف",
+          "member": "عضو"
+        }
+      },
+      "inviteTeammates": {
+        "title": "ضمّ فريقك",
+        "subtitleOwner": "شركات سيڤنت تشتغل أفضل مع شخصين أو أكثر. ادعُ مشرفاً أو عضواً.",
+        "subtitleAdmin": "أضف زميلاً لتقاسم العبء.",
+        "cta": "دعوة زميل"
+      }
     },
     "onboarding": {
       "companyChoice": {
