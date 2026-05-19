@@ -220,7 +220,20 @@ export async function TopNav({ role }: { role: Role }) {
   // `pending_review` / `rejected` doesn't see clickable links to Catalog /
   // Calendar / Bookings / RFQs / Profile. The featureless fallback keeps a
   // Dashboard link visible so the user isn't stranded with no navigation.
-  const candidateItems = NAV_BY_ROLE[role];
+  const candidateItems: NavItem[] = [...NAV_BY_ROLE[role]];
+  // PR 7 audit finding #10: a company-organizer with no nav entry into
+  // `/organizer/settings/*` could only reach Members/Invites/Company via
+  // direct URL typing. We append the entry only when the resolver has
+  // pinned an active company — individual organizers don't see it.
+  if (role === "organizer" && decision.activeCompanyId) {
+    candidateItems.push({
+      href: "/organizer/settings/company",
+      labelKey: "organizer.settings",
+      iconKey: "settings",
+      feature: "organizer.settings",
+      activePrefixes: ["/organizer/settings"],
+    });
+  }
   const allowedItems = candidateItems.filter(
     (item) => decision.features[item.feature],
   );

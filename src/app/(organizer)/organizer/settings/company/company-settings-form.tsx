@@ -82,43 +82,52 @@ export function CompanySettingsForm({
         />
       </Field>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Field label={t("crLabel")} hint={t("crHint")}>
-          <Input
-            id="company-cr"
-            name="cr_number"
-            inputMode="numeric"
-            pattern="^\d{10}$"
-            maxLength={10}
-            defaultValue={defaultValues.cr_number}
-            disabled={!canEdit}
-          />
-        </Field>
+      {/*
+        Finance fields (CR / VAT / billing email) are admin-only. Members
+        don't see them at all — both for the UI (PR 7 finding #7) and to
+        keep the server-side payload free of those values when a non-admin
+        submits. The DB-side `revoke select (cr_number, vat_number,
+        billing_email)` from `authenticated` is the actual enforcement
+        boundary; this hides them from the form rendering too.
+      */}
+      {canEdit ? (
+        <>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Field label={t("crLabel")} hint={t("crHint")}>
+              <Input
+                id="company-cr"
+                name="cr_number"
+                inputMode="numeric"
+                pattern="^\d{10}$"
+                maxLength={10}
+                defaultValue={defaultValues.cr_number}
+              />
+            </Field>
 
-        <Field label={t("vatLabel")} hint={t("vatHint")}>
-          <Input
-            id="company-vat"
-            name="vat_number"
-            inputMode="numeric"
-            pattern="^3\d{14}$"
-            maxLength={15}
-            defaultValue={defaultValues.vat_number}
-            disabled={!canEdit}
-          />
-        </Field>
-      </div>
+            <Field label={t("vatLabel")} hint={t("vatHint")}>
+              <Input
+                id="company-vat"
+                name="vat_number"
+                inputMode="numeric"
+                pattern="^3\d{14}$"
+                maxLength={15}
+                defaultValue={defaultValues.vat_number}
+              />
+            </Field>
+          </div>
 
-      <Field label={t("billingEmailLabel")} hint={t("billingEmailHint")}>
-        <Input
-          id="company-billing"
-          name="billing_email"
-          type="email"
-          required
-          maxLength={255}
-          defaultValue={defaultValues.billing_email}
-          disabled={!canEdit}
-        />
-      </Field>
+          <Field label={t("billingEmailLabel")} hint={t("billingEmailHint")}>
+            <Input
+              id="company-billing"
+              name="billing_email"
+              type="email"
+              required
+              maxLength={255}
+              defaultValue={defaultValues.billing_email}
+            />
+          </Field>
+        </>
+      ) : null}
 
       <Field label={t("defaultLanguageLabel")}>
         <Select

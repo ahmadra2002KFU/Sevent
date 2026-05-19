@@ -16,6 +16,7 @@ export type InviteMutationErrorCode =
   | "alreadyPending"
   | "inviteNotFound"
   | "inviteResolved"
+  | "adminCannotInviteAdmin"
   | "mutationFailed";
 
 export type InviteMutationState =
@@ -182,6 +183,9 @@ export async function createInviteAction(
     if (code === "P0050") return { status: "error", code: "alreadyPending" };
     if (code === "P0051") return { status: "error", code: "notAdmin" };
     if (code === "P0052") return { status: "error", code: "roleInvalid" };
+    if (code === "P0061") {
+      return { status: "error", code: "adminCannotInviteAdmin" };
+    }
     console.error("[createInviteAction] RPC failed", {
       code,
       message: error.message,
@@ -266,12 +270,12 @@ export async function revokeInviteAction(
 }
 
 /**
- * Resend = revoke existing pending invite + create a new one with the same
- * (email, role). Two-step is acceptable because the partial unique index
- * ((company_id, lower(email)) where status='pending') guarantees we never
- * end up with two pending invites for the same address, and if the
- * second step fails the admin can simply create a fresh invite from the
- * form.
+ * Resend an existing pending invite. PR 7 audit finding #1: previously this
+ * was a two-step revoke→create chain in the application layer. If the
+ * create step failed, the old emailed link was permanently revoked and
+ * the admin saw a generic error with no recovery. The atomic RPC
+ * `resend_organizer_invite_tx` now does both inside one transaction so
+ * a failure rolls back the revoke and the original invite stays usable.
  */
 export async function resendInviteAction(
   _prev: InviteMutationState | undefined,
@@ -294,66 +298,43 @@ export async function resendInviteAction(
     return { status: "error", code: "inviteNotFound" };
   }
 
-  // Look up the existing row so we can replay (email, role) onto a fresh
-  // token. We need the company_id match here so a malicious admin in a
-  // different company can't operate on someone else's invite — service_role
-  // bypasses RLS, so the .eq(company_id) is the guard.
+  // Cross-company guard: the RPC enforces this too via its admin-membership
+  // check, but a pre-flight company match short-circuits a bogus invite_id
+  // before we pay the RPC round-trip.
   const { data: existing } = await admin
     .from("organizer_invites")
-    .select("email, role, status")
+    .select("status")
     .eq("id", parsed.data.invite_id)
     .eq("company_id", companyId)
     .maybeSingle();
   if (!existing) {
     return { status: "error", code: "inviteNotFound" };
   }
-  const row = existing as {
-    email: string;
-    role: "admin" | "member";
-    status: string;
-  };
-  if (row.status !== "pending") {
-    return { status: "error", code: "inviteResolved" };
-  }
 
-  // Step 1: revoke the old row.
-  const { error: revokeError } = await admin.rpc("revoke_organizer_invite_tx", {
-    p_invite_id: parsed.data.invite_id,
-    p_actor_profile_id: user.id,
-    p_reason: "resend",
-  });
-  if (revokeError) {
-    const code = (revokeError as { code?: string }).code ?? null;
-    if (code === "P0051") return { status: "error", code: "notAdmin" };
-    if (code === "P0053") return { status: "error", code: "inviteNotFound" };
-    if (code === "P0054") return { status: "error", code: "inviteResolved" };
-    console.error("[resendInviteAction] revoke failed", {
-      code,
-      message: revokeError.message,
-    });
-    return { status: "error", code: "mutationFailed" };
-  }
-
-  // Step 2: fresh invite with new token + expiry.
   const token = generateInviteToken();
   const expiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString();
-  const { data: rpcData, error: createError } = await admin.rpc(
-    "create_organizer_invite_tx",
+
+  const { data: rpcData, error } = await admin.rpc(
+    "resend_organizer_invite_tx",
     {
-      p_company_id: companyId,
+      p_invite_id: parsed.data.invite_id,
       p_actor_profile_id: user.id,
-      p_email: row.email,
-      p_role: row.role,
-      p_token: token,
-      p_expires_at: expiresAt,
+      p_new_token: token,
+      p_new_expires_at: expiresAt,
     },
   );
 
-  if (createError) {
-    const code = (createError as { code?: string }).code ?? null;
-    console.error("[resendInviteAction] create failed", {
+  if (error) {
+    const code = (error as { code?: string }).code ?? null;
+    if (code === "P0051") return { status: "error", code: "notAdmin" };
+    if (code === "P0053") return { status: "error", code: "inviteNotFound" };
+    if (code === "P0054") return { status: "error", code: "inviteResolved" };
+    if (code === "P0061") {
+      return { status: "error", code: "adminCannotInviteAdmin" };
+    }
+    console.error("[resendInviteAction] RPC failed", {
       code,
-      message: createError.message,
+      message: error.message,
     });
     return { status: "error", code: "mutationFailed" };
   }
@@ -361,7 +342,9 @@ export async function resendInviteAction(
   const newRow = Array.isArray(rpcData) ? rpcData[0] : rpcData;
   const newInviteId = (newRow as { out_invite_id?: string } | null)
     ?.out_invite_id;
-  if (!newInviteId) {
+  const newEmail = (newRow as { out_email?: string } | null)?.out_email;
+  const newRole = (newRow as { out_role?: "admin" | "member" } | null)?.out_role;
+  if (!newInviteId || !newEmail || !newRole) {
     return { status: "error", code: "mutationFailed" };
   }
 
@@ -375,8 +358,8 @@ export async function resendInviteAction(
     admin,
     companyId,
     inviteId: newInviteId,
-    email: row.email,
-    role: row.role,
+    email: newEmail,
+    role: newRole,
     expiresAt,
     url: buildInviteUrl(newInviteId, token),
     inviterName,

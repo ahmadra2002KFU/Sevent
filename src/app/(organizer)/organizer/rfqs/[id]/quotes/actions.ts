@@ -115,6 +115,10 @@ function errorForRpc(err: PgError): {
         params: { status: status || "—" },
       };
     }
+    case "P0060":
+      // accept_quote_tx_v2 spend-cap reject for member-role actors.
+      // Message shape: "quote_above_member_threshold:<quote_total> > <threshold>"
+      return { code: "acceptErrorAboveMemberThreshold" };
     default:
       return { code: "acceptErrorUnknown" };
   }

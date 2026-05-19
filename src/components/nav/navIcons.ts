@@ -12,6 +12,7 @@ import {
   Mail,
   MessageSquare,
   Palette,
+  Settings,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -45,6 +46,7 @@ export const NAV_ICONS = {
   notifications: Bell,
   feedback: MessageSquare,
   messages: Mail,
+  settings: Settings,
 } as const satisfies Record<string, LucideIcon>;
 
 export type NavIconKey = keyof typeof NAV_ICONS;

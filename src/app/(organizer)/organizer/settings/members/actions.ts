@@ -13,6 +13,8 @@ export type MemberMutationErrorCode =
   | "invalidRole"
   | "selfTransfer"
   | "transferTargetMissing"
+  | "adminCannotChangeAdmin"
+  | "adminCannotRemoveAdmin"
   | "mutationFailed";
 
 export type MemberMutationState =
@@ -80,6 +82,9 @@ export async function changeMemberRoleAction(
     if (code === "P0056") {
       return { status: "error", code: "cannotChangeOwner" };
     }
+    if (code === "P0058") {
+      return { status: "error", code: "adminCannotChangeAdmin" };
+    }
     console.error("[changeMemberRoleAction] RPC failed", {
       code,
       message: error.message,
@@ -134,6 +139,9 @@ export async function removeMemberAction(
     if (code === "P0049") return { status: "error", code: "memberNotFound" };
     if (code === "P0044") {
       return { status: "error", code: "cannotRemoveSoleOwner" };
+    }
+    if (code === "P0059") {
+      return { status: "error", code: "adminCannotRemoveAdmin" };
     }
     console.error("[removeMemberAction] RPC failed", {
       code,

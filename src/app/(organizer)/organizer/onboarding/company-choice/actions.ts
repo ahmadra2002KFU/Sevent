@@ -20,26 +20,20 @@ import { requireAccess } from "@/lib/auth/access";
 export async function markAsIndividualAction(): Promise<void> {
   const { user, admin } = await requireAccess("organizer.onboarding");
 
-  // Only allow flipping from NULL → 'individual'. Once the user has declared
-  // a legal_type we don't let this action overwrite it (a company member
-  // calling this would lock themselves out of the company surface).
-  const { data: profileRow } = await admin
+  // Conditional UPDATE — only flip NULL → 'individual' atomically. The
+  // SELECT-then-UPDATE pattern this replaces had a TOCTOU window where a
+  // concurrent createCompanyAction (which writes
+  // organizer_legal_type='company') could be silently overwritten back to
+  // 'individual'. Filtering on `.is(...)` pushes the precondition into the
+  // single UPDATE statement so the DB enforces it under MVCC.
+  const { error } = await admin
     .from("profiles")
-    .select("organizer_legal_type")
+    .update({ organizer_legal_type: "individual" })
     .eq("id", user.id)
-    .maybeSingle();
-  const current = (profileRow as { organizer_legal_type?: string | null } | null)
-    ?.organizer_legal_type;
-
-  if (current === null || current === undefined) {
-    const { error } = await admin
-      .from("profiles")
-      .update({ organizer_legal_type: "individual" })
-      .eq("id", user.id);
-    if (error) {
-      console.error("[markAsIndividualAction] update failed", error);
-      redirect("/organizer/onboarding/company-choice?error=db");
-    }
+    .is("organizer_legal_type", null);
+  if (error) {
+    console.error("[markAsIndividualAction] update failed", error);
+    redirect("/organizer/onboarding/company-choice?error=db");
   }
 
   redirect("/organizer/dashboard");

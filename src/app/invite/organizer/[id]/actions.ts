@@ -2,10 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import {
-  createSupabaseServiceRoleClient,
-  getCurrentUser,
-} from "@/lib/supabase/server";
+import { requireAccess } from "@/lib/auth/access";
 import { setActiveCompanyCookie } from "@/lib/auth/activeCompany";
 
 export type AcceptInviteErrorCode =
@@ -32,15 +29,21 @@ const InputSchema = z.object({
  * validated invite status + token presence client-side, but the RPC is
  * the security boundary — it re-verifies the sha256(token) against the
  * stored hash under a FOR UPDATE lock.
+ *
+ * Auth: routed through `requireAccess("organizer.onboarding")` so a
+ * suspended / banned / wrong-role user is caught at the access-decision
+ * layer rather than via a bare profile.role check. Granting the feature
+ * is what `organizer.active` + `organizer.no_company` already do; any
+ * other state redirects to bestDestination before we touch the RPC.
  */
 export async function acceptInviteAction(
   _prev: AcceptInviteState | undefined,
   formData: FormData,
 ): Promise<AcceptInviteState> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { status: "error", code: "unauthenticated" };
-  }
+  // requireAccess throws NEXT_REDIRECT for unauthenticated / unauthorized
+  // states; if we get past this call the user is a viable organizer-side
+  // identity. The matrix admits `organizer.active` and `organizer.no_company`.
+  const { user, admin } = await requireAccess("organizer.onboarding");
 
   const parsed = InputSchema.safeParse({
     invite_id: formData.get("invite_id") ?? "",
@@ -48,20 +51,6 @@ export async function acceptInviteAction(
   });
   if (!parsed.success) {
     return { status: "error", code: "tokenInvalid" };
-  }
-
-  const admin = createSupabaseServiceRoleClient();
-
-  // Role compatibility check — the page renders an early-out for this
-  // case, but a determined caller could POST directly to the action.
-  const { data: profileRow } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  const profileRole = (profileRow as { role?: string } | null)?.role ?? null;
-  if (profileRole && profileRole !== "organizer" && profileRole !== "agency") {
-    return { status: "error", code: "wrongRole" };
   }
 
   const { data: rpcData, error } = await admin.rpc(

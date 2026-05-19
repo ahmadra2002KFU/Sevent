@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Building2, Mail, Users } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import { SettingsSideNav, type SettingsNavItem } from "./SettingsSideNav";
 
@@ -64,12 +62,3 @@ export default async function OrganizerSettingsLayout({
     </section>
   );
 }
-
-// Re-export for convenience to side-nav icon mapping. The component is a
-// pure client renderer of these items; both server (this file) and client
-// (SettingsSideNav.tsx) need the same SettingsNavItem shape.
-export const SETTINGS_ICONS = {
-  company: Building2,
-  members: Users,
-  invites: Mail,
-} as const;

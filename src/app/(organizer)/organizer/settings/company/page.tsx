@@ -63,6 +63,12 @@ export default async function OrganizerCompanySettingsPage() {
   const canEdit =
     decision.companyRole === "owner" || decision.companyRole === "admin";
 
+  // PR 7 finding #7: finance fields (cr_number, vat_number, billing_email)
+  // are admin-only. Mask them to empty strings for member viewers so they
+  // never reach the HTML payload, even though the form also conditionally
+  // omits the inputs. Defense in depth — the form is the UX line; the
+  // server-side `revoke select(...) from authenticated` migration is the
+  // PostgREST line.
   return (
     <CompanySettingsForm
       companyId={company.id}
@@ -70,9 +76,9 @@ export default async function OrganizerCompanySettingsPage() {
         name: company.name,
         name_ar: company.name_ar ?? "",
         slug: company.slug,
-        cr_number: company.cr_number ?? "",
-        vat_number: company.vat_number ?? "",
-        billing_email: company.billing_email ?? "",
+        cr_number: canEdit ? company.cr_number ?? "" : "",
+        vat_number: canEdit ? company.vat_number ?? "" : "",
+        billing_email: canEdit ? company.billing_email ?? "" : "",
         default_language: company.default_language,
         logo_path: company.logo_path ?? "",
       }}

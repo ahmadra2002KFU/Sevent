@@ -25,7 +25,8 @@
       "events": "Events",
       "rfqs": "RFQs",
       "bookings": "Bookings",
-      "messages": "Messages"
+      "messages": "Messages",
+      "settings": "Settings"
     },
     "supplier": {
       "dashboard": "Dashboard",
@@ -2288,6 +2289,8 @@
           "invalidRole": "Pick a role between admin and member.",
           "selfTransfer": "You can't transfer ownership to yourself.",
           "transferTargetMissing": "Pick a current member to transfer ownership to.",
+          "adminCannotChangeAdmin": "Only owners can change another admin's role. Ask the owner to make this change.",
+          "adminCannotRemoveAdmin": "Only owners can remove another admin. Ask the owner to remove this teammate.",
           "mutationFailed": "Couldn't save the change. Please try again."
         },
         "audit": {
@@ -2349,6 +2352,7 @@
           "alreadyPending": "That address already has a pending invite. Resend or revoke it first.",
           "inviteNotFound": "That invite couldn't be found.",
           "inviteResolved": "That invite is no longer pending.",
+          "adminCannotInviteAdmin": "Only the company owner can invite admins. You can invite teammates as members.",
           "mutationFailed": "Couldn't update the invite. Please try again."
         }
       }
@@ -2729,6 +2733,7 @@
       "acceptErrorOrganizerMismatch": "You are not the organizer of this RFQ.",
       "acceptErrorSupplierUnavailable": "Supplier no longer available — date conflict.",
       "acceptErrorRfqTerminal": "This RFQ is no longer bookable ({status}).",
+      "acceptErrorAboveMemberThreshold": "This quote exceeds your spending limit. Ask an owner or admin to accept it.",
       "acceptErrorUnknown": "We couldn't accept this quote. Please try again.",
       "snapshotHeading": "Quote snapshot",
       "snapshotLineItems": "Line items",

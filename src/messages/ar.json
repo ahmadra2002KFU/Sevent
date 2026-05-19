@@ -25,7 +25,8 @@
       "events": "الفعاليات",
       "rfqs": "طلبات العروض",
       "bookings": "الحجوزات",
-      "messages": "الرسائل"
+      "messages": "الرسائل",
+      "settings": "الإعدادات"
     },
     "supplier": {
       "dashboard": "لوحة التحكم",
@@ -2288,6 +2289,8 @@
           "invalidRole": "اختر صلاحية مشرف أو عضو.",
           "selfTransfer": "ما تقدر تنقل الملكية لنفسك.",
           "transferTargetMissing": "اختر عضواً حالياً لنقل الملكية إليه.",
+          "adminCannotChangeAdmin": "يقدر المالك فقط يغيّر صلاحية مشرف آخر. اطلب من المالك إجراء التغيير.",
+          "adminCannotRemoveAdmin": "يقدر المالك فقط يزيل مشرفاً آخر. اطلب من المالك إزالة الزميل.",
           "mutationFailed": "ما قدرنا نحفظ التغيير. حاول مرة أخرى."
         },
         "audit": {
@@ -2349,6 +2352,7 @@
           "alreadyPending": "هذا البريد عنده دعوة قيد الانتظار. أعد إرسالها أو ألغها أولاً.",
           "inviteNotFound": "ما قدرنا نلقى هذه الدعوة.",
           "inviteResolved": "هذه الدعوة لم تعد قيد الانتظار.",
+          "adminCannotInviteAdmin": "يقدر مالك الشركة فقط دعوة المشرفين. تقدر تدعو الزملاء بصفة أعضاء.",
           "mutationFailed": "ما قدرنا نحدّث الدعوة. حاول مرة أخرى."
         }
       }
@@ -2729,6 +2733,7 @@
       "acceptErrorOrganizerMismatch": "أنت لست منظم طلب السعر هذا.",
       "acceptErrorSupplierUnavailable": "المورد لم يعد متاحاً — تعارض في التاريخ.",
       "acceptErrorRfqTerminal": "طلب السعر هذا لم يعد قابلاً للحجز ({status}).",
+      "acceptErrorAboveMemberThreshold": "هذا العرض يتجاوز حد صلاحيتك للإنفاق. اطلب من المالك أو المشرف قبوله.",
       "acceptErrorUnknown": "تعذّر قبول العرض. حاول مرة ثانية.",
       "snapshotHeading": "ملخص العرض",
       "snapshotLineItems": "بنود التسعير",
