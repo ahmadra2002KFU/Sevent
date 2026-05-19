@@ -24,6 +24,12 @@ node_modules/
 # misc
 .DS_Store
 *.pem
+# Office lock files
+~$*
+
+# Generated docs workflow diagrams
+/Claude Docs/workflow-diagrams/**/*.svg
+/Claude Docs/workflow-diagrams/**/*.mmd
 
 # debug
 npm-debug.log*
