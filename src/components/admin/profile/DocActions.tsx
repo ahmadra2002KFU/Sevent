@@ -3,14 +3,26 @@
 import { useActionState, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, X } from "lucide-react";
-import { approveDocAction, rejectDocAction } from "../actions";
-import { initialActionState } from "../action-state";
+import {
+  approveDocAction,
+  rejectDocAction,
+} from "@/app/(admin)/admin/verifications/actions";
+import { initialActionState } from "@/app/(admin)/admin/verifications/action-state";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ActionBanner } from "./ActionBanner";
 import { SubmitButton } from "./SubmitButton";
 
+/**
+ * Per-document approve / reject buttons. Used by both the initial-review
+ * verifications page and the Sheet's re-review surface. Server actions write
+ * an audit-log row internally, so this component stays presentation-only.
+ *
+ * On a stale state (the supplier re-uploaded between page render and submit)
+ * the server action returns a clear message via `ActionBanner` and the admin
+ * can reload — no double-write.
+ */
 export function DocActions({
   docId,
   supplierId,

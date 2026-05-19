@@ -39,6 +39,7 @@ type Labels = {
   errorTooMany: string;
   errorNotFound: string;
   errorGeneric: string;
+  viewProfile: string;
 };
 
 export type PreselectedUser = {
@@ -107,7 +108,7 @@ export function ComposeForm({ labels, preselectedUser }: ComposeFormProps) {
 
           {target === "user" ? (
             preselectedUser ? (
-              <div className="flex flex-col gap-1 text-sm">
+              <div className="flex flex-col gap-2 text-sm">
                 <span className="font-medium">{labels.recipientLabel}</span>
                 <div className="flex flex-col rounded-md border border-border bg-muted/40 px-3 py-2">
                   <span className="font-medium text-foreground">
@@ -119,6 +120,14 @@ export function ComposeForm({ labels, preselectedUser }: ComposeFormProps) {
                     </span>
                   ) : null}
                 </div>
+                <Button asChild variant="outline" size="sm" className="w-fit">
+                  <Link
+                    href={`/admin/messages/profile/${preselectedUser.id}`}
+                    scroll={false}
+                  >
+                    {labels.viewProfile}
+                  </Link>
+                </Button>
                 <input
                   type="hidden"
                   name="user_id"

@@ -1729,19 +1729,23 @@
         "role": "الدور",
         "subject": "الموضوع",
         "status": "الحالة",
-        "snippet": "آخر رسالة"
+        "snippet": "آخر رسالة",
+        "profile": "الملف الشخصي"
       },
       "row": {
         "unread": "غير مقروءة",
         "noSubject": "(بدون موضوع)",
-        "noEmail": "(تم حذف الحساب)"
+        "noEmail": "(تم حذف الحساب)",
+        "viewProfile": "عرض الملف",
+        "papersUpdated": "تم تحديث المستندات"
       },
       "thread": {
         "back": "رجوع إلى الرسائل",
         "recipient": "المستخدم",
         "noEmail": "(تم حذف الحساب)",
         "subjectPlaceholder": "(بدون موضوع)",
-        "campaign": "ضمن حملة"
+        "campaign": "ضمن حملة",
+        "viewProfile": "عرض الملف"
       },
       "actions": {
         "close": "إغلاق",
@@ -1786,7 +1790,42 @@
         "errorTooMany": "الإرسال الجماعي محدود بـ {limit} مستلمًا لكل حملة.",
         "errorNotFound": "تعذر العثور على هذا المستخدم.",
         "successSingle": "تم إرسال الرسالة.",
-        "successBulk": "أُرسلت إلى {count, plural, one {مستلم واحد} other {# مستلمين}}."
+        "successBulk": "أُرسلت إلى {count, plural, one {مستلم واحد} other {# مستلمين}}.",
+        "viewProfile": "عرض الملف"
+      }
+    },
+    "profileViewer": {
+      "sheetTitle": "الملف الشخصي",
+      "close": "إغلاق",
+      "noUser": "لا يوجد مستلم لهذه المحادثة.",
+      "loading": "جاري تحميل الملف…",
+      "errorLoad": "تعذّر تحميل الملف.",
+      "logoMissing": "لا يوجد شعار",
+      "phone": "الهاتف",
+      "roleBadge": {
+        "supplier": "مورد",
+        "organizer": "منظّم",
+        "admin": "مشرف",
+        "agency": "وكالة"
+      },
+      "supplier": {
+        "noSupplier": "لم يبدأ هذا المستخدم تسجيل المورد بعد.",
+        "papersUpdated": "تم تحديث المستندات منذ آخر مراجعة",
+        "lastReviewedAt": "آخر مراجعة",
+        "documentsCount": "{count, plural, =0 {لا توجد مستندات} one {مستند واحد} other {# مستندات}}"
+      },
+      "organizer": {
+        "noCompany": "منظّم فردي — لا توجد شركة مسجّلة.",
+        "company": "الشركة",
+        "companyAr": "الشركة (بالعربية)",
+        "slug": "المعرّف",
+        "crNumber": "رقم السجل التجاري",
+        "vatNumber": "الرقم الضريبي",
+        "billingEmail": "بريد الفوترة",
+        "defaultLanguage": "اللغة الافتراضية"
+      },
+      "admin": {
+        "selfNotice": "أنت تعرض ملفك الإداري الخاص."
       }
     },
     "users": {

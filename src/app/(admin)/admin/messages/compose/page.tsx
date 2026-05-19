@@ -83,6 +83,7 @@ export default async function AdminComposePage({
           errorTooMany: t("errorTooMany", { limit: 5000 }),
           errorNotFound: t("errorNotFound"),
           errorGeneric: "Couldn't send the message.",
+          viewProfile: t("viewProfile"),
         }}
       />
     </section>

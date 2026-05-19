@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Inbox, MailPlus, Users } from "lucide-react";
+import { Eye, Inbox, MailPlus, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar as arLocale, enUS as enLocale } from "date-fns/locale";
 
@@ -105,12 +105,13 @@ export default async function AdminMessagesPage({
     unreadOnly: unread === "only",
     search: search || undefined,
   };
-  const { rows, totalCount, totalPages } = await listThreadsForAdmin({
-    admin,
-    filters,
-    page,
-    pageSize: PAGE_SIZE,
-  });
+  const { rows, totalCount, totalPages, papersChangedUserIds } =
+    await listThreadsForAdmin({
+      admin,
+      filters,
+      page,
+      pageSize: PAGE_SIZE,
+    });
 
   const userIds = Array.from(
     new Set(rows.map((r) => r.user_id).filter((v): v is string => v !== null)),
@@ -205,6 +206,7 @@ export default async function AdminMessagesPage({
                   <TableHead className="hidden md:table-cell">
                     {t("columns.snippet")}
                   </TableHead>
+                  <TableHead className="text-end">{t("columns.profile")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -213,10 +215,17 @@ export default async function AdminMessagesPage({
                     key={row.id}
                     row={row}
                     email={row.user_id ? (userEmails.get(row.user_id) ?? null) : null}
+                    papersChanged={
+                      row.user_id
+                        ? papersChangedUserIds.has(row.user_id)
+                        : false
+                    }
                     locale={dfnsLocale}
                     tNoSubject={t("row.noSubject")}
                     tNoEmail={t("row.noEmail")}
                     tUnread={t("row.unread")}
+                    tViewProfile={t("row.viewProfile")}
+                    tPapersUpdated={t("row.papersUpdated")}
                     tStatusLabels={{
                       new: t("filters.status.new"),
                       triaged: t("filters.status.triaged"),
@@ -278,18 +287,24 @@ export default async function AdminMessagesPage({
 function ThreadListRow({
   row,
   email,
+  papersChanged,
   locale,
   tNoSubject,
   tNoEmail,
   tUnread,
+  tViewProfile,
+  tPapersUpdated,
   tStatusLabels,
 }: {
   row: ThreadRow;
   email: string | null;
+  papersChanged: boolean;
   locale: Locale;
   tNoSubject: string;
   tNoEmail: string;
   tUnread: string;
+  tViewProfile: string;
+  tPapersUpdated: string;
   tStatusLabels: Record<"new" | "triaged" | "resolved" | "closed", string>;
 }) {
   const unread = row.read_at_admin === null;
@@ -327,10 +342,18 @@ function ThreadListRow({
         </Link>
       </TableCell>
       <TableCell className="text-sm capitalize text-muted-foreground">{row.role}</TableCell>
-      <TableCell className="max-w-xs truncate text-sm font-medium">
-        <Link href={`/admin/messages/${row.id}`} className="hover:underline">
+      <TableCell className="max-w-xs text-sm font-medium">
+        <Link
+          href={`/admin/messages/${row.id}`}
+          className="block truncate hover:underline"
+        >
           {subjectText}
         </Link>
+        {papersChanged ? (
+          <span className="mt-1 inline-flex items-center rounded-full border border-semantic-warning-500/40 bg-semantic-warning-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-semantic-warning-500">
+            {tPapersUpdated}
+          </span>
+        ) : null}
       </TableCell>
       <TableCell>
         <ThreadStatusBadge
@@ -341,6 +364,16 @@ function ThreadListRow({
       </TableCell>
       <TableCell className="hidden max-w-md truncate text-sm text-muted-foreground md:table-cell">
         {snippetText}
+      </TableCell>
+      <TableCell className="text-end">
+        {row.user_id ? (
+          <Button asChild variant="ghost" size="xs">
+            <Link href={`/admin/messages/profile/${row.user_id}`} scroll={false}>
+              <Eye aria-hidden className="me-1 size-3.5" />
+              {tViewProfile}
+            </Link>
+          </Button>
+        ) : null}
       </TableCell>
     </TableRow>
   );

@@ -11,6 +11,10 @@ export const STORAGE_BUCKETS = {
   docs: "supplier-docs",
   contracts: "contracts",
   logos: "supplier-logos",
+  // organizer-logos bucket is `public=false` at the bucket level even though
+  // the SELECT policy is permissive — so `getPublicUrl()` 400s. Use the
+  // signed-URL helper for any admin-side rendering.
+  organizerLogos: "organizer-logos",
 } as const;
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
