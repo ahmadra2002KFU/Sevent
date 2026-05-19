@@ -28,8 +28,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { SupplierVerificationStatus } from "@/lib/supabase/types";
-import { ActionBanner } from "./ActionBanner";
-import { SubmitButton } from "./SubmitButton";
+import { ActionBanner } from "@/components/admin/profile/ActionBanner";
+import { SubmitButton } from "@/components/admin/profile/SubmitButton";
 
 export function SupplierActions({
   supplierId,

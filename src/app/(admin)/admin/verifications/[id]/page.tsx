@@ -1,153 +1,24 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
-import {
-  ArrowLeft,
-  Award,
-  BadgeCheck,
-  ExternalLink,
-  FileBadge,
-  FileText,
-  IdCard,
-  Landmark,
-  MapPin,
-  ReceiptText,
-  ShieldCheck,
-  type LucideIcon,
-} from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { ArrowLeft } from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
-import type {
-  EventType,
-  SupplierDocStatus,
-  SupplierDocType,
-  SupplierVerificationStatus,
-} from "@/lib/supabase/types";
-import { getSegmentBySlug } from "@/lib/domain/segments";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
-import type { StatusPillStatus } from "@/components/ui-ext/StatusPill";
-import { EmptyState } from "@/components/ui-ext/EmptyState";
-import { DocActions } from "../_components/DocActions";
 import { SupplierActions } from "../_components/SupplierActions";
+import { SupplierProfileSnapshot } from "@/components/admin/profile/SupplierProfileSnapshot";
+import { SupplierDocumentList } from "@/components/admin/profile/SupplierDocumentList";
+import {
+  SupplierLogo,
+  fmtDate,
+  verificationStatusPill,
+  type SupplierDetail,
+  type SupplierDoc,
+} from "@/components/admin/profile/shared";
 
 export const dynamic = "force-dynamic";
-
-type SupplierDetail = {
-  id: string;
-  business_name: string;
-  slug: string;
-  legal_type: string;
-  cr_number: string | null;
-  national_id: string | null;
-  base_city: string;
-  service_area_cities: string[];
-  languages: string[];
-  capacity: number | null;
-  concurrent_event_limit: number;
-  bio: string | null;
-  is_published: boolean;
-  verification_status: SupplierVerificationStatus;
-  verification_notes: string | null;
-  verified_at: string | null;
-  created_at: string;
-  profile_id: string;
-  logo_path: string | null;
-  works_with_segments: EventType[];
-};
-
-type SupplierDoc = {
-  id: string;
-  doc_type: string;
-  file_path: string;
-  status: SupplierDocStatus;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-  notes: string | null;
-  created_at: string;
-};
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function docStatusPill(status: SupplierDocStatus): StatusPillStatus {
-  if (status === "approved") return "approved";
-  if (status === "rejected") return "rejected";
-  return "pending";
-}
-
-function verificationStatusPill(
-  status: SupplierVerificationStatus,
-): StatusPillStatus {
-  if (status === "approved") return "approved";
-  if (status === "rejected") return "rejected";
-  return "pending";
-}
-
-type Translator = (key: string) => string;
-
-function legalTypeLabel(raw: string, t: Translator): string {
-  if (["company", "freelancer", "foreign"].includes(raw))
-    return t(`legalType.${raw}`);
-  return raw;
-}
-
-const KNOWN_DOC_TYPES: ReadonlyArray<SupplierDocType> = [
-  "cr",
-  "vat",
-  "id",
-  "gea_permit",
-  "certification",
-  "iban_certificate",
-  "company_profile",
-  "national_address",
-  "other",
-];
-
-function docTypeLabel(raw: string, t: Translator): string {
-  if ((KNOWN_DOC_TYPES as ReadonlyArray<string>).includes(raw))
-    return t(`docType.${raw}`);
-  return raw;
-}
-
-const DOC_TYPE_ICONS: Record<SupplierDocType, LucideIcon> = {
-  cr: FileBadge,
-  vat: ReceiptText,
-  id: IdCard,
-  gea_permit: BadgeCheck,
-  certification: Award,
-  iban_certificate: Landmark,
-  company_profile: FileText,
-  national_address: MapPin,
-  other: FileText,
-};
-
-function docTypeIcon(raw: string): LucideIcon {
-  if ((KNOWN_DOC_TYPES as ReadonlyArray<string>).includes(raw)) {
-    return DOC_TYPE_ICONS[raw as SupplierDocType];
-  }
-  return FileText;
-}
 
 export default async function AdminVerificationDetailPage({
   params,
@@ -155,7 +26,6 @@ export default async function AdminVerificationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const t = await getTranslations("admin.verifications");
-  const locale = (await getLocale()) as "en" | "ar";
   const { id } = await params;
 
   const gate = await requireRole("admin");
@@ -223,6 +93,7 @@ export default async function AdminVerificationDetailPage({
   const logoUrl = supplier.logo_path
     ? `/admin/verifications/${supplier.id}/logo`
     : null;
+  const previewHrefBase = `/admin/verifications/${supplier.id}/doc`;
 
   const businessInitial =
     supplier.business_name.trim().charAt(0).toUpperCase() || "?";
@@ -239,7 +110,7 @@ export default async function AdminVerificationDetailPage({
         <div className="flex items-start gap-4">
           <SupplierLogo
             logoUrl={logoUrl}
-            businessInitial={businessInitial}
+            initial={businessInitial}
             missingLabel={t("logo.missing")}
             headingLabel={t("logo.heading")}
           />
@@ -248,7 +119,9 @@ export default async function AdminVerificationDetailPage({
               title={supplier.business_name}
               description={`${t("submitted")} ${fmtDate(supplier.created_at)} · /${supplier.slug}`}
               actions={
-                <StatusPill status={verificationStatusPill(supplier.verification_status)} />
+                <StatusPill
+                  status={verificationStatusPill(supplier.verification_status)}
+                />
               }
             />
           </div>
@@ -266,215 +139,12 @@ export default async function AdminVerificationDetailPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
-          {/* Profile snapshot */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ShieldCheck className="size-4 text-brand-cobalt-500" aria-hidden />
-                {t("profileSnapshot")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
-                <DetailRow
-                  label={t("detail.email")}
-                  value={
-                    signupEmail ? (
-                      <a
-                        href={`mailto:${signupEmail}`}
-                        className="break-all text-brand-cobalt-500 underline-offset-2 hover:underline"
-                      >
-                        {signupEmail}
-                      </a>
-                    ) : (
-                      t("detail.emailUnavailable")
-                    )
-                  }
-                />
-                <DetailRow
-                  label={t("list.col.legalType")}
-                  value={legalTypeLabel(supplier.legal_type, t)}
-                />
-                <DetailRow
-                  label={t("detail.baseCity")}
-                  value={supplier.base_city}
-                />
-                <DetailRow
-                  label={t("detail.crNumber")}
-                  value={supplier.cr_number ?? "—"}
-                />
-                <DetailRow
-                  label={t("detail.nationalId")}
-                  value={supplier.national_id ?? "—"}
-                />
-                <DetailRow
-                  label={t("detail.serviceArea")}
-                  value={
-                    supplier.service_area_cities?.length
-                      ? supplier.service_area_cities.join(", ")
-                      : "—"
-                  }
-                />
-                <DetailRow
-                  label={t("detail.languages")}
-                  value={
-                    supplier.languages?.length
-                      ? supplier.languages.join(", ")
-                      : "—"
-                  }
-                />
-                <DetailRow
-                  label={t("detail.capacity")}
-                  value={supplier.capacity != null ? String(supplier.capacity) : "—"}
-                />
-                <DetailRow
-                  label={t("detail.concurrent")}
-                  value={String(supplier.concurrent_event_limit)}
-                />
-                <DetailRow
-                  label={t("detail.published")}
-                  value={supplier.is_published ? t("detail.yes") : t("detail.no")}
-                />
-                <DetailRow
-                  label={t("detail.verifiedAt")}
-                  value={fmtDate(supplier.verified_at)}
-                />
-              </dl>
-              <Separator className="my-4" />
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("segments.heading")}
-                </dt>
-                <dd className="mt-2">
-                  {supplier.works_with_segments &&
-                  supplier.works_with_segments.length > 0 ? (
-                    <ul className="flex flex-wrap gap-2">
-                      {supplier.works_with_segments.map((slug) => {
-                        const seg = getSegmentBySlug(slug);
-                        const label = seg
-                          ? locale === "ar"
-                            ? seg.name_ar
-                            : seg.name_en
-                          : slug;
-                        return (
-                          <li
-                            key={slug}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground"
-                          >
-                            <span aria-hidden className="text-sm leading-none">
-                              {seg?.icon ?? "•"}
-                            </span>
-                            <span>{label}</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {t("segments.none")}
-                    </p>
-                  )}
-                </dd>
-              </div>
-              {supplier.bio ? (
-                <>
-                  <Separator className="my-4" />
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {t("detail.bio")}
-                    </dt>
-                    <dd className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                      {supplier.bio}
-                    </dd>
-                  </div>
-                </>
-              ) : null}
-              {supplier.verification_notes ? (
-                <div className="mt-4 rounded-md border border-semantic-danger-500/30 bg-semantic-danger-100 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-semantic-danger-500">
-                    {t("lastReviewerNotes")}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-semantic-danger-500">
-                    {supplier.verification_notes}
-                  </p>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {/* Documents */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="size-4 text-brand-cobalt-500" aria-hidden />
-                {t("detail.docsHeading")}
-              </CardTitle>
-              <CardDescription>
-                {t("detail.docsCount", { count: docs.length })}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
-              {docs.length === 0 ? (
-                <EmptyState icon={FileText} title={t("noDocs")} />
-              ) : (
-                <ul className="flex flex-col divide-y divide-border">
-                  {docs.map((d) => {
-                    const DocIcon = docTypeIcon(d.doc_type);
-                    const previewHref = `/admin/verifications/${supplier.id}/doc/${d.id}/preview`;
-                    return (
-                    <li key={d.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            aria-hidden
-                            className="inline-flex size-7 items-center justify-center rounded-md bg-muted text-muted-foreground"
-                          >
-                            <DocIcon className="size-4" />
-                          </span>
-                          <span className="text-sm font-medium text-foreground">
-                            {docTypeLabel(d.doc_type, t)}
-                          </span>
-                          <StatusPill status={docStatusPill(d.status)} />
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {t("uploaded")} {fmtDate(d.created_at)}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        <Button asChild variant="outline" size="xs">
-                          <a
-                            href={previewHref}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t("openPreview")}
-                            <ExternalLink aria-hidden />
-                          </a>
-                        </Button>
-                        {d.reviewed_at ? (
-                          <span>
-                            · {t("reviewed")} {fmtDate(d.reviewed_at)}
-                          </span>
-                        ) : null}
-                      </div>
-                      {d.notes ? (
-                        <p className="rounded-md bg-muted p-2 text-xs text-muted-foreground">
-                          {d.notes}
-                        </p>
-                      ) : null}
-                      <DocActions
-                        docId={d.id}
-                        supplierId={supplier.id}
-                        currentStatus={d.status}
-                        currentNotes={d.notes}
-                      />
-                    </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+          <SupplierProfileSnapshot supplier={supplier} signupEmail={signupEmail} />
+          <SupplierDocumentList
+            supplierId={supplier.id}
+            docs={docs}
+            previewHrefBase={previewHrefBase}
+          />
         </div>
 
         <aside className="flex flex-col gap-4">
@@ -492,58 +162,5 @@ export default async function AdminVerificationDetailPage({
         </aside>
       </div>
     </section>
-  );
-}
-
-function SupplierLogo({
-  logoUrl,
-  businessInitial,
-  missingLabel,
-  headingLabel,
-}: {
-  logoUrl: string | null;
-  businessInitial: string;
-  missingLabel: string;
-  headingLabel: string;
-}) {
-  // Fixed square, 96px — inside the 80-120px band the spec asks for.
-  const size = "size-24"; // 6rem = 96px
-  if (logoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={logoUrl}
-        alt={headingLabel}
-        width={96}
-        height={96}
-        className={`${size} rounded-lg border border-border object-cover bg-muted`}
-      />
-    );
-  }
-  return (
-    <div
-      role="img"
-      aria-label={missingLabel}
-      className={`${size} flex items-center justify-center rounded-lg border border-dashed border-border bg-muted text-3xl font-semibold text-muted-foreground`}
-    >
-      {businessInitial}
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="text-sm text-foreground">{value}</dd>
-    </div>
   );
 }

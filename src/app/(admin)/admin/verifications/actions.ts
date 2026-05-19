@@ -24,6 +24,8 @@ const notesSchema = z
   .min(1, "Provide a short note for the supplier.")
   .max(2000, "Notes must be 2000 characters or fewer.");
 
+type DocStatus = "pending" | "approved" | "rejected";
+
 type AdminContext = {
   adminId: string;
   serviceClient: Awaited<ReturnType<typeof createSupabaseServiceRoleClient>>;
@@ -109,6 +111,41 @@ async function sendVerificationEmail(args: {
 function revalidateAll(supplierId?: string) {
   revalidatePath("/admin/verifications");
   if (supplierId) revalidatePath(`/admin/verifications/${supplierId}`);
+  // The Sheet on /admin/messages reads the same supplier_docs rows; revalidate
+  // the messages surface so a re-review action shows up there immediately too.
+  revalidatePath("/admin/messages");
+}
+
+// ---------------------------------------------------------------------------
+// Audit log helper
+// ---------------------------------------------------------------------------
+
+type AuditRow = {
+  doc_id: string;
+  supplier_id: string;
+  prior_status: DocStatus;
+  new_status: DocStatus;
+  reviewer_id: string;
+  notes: string | null;
+};
+
+/**
+ * Append rows to `supplier_doc_reviews`. The audit log is best-effort: a
+ * failure to write here does NOT roll back the underlying status change
+ * (the change is the source of truth). We log loudly so the gap is visible.
+ */
+async function appendDocReviews(
+  client: AdminContext["serviceClient"],
+  rows: AuditRow[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  const { error } = await client.from("supplier_doc_reviews").insert(rows);
+  if (error) {
+    console.error("[verifications/audit] supplier_doc_reviews insert failed", {
+      count: rows.length,
+      error: error.message,
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -125,26 +162,64 @@ export async function approveDocAction(
   if (!docParse.success) {
     return { status: "error", message: "Invalid document id." };
   }
+  const docId = docParse.data;
 
   const ctx = await requireAdmin();
   if ("error" in ctx) return { status: "error", message: ctx.error };
 
-  const { error } = await ctx.serviceClient
+  // Snapshot prior status + supplier_id so the audit row has both halves of
+  // the transition and the guarded update knows what to assert.
+  const { data: priorRow, error: readErr } = await ctx.serviceClient
     .from("supplier_docs")
-    .update({
-      status: "approved",
-      reviewed_by: ctx.adminId,
-      reviewed_at: new Date().toISOString(),
-      notes: null,
-    })
-    .eq("id", docParse.data);
+    .select("status, supplier_id")
+    .eq("id", docId)
+    .maybeSingle();
+  if (readErr) return { status: "error", message: readErr.message };
+  if (!priorRow) return { status: "error", message: "Document not found." };
+  const priorStatus = priorRow.status as DocStatus;
+  const supplierIdForAudit = priorRow.supplier_id as string;
+
+  // Guarded update: only flip if status is still what we just read. If a
+  // supplier re-uploaded between page render and submit, this no-ops and we
+  // surface a stale-state error so the admin reloads and re-reviews fresh.
+  const { error, count } = await ctx.serviceClient
+    .from("supplier_docs")
+    .update(
+      {
+        status: "approved",
+        reviewed_by: ctx.adminId,
+        reviewed_at: new Date().toISOString(),
+        notes: null,
+      },
+      { count: "exact" },
+    )
+    .eq("id", docId)
+    .eq("status", priorStatus);
   if (error) return { status: "error", message: error.message };
+  if ((count ?? 0) === 0) {
+    return {
+      status: "error",
+      message:
+        "This document changed since you opened the page. Reload to see the latest version, then review it again.",
+    };
+  }
+
+  await appendDocReviews(ctx.serviceClient, [
+    {
+      doc_id: docId,
+      supplier_id: supplierIdForAudit,
+      prior_status: priorStatus,
+      new_status: "approved",
+      reviewer_id: ctx.adminId,
+      notes: null,
+    },
+  ]);
 
   if (typeof supplierIdRaw === "string") {
     const supplierParse = supplierIdSchema.safeParse(supplierIdRaw);
     revalidateAll(supplierParse.success ? supplierParse.data : undefined);
   } else {
-    revalidateAll();
+    revalidateAll(supplierIdForAudit);
   }
   return { status: "success", message: "Document approved." };
 }
@@ -161,27 +236,61 @@ export async function rejectDocAction(
   if (!notesParse.success) {
     return { status: "error", message: notesParse.error.issues[0]?.message ?? "Invalid notes." };
   }
+  const docId = docParse.data;
+  const notes = notesParse.data;
 
   const ctx = await requireAdmin();
   if ("error" in ctx) return { status: "error", message: ctx.error };
 
-  const { error } = await ctx.serviceClient
+  const { data: priorRow, error: readErr } = await ctx.serviceClient
     .from("supplier_docs")
-    .update({
-      status: "rejected",
-      reviewed_by: ctx.adminId,
-      reviewed_at: new Date().toISOString(),
-      notes: notesParse.data,
-    })
-    .eq("id", docParse.data);
+    .select("status, supplier_id")
+    .eq("id", docId)
+    .maybeSingle();
+  if (readErr) return { status: "error", message: readErr.message };
+  if (!priorRow) return { status: "error", message: "Document not found." };
+  const priorStatus = priorRow.status as DocStatus;
+  const supplierIdForAudit = priorRow.supplier_id as string;
+
+  const { error, count } = await ctx.serviceClient
+    .from("supplier_docs")
+    .update(
+      {
+        status: "rejected",
+        reviewed_by: ctx.adminId,
+        reviewed_at: new Date().toISOString(),
+        notes,
+      },
+      { count: "exact" },
+    )
+    .eq("id", docId)
+    .eq("status", priorStatus);
   if (error) return { status: "error", message: error.message };
+  if ((count ?? 0) === 0) {
+    return {
+      status: "error",
+      message:
+        "This document changed since you opened the page. Reload to see the latest version, then review it again.",
+    };
+  }
+
+  await appendDocReviews(ctx.serviceClient, [
+    {
+      doc_id: docId,
+      supplier_id: supplierIdForAudit,
+      prior_status: priorStatus,
+      new_status: "rejected",
+      reviewer_id: ctx.adminId,
+      notes,
+    },
+  ]);
 
   const supplierIdRaw = formData.get("supplier_id");
   if (typeof supplierIdRaw === "string") {
     const supplierParse = supplierIdSchema.safeParse(supplierIdRaw);
     revalidateAll(supplierParse.success ? supplierParse.data : undefined);
   } else {
-    revalidateAll();
+    revalidateAll(supplierIdForAudit);
   }
   return { status: "success", message: "Document rejected." };
 }
@@ -208,6 +317,17 @@ export async function approveSupplierAction(
 
   const nowIso = new Date().toISOString();
 
+  // Snapshot the docs that will actually transition (i.e. weren't already
+  // approved) so the audit log only carries real changes, not no-op churn.
+  const { data: priorRows, error: priorErr } = await ctx.serviceClient
+    .from("supplier_docs")
+    .select("id, status")
+    .eq("supplier_id", supplierId)
+    .neq("status", "rejected");
+  if (priorErr) {
+    return { status: "error", message: `Failed to read docs: ${priorErr.message}` };
+  }
+
   // Promote any non-rejected docs to approved as part of the overall sign-off.
   const { error: docsErr } = await ctx.serviceClient
     .from("supplier_docs")
@@ -221,6 +341,20 @@ export async function approveSupplierAction(
   if (docsErr) {
     return { status: "error", message: `Doc update failed: ${docsErr.message}` };
   }
+
+  await appendDocReviews(
+    ctx.serviceClient,
+    (priorRows ?? [])
+      .filter((r) => r.status !== "approved")
+      .map((r) => ({
+        doc_id: r.id as string,
+        supplier_id: supplierId,
+        prior_status: r.status as DocStatus,
+        new_status: "approved" as DocStatus,
+        reviewer_id: ctx.adminId,
+        notes: null,
+      })),
+  );
 
   // Flip the supplier verification + publish flag. The
   // `guard_supplier_verification` trigger lets this through because the call
@@ -315,6 +449,16 @@ export async function rejectSupplierAction(
 
   const nowIso = new Date().toISOString();
 
+  // Snapshot the docs that will actually transition (non-approved → rejected).
+  const { data: priorRows, error: priorErr } = await ctx.serviceClient
+    .from("supplier_docs")
+    .select("id, status")
+    .eq("supplier_id", supplierId)
+    .neq("status", "approved");
+  if (priorErr) {
+    return { status: "error", message: `Failed to read docs: ${priorErr.message}` };
+  }
+
   // Mark every non-approved doc as rejected so the supplier sees a clean
   // resubmission target. (Already-approved docs stay approved.)
   const { error: docsErr } = await ctx.serviceClient
@@ -330,6 +474,20 @@ export async function rejectSupplierAction(
   if (docsErr) {
     return { status: "error", message: `Doc update failed: ${docsErr.message}` };
   }
+
+  await appendDocReviews(
+    ctx.serviceClient,
+    (priorRows ?? [])
+      .filter((r) => r.status !== "rejected")
+      .map((r) => ({
+        doc_id: r.id as string,
+        supplier_id: supplierId,
+        prior_status: r.status as DocStatus,
+        new_status: "rejected" as DocStatus,
+        reviewer_id: ctx.adminId,
+        notes,
+      })),
+  );
 
   const { error: supplierErr } = await ctx.serviceClient
     .from("suppliers")

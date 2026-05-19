@@ -90,6 +90,12 @@ export type ListThreadsResult = {
   rows: ThreadRow[];
   totalCount: number;
   totalPages: number;
+  /**
+   * Profile ids whose recipients (suppliers) have re-uploaded papers since
+   * the last full sign-off. Drives the inbox "papers updated" badge. Only
+   * populated by the admin variant; the user variant leaves it empty.
+   */
+  papersChangedUserIds: Set<string>;
 };
 
 export async function listThreadsForAdmin(
@@ -123,12 +129,42 @@ export async function listThreadsForAdmin(
   const { data, count, error } = await q;
   if (error) {
     console.error("[messaging/threads] listThreadsForAdmin failed", error);
-    return { rows: [], totalCount: 0, totalPages: 1 };
+    return {
+      rows: [],
+      totalCount: 0,
+      totalPages: 1,
+      papersChangedUserIds: new Set<string>(),
+    };
   }
   const rows = (data ?? []) as ThreadRow[];
   const totalCount = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  return { rows, totalCount, totalPages };
+
+  // Batched lookup: which of the recipients on THIS page have papers that
+  // changed after their last full sign-off? The RPC takes the array and
+  // returns only the dirty rows, so the round-trip is bounded by pageSize.
+  const userIds = Array.from(
+    new Set(rows.map((r) => r.user_id).filter((v): v is string => v !== null)),
+  );
+  let papersChangedUserIds = new Set<string>();
+  if (userIds.length > 0) {
+    const { data: changes, error: rpcErr } = await params.admin.rpc(
+      "admin_thread_recipient_changes",
+      { p_user_ids: userIds },
+    );
+    if (rpcErr) {
+      console.warn(
+        "[messaging/threads] admin_thread_recipient_changes failed",
+        rpcErr,
+      );
+    } else {
+      papersChangedUserIds = new Set(
+        (changes ?? []).map((r: { user_id: string }) => r.user_id),
+      );
+    }
+  }
+
+  return { rows, totalCount, totalPages, papersChangedUserIds };
 }
 
 // ---------------------------------------------------------------------------
@@ -168,12 +204,20 @@ export async function listThreadsForUser(
   const { data, count, error } = await q;
   if (error) {
     console.error("[messaging/threads] listThreadsForUser failed", error);
-    return { rows: [], totalCount: 0, totalPages: 1 };
+    return {
+      rows: [],
+      totalCount: 0,
+      totalPages: 1,
+      papersChangedUserIds: new Set<string>(),
+    };
   }
   return {
     rows: (data ?? []) as ThreadRow[],
     totalCount: count ?? 0,
     totalPages: Math.max(1, Math.ceil((count ?? 0) / pageSize)),
+    // User variant has no need for the admin-only RPC; surface an empty set
+    // so the shared `ListThreadsResult` shape stays exhaustive.
+    papersChangedUserIds: new Set<string>(),
   };
 }
 

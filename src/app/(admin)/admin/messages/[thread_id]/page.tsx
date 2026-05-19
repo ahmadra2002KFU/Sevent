@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ar as arLocale, enUS as enLocale } from "date-fns/locale";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 
 import { requireAccess } from "@/lib/auth/access";
 import {
@@ -91,6 +91,17 @@ export default async function AdminThreadPage({
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {thread.user_id ? (
+              <Button asChild size="sm" variant="outline">
+                <Link
+                  href={`/admin/messages/profile/${thread.user_id}`}
+                  scroll={false}
+                >
+                  <Eye className="me-1 size-4" />
+                  {t("thread.viewProfile")}
+                </Link>
+              </Button>
+            ) : null}
             <ThreadStatusBadge
               status={thread.status}
               closed={closed}

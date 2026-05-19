@@ -1729,19 +1729,23 @@
         "role": "Role",
         "subject": "Subject",
         "status": "Status",
-        "snippet": "Last message"
+        "snippet": "Last message",
+        "profile": "Profile"
       },
       "row": {
         "unread": "Unread",
         "noSubject": "(no subject)",
-        "noEmail": "(account removed)"
+        "noEmail": "(account removed)",
+        "viewProfile": "View profile",
+        "papersUpdated": "Papers updated"
       },
       "thread": {
         "back": "Back to messages",
         "recipient": "User",
         "noEmail": "(account removed)",
         "subjectPlaceholder": "(no subject)",
-        "campaign": "Part of campaign"
+        "campaign": "Part of campaign",
+        "viewProfile": "View profile"
       },
       "actions": {
         "close": "Close",
@@ -1786,7 +1790,42 @@
         "errorTooMany": "Bulk sends are limited to {limit} recipients per campaign.",
         "errorNotFound": "We couldn't find that user.",
         "successSingle": "Message sent.",
-        "successBulk": "Sent to {count, plural, one {# recipient} other {# recipients}}."
+        "successBulk": "Sent to {count, plural, one {# recipient} other {# recipients}}.",
+        "viewProfile": "View profile"
+      }
+    },
+    "profileViewer": {
+      "sheetTitle": "Profile",
+      "close": "Close",
+      "noUser": "This thread has no recipient.",
+      "loading": "Loading profile…",
+      "errorLoad": "Couldn't load profile.",
+      "logoMissing": "Logo not provided",
+      "phone": "Phone",
+      "roleBadge": {
+        "supplier": "Supplier",
+        "organizer": "Organizer",
+        "admin": "Admin",
+        "agency": "Agency"
+      },
+      "supplier": {
+        "noSupplier": "This user has not started supplier onboarding yet.",
+        "papersUpdated": "Papers updated since last review",
+        "lastReviewedAt": "Last reviewed",
+        "documentsCount": "{count, plural, =0 {No documents} one {1 document} other {# documents}}"
+      },
+      "organizer": {
+        "noCompany": "Individual organizer — no company on file.",
+        "company": "Company",
+        "companyAr": "Company (Arabic)",
+        "slug": "Slug",
+        "crNumber": "CR number",
+        "vatNumber": "VAT number",
+        "billingEmail": "Billing email",
+        "defaultLanguage": "Default language"
+      },
+      "admin": {
+        "selfNotice": "You are viewing your own admin profile."
       }
     },
     "users": {

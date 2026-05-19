@@ -3,7 +3,7 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import type { ActionState } from "../action-state";
+import type { ActionState } from "@/app/(admin)/admin/verifications/action-state";
 
 /**
  * Toast-style banner that surfaces the result of a server action consumed via
