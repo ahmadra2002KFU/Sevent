@@ -125,6 +125,18 @@ describe("sanitizeNextParam", () => {
       ).toBe("/supplier/dashboard#section-1");
     });
 
+    it("accepts organizer invite links for organizer allow lists", () => {
+      expect(
+        sanitizeNextParam(
+          "/invite/organizer/00000000-0000-4000-8000-000000000000?t=abc",
+          ["/organizer", "/invite/organizer"],
+          APP_URL,
+        ),
+      ).toBe(
+        "/invite/organizer/00000000-0000-4000-8000-000000000000?t=abc",
+      );
+    });
+
     it("rejects prefix-boundary tricks", () => {
       // /supplier/dashboard-evil is NOT a sub-path of /supplier/dashboard
       expect(

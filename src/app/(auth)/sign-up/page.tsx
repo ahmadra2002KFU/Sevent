@@ -4,7 +4,7 @@ import { SignUpExperience } from "./SignUpExperience";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  searchParams: Promise<{ role?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 /**
@@ -14,7 +14,9 @@ type PageProps = {
  * and `/sign-up/supplier` routes redirect here.
  */
 export default async function SignUpPage({ searchParams }: PageProps) {
-  const { role } = await searchParams;
+  const params = await searchParams;
+  const role = typeof params.role === "string" ? params.role : undefined;
+  const next = typeof params.next === "string" ? params.next : undefined;
   const initialRole = role === "supplier" ? "supplier" : "organizer";
 
   const [t, tSupplier, tCommon, locale] = await Promise.all([
@@ -29,6 +31,7 @@ export default async function SignUpPage({ searchParams }: PageProps) {
     <SignUpExperience
       initialRole={initialRole}
       locale={signUpLocale}
+      next={next}
       labels={{
         backHome: tCommon("backHome"),
         toggle: {

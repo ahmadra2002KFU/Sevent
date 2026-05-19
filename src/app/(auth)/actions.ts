@@ -20,6 +20,7 @@ const signUpSchema = z.object({
   phone: z.string().regex(/^5\d{8}$/),
   role: z.enum(["organizer", "supplier"]),
   language: z.enum(["en", "ar"]).default("en"),
+  next: z.string().max(2048).optional(),
 });
 
 const signUpSupplierSchema = z.object({
@@ -64,6 +65,16 @@ export type ResendState = {
  */
 const RESEND_LIMIT_PER_WINDOW = 2;
 const RESEND_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const INVITE_NEXT_PREFIXES = ["/invite/organizer"];
+
+function authCallbackUrl(next: string | null): string {
+  const url = new URL(
+    "/auth/callback",
+    process.env.APP_URL ?? "http://localhost:3000",
+  );
+  if (next) url.searchParams.set("next", next);
+  return url.toString();
+}
 
 export async function signUpAction(
   _prev: AuthState | undefined,
@@ -76,6 +87,7 @@ export async function signUpAction(
     phone: formData.get("phone"),
     role: formData.get("role"),
     language: formData.get("language") ?? "en",
+    next: formData.get("next") ?? undefined,
   });
   if (!parsed.success) {
     return {
@@ -86,6 +98,10 @@ export async function signUpAction(
 
   const supabase = await createSupabaseServerClient();
   const { email, password, fullName, phone, role, language } = parsed.data;
+  const inviteNext = sanitizeNextParam(
+    parsed.data.next ?? null,
+    role === "organizer" ? INVITE_NEXT_PREFIXES : [],
+  );
   const canonicalPhone = `+966${phone}`;
   const { error } = await supabase.auth.signUp({
     email,
@@ -97,7 +113,7 @@ export async function signUpAction(
         phone: canonicalPhone,
         language,
       },
-      emailRedirectTo: `${process.env.APP_URL ?? "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: authCallbackUrl(inviteNext),
     },
   });
   if (error) return { ok: false, error: error.message };
@@ -106,7 +122,8 @@ export async function signUpAction(
   // lands on /auth/callback, which exchanges the code for a session and
   // redirects the user to the role-appropriate dashboard. We still show a
   // "check your inbox" hint here in case the user came back to the tab.
-  redirect(`/sign-in?confirm=1&role=${role}`);
+  const nextQuery = inviteNext ? `&next=${encodeURIComponent(inviteNext)}` : "";
+  redirect(`/sign-in?confirm=1&role=${role}${nextQuery}`);
 }
 
 /**

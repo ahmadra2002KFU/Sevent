@@ -61,14 +61,19 @@ const fade = {
 export function SignUpExperience({
   initialRole,
   locale,
+  next,
   labels,
 }: {
   initialRole: SignupRole;
   locale: "en" | "ar";
+  next?: string;
   labels: SignUpExperienceLabels;
 }) {
   const [role, setRole] = useState<SignupRole>(initialRole);
   const column = role === "organizer" ? labels.organizer : labels.supplier;
+  const signInHref = next
+    ? `/sign-in?next=${encodeURIComponent(next)}`
+    : "/sign-in";
 
   return (
     <main className="flex min-h-screen bg-neutral-50">
@@ -132,7 +137,11 @@ export function SignUpExperience({
                   transition={fade.transition}
                 >
                   {role === "organizer" ? (
-                    <SignUpForm role="organizer" labels={labels.organizer.form} />
+                    <SignUpForm
+                      role="organizer"
+                      next={next}
+                      labels={labels.organizer.form}
+                    />
                   ) : (
                     <SupplierSignUpForm
                       locale={locale}
@@ -147,7 +156,7 @@ export function SignUpExperience({
                   ? labels.organizer.haveAccount
                   : labels.supplier.alreadyHaveAccount}{" "}
                 <Link
-                  href="/sign-in"
+                  href={signInHref}
                   className="font-semibold text-brand-cobalt-500 transition-colors hover:text-brand-cobalt-400"
                 >
                   {column.signIn}

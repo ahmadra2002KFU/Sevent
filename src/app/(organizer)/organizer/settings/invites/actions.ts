@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
 import { enqueueEmail, makeDedupKey } from "@/lib/notifications/outbox";
+import { strings as inviteEmailStrings } from "@/lib/notifications/templates/organizer/OrganizerInviteSent.strings";
 import { env } from "@/lib/env";
 
 export type InviteMutationErrorCode =
@@ -89,6 +90,7 @@ async function enqueueInviteEmail(opts: {
     templateKind: "organizer.invite_sent",
     locale: opts.locale,
     payload,
+    subjectOverride: inviteEmailStrings[opts.locale].subject(opts.companyName),
     dedupKey,
   });
   if (!result.ok) {

@@ -146,7 +146,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
   },
   "organizer.active": {
     bestDestination: "/organizer/dashboard",
-    allowedRoutePrefixes: ["/organizer"],
+    allowedRoutePrefixes: ["/organizer", "/invite/organizer"],
     features: ORGANIZER_FEATURES,
   },
   // Emitted when profiles.organizer_legal_type='company' but the user has
@@ -158,6 +158,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
     bestDestination: "/organizer/onboarding/company",
     allowedRoutePrefixes: [
       "/organizer/onboarding/company",
+      "/invite/organizer",
       "/auth",
       "/sign-out",
     ],
@@ -172,7 +173,7 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
   "agency.active": {
     // Agencies act on organizers' behalf and get the same surface today.
     bestDestination: "/organizer/dashboard",
-    allowedRoutePrefixes: ["/organizer"],
+    allowedRoutePrefixes: ["/organizer", "/invite/organizer"],
     features: ORGANIZER_FEATURES,
   },
   "admin.active": {

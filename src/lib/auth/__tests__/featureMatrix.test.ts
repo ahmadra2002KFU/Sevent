@@ -99,6 +99,7 @@ describe("STATE_CONFIG", () => {
       expect(cfg.features["organizer.rfqs"]).toBe(true);
       expect(cfg.features["organizer.bookings"]).toBe(true);
       expect(cfg.features["supplier.dashboard"]).toBeFalsy();
+      expect(cfg.allowedRoutePrefixes).toContain("/invite/organizer");
     });
 
     it("agency mirrors organizer", () => {

@@ -54,9 +54,11 @@ const initial: AuthState = { ok: false };
  */
 export function SignUpForm({
   role = "organizer",
+  next,
   labels,
 }: {
   role?: SignUpRole;
+  next?: string;
   labels: SignUpFormLabels;
 }) {
   const schema = z.object({
@@ -87,6 +89,7 @@ export function SignUpForm({
     fd.set("phone", values.phone);
     fd.set("password", values.password);
     fd.set("role", role);
+    if (next) fd.set("next", next);
     startTransition(() => formAction(fd));
   };
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveAccessForUser } from "@/lib/auth/access";
+import { sanitizeNextParam } from "@/lib/auth/nextParam";
 
 /**
  * Auth callback for Supabase email-based flows (confirmation, magic link,
@@ -19,6 +21,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const next = url.searchParams.get("next");
 
   // Behind Cloudflare → host → container loopback, `request.url` resolves to
   // the container's bind address (0.0.0.0:3000) rather than the public host.
@@ -53,6 +56,12 @@ export async function GET(request: Request) {
 
   let role: string | null = null;
   if (user) {
+    const decision = await resolveAccessForUser(user.id);
+    const safeNext = sanitizeNextParam(next, decision.allowedRoutePrefixes);
+    if (safeNext) {
+      return NextResponse.redirect(new URL(safeNext, redirectBase));
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")

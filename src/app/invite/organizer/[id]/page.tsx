@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { AlertTriangle, Building2, Crown, ShieldCheck, UserCog } from "lucide-react";
+import { AlertTriangle, Building2, ShieldCheck, UserCog } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -33,8 +33,8 @@ type InviteContext = {
  * users can submit the form, and the RPC re-verifies the token.
  *
  * Unauthenticated users get bounced to /sign-up with the invite preserved
- * via `?invite=<id>&t=<token>` so the post-signup redirect can drop them
- * back here. Strict email match is NOT enforced — too many KSA users have
+ * via `?next=/invite/organizer/<id>?t=<token>` so the post-signup redirect
+ * can drop them back here. Strict email match is NOT enforced — too many KSA users have
  * multiple email identities — instead we render a warning when the
  * signed-in user's email differs from the invite's recipient.
  */
@@ -114,6 +114,7 @@ export default async function OrganizerInviteAcceptPage({
   }
 
   // Expired by clock but DB hasn't yet flipped status — treat as expired.
+  // eslint-disable-next-line react-hooks/purity -- dynamic server route needs a request-time expiry check.
   if (new Date(ctx.expiresAt).getTime() <= Date.now()) {
     return (
       <Shell
@@ -132,11 +133,11 @@ export default async function OrganizerInviteAcceptPage({
 
   if (!user) {
     // Drop unauthenticated callers into sign-up with the invite preserved.
-    // The sign-up flow can read ?invite and ?t and route back here on
-    // success.
+    // The sign-up and auth-callback flows carry `next` back here after the
+    // user confirms their email.
     const next = `/invite/organizer/${encodeURIComponent(ctx.inviteId)}?t=${encodeURIComponent(ctx.token)}`;
     redirect(
-      `/sign-up?role=organizer&invite=${encodeURIComponent(ctx.inviteId)}&next=${encodeURIComponent(next)}`,
+      `/sign-up?role=organizer&next=${encodeURIComponent(next)}`,
     );
   }
 

@@ -14,6 +14,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const next = typeof params.next === "string" ? params.next : undefined;
   const confirm = params.confirm === "1";
+  const signUpHref = next
+    ? `/sign-up?role=organizer&next=${encodeURIComponent(next)}`
+    : "/sign-up";
   const t = await getTranslations("auth.signIn");
   const tCommon = await getTranslations("auth.common");
 
@@ -74,7 +77,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
             <p className="text-center text-sm text-muted-foreground">
               {t("newHere")}{" "}
               <Link
-                href="/sign-up"
+                href={signUpHref}
                 className="font-semibold text-brand-cobalt-500 transition-colors hover:text-brand-cobalt-400"
               >
                 {t("createAccount")}

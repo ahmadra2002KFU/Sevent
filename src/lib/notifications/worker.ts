@@ -198,6 +198,8 @@ function pickSubject(
  */
 function orderedPreviewArgs(payload: Record<string, unknown>): unknown[] {
   const priority = [
+    "company_name",
+    "companyName",
     "supplierBusinessName",
     "supplier",
     "eventName",
