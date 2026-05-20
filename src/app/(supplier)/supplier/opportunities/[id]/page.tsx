@@ -5,6 +5,7 @@ import {
   ClockAlert,
   Hash,
   MapPin,
+  Paperclip,
   Users,
 } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
@@ -19,6 +20,12 @@ import {
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { BackLink } from "@/components/ui-ext/BackLink";
 import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
+import { RfqAttachmentsView } from "@/components/rfq/RfqAttachmentsView";
+import type { RfqAttachmentRow } from "@/lib/domain/attachments";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrls,
+} from "@/lib/supabase/storage";
 import {
   Card,
   CardContent,
@@ -37,8 +44,11 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
   const { id } = await params;
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("supplier.opportunities");
+  const tAttachments = await getTranslations("rfqAttachments");
 
-  const { decision } = await requireAccess("supplier.opportunities.browse");
+  const { decision, admin } = await requireAccess(
+    "supplier.opportunities.browse",
+  );
   const supplierId = decision.supplierId;
   if (!supplierId) notFound();
 
@@ -58,6 +68,26 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
   const categoryLabel = categoryName(opportunity.category, locale);
   const subLabel = categoryName(opportunity.subcategory, locale);
   const qty = readQty(opportunity.requirements_jsonb);
+
+  // Per-بند attachments the organizer uploaded — travel with the RFQ.
+  const { data: attachRows } = await admin
+    .from("rfq_attachments")
+    .select(
+      "id, rfq_id, event_id, uploaded_by, kind, file_path, file_name, content_type, size_bytes, created_at",
+    )
+    .eq("rfq_id", opportunity.rfq_id)
+    .order("created_at", { ascending: true });
+  const attachments = (attachRows ?? []) as RfqAttachmentRow[];
+  let attachmentSignedUrls = new Map<string, string>();
+  try {
+    attachmentSignedUrls = await createSignedDownloadUrls(
+      admin,
+      STORAGE_BUCKETS.rfqAttachments,
+      attachments.map((a) => a.file_path),
+    );
+  } catch {
+    attachmentSignedUrls = new Map();
+  }
 
   return (
     <section className="flex flex-col gap-6">
@@ -118,6 +148,19 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="p-6">
           <RfqRequirementsView payload={opportunity.requirements_jsonb} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0">
+          <Paperclip className="size-4 text-brand-cobalt-500" aria-hidden />
+          <CardTitle className="text-lg">{tAttachments("heading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <RfqAttachmentsView
+            attachments={attachments}
+            signedUrls={attachmentSignedUrls}
+          />
         </CardContent>
       </Card>
 

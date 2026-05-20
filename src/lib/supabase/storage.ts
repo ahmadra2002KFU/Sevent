@@ -15,6 +15,10 @@ export const STORAGE_BUCKETS = {
   // the SELECT policy is permissive — so `getPublicUrl()` 400s. Use the
   // signed-URL helper for any admin-side rendering.
   organizerLogos: "organizer-logos",
+  // Per-بند RFQ attachments (organizer-uploaded images/documents). Private;
+  // read access is gated by storage RLS mirroring the rfqs read audiences
+  // (migration 20260521100100). Server action uploads via service-role.
+  rfqAttachments: "rfq-attachments",
 } as const;
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
@@ -37,6 +41,28 @@ export function supplierScopedPath(
   }
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "-");
   return `${supplierId}/${subdir}/${Date.now()}-${safeName}`;
+}
+
+/**
+ * Build an `rfq-attachments` object path. Layout (see migration 20260521100100):
+ *   {event_id}/{rfq_id}/{timestamp}-{uuid}-{safe_name}
+ * The {event_id} prefix lets storage RLS resolve the parent event, and the uuid
+ * guarantees uniqueness even when two files share a name within one بند.
+ */
+export function rfqAttachmentPath(
+  eventId: string,
+  rfqId: string,
+  filename: string,
+): string {
+  const uuidRe = /^[0-9a-f-]{36}$/i;
+  if (!uuidRe.test(eventId)) {
+    throw new Error(`rfqAttachmentPath: invalid eventId: ${eventId}`);
+  }
+  if (!uuidRe.test(rfqId)) {
+    throw new Error(`rfqAttachmentPath: invalid rfqId: ${rfqId}`);
+  }
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 120);
+  return `${eventId}/${rfqId}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
 }
 
 /** Asserts that a stored path begins with the expected supplier prefix. */

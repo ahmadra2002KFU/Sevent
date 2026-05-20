@@ -69,10 +69,11 @@ const nextConfig: NextConfig = {
     // Server Actions default to a 1 MB FormData cap. Supplier onboarding
     // submits a logo + multiple verification PDFs in one action, and quote
     // builders attach a 10 MB technical-proposal PDF — both blow past 1 MB.
-    // 25 MB leaves headroom for the tech-proposal cap plus a logo and a
-    // couple of doc PDFs without forcing the user to re-upload.
+    // Event creation can also carry per-بند attachments (images/documents);
+    // ATTACHMENT_MAX_TOTAL_BYTES_PER_SUBMIT (40 MB, see src/lib/domain/attachments.ts)
+    // is the attachment budget, so the whole multipart POST needs ~45 MB.
     serverActions: {
-      bodySizeLimit: "25mb",
+      bodySizeLimit: "45mb",
     },
   },
   images: {

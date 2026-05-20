@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BandAttachmentsField } from "@/components/rfq/BandAttachmentsField";
 import { addBandAction } from "../actions";
 import {
   listCategoriesAction,
@@ -59,6 +60,7 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
   const [subcategoryId, setSubcategoryId] = useState("");
   const [notes, setNotes] = useState("");
   const [qty, setQty] = useState(1);
+  const [files, setFiles] = useState<File[]>([]);
   const [categories, setCategories] = useState<CategoriesBundle | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -96,17 +98,21 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
     setSubcategoryId("");
     setNotes("");
     setQty(1);
+    setFiles([]);
   };
 
   const handleSubmit = () => {
     if (!subcategoryId) return;
+    // addBandAction now takes FormData (single بند → files keyed at index 0),
+    // matching the multi-بند contract on the event-creation form.
+    const fd = new FormData();
+    fd.append("event_id", eventId);
+    fd.append("subcategory_id", subcategoryId);
+    fd.append("notes", notes.trim());
+    fd.append("qty", String(qty));
+    files.forEach((f) => fd.append("band_attachment_0", f, f.name));
     startTransition(async () => {
-      const result = await addBandAction({
-        event_id: eventId,
-        subcategory_id: subcategoryId,
-        notes: notes.trim() ? notes.trim() : undefined,
-        qty,
-      });
+      const result = await addBandAction(fd);
       if (result.ok) {
         toast.success(t("bandSavedToast"));
         reset();
@@ -201,6 +207,12 @@ export function AddBandDialog({ eventId, triggerLabel, variant = "default" }: Pr
               maxLength={2000}
             />
           </div>
+
+          <BandAttachmentsField
+            files={files}
+            onChange={setFiles}
+            idPrefix="add-band"
+          />
         </div>
 
         <DialogFooter>

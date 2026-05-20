@@ -23,6 +23,14 @@ import { BandInput, EventFormInput } from "@/lib/domain/events";
 import { sarToHalalas } from "@/lib/domain/money";
 import { requireAccess } from "@/lib/auth/access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { STORAGE_BUCKETS, rfqAttachmentPath } from "@/lib/supabase/storage";
+import {
+  type AttachmentKind,
+  ATTACHMENT_MAX_PER_BAND,
+  ATTACHMENT_MAX_TOTAL_BYTES_PER_SUBMIT,
+  kindForMime,
+  maxBytesForKind,
+} from "@/lib/domain/attachments";
 
 function zodMessage(err: ZodError): string {
   return err.issues
@@ -119,6 +127,154 @@ async function publishBunoodForEvent(
   return ((inserted ?? []) as Array<{ id: string }>).map((r) => r.id);
 }
 
+/**
+ * Best-effort upload of per-بند attachments AFTER their RFQs are committed.
+ *
+ * `rfq_id` is the storage-path key and does not exist until `publishBunoodForEvent`
+ * inserts the RFQ rows, so this runs last. It is intentionally best-effort: a failed
+ * upload must never block the post-create redirect or roll back the already-committed
+ * event/RFQs. Attachments are supplementary enrichment (like the best-effort
+ * notification sends elsewhere); the load-bearing بند data (notes/qty) is already in
+ * `requirements_jsonb`. Every file is re-validated server-side (type/size/per-بند
+ * count/total budget) regardless of client checks, uploaded via the service-role
+ * client (there is no authenticated INSERT policy on `rfq_attachments`), and on a
+ * row-insert failure the just-uploaded blobs are best-effort removed so the bucket
+ * does not accumulate orphans.
+ *
+ * @param admin       service-role client (bypasses RLS)
+ * @param uploaderId  profiles.id of the organizer
+ * @param eventId     parent event id (storage path prefix)
+ * @param rfqIds      inserted RFQ ids, index-aligned with `fileGroups`
+ * @param fileGroups  fileGroups[i] = files attached to بند i
+ */
+async function uploadBandAttachments(
+  admin: Awaited<ReturnType<typeof requireAccess>>["admin"],
+  uploaderId: string,
+  eventId: string,
+  rfqIds: string[],
+  fileGroups: File[][],
+): Promise<void> {
+  type AttachmentInsertRow = {
+    rfq_id: string;
+    event_id: string;
+    uploaded_by: string;
+    kind: AttachmentKind;
+    file_path: string;
+    file_name: string;
+    content_type: string;
+    size_bytes: number;
+  };
+
+  const rows: AttachmentInsertRow[] = [];
+  const uploadedPaths: string[] = [];
+  let totalBytes = 0;
+
+  for (let i = 0; i < fileGroups.length; i++) {
+    const rfqId = rfqIds[i];
+    if (!rfqId) continue; // defensive: index must map to a created RFQ
+    let countForBand = 0;
+
+    for (const file of fileGroups[i]) {
+      try {
+        const kind = kindForMime(file.type);
+        if (kind === null) {
+          console.warn("[uploadBandAttachments] skipped disallowed type", {
+            event_id: eventId,
+            rfq_id: rfqId,
+            file_name: file.name,
+            content_type: file.type,
+          });
+          continue;
+        }
+        if (file.size > maxBytesForKind(kind)) {
+          console.warn("[uploadBandAttachments] skipped oversize file", {
+            rfq_id: rfqId,
+            file_name: file.name,
+            size_bytes: file.size,
+          });
+          continue;
+        }
+        if (countForBand >= ATTACHMENT_MAX_PER_BAND) {
+          console.warn("[uploadBandAttachments] skipped — per-بند count exceeded", {
+            rfq_id: rfqId,
+            file_name: file.name,
+          });
+          continue;
+        }
+        if (totalBytes + file.size > ATTACHMENT_MAX_TOTAL_BYTES_PER_SUBMIT) {
+          console.warn("[uploadBandAttachments] skipped — total size budget exceeded", {
+            rfq_id: rfqId,
+            file_name: file.name,
+          });
+          continue;
+        }
+
+        const path = rfqAttachmentPath(eventId, rfqId, file.name);
+        const buf = Buffer.from(await file.arrayBuffer());
+        const { error: upErr } = await admin.storage
+          .from(STORAGE_BUCKETS.rfqAttachments)
+          .upload(path, buf, { contentType: file.type, upsert: false });
+        if (upErr) {
+          console.warn("[uploadBandAttachments] storage upload failed", {
+            rfq_id: rfqId,
+            file_name: file.name,
+            message: upErr.message,
+          });
+          continue;
+        }
+
+        uploadedPaths.push(path);
+        countForBand += 1;
+        totalBytes += file.size;
+        rows.push({
+          rfq_id: rfqId,
+          event_id: eventId,
+          uploaded_by: uploaderId,
+          kind,
+          file_path: path,
+          file_name: file.name,
+          content_type: file.type,
+          size_bytes: file.size,
+        });
+      } catch (err) {
+        console.warn("[uploadBandAttachments] unexpected error; skipping file", {
+          rfq_id: rfqId,
+          file_name: file.name,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+
+  if (rows.length === 0) return;
+
+  const { error: insErr } = await admin.from("rfq_attachments").insert(rows);
+  if (insErr) {
+    console.warn("[uploadBandAttachments] row insert failed; removing orphans", {
+      event_id: eventId,
+      count: rows.length,
+      message: insErr.message,
+    });
+    // Best-effort cleanup so the bucket doesn't accumulate unreferenced blobs.
+    if (uploadedPaths.length > 0) {
+      await admin.storage
+        .from(STORAGE_BUCKETS.rfqAttachments)
+        .remove(uploadedPaths);
+    }
+  }
+}
+
+/**
+ * Read a single بند's uploaded files out of the action FormData. The client
+ * appends them keyed by بند index (`band_attachment_${i}`), so this mirrors the
+ * exact serialization in event-form.tsx / AddBandDialog.tsx.
+ */
+function bandFilesAt(formData: FormData, index: number): File[] {
+  return formData
+    .getAll(`band_attachment_${index}`)
+    .filter((v): v is File => v instanceof File && v.size > 0);
+}
+
 function isoFromLocal(raw: FormDataEntryValue | null): string {
   // datetime-local inputs produce "YYYY-MM-DDTHH:mm" (local time, no offset).
   // We pass it through Date which interprets as local time, then serialize to
@@ -130,7 +286,7 @@ function isoFromLocal(raw: FormDataEntryValue | null): string {
 }
 
 export async function createEventAction(formData: FormData): Promise<void> {
-  const { user } = await requireAccess("organizer.events");
+  const { user, admin } = await requireAccess("organizer.events");
   const supabase = await createSupabaseServerClient();
 
   const raw = {
@@ -198,8 +354,21 @@ export async function createEventAction(formData: FormData): Promise<void> {
 
   // Auto-publish each بند as an RFQ tied to the new event. The schema enforces
   // .min(1), so `parsed.bunood` is non-empty here. RLS allows organizer inserts
-  // because they own `events.id = newId` (they just inserted it).
-  await publishBunoodForEvent(supabase, newId, parsed.bunood);
+  // because they own `events.id = newId` (they just inserted it). The returned
+  // ids are in the same order as `parsed.bunood`, which is also the order the
+  // client keyed `band_attachment_${i}` files in the FormData.
+  const rfqIds = await publishBunoodForEvent(supabase, newId, parsed.bunood);
+
+  // Best-effort: attach each بند's uploaded files to its RFQ. Never blocks the
+  // redirect — see uploadBandAttachments.
+  const fileGroups = parsed.bunood.map((_, i) => bandFilesAt(formData, i));
+  if (fileGroups.some((g) => g.length > 0)) {
+    try {
+      await uploadBandAttachments(admin, user.id, newId, rfqIds, fileGroups);
+    } catch (err) {
+      console.warn("[createEventAction] attachment upload failed", err);
+    }
+  }
 
   revalidatePath("/organizer/events");
   revalidatePath("/organizer/dashboard");
@@ -218,13 +387,21 @@ export type AddBandResult =
   | { ok: true; rfq_id: string }
   | { ok: false; error: string };
 
-export async function addBandAction(input: unknown): Promise<AddBandResult> {
-  const parsed = AddBandFormInput.safeParse(input);
+export async function addBandAction(formData: FormData): Promise<AddBandResult> {
+  // FormData-based (was a plain object) so the dialog can attach files alongside
+  // the بند fields. Scalars are read the same way createEventAction reads them.
+  const candidate = {
+    event_id: optionalString(formData.get("event_id")),
+    subcategory_id: optionalString(formData.get("subcategory_id")),
+    notes: optionalString(formData.get("notes")),
+    qty: optionalNumericString(formData.get("qty")),
+  };
+  const parsed = AddBandFormInput.safeParse(candidate);
   if (!parsed.success) {
     return { ok: false, error: zodMessage(parsed.error) };
   }
 
-  const { user } = await requireAccess("organizer.events");
+  const { user, admin } = await requireAccess("organizer.events");
   const supabase = await createSupabaseServerClient();
 
   // Verify ownership before insert. RLS on `events` already scopes select to
@@ -258,6 +435,18 @@ export async function addBandAction(input: unknown): Promise<AddBandResult> {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to add بند.",
     };
+  }
+
+  // Best-effort: attach this بند's uploaded files (keyed at index 0) to its RFQ.
+  const files = bandFilesAt(formData, 0);
+  if (files.length > 0) {
+    try {
+      await uploadBandAttachments(admin, user.id, parsed.data.event_id, rfqIds, [
+        files,
+      ]);
+    } catch (err) {
+      console.warn("[addBandAction] attachment upload failed", err);
+    }
   }
 
   revalidatePath(`/organizer/events/${parsed.data.event_id}`);

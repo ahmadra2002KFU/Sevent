@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, FileText, Inbox, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Inbox,
+  MessageSquare,
+  Paperclip,
+} from "lucide-react";
 import { requireRole } from "@/lib/supabase/server";
 import {
   Card,
@@ -38,7 +44,12 @@ import {
   type RfqInviteStatus,
 } from "@/lib/domain/rfq";
 import { formatMoney } from "@/lib/domain/money";
-import { STORAGE_BUCKETS } from "@/lib/supabase/storage";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrls,
+} from "@/lib/supabase/storage";
+import { RfqAttachmentsView } from "@/components/rfq/RfqAttachmentsView";
+import type { RfqAttachmentRow } from "@/lib/domain/attachments";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +178,7 @@ export default async function AdminRfqDetailPage({
   const tDetail = await getTranslations("admin.rfqs.detail");
   const tProposalStatus = await getTranslations("admin.proposals.status");
   const tBooking = await getTranslations("bookingStatus");
+  const tAttachments = await getTranslations("rfqAttachments");
 
   const gate = await requireRole("admin");
   if (gate.status === "unauthenticated") {
@@ -307,6 +319,29 @@ export default async function AdminRfqDetailPage({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Per-بند attachments the organizer uploaded — travel with the RFQ. `id` is
+  // the rfq id on this route (== rfq.id).
+  // ---------------------------------------------------------------------------
+  const { data: attachRows } = await admin
+    .from("rfq_attachments")
+    .select(
+      "id, rfq_id, event_id, uploaded_by, kind, file_path, file_name, content_type, size_bytes, created_at",
+    )
+    .eq("rfq_id", rfq.id)
+    .order("created_at", { ascending: true });
+  const attachments = (attachRows ?? []) as RfqAttachmentRow[];
+  let attachmentSignedUrls = new Map<string, string>();
+  try {
+    attachmentSignedUrls = await createSignedDownloadUrls(
+      admin,
+      STORAGE_BUCKETS.rfqAttachments,
+      attachments.map((a) => a.file_path),
+    );
+  } catch {
+    attachmentSignedUrls = new Map();
+  }
+
   // Group revisions by quote for the per-quote disclosure.
   const revisionsByQuote = new Map<string, RevisionRow[]>();
   for (const r of revisions) {
@@ -395,6 +430,22 @@ export default async function AdminRfqDetailPage({
 
       {/* Requirements */}
       <RequirementsSection payload={rfq.requirements_jsonb} />
+
+      {/* Attachments */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Paperclip aria-hidden className="size-4" />
+            {tAttachments("heading")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RfqAttachmentsView
+            attachments={attachments}
+            signedUrls={attachmentSignedUrls}
+          />
+        </CardContent>
+      </Card>
 
       {/* Invites */}
       <Card>

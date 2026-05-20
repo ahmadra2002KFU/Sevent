@@ -60,6 +60,7 @@ import {
 import { MARKET_SEGMENTS } from "@/lib/domain/segments";
 import { CityCombobox } from "@/components/supplier/CityCombobox";
 import { HelperText } from "@/components/ui-ext/HelperText";
+import { BandAttachmentsField } from "@/components/rfq/BandAttachmentsField";
 import { createEventAction } from "../actions";
 import {
   listCategoriesAction,
@@ -67,7 +68,12 @@ import {
   type CategoryOption,
 } from "../../rfqs/actions";
 
-type BandRow = { subcategory_id: string; notes: string; qty: number };
+type BandRow = {
+  subcategory_id: string;
+  notes: string;
+  qty: number;
+  files: File[];
+};
 
 type FormValues = {
   event_type: EventType | "";
@@ -290,6 +296,12 @@ export function EventForm() {
   const submit: SubmitHandler<FormValues> = () => {
     if (!formRef.current) return;
     const fd = new FormData(formRef.current);
+    // Append each بند's files keyed by row index — the exact contract the
+    // server action reads (band_attachment_<i>). The bunood JSON hidden input
+    // stays files-free; files travel as separate multipart parts here.
+    bunood.forEach((row, i) =>
+      row.files.forEach((f) => fd.append(`band_attachment_${i}`, f, f.name)),
+    );
     startTransition(async () => {
       try {
         await createEventAction(fd);
@@ -810,7 +822,10 @@ function BunoodCard({
   };
 
   const addRow = () => {
-    setBunood((prev) => [...prev, { subcategory_id: "", notes: "", qty: 1 }]);
+    setBunood((prev) => [
+      ...prev,
+      { subcategory_id: "", notes: "", qty: 1, files: [] },
+    ]);
   };
 
   // Single-line row layout: subcategory select | notes input | delete button.
@@ -986,6 +1001,16 @@ function BunoodCard({
                     <Trash2 className="size-4" aria-hidden />
                     <span className="sr-only">{t("removeBand")}</span>
                   </button>
+                </div>
+
+                {/* Attachments — full-width second sub-row beneath the grid line. */}
+                <div className="sm:col-span-full">
+                  <BandAttachmentsField
+                    files={row.files}
+                    onChange={(files) => updateRow(idx, { files })}
+                    idPrefix={`band-${idx}`}
+                    disabled={!categoriesLoaded}
+                  />
                 </div>
               </li>
             ))}

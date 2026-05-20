@@ -2550,7 +2550,15 @@
         "dialogSaving": "Publishing…",
         "dialogCancel": "Cancel",
         "bandSavedToast": "Line item added and published to the marketplace.",
-        "bandFailedToast": "Could not add the line item."
+        "bandFailedToast": "Could not add the line item.",
+        "attachmentsLabel": "Images & documents (optional)",
+        "addFiles": "Add files",
+        "attachmentsHint": "Attach reference images or documents for suppliers (PNG, JPG, WebP, PDF).",
+        "removeFile": "Remove file",
+        "fileTooLarge": "File is too large.",
+        "fileTypeNotAllowed": "File type not allowed.",
+        "tooManyFiles": "You can attach up to 5 files per item.",
+        "totalTooLarge": "Total attachment size is too large."
       }
     },
     "rfqs": {
@@ -3565,5 +3573,13 @@
       "qty": "Quantity",
       "notes": "Notes"
     }
+  },
+  "rfqAttachments": {
+    "heading": "Attachments",
+    "none": "No attachments.",
+    "imagesHeading": "Images",
+    "documentsHeading": "Documents",
+    "open": "Open",
+    "download": "Download"
   }
 }

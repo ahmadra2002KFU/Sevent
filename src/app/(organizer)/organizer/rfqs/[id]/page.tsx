@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { FileCheck } from "lucide-react";
+import { FileCheck, Paperclip } from "lucide-react";
 import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
@@ -28,6 +28,12 @@ import {
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
 import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
+import { RfqAttachmentsView } from "@/components/rfq/RfqAttachmentsView";
+import type { RfqAttachmentRow } from "@/lib/domain/attachments";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrls,
+} from "@/lib/supabase/storage";
 import { requireAccess } from "@/lib/auth/access";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +112,7 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const t = await getTranslations("organizer.rfqs");
   const tSource = await getTranslations("organizer.quote.sourceBadge");
   const tDecline = await getTranslations("supplier.rfqInbox.declineReason");
+  const tAttachments = await getTranslations("rfqAttachments");
 
   const { user, admin } = await requireAccess("organizer.rfqs");
 
@@ -156,6 +163,26 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
     .select("id", { count: "exact", head: true })
     .eq("rfq_id", id)
     .eq("status", "sent");
+
+  // Per-بند attachments the organizer uploaded — travel with the RFQ.
+  const { data: attachRows } = await admin
+    .from("rfq_attachments")
+    .select(
+      "id, rfq_id, event_id, uploaded_by, kind, file_path, file_name, content_type, size_bytes, created_at",
+    )
+    .eq("rfq_id", id)
+    .order("created_at", { ascending: true });
+  const attachments = (attachRows ?? []) as RfqAttachmentRow[];
+  let attachmentSignedUrls = new Map<string, string>();
+  try {
+    attachmentSignedUrls = await createSignedDownloadUrls(
+      admin,
+      STORAGE_BUCKETS.rfqAttachments,
+      attachments.map((a) => a.file_path),
+    );
+  } catch {
+    attachmentSignedUrls = new Map();
+  }
 
   const parentLabel = categoryName(rfq.parent, locale);
   const subLabel = categoryName(rfq.sub, locale);
@@ -209,6 +236,19 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="p-6">
           <RfqRequirementsView payload={rfq.requirements_jsonb} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b pb-4">
+          <Paperclip className="size-4 text-brand-cobalt-500" aria-hidden />
+          <CardTitle className="text-lg">{tAttachments("heading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <RfqAttachmentsView
+            attachments={attachments}
+            signedUrls={attachmentSignedUrls}
+          />
         </CardContent>
       </Card>
 

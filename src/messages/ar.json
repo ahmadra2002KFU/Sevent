@@ -2550,7 +2550,15 @@
         "dialogSaving": "جارٍ النشر…",
         "dialogCancel": "إلغاء",
         "bandSavedToast": "تمت إضافة البند ونشره في السوق.",
-        "bandFailedToast": "تعذّر إضافة البند."
+        "bandFailedToast": "تعذّر إضافة البند.",
+        "attachmentsLabel": "صور ومستندات (اختياري)",
+        "addFiles": "إضافة ملفات",
+        "attachmentsHint": "أرفق صورًا أو مستندات مرجعية للموردين (PNG، JPG، WebP، PDF).",
+        "removeFile": "إزالة الملف",
+        "fileTooLarge": "حجم الملف كبير جدًا.",
+        "fileTypeNotAllowed": "نوع الملف غير مسموح به.",
+        "tooManyFiles": "يمكنك إرفاق ما يصل إلى 5 ملفات لكل بند.",
+        "totalTooLarge": "إجمالي حجم المرفقات كبير جدًا."
       }
     },
     "rfqs": {
@@ -3565,5 +3573,13 @@
       "qty": "الكمية",
       "notes": "ملاحظات"
     }
+  },
+  "rfqAttachments": {
+    "heading": "المرفقات",
+    "none": "لا توجد مرفقات.",
+    "imagesHeading": "الصور",
+    "documentsHeading": "المستندات",
+    "open": "فتح",
+    "download": "تنزيل"
   }
 }

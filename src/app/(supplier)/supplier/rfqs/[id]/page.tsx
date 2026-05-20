@@ -8,6 +8,7 @@ import {
   FileText,
   Hourglass,
   MapPin,
+  Paperclip,
 } from "lucide-react";
 import { requireAccess } from "@/lib/auth/access";
 import {
@@ -27,6 +28,12 @@ import {
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { RfqRequirementsView } from "@/components/rfq/RfqRequirementsView";
+import { RfqAttachmentsView } from "@/components/rfq/RfqAttachmentsView";
+import type { RfqAttachmentRow } from "@/lib/domain/attachments";
+import {
+  STORAGE_BUCKETS,
+  createSignedDownloadUrls,
+} from "@/lib/supabase/storage";
 import {
   Card,
   CardContent,
@@ -133,6 +140,7 @@ export default async function SupplierRfqDetailPage({
   const t = await getTranslations("supplier.rfqInbox");
   const tRfp = await getTranslations("supplier.rfp");
   const tQuoteStatus = await getTranslations("quoteStatus");
+  const tAttachments = await getTranslations("rfqAttachments");
 
   const formatDate = (iso: string | null | undefined): string =>
     fmtDateTime(iso ?? null, locale) || "—";
@@ -169,6 +177,29 @@ export default async function SupplierRfqDetailPage({
   const subcategory = rfq?.categories ?? null;
   const subcategoryLabel = categoryName(subcategory, locale);
   const cityLabel = event?.city ? cityNameFor(event.city, locale) : "";
+
+  // Per-بند attachments the organizer uploaded — travel with the RFQ.
+  let attachments: RfqAttachmentRow[] = [];
+  let attachmentSignedUrls = new Map<string, string>();
+  if (rfq?.id) {
+    const { data: attachRows } = await admin
+      .from("rfq_attachments")
+      .select(
+        "id, rfq_id, event_id, uploaded_by, kind, file_path, file_name, content_type, size_bytes, created_at",
+      )
+      .eq("rfq_id", rfq.id)
+      .order("created_at", { ascending: true });
+    attachments = (attachRows ?? []) as RfqAttachmentRow[];
+    try {
+      attachmentSignedUrls = await createSignedDownloadUrls(
+        admin,
+        STORAGE_BUCKETS.rfqAttachments,
+        attachments.map((a) => a.file_path),
+      );
+    } catch {
+      attachmentSignedUrls = new Map();
+    }
+  }
 
   // Load the supplier's quote on this RFQ (if any) — mirrors the quote
   // builder's loader. Any non-null quote means the supplier has responded
@@ -324,6 +355,19 @@ export default async function SupplierRfqDetailPage({
         </CardHeader>
         <CardContent className="pt-4">
           <RfqRequirementsView payload={rfq?.requirements_jsonb} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 border-b">
+          <Paperclip className="size-4 text-brand-cobalt-500" aria-hidden />
+          <CardTitle>{tAttachments("heading")}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <RfqAttachmentsView
+            attachments={attachments}
+            signedUrls={attachmentSignedUrls}
+          />
         </CardContent>
       </Card>
 
