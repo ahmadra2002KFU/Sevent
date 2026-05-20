@@ -22,7 +22,14 @@ export type InviteMutationErrorCode =
 
 export type InviteMutationState =
   | { status: "idle" }
-  | { status: "success"; action: "create" | "revoke" | "resend" }
+  | {
+      status: "success";
+      action: "create" | "revoke" | "resend";
+      /** create/resend only: false when the invite row was written but the
+       *  email failed to enqueue, so the UI can prompt a Resend. Omitted (and
+       *  treated as queued) for revoke. */
+      emailQueued?: boolean;
+    }
   | { status: "error"; code: InviteMutationErrorCode };
 
 const InviteRoleSchema = z.enum(["admin", "member"]);
@@ -73,7 +80,7 @@ async function enqueueInviteEmail(opts: {
   inviterName: string | null;
   companyName: string;
   locale: "en" | "ar";
-}): Promise<void> {
+}): Promise<{ ok: boolean }> {
   const payload = {
     locale: opts.locale,
     company_name: opts.companyName,
@@ -94,13 +101,15 @@ async function enqueueInviteEmail(opts: {
     dedupKey,
   });
   if (!result.ok) {
-    // Log but do not throw — the invite row is the durable record. Admins
-    // can resend if the email failed to enqueue.
+    // Log but do not throw — the invite row is the durable record. The
+    // caller surfaces `ok:false` so the admin sees a Resend prompt instead
+    // of a silent "success".
     console.error("[invites/enqueueInviteEmail] outbox enqueue failed", {
       inviteId: opts.inviteId,
       error: result.error,
     });
   }
+  return { ok: result.ok };
 }
 
 async function loadInviterContext(
@@ -207,7 +216,7 @@ export async function createInviteAction(
     user.id,
     companyId,
   );
-  await enqueueInviteEmail({
+  const emailResult = await enqueueInviteEmail({
     admin,
     companyId,
     inviteId,
@@ -221,7 +230,7 @@ export async function createInviteAction(
   });
 
   revalidatePath("/organizer/settings/invites");
-  return { status: "success", action: "create" };
+  return { status: "success", action: "create", emailQueued: emailResult.ok };
 }
 
 /**
@@ -356,7 +365,7 @@ export async function resendInviteAction(
     user.id,
     companyId,
   );
-  await enqueueInviteEmail({
+  const emailResult = await enqueueInviteEmail({
     admin,
     companyId,
     inviteId: newInviteId,
@@ -370,5 +379,5 @@ export async function resendInviteAction(
   });
 
   revalidatePath("/organizer/settings/invites");
-  return { status: "success", action: "resend" };
+  return { status: "success", action: "resend", emailQueued: emailResult.ok };
 }

@@ -1,90 +1,46 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, Building2, UserRound } from "lucide-react";
+import { Building2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { markAsIndividualAction } from "@/app/(onboarding)/organizer/onboarding/company-choice/actions";
 
 /**
- * Post-signup choice surface, rendered inline at the top of
- * `/organizer/dashboard` when `profiles.organizer_legal_type IS NULL`.
+ * Slim, dismissible onramp shown at the top of `/organizer/dashboard` while
+ * `profiles.organizer_legal_type IS NULL` (organizer hasn't declared a path).
  *
- * Without this banner the choice flow lived only at the dedicated
- * `/organizer/onboarding/company-choice` URL, which was never linked from
- * the dashboard — new signups landed on the dashboard with no visible
- * onramp into the company path (PR 7 follow-up: discoverability hole).
- *
- * The banner is intentionally lightweight: two parallel CTAs (one link,
- * one form-action) and a single sentence of copy. Once the user picks,
- * `organizer_legal_type` flips away from NULL and the banner disappears
- * on the next render.
+ * The primary, always-available entry into company creation now lives in the
+ * account dropdown ("Register a company"); this hint is just a lightweight
+ * nudge. Dismissing it reuses `markAsIndividualAction`, which flips
+ * legal_type NULL→'individual' server-side so the hint stays gone on every
+ * device — and 'individual' behaves identically to NULL (the dashboard works
+ * the same). The user can still register a company anytime from the dropdown.
  */
 export async function OrganizerOnboardingBanner() {
   const t = await getTranslations("organizer.dashboard.onboardingBanner");
 
   return (
-    <Card className="border-brand-gold-100 bg-gradient-to-br from-brand-gold-100/60 to-brand-cobalt-100/40">
-      <CardContent className="flex flex-col gap-5 p-6 sm:p-7">
-        <div className="flex flex-col gap-1.5">
-          <h2 className="text-lg font-semibold tracking-tight text-brand-navy-900 sm:text-xl">
-            {t("title")}
-          </h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            {t("subtitle")}
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand-gold-100 bg-brand-gold-100/40 px-4 py-3">
+      <Building2
+        className="size-5 shrink-0 text-brand-cobalt-500"
+        aria-hidden
+      />
+      <p className="min-w-0 flex-1 text-sm text-brand-navy-900">{t("hint")}</p>
+      <div className="flex items-center gap-1.5">
+        <Button asChild size="sm" className="shrink-0">
+          <Link href="/organizer/onboarding/company">{t("register")}</Link>
+        </Button>
+        <form action={markAsIndividualAction}>
           <Button
-            asChild
-            size="lg"
-            className="h-auto justify-start gap-3 px-4 py-3"
+            type="submit"
+            size="sm"
+            variant="ghost"
+            className="shrink-0"
+            aria-label={t("dismiss")}
           >
-            <Link href="/organizer/onboarding/company">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white/15 text-white">
-                <Building2 className="size-5" aria-hidden />
-              </span>
-              <span className="flex min-w-0 flex-col items-start text-left">
-                <span className="text-sm font-semibold leading-tight">
-                  {t("companyLabel")}
-                </span>
-                <span className="text-[11px] font-normal text-white/85">
-                  {t("companyHint")}
-                </span>
-              </span>
-              <ArrowRight
-                className="ms-auto size-4 shrink-0 rtl:rotate-180"
-                aria-hidden
-              />
-            </Link>
+            <X className="size-4" aria-hidden />
           </Button>
-
-          <form action={markAsIndividualAction}>
-            <Button
-              type="submit"
-              variant="outline"
-              size="lg"
-              className="h-auto w-full justify-start gap-3 border-brand-navy-900/15 bg-white px-4 py-3"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-cobalt-100 text-brand-cobalt-500">
-                <UserRound className="size-5" aria-hidden />
-              </span>
-              <span className="flex min-w-0 flex-col items-start text-left">
-                <span className="text-sm font-semibold leading-tight text-brand-navy-900">
-                  {t("individualLabel")}
-                </span>
-                <span className="text-[11px] font-normal text-muted-foreground">
-                  {t("individualHint")}
-                </span>
-              </span>
-              <ArrowRight
-                className="ms-auto size-4 shrink-0 text-muted-foreground rtl:rotate-180"
-                aria-hidden
-              />
-            </Button>
-          </form>
-        </div>
-      </CardContent>
-    </Card>
+        </form>
+      </div>
+    </div>
   );
 }

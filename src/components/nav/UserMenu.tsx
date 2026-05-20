@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { Building2, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import {
   Avatar,
@@ -26,6 +27,10 @@ type UserMenuProps = {
   companies?: CompanyOption[];
   activeCompanyId?: string | null;
   companySwitcherLabel?: string;
+  /** Organizer without a company: surface a "Register a company" entry that
+   *  links into the company-creation flow. */
+  canRegisterCompany?: boolean;
+  registerCompanyLabel?: string;
 };
 
 function initials(source: string): string {
@@ -42,6 +47,8 @@ export function UserMenu({
   companies = [],
   activeCompanyId = null,
   companySwitcherLabel = "Switch company",
+  canRegisterCompany = false,
+  registerCompanyLabel = "Register a company",
 }: UserMenuProps) {
   const label = displayName || email;
   return (
@@ -82,6 +89,17 @@ export function UserMenu({
           activeCompanyId={activeCompanyId}
           label={companySwitcherLabel}
         />
+        {canRegisterCompany ? (
+          <DropdownMenuItem asChild>
+            <Link
+              href="/organizer/onboarding/company"
+              className="flex w-full cursor-pointer items-center gap-2"
+            >
+              <Building2 className="size-4" aria-hidden />
+              {registerCompanyLabel}
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <FeedbackMenuItem />
         <DropdownMenuSeparator />

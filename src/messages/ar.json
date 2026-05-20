@@ -15,6 +15,7 @@
     "signUpAsSupplier": "أنا مورّد",
     "signUpAsSupplierHint": "قدّم خدماتك للمنظّمين",
     "companySwitcher": "تبديل الشركة",
+    "registerCompany": "تسجيل شركة",
     "role": {
       "organizer": "منظّم",
       "supplier": "مورّد",
@@ -2174,12 +2175,9 @@
       "notifications": "الإشعارات",
       "invitesCount": "{count, plural, zero {لا يوجد دعوات} one {دعوة واحدة} two {دعوتان} few {# دعوات} many {# دعوة} other {# دعوة}}",
       "onboardingBanner": {
-        "title": "أهلًا بك في سيڤنت — اختر طريقة عملك",
-        "subtitle": "هذا يحدّد كيف يظهر الزملاء والفوترة. سنتذكّر اختيارك.",
-        "companyLabel": "تأسيس شركة",
-        "companyHint": "زملاء متعددون · سجل تجاري وضريبي على الحجوزات",
-        "individualLabel": "متابعة كفرد",
-        "individualHint": "خطّط للفعاليات كمنظّم فردي"
+        "hint": "تعمل ضمن فريق؟ سجّل شركة للتعاون في الفعاليات والفوترة.",
+        "register": "تسجيل شركة",
+        "dismiss": "إغلاق"
       },
       "companyMeta": {
         "teammates": "{count, plural, zero {لا يوجد زملاء} one {زميل واحد} two {زميلان} few {# زملاء} many {# زميلاً} other {# زميل}}",
@@ -2436,7 +2434,8 @@
         "success": {
           "create": "تم إرسال الدعوة.",
           "revoke": "تم إلغاء الدعوة.",
-          "resend": "تم إعادة إرسال الدعوة."
+          "resend": "تم إعادة إرسال الدعوة.",
+          "emailQueueWarning": "تم إنشاء الدعوة، لكن تعذّر إدراج البريد للإرسال. استخدم إعادة الإرسال للمحاولة مجددًا."
         },
         "errors": {
           "notAdmin": "يقدر المالك والمشرفون فقط إدارة الدعوات.",

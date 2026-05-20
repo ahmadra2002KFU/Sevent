@@ -15,6 +15,7 @@
     "signUpAsSupplier": "I'm a supplier",
     "signUpAsSupplierHint": "Offer your services to organizers",
     "companySwitcher": "Switch company",
+    "registerCompany": "Register a company",
     "role": {
       "organizer": "Organizer",
       "supplier": "Supplier",
@@ -2174,12 +2175,9 @@
       "notifications": "Notifications",
       "invitesCount": "{count, plural, one {# invite} other {# invites}}",
       "onboardingBanner": {
-        "title": "Welcome to Sevent — pick how you'll work",
-        "subtitle": "This affects how teammates and billing show up. We'll remember your choice.",
-        "companyLabel": "Set up a company",
-        "companyHint": "Multiple teammates · CR / VAT on bookings",
-        "individualLabel": "Continue solo",
-        "individualHint": "Plan events as an individual organizer"
+        "hint": "Working with a team? Register a company to collaborate on events and billing.",
+        "register": "Register a company",
+        "dismiss": "Dismiss"
       },
       "companyMeta": {
         "teammates": "{count, plural, one {# teammate} other {# teammates}}",
@@ -2436,7 +2434,8 @@
         "success": {
           "create": "Invite sent.",
           "revoke": "Invite revoked.",
-          "resend": "Invite resent."
+          "resend": "Invite resent.",
+          "emailQueueWarning": "Invite created, but the email couldn't be queued. Use Resend to try again."
         },
         "errors": {
           "notAdmin": "Only owners and admins can manage invites.",

@@ -148,12 +148,19 @@ export function InvitesPanel({ invites, canManage }: InvitesPanelProps) {
         </Alert>
       ) : null}
       {state.status === "success" ? (
-        <Alert>
-          <CheckCircle2 aria-hidden />
-          <AlertDescription>
-            {t(`success.${state.action}` as never)}
-          </AlertDescription>
-        </Alert>
+        state.action !== "revoke" && state.emailQueued === false ? (
+          <Alert className="border-brand-gold-400 [&>svg]:text-brand-gold-700">
+            <AlertTriangle aria-hidden />
+            <AlertDescription>{t("success.emailQueueWarning")}</AlertDescription>
+          </Alert>
+        ) : (
+          <Alert>
+            <CheckCircle2 aria-hidden />
+            <AlertDescription>
+              {t(`success.${state.action}` as never)}
+            </AlertDescription>
+          </Alert>
+        )
       ) : null}
 
       {invites.length === 0 ? (

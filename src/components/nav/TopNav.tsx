@@ -306,6 +306,11 @@ export async function TopNav({ role }: { role: Role }) {
               companies={companies}
               activeCompanyId={decision.activeCompanyId}
               companySwitcherLabel={nav("companySwitcher")}
+              canRegisterCompany={
+                role === "organizer" &&
+                decision.availableCompanyIds.length === 0
+              }
+              registerCompanyLabel={nav("registerCompany")}
             />
           ) : null}
         </nav>
