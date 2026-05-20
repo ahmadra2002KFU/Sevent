@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
+import { AnimatePresence, motion } from "motion/react";
 import { AlertTriangle, Building2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -110,14 +111,25 @@ export function CompanyForm({ defaultLanguage }: { defaultLanguage: "en" | "ar" 
         </Select>
       </Field>
 
-      {state.status === "error" ? (
-        <Alert variant="destructive">
-          <AlertTriangle aria-hidden />
-          <AlertDescription>
-            {t(`errors.${state.code}` as never)}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <AnimatePresence>
+        {state.status === "error" ? (
+          <motion.div
+            key="company-error"
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="overflow-hidden"
+          >
+            <Alert variant="destructive">
+              <AlertTriangle aria-hidden />
+              <AlertDescription>
+                {t(`errors.${state.code}` as never)}
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <SubmitButton label={t("submit")} pendingLabel={t("submitting")} />
     </form>

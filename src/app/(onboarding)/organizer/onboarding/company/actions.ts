@@ -140,5 +140,8 @@ export async function createCompanyAction(
   // primary fast-path signal.
   await setActiveCompanyCookie(companyId);
 
-  redirect("/organizer/dashboard");
+  // ?welcome=1 triggers the one-time celebration banner on the dashboard so
+  // company creation lands on an explicit success state rather than a silent
+  // redirect.
+  redirect("/organizer/dashboard?welcome=1");
 }

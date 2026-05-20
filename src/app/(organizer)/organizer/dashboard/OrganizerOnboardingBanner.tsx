@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowRight, Building2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { markAsIndividualAction } from "../onboarding/company-choice/actions";
+import { markAsIndividualAction } from "@/app/(onboarding)/organizer/onboarding/company-choice/actions";
 
 /**
  * Post-signup choice surface, rendered inline at the top of

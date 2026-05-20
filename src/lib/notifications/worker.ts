@@ -92,6 +92,15 @@ type TemplateModule = {
  * triggered out-of-band by Supabase Auth, not by notification rows.
  */
 const TEMPLATES: Record<string, () => Promise<TemplateModule>> = {
+  // First sign-in welcome emails. Unlike the other auth-flow templates
+  // (PasswordReset etc.) these are NOT sent by Supabase Auth — they're
+  // enqueued by our own /auth/callback after the email-confirmation code is
+  // exchanged, with a stable per-user dedup_key so each user is welcomed once.
+  "welcome.organizer": () =>
+    import("./templates/auth/WelcomeOrganizer") as unknown as Promise<TemplateModule>,
+  "welcome.supplier": () =>
+    import("./templates/auth/WelcomeSupplier") as unknown as Promise<TemplateModule>,
+
   // Supplier lifecycle.
   "supplier.approved": () =>
     import("./templates/supplier/SupplierApproved") as unknown as Promise<TemplateModule>,

@@ -2208,11 +2208,33 @@
         "companyCta": "تأسيس شركة",
         "inviteLabel": "تمت دعوتي للانضمام لشركة",
         "inviteDescription": "افتح رابط الدعوة من البريد الذي وصلك من مسؤول الشركة. الرابط يتكفّل بالباقي.",
-        "individualError": "ما قدرنا نحدّث ملفك. حاول مرة أخرى بعد لحظات."
+        "individualError": "ما قدرنا نحدّث ملفك. حاول مرة أخرى بعد لحظات.",
+        "needsTitle": "ما الذي تحصل عليه",
+        "etaPrefix": "يستغرق نحو",
+        "continueCta": "متابعة",
+        "continueLoading": "جارٍ الحفظ…",
+        "individualStep1": "أنشئ الفعاليات تحت ملفك الشخصي",
+        "individualStep2": "استلم عروض أسعار من مورّدين موثّقين",
+        "individualStep3": "أدر حجوزاتك بنفسك",
+        "individualEta": "دقيقة واحدة",
+        "companyStep1": "ادعُ زملاءك للتعاون معك",
+        "companyStep2": "السجل التجاري / الرقم الضريبي على الحجوزات والفواتير",
+        "companyStep3": "فعاليات وطلبات أسعار وحجوزات مشتركة",
+        "companyEta": "٣ دقائق",
+        "companyTag": "الأنسب للفرق",
+        "inviteStep1": "الصق رابط الدعوة من بريدك",
+        "inviteStep2": "انضم لمساحة شركتك فوراً",
+        "inviteEta": "دقيقة",
+        "invitePasteLabel": "الصق رابط الدعوة",
+        "invitePastePlaceholder": "https://www.seventsa.com/invite/organizer/…",
+        "invitePasteCta": "فتح الدعوة",
+        "invitePasteError": "هذا لا يبدو رابط دعوة صالحاً في سيڤنت.",
+        "inviteHelp": "الرابط موجود في البريد الذي أرسله لك المسؤول. لم تجده؟ اطلب منه إعادة إرساله."
       },
       "company": {
         "title": "أسّس منظّم شركتك",
         "subtitle": "هذه التفاصيل تظهر على طلبات الأسعار والحجوزات الموجّهة لفريقك.",
+        "intro": "تقدر تحدّث أيّاً من هذه التفاصيل لاحقاً من إعدادات الشركة.",
         "backToChoice": "العودة للخيارات",
         "nameLabel": "اسم الشركة",
         "namePlaceholder": "Acme Events Co.",
@@ -2248,6 +2270,17 @@
           "billingEmailInvalid": "صيغة البريد ما تبدو صحيحة.",
           "createFailed": "ما قدرنا ننشئ الشركة. حاول مرة أخرى."
         }
+      },
+      "progress": {
+        "choosePath": "اختيار المسار",
+        "companyDetails": "تفاصيل الشركة"
+      },
+      "success": {
+        "smallLabel": "{name} جاهزة",
+        "title": "تم إعداد شركتك بالكامل",
+        "body": "ادعُ زملاءك وانشر فعاليتك الأولى — عروض الأسعار من المورّدين الموثّقين تصلك مباشرة في لوحة التحكم.",
+        "ctaPrimary": "أنشئ فعاليتك الأولى",
+        "ctaSecondary": "اذهب إلى لوحة التحكم"
       }
     },
     "invite": {

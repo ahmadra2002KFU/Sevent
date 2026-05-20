@@ -9,9 +9,20 @@ import { getCurrentUser } from "@/lib/supabase/server";
  * Focused onboarding chrome. Mirrors the Direction-A mock's `ATopbar`:
  * minimal logo + language toggle + save-and-exit + avatar, with no app
  * navigation. Used as the top bar for the `(onboarding)` route group so
- * suppliers stay in a task-oriented shell until they finish registration.
+ * suppliers (and now organizers) stay in a task-oriented shell until they
+ * finish registration.
+ *
+ * `homeHref`/`exitHref` default to the supplier surfaces for backwards
+ * compatibility; the organizer onboarding layout passes its own targets so
+ * the same chrome serves both funnels without a duplicate component.
  */
-export async function OnboardingTopbar() {
+export async function OnboardingTopbar({
+  homeHref = "/supplier/onboarding",
+  exitHref = "/supplier/dashboard",
+}: {
+  homeHref?: string;
+  exitHref?: string;
+} = {}) {
   const [user, tCommon] = await Promise.all([
     getCurrentUser(),
     getTranslations("auth.common"),
@@ -23,7 +34,7 @@ export async function OnboardingTopbar() {
     <header className="border-b border-border bg-white">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <Link
-          href="/supplier/onboarding"
+          href={homeHref}
           prefetch={false}
           aria-label="Sevent home"
           className="flex min-h-[44px] shrink-0 items-center"
@@ -34,7 +45,7 @@ export async function OnboardingTopbar() {
         <div className="flex-1" />
 
         <Link
-          href="/supplier/dashboard"
+          href={exitHref}
           prefetch={false}
           className="hidden whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
         >

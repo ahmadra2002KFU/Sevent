@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { requireAccess } from "@/lib/auth/access";
 import type { SupportedLocale } from "@/lib/domain/formatDate";
+import { ChoiceProgress } from "../_components/ChoiceProgress";
 import { CompanyForm } from "./company-form";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function OrganizerOnboardingCompanyPage() {
   await requireAccess("organizer.onboarding");
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.onboarding.company");
+  const tProgress = await getTranslations("organizer.onboarding.progress");
 
   return (
     <section className="mx-auto flex w-full max-w-2xl flex-col gap-6 py-10">
@@ -32,11 +34,17 @@ export default async function OrganizerOnboardingCompanyPage() {
         </Link>
       </Button>
 
+      <ChoiceProgress
+        current={2}
+        labels={[tProgress("choosePath"), tProgress("companyDetails")]}
+      />
+
       <header className="flex flex-col gap-1 border-b pb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-brand-navy-900 sm:text-3xl">
           {t("title")}
         </h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("intro")}</p>
       </header>
 
       <CompanyForm defaultLanguage={locale === "ar" ? "ar" : "en"} />

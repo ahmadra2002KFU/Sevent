@@ -20,11 +20,16 @@ import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill, type StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
+import { CelebrationBanner } from "@/components/supplier/onboarding/CelebrationBanner";
 import { OrganizerOnboardingBanner } from "./OrganizerOnboardingBanner";
 import { CompanyMetaLine } from "./CompanyMetaLine";
 import { InviteTeammatesPrompt } from "./InviteTeammatesPrompt";
 
 export const dynamic = "force-dynamic";
+
+type DashboardPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 type DashboardRfq = {
   id: string;
@@ -70,10 +75,15 @@ function toPillStatus(raw: string): StatusPillStatus {
     : "draft";
 }
 
-export default async function OrganizerDashboardPage() {
+export default async function OrganizerDashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const params = await searchParams;
+  const showWelcome = params.welcome === "1";
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("organizer.dashboard");
   const rfqT = await getTranslations("organizer.rfqs");
+  const tSuccess = await getTranslations("organizer.onboarding.success");
 
   const { user, admin, decision } = await requireAccess("organizer.dashboard");
 
@@ -221,6 +231,21 @@ export default async function OrganizerDashboardPage() {
           </Button>
         }
       />
+
+      {showWelcome && companyName ? (
+        <CelebrationBanner
+          supplierName={companyName}
+          labels={{
+            smallLabel: tSuccess("smallLabel", { name: companyName }),
+            title: tSuccess("title"),
+            body: tSuccess("body"),
+            ctaPrimary: tSuccess("ctaPrimary"),
+            ctaPrimaryHref: "/organizer/events/new",
+            ctaSecondary: tSuccess("ctaSecondary"),
+            ctaSecondaryHref: "/organizer/dashboard",
+          }}
+        />
+      ) : null}
 
       {activeCompanyId && companyName && companyRole ? (
         <CompanyMetaLine

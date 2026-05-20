@@ -2208,11 +2208,33 @@
         "companyCta": "Set up a company",
         "inviteLabel": "I was invited to join a company",
         "inviteDescription": "Open the invite link from the email your admin sent you. The link does the rest.",
-        "individualError": "Couldn't update your profile. Try again in a moment."
+        "individualError": "Couldn't update your profile. Try again in a moment.",
+        "needsTitle": "What's included",
+        "etaPrefix": "Takes about",
+        "continueCta": "Continue",
+        "continueLoading": "Saving…",
+        "individualStep1": "Create events under your own profile",
+        "individualStep2": "Get quotes from verified suppliers",
+        "individualStep3": "Manage your bookings yourself",
+        "individualEta": "1 minute",
+        "companyStep1": "Invite teammates to collaborate",
+        "companyStep2": "CR / VAT shown on bookings & invoices",
+        "companyStep3": "Shared events, RFQs and bookings",
+        "companyEta": "3 minutes",
+        "companyTag": "Best for teams",
+        "inviteStep1": "Paste the invite link from your email",
+        "inviteStep2": "Join your company workspace instantly",
+        "inviteEta": "a minute",
+        "invitePasteLabel": "Paste your invite link",
+        "invitePastePlaceholder": "https://www.seventsa.com/invite/organizer/…",
+        "invitePasteCta": "Open invite",
+        "invitePasteError": "That doesn't look like a valid Sevent invite link.",
+        "inviteHelp": "The link is in the email your admin sent you. Can't find it? Ask them to resend it."
       },
       "company": {
         "title": "Set up your company organizer",
         "subtitle": "These details appear on RFQs and bookings supplied to your team.",
+        "intro": "You can update any of this later from company settings.",
         "backToChoice": "Back to options",
         "nameLabel": "Company name",
         "namePlaceholder": "Acme Events Co.",
@@ -2248,6 +2270,17 @@
           "billingEmailInvalid": "That email doesn't look right.",
           "createFailed": "Could not create the company. Please try again."
         }
+      },
+      "progress": {
+        "choosePath": "Choose path",
+        "companyDetails": "Company details"
+      },
+      "success": {
+        "smallLabel": "{name} is ready",
+        "title": "Your company is all set",
+        "body": "Invite your teammates and post your first event — quotes from verified suppliers land right in your dashboard.",
+        "ctaPrimary": "Create your first event",
+        "ctaSecondary": "Go to dashboard"
       }
     },
     "invite": {
