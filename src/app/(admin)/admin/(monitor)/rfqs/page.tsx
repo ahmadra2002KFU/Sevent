@@ -28,11 +28,15 @@ import { categoryName } from "@/lib/domain/taxonomy";
 import {
   RFQ_STATUS_FILTERS,
   PUBLISHED_FILTERS,
+  TESTING_FILTERS,
   RfqFilters,
   type RfqFilterState,
   type RfqStatusFilter,
   type PublishedFilter,
+  type TestingFilter,
 } from "./_components/RfqFilters";
+import { HideTestingSwitch } from "./_components/HideTestingSwitch";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +46,7 @@ type AdminRfqListRow = {
   id: string;
   status: string;
   is_published_to_marketplace: boolean | null;
+  is_testing: boolean | null;
   sent_at: string | null;
   created_at: string;
   events: {
@@ -67,6 +72,14 @@ function parsePublished(raw: string | undefined): PublishedFilter {
   const v = (raw ?? "all").toLowerCase();
   if ((PUBLISHED_FILTERS as readonly string[]).includes(v)) {
     return v as PublishedFilter;
+  }
+  return "all";
+}
+
+function parseTesting(raw: string | undefined): TestingFilter {
+  const v = (raw ?? "all").toLowerCase();
+  if ((TESTING_FILTERS as readonly string[]).includes(v)) {
+    return v as TestingFilter;
   }
   return "all";
 }
@@ -152,6 +165,7 @@ export default async function AdminRfqsListPage({
   searchParams: Promise<{
     status?: string;
     published?: string;
+    testing?: string;
     q?: string;
     from?: string;
     to?: string;
@@ -166,6 +180,7 @@ export default async function AdminRfqsListPage({
   const filterState: RfqFilterState = {
     status: parseStatus(params.status),
     published: parsePublished(params.published),
+    testing: parseTesting(params.testing),
     q: typeof params.q === "string" ? params.q : "",
     from: parseDateParam(params.from),
     to: parseDateParam(params.to),
@@ -192,6 +207,18 @@ export default async function AdminRfqsListPage({
     fmtDateHelper(iso, locale) || "—";
   const fmtDateTime = (iso: string | null): string =>
     fmtDateTimeHelper(iso, locale) || "—";
+
+  // Global testing kill switch state — drives the HideTestingSwitch toggle and
+  // tells admins whether suppliers currently see testing opportunities.
+  const { data: settingsRow } = await admin
+    .from("app_settings")
+    .select("hide_testing_opportunities")
+    .eq("id", true)
+    .maybeSingle();
+  const hideTesting = Boolean(
+    (settingsRow as { hide_testing_opportunities: boolean } | null)
+      ?.hide_testing_opportunities,
+  );
 
   // If the operator typed a search term, first resolve which event IDs match.
   // The search covers `events.event_type` + `events.city`. supabase-js doesn't
@@ -237,6 +264,7 @@ export default async function AdminRfqsListPage({
         totalPages: 1,
         tPag,
         rows: [],
+        hideTesting,
       });
     }
   }
@@ -247,7 +275,7 @@ export default async function AdminRfqsListPage({
   let query = admin
     .from("rfqs")
     .select(
-      `id, status, is_published_to_marketplace, sent_at, created_at,
+      `id, status, is_published_to_marketplace, is_testing, sent_at, created_at,
        events ( id, city, event_type, starts_at, organizer_id ),
        cat:categories!rfqs_category_id_fkey ( id, name_en, name_ar ),
        sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar )`,
@@ -264,6 +292,11 @@ export default async function AdminRfqsListPage({
     query = query.eq("is_published_to_marketplace", true);
   } else if (filterState.published === "no") {
     query = query.eq("is_published_to_marketplace", false);
+  }
+  if (filterState.testing === "yes") {
+    query = query.eq("is_testing", true);
+  } else if (filterState.testing === "no") {
+    query = query.eq("is_testing", false);
   }
   if (filterState.from) {
     query = query.gte("created_at", `${filterState.from}T00:00:00Z`);
@@ -331,6 +364,8 @@ export default async function AdminRfqsListPage({
     <section className="flex flex-col gap-6">
       <PageHeader title={t("title")} description={t("subtitle")} />
 
+      <HideTestingSwitch hidden={hideTesting} />
+
       <RfqFilters state={filterState} />
 
       {rfqs.length === 0 ? (
@@ -381,8 +416,13 @@ export default async function AdminRfqsListPage({
                           href={`/admin/rfqs/${r.id}`}
                           className="flex flex-col hover:underline"
                         >
-                          <span className="font-medium text-foreground">
+                          <span className="flex items-center gap-2 font-medium text-foreground">
                             {eventType}
+                            {r.is_testing ? (
+                              <Badge className="border-semantic-warning-500/40 bg-semantic-warning-100 text-semantic-warning-500">
+                                {t("testing.badge")}
+                              </Badge>
+                            ) : null}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {city} · {fmtDate(r.events?.starts_at ?? null)}
@@ -464,6 +504,7 @@ function Pagination({
   if (filterState.status !== "all") baseParams.status = filterState.status;
   if (filterState.published !== "all")
     baseParams.published = filterState.published;
+  if (filterState.testing !== "all") baseParams.testing = filterState.testing;
   if (filterState.q) baseParams.q = filterState.q;
   if (filterState.from) baseParams.from = filterState.from;
   if (filterState.to) baseParams.to = filterState.to;
@@ -515,6 +556,7 @@ function renderEmptyState({
   totalPages,
   tPag,
   rows,
+  hideTesting,
 }: {
   t: Awaited<ReturnType<typeof getTranslations>>;
   filterState: RfqFilterState;
@@ -522,11 +564,13 @@ function renderEmptyState({
   totalPages: number;
   tPag: Awaited<ReturnType<typeof getTranslations>>;
   rows: AdminRfqListRow[];
+  hideTesting: boolean;
 }) {
   void rows;
   return (
     <section className="flex flex-col gap-6">
       <PageHeader title={t("title")} description={t("subtitle")} />
+      <HideTestingSwitch hidden={hideTesting} />
       <RfqFilters state={filterState} />
       <EmptyState icon={Inbox} title={t("list.empty")} />
       {totalPages > 1 ? (

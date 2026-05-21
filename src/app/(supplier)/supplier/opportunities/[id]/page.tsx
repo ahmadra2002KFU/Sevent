@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   CalendarDays,
   ClockAlert,
+  FlaskConical,
   Hash,
   MapPin,
   Paperclip,
@@ -101,6 +102,15 @@ export default async function OpportunityDetailPage({ params }: PageProps) {
             .join(" · ")
         }
       />
+
+      {opportunity.is_testing ? (
+        <Alert className="border-semantic-warning-500/40 bg-semantic-warning-100 text-semantic-warning-500">
+          <FlaskConical aria-hidden />
+          <AlertDescription className="text-semantic-warning-500">
+            {t("detail.testingNotice")}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {opportunity.expires_at ? (
         <Alert>

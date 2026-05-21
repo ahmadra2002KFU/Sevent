@@ -50,6 +50,7 @@ import {
 } from "@/lib/supabase/storage";
 import { RfqAttachmentsView } from "@/components/rfq/RfqAttachmentsView";
 import type { RfqAttachmentRow } from "@/lib/domain/attachments";
+import { RfqTestingToggle } from "../_components/RfqTestingToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,7 @@ type RfqDetailRow = {
   id: string;
   status: string;
   is_published_to_marketplace: boolean | null;
+  is_testing: boolean | null;
   sent_at: string | null;
   expires_at: string | null;
   created_at: string;
@@ -208,7 +210,7 @@ export default async function AdminRfqDetailPage({
     admin
       .from("rfqs")
       .select(
-        `id, status, is_published_to_marketplace, sent_at, expires_at, created_at,
+        `id, status, is_published_to_marketplace, is_testing, sent_at, expires_at, created_at,
          requirements_jsonb, event_id,
          events ( id, city, event_type, starts_at, organizer_id, guest_count,
                   budget_range_min_halalas, budget_range_max_halalas ),
@@ -404,6 +406,11 @@ export default async function AdminRfqDetailPage({
               ? tDetail("summary.marketplaceYes")
               : tDetail("summary.marketplaceNo")}
           </SummaryItem>
+          <SummaryItem label={t("testing.summaryLabel")}>
+            {rfq.is_testing
+              ? t("testing.summaryYes")
+              : t("testing.summaryNo")}
+          </SummaryItem>
           <SummaryItem label={tDetail("summary.organizer")}>
             {organizer?.full_name || t("list.organizerUnknown")}
           </SummaryItem>
@@ -427,6 +434,9 @@ export default async function AdminRfqDetailPage({
           </SummaryItem>
         </CardContent>
       </Card>
+
+      {/* Testing badge control */}
+      <RfqTestingToggle rfqId={rfq.id} isTesting={Boolean(rfq.is_testing)} />
 
       {/* Requirements */}
       <RequirementsSection payload={rfq.requirements_jsonb} />
