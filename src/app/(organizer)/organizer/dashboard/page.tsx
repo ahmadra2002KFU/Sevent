@@ -135,13 +135,21 @@ export default async function OrganizerDashboardPage({
       ])
     : Promise.resolve(null);
 
-  // Activity queries. When a company is pinned, scope to company_id so every
-  // member sees the team's events / RFQs / bookings. Individual organizers are
-  // scoped by ownership: events/bookings via `organizer_id`, and RFQs via the
-  // joined event's `organizer_id` (rfqs.company_id is NULL on that path). The
-  // `admin` client is service-role and bypasses RLS, so these owner filters
-  // are load-bearing — without the rfqs event-join filter an individual would
-  // see every organizer's RFQs.
+  // Activity queries. Scope every query to the signed-in organizer's own rows
+  // via `organizer_id` (events/bookings) / the joined event's `organizer_id`
+  // (rfqs) — IDENTICAL to the events / RFQs / bookings list pages, so the
+  // dashboard numbers always match what those lists show.
+  //
+  // Deliberately NOT company-scoped: the write path never sets `company_id`
+  // (createEventAction inserts events with company_id = NULL; the company
+  // backfill was explicitly out of scope — see migration 20260518111000), so
+  // `company_id = activeCompanyId` matches nothing and would hide a company
+  // organizer's events entirely. `activeCompanyId` below is used only for the
+  // company meta-line / invite prompt, not for data scoping.
+  //
+  // The `admin` client is service-role and bypasses RLS, so these owner
+  // filters are load-bearing — without the rfqs event-join filter an organizer
+  // would see every organizer's RFQs.
   const upcomingEventsQ = admin
     .from("events")
     .select(
@@ -173,19 +181,11 @@ export default async function OrganizerDashboardPage({
     .order("created_at", { ascending: false })
     .limit(5);
 
-  if (activeCompanyId) {
-    upcomingEventsQ.eq("company_id", activeCompanyId);
-    rfqStatusQ.eq("company_id", activeCompanyId);
-    awaitingBookingsQ.eq("company_id", activeCompanyId);
-    confirmedBookingsQ.eq("company_id", activeCompanyId);
-    latestRfqsQ.eq("company_id", activeCompanyId);
-  } else {
-    upcomingEventsQ.eq("organizer_id", user.id).is("company_id", null);
-    awaitingBookingsQ.eq("organizer_id", user.id).is("company_id", null);
-    confirmedBookingsQ.eq("organizer_id", user.id).is("company_id", null);
-    rfqStatusQ.eq("events.organizer_id", user.id).is("company_id", null);
-    latestRfqsQ.eq("events.organizer_id", user.id).is("company_id", null);
-  }
+  upcomingEventsQ.eq("organizer_id", user.id);
+  awaitingBookingsQ.eq("organizer_id", user.id);
+  confirmedBookingsQ.eq("organizer_id", user.id);
+  rfqStatusQ.eq("events.organizer_id", user.id);
+  latestRfqsQ.eq("events.organizer_id", user.id);
 
   const [
     profileRes,
