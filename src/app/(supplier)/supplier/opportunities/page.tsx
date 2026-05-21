@@ -185,6 +185,7 @@ export default async function OpportunitiesPage({ searchParams }: PageProps) {
                   guestsLabel: t("guestsLabel"),
                   postedLabel: t("postedLabel"),
                   dueLabel: t("dueLabel"),
+                  testingLabel: t("testingBadge"),
                 }}
               />
             </li>
@@ -204,6 +205,7 @@ type OpportunityCardProps = {
     guestsLabel: string;
     postedLabel: string;
     dueLabel: string;
+    testingLabel: string;
   };
 };
 
@@ -218,10 +220,23 @@ function OpportunityCard({ op, locale, tLabels }: OpportunityCardProps) {
     .join(" — ");
 
   return (
-    <Card className="group/op-card relative transition-[box-shadow,background-color,border-color] duration-200 ease-out hover:bg-background hover:ring-primary/35 hover:shadow-brand-md focus-within:ring-2 focus-within:ring-ring/50 focus-within:shadow-brand-md motion-reduce:transition-none">
+    <Card
+      className={cn(
+        "group/op-card relative transition-[box-shadow,background-color,border-color] duration-200 ease-out hover:bg-background hover:ring-primary/35 hover:shadow-brand-md focus-within:ring-2 focus-within:ring-ring/50 focus-within:shadow-brand-md motion-reduce:transition-none",
+        // Testing opportunities read as secondary: muted surface + warning edge
+        // so suppliers can tell at a glance this is a test row.
+        op.is_testing &&
+          "border-semantic-warning-500/40 bg-semantic-warning-100/30",
+      )}
+    >
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
+            {op.is_testing ? (
+              <Badge className="border-semantic-warning-500/40 bg-semantic-warning-100 text-semantic-warning-500">
+                {tLabels.testingLabel}
+              </Badge>
+            ) : null}
             {categoryLabel ? (
               <Badge variant="secondary">{categoryLabel}</Badge>
             ) : null}

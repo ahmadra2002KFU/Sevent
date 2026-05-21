@@ -44,6 +44,10 @@ export type MarketplaceOpportunity = {
   rfq_id: string;
   sent_at: string | null;
   expires_at: string | null;
+  /** Admin-flagged testing opportunity. Still applyable; the UI badges it and
+   *  the list sorts these last. Hidden entirely when the global kill switch is
+   *  on (enforced by RLS + the candidate function). */
+  is_testing: boolean;
   category: {
     id: string;
     slug: string;
@@ -105,6 +109,7 @@ export async function listMarketplaceOpportunities(
     id: string;
     sent_at: string | null;
     expires_at: string | null;
+    is_testing: boolean;
     events:
       | {
           id: string;
@@ -138,7 +143,7 @@ export async function listMarketplaceOpportunities(
   const { data: rfqRows, error } = await supabase
     .from("rfqs")
     .select(
-      `id, sent_at, expires_at,
+      `id, sent_at, expires_at, is_testing,
        events (
          id, city, starts_at, ends_at, guest_count, event_type,
          budget_range_min_halalas, budget_range_max_halalas
@@ -202,10 +207,19 @@ export async function listMarketplaceOpportunities(
       return true;
     });
 
-  return filtered.map<MarketplaceOpportunity>((r) => ({
+  // Testing opportunities sort to the bottom. The hydration query already
+  // ordered by `sent_at desc`; Array.prototype.sort is stable (ES2019+), so a
+  // sort keyed only on `is_testing` keeps the sent_at ordering within each
+  // group — real opportunities first (newest→oldest), testing ones after.
+  const ordered = filtered
+    .slice()
+    .sort((a, b) => Number(a.is_testing) - Number(b.is_testing));
+
+  return ordered.map<MarketplaceOpportunity>((r) => ({
     rfq_id: r.id,
     sent_at: r.sent_at,
     expires_at: r.expires_at,
+    is_testing: r.is_testing,
     category: r.category,
     subcategory: r.subcategory,
     event: {
@@ -253,7 +267,7 @@ export async function getMarketplaceOpportunity(params: {
   const { data: rfqRow } = await supabase
     .from("rfqs")
     .select(
-      `id, sent_at, expires_at, requirements_jsonb,
+      `id, sent_at, expires_at, requirements_jsonb, is_testing,
        events (
          id, city, starts_at, ends_at, guest_count, event_type,
          budget_range_min_halalas, budget_range_max_halalas
@@ -277,6 +291,7 @@ export async function getMarketplaceOpportunity(params: {
     sent_at: string | null;
     expires_at: string | null;
     requirements_jsonb: unknown;
+    is_testing: boolean;
     events:
       | {
           id: string;
@@ -316,6 +331,7 @@ export async function getMarketplaceOpportunity(params: {
     rfq_id: row.id,
     sent_at: row.sent_at,
     expires_at: row.expires_at,
+    is_testing: row.is_testing,
     category: row.category,
     subcategory: row.subcategory,
     event: {

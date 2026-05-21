@@ -1235,6 +1235,7 @@
       "budgetNotDisclosed": "Not disclosed",
       "postedLabel": "Posted",
       "dueLabel": "Responses due",
+      "testingBadge": "Testing",
       "filters": {
         "city": "City",
         "anyCity": "Any city",
@@ -1263,7 +1264,8 @@
         "noRequirements": "No extra requirements — the organizer didn't add specifics.",
         "dueAt": "Responses due by {date}",
         "applyCta": "Apply and submit a quote",
-        "applyingCta": "Submitting application…"
+        "applyingCta": "Submitting application…",
+        "testingNotice": "This is a testing opportunity, published for platform testing. You're welcome to apply and submit a quote — just note it may not lead to a real booking."
       }
     },
     "profile": {
@@ -1932,9 +1934,31 @@
         "publishedAll": "Any visibility",
         "publishedYes": "Opportunities only",
         "publishedNo": "Direct invites only",
+        "testingAll": "Any kind",
+        "testingYes": "Testing only",
+        "testingNo": "Real only",
         "dateFrom": "From",
         "dateTo": "To",
         "pending": "Pending"
+      },
+      "testing": {
+        "badge": "Testing",
+        "heading": "Testing opportunity",
+        "description": "Mark this RFQ as a testing opportunity. Suppliers can still apply, but it shows a Testing label and sorts to the bottom of the marketplace. Use the global switch on the RFQ list to hide all testing opportunities from suppliers at once.",
+        "markCta": "Mark as testing",
+        "unmarkCta": "Unmark testing",
+        "working": "Saving…",
+        "summaryLabel": "Testing",
+        "summaryYes": "Testing opportunity",
+        "summaryNo": "Real opportunity"
+      },
+      "globalHide": {
+        "heading": "Hide testing opportunities from suppliers",
+        "descriptionOn": "Testing opportunities are currently hidden from the supplier marketplace.",
+        "descriptionOff": "Testing opportunities are currently visible to suppliers — labelled and sorted last.",
+        "enableCta": "Hide testing",
+        "disableCta": "Show testing",
+        "working": "Saving…"
       },
       "search": {
         "placeholder": "Search by event type or city…",

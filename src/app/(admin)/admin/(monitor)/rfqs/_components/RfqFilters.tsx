@@ -26,9 +26,13 @@ export type RfqStatusFilter = (typeof RFQ_STATUS_FILTERS)[number];
 export const PUBLISHED_FILTERS = ["all", "yes", "no"] as const;
 export type PublishedFilter = (typeof PUBLISHED_FILTERS)[number];
 
+export const TESTING_FILTERS = ["all", "yes", "no"] as const;
+export type TestingFilter = (typeof TESTING_FILTERS)[number];
+
 export type RfqFilterState = {
   status: RfqStatusFilter;
   published: PublishedFilter;
+  testing: TestingFilter;
   q: string;
   from: string;
   to: string;
@@ -39,6 +43,7 @@ function buildHref(base: string, state: RfqFilterState, overrides: Partial<RfqFi
   const params = new URLSearchParams();
   if (merged.status !== "all") params.set("status", merged.status);
   if (merged.published !== "all") params.set("published", merged.published);
+  if (merged.testing !== "all") params.set("testing", merged.testing);
   if (merged.q) params.set("q", merged.q);
   if (merged.from) params.set("from", merged.from);
   if (merged.to) params.set("to", merged.to);
@@ -106,6 +111,36 @@ export async function RfqFilters({ state }: { state: RfqFilterState }) {
         })}
       </nav>
 
+      <nav
+        aria-label={t("filter.testingAll")}
+        className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1"
+      >
+        {TESTING_FILTERS.map((key) => {
+          const active = key === state.testing;
+          const labelKey =
+            key === "all"
+              ? "testingAll"
+              : key === "yes"
+                ? "testingYes"
+                : "testingNo";
+          return (
+            <Link
+              key={key}
+              href={buildHref(base, state, { testing: key })}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "inline-flex h-7 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors",
+                active
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(`filter.${labelKey}`)}
+            </Link>
+          );
+        })}
+      </nav>
+
       <form
         method="get"
         action={base}
@@ -117,6 +152,9 @@ export async function RfqFilters({ state }: { state: RfqFilterState }) {
         ) : null}
         {state.published !== "all" ? (
           <input type="hidden" name="published" value={state.published} />
+        ) : null}
+        {state.testing !== "all" ? (
+          <input type="hidden" name="testing" value={state.testing} />
         ) : null}
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">

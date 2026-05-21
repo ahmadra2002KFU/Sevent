@@ -25,6 +25,9 @@ export type SupplierDocStatus = "pending" | "approved" | "rejected";
 
 export type SupplierMediaKind = "photo" | "video" | "document";
 
+/** Mirrors the public.rfq_attachment_kind enum (migration 20260521100000). */
+export type RfqAttachmentKind = "image" | "document";
+
 export type PackageUnit = "event" | "hour" | "day" | "person" | "unit";
 
 export type PricingRuleType =
@@ -234,8 +237,20 @@ export type RfqRow = {
   cancelled_at: string | null;
   cancelled_by: string | null;
   is_published_to_marketplace: boolean;
+  /** Admin-set testing flag. A testing opportunity is still applyable; the UI
+   *  badges it and sorts it last, and the global kill switch can hide it. See
+   *  migration 20260521110000_rfq_testing_badge.sql. */
+  is_testing: boolean;
   created_at: string;
   updated_at: string;
+};
+
+/** Singleton platform settings row (migration 20260521110000). */
+export type AppSettingsRow = {
+  id: boolean;
+  hide_testing_opportunities: boolean;
+  updated_at: string;
+  updated_by: string | null;
 };
 
 export type RfqInviteRow = {
