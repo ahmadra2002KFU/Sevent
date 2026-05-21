@@ -306,13 +306,19 @@ export async function drainEmailOutbox(
       continue;
     }
 
-    // 2. Render HTML.
+    // 2. Render HTML + a real text/plain part. Multipart (not HTML-only)
+    //    measurably improves inbox placement with strict corporate filters
+    //    (Proofpoint/Mimecast/EOP penalise HTML-only mail). The plain-text body
+    //    is derived from the same React tree, so it never drifts from the HTML.
     let html: string;
+    let text: string;
     try {
       const Component = tpl.default;
       const element = Component({ locale: row.locale, ...row.payload_jsonb });
       // @react-email/render accepts any ReactElement; cast for the type-check.
-      html = await render(element as Parameters<typeof render>[0]);
+      const renderable = element as Parameters<typeof render>[0];
+      html = await render(renderable);
+      text = await render(renderable, { plainText: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await supabase
@@ -351,6 +357,7 @@ export async function drainEmailOutbox(
           to: row.recipient_email,
           subject,
           html,
+          text,
         },
         { idempotencyKey: row.dedup_key },
       );

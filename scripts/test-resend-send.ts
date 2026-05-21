@@ -26,6 +26,20 @@ if (!apiKey) {
   process.exit(1);
 }
 
+// Bounce hygiene: hard bounces to non-existent domains directly damage the
+// domain's sender reputation (and were the source of the ~5% bounce rate in the
+// Resend logs). Refuse the placeholder domains we know don't accept mail. For a
+// safe end-to-end test that does NOT touch reputation, use Resend's simulator
+// inboxes: delivered@resend.dev / bounced@resend.dev / complained@resend.dev.
+const UNDELIVERABLE = [/@test\.com$/i, /@sevent\.dev$/i, /\.local$/i, /@example\.(com|org|net)$/i];
+if (UNDELIVERABLE.some((re) => re.test(to))) {
+  console.error(
+    `Refusing to send to "${to}" — that domain bounces and hurts sender reputation.\n` +
+      "Use a real inbox, or a Resend simulator address (delivered@resend.dev / bounced@resend.dev).",
+  );
+  process.exit(1);
+}
+
 const resend = new Resend(apiKey);
 
 async function main() {
@@ -49,6 +63,11 @@ async function main() {
         </p>
       </div>
     `,
+    text:
+      "Resend wiring confirmed\n\n" +
+      "If you can read this, Sevent's transactional pipeline is working end-to-end: " +
+      "API key valid, apex seventsa.com DKIM signed, DNS reaching inbox.\n\n" +
+      `Sent ${new Date().toISOString()} by scripts/test-resend-send.ts`,
   });
 
   if (error) {

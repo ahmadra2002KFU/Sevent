@@ -75,6 +75,19 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     return { ok: false, error: `render failed: ${message}` };
   }
 
+  // Plain-text part. Prefer a caller-supplied one; otherwise derive a real
+  // text/plain body from the same React tree. Sending multipart (rather than
+  // relying on Resend's HTML auto-strip) improves deliverability with strict
+  // corporate filters. Non-fatal — if it fails we let Resend derive the text.
+  let text = params.text;
+  if (!text) {
+    try {
+      text = await render(params.react, { plainText: true });
+    } catch {
+      text = undefined;
+    }
+  }
+
   // Console-mode fallback is ONLY for development. Production with a missing
   // key must hard-fail so dashboards reflect reality.
   if (!apiKey) {
@@ -114,7 +127,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       to: actualTo,
       subject,
       html,
-      ...(params.text ? { text: params.text } : {}),
+      ...(text ? { text } : {}),
     });
     if (error) {
       console.error("[notifications/email] resend api error", {
