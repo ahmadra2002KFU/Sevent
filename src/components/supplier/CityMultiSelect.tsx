@@ -21,17 +21,30 @@ import {
 import { KSA_CITIES, type KsaRegionSlug } from "@/lib/domain/cities";
 
 type Props = {
-  value: string | null | undefined;
-  onChange: (slug: string) => void;
+  /** Currently-selected city slugs. */
+  value: string[];
+  /** Toggle a city in/out of the selection. The picker never closes itself. */
+  onToggle: (slug: string) => void;
+  /** A slug to omit from the list — typically the supplier's base city. */
+  excludeSlug?: string;
+  /** Cap on selections; unselected rows go disabled once it's reached. */
+  max?: number;
   placeholder?: string;
   ariaLabel?: string;
   disabled?: boolean;
   className?: string;
 };
 
-export function CityCombobox({
+/**
+ * Multi-select city picker. Unlike {@link CityCombobox} (single-select, closes
+ * on pick), this stays open after every selection and shows a checkmark beside
+ * each chosen city, so the supplier can tick through several cities in one go.
+ */
+export function CityMultiSelect({
   value,
-  onChange,
+  onToggle,
+  excludeSlug,
+  max,
   placeholder,
   ariaLabel,
   disabled,
@@ -42,13 +55,22 @@ export function CityCombobox({
   const isAr = locale === "ar";
   const [open, setOpen] = useState(false);
 
+  const selectedSet = useMemo(() => new Set(value), [value]);
+  const atMax = typeof max === "number" && value.length >= max;
+
   const grouped = useMemo(() => {
-    type Bucket = { regionLabel: string; items: Array<(typeof KSA_CITIES)[number]> };
+    type Bucket = {
+      regionLabel: string;
+      items: Array<(typeof KSA_CITIES)[number]>;
+    };
     const byRegion = new Map<KsaRegionSlug, Bucket>();
     for (const city of KSA_CITIES) {
+      if (city.slug === excludeSlug) continue;
       if (!byRegion.has(city.region)) {
-        const regionLabel = t(`region.${city.region}`);
-        byRegion.set(city.region, { regionLabel, items: [] });
+        byRegion.set(city.region, {
+          regionLabel: t(`region.${city.region}`),
+          items: [],
+        });
       }
       byRegion.get(city.region)!.items.push(city);
     }
@@ -66,14 +88,12 @@ export function CityCombobox({
     return Array.from(byRegion.values()).sort((a, b) =>
       a.regionLabel.localeCompare(b.regionLabel, locale),
     );
-  }, [locale, isAr, t]);
+  }, [locale, isAr, t, excludeSlug]);
 
-  const selected = KSA_CITIES.find((c) => c.slug === value) ?? null;
-  const selectedLabel = selected
-    ? isAr
-      ? selected.name_ar
-      : selected.name_en
-    : null;
+  const triggerLabel =
+    value.length > 0
+      ? t("selectedCount", { count: value.length })
+      : placeholder ?? t("multiPlaceholder");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -90,8 +110,8 @@ export function CityCombobox({
             className,
           )}
         >
-          <span className={cn(!selected && "text-muted-foreground")}>
-            {selectedLabel ?? placeholder ?? t("placeholder")}
+          <span className={cn(value.length === 0 && "text-muted-foreground")}>
+            {triggerLabel}
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
         </Button>
@@ -105,20 +125,21 @@ export function CityCombobox({
               <CommandGroup key={g.regionLabel} heading={g.regionLabel}>
                 {g.items.map((c) => {
                   const label = isAr ? c.name_ar : c.name_en;
+                  const isSelected = selectedSet.has(c.slug);
                   const searchValue = `${c.slug} ${c.name_en} ${c.name_ar}`;
                   return (
                     <CommandItem
                       key={c.slug}
                       value={searchValue}
-                      data-checked={value === c.slug ? "true" : undefined}
-                      onSelect={() => {
-                        onChange(c.slug);
-                        setOpen(false);
-                      }}
+                      data-checked={isSelected ? "true" : undefined}
+                      disabled={!isSelected && atMax}
+                      // No setOpen(false): multi-select stays open so the
+                      // supplier can keep ticking cities one after another.
+                      onSelect={() => onToggle(c.slug)}
                     >
                       <span>{label}</span>
                       {c.is_regional_capital ? (
-                        <span className="ms-auto text-[10px] uppercase tracking-wide text-muted-foreground">
+                        <span className="ms-2 text-[10px] uppercase tracking-wide text-muted-foreground">
                           {t("capitalBadge")}
                         </span>
                       ) : null}
@@ -134,4 +155,4 @@ export function CityCombobox({
   );
 }
 
-export default CityCombobox;
+export default CityMultiSelect;

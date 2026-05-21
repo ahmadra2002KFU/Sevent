@@ -65,6 +65,8 @@
     "error": "Something went wrong.",
     "cityCombobox": {
       "placeholder": "Pick a city",
+      "multiPlaceholder": "Select the cities you serve",
+      "selectedCount": "{count} cities selected",
       "searchPlaceholder": "Search cities…",
       "empty": "No city matches",
       "capitalBadge": "Capital",

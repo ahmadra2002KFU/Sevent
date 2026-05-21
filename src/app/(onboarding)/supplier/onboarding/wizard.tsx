@@ -45,6 +45,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { HelperText } from "@/components/ui-ext/HelperText";
 import { CityCombobox } from "@/components/supplier/CityCombobox";
+import { CityMultiSelect } from "@/components/supplier/CityMultiSelect";
 import { SegmentsPicker } from "@/components/supplier/SegmentsPicker";
 import { cityNameFor } from "@/lib/domain/cities";
 import { WizardStepper } from "@/components/supplier/onboarding/WizardStepper";
@@ -575,7 +576,10 @@ function Step1Form({
         />
       </Field>
 
-      <Field label={t("serviceAreaLabel")} helperKey="helper.serviceArea">
+      {/* FieldGroup (not Field): the service area is a composite of a checkbox
+          + a multi-select, so a wrapping <label> would proxy stray heading
+          clicks to the first nested button and silently toggle "all KSA". */}
+      <FieldGroup label={t("serviceAreaLabel")} helperKey="helper.serviceArea">
         <Controller
           control={control}
           name="service_area_cities"
@@ -604,7 +608,7 @@ function Step1Form({
           )}
         />
         <ServiceAreaTooManyWarning control={control} message={t("serviceAreaTooMany")} />
-      </Field>
+      </FieldGroup>
 
       <Field label={t("languagesLabel")} helperKey="helper.languages">
         <LanguagesChips control={control} register={register} t={t} />
@@ -836,6 +840,8 @@ function AutoSaveSlot({
   return <AutoSaveIndicator label={label} visible={autoSaveVisible} />;
 }
 
+const SERVICE_AREA_MAX = 15;
+
 function ServiceAreaPicker({
   value,
   excludeSlug,
@@ -851,130 +857,137 @@ function ServiceAreaPicker({
 }) {
   const t = useTranslations("supplier.onboarding");
   const locale = useLocale() as "en" | "ar";
-  // A CityCombobox keyed on a per-pick nonce so it resets after each selection.
-  const [nonce, setNonce] = useState(0);
-  const [pending, setPending] = useState<string>("");
 
-  function appendCity(slug: string) {
+  // Tick a city on/off. Selecting any city implies "not all KSA".
+  function toggleCity(slug: string) {
     if (!slug) return;
     if (slug === excludeSlug) return; // base city should not double up
-    if (value.includes(slug)) return;
-    if (value.length >= 15) return;
-    // Selecting an individual city implies they don't serve "all KSA".
+    if (value.includes(slug)) {
+      onChange(value.filter((s) => s !== slug));
+      return;
+    }
+    if (value.length >= SERVICE_AREA_MAX) return;
     if (servesAllKsa) onServesAllKsaChange(false);
     onChange([...value, slug]);
-    setPending("");
-    setNonce((n) => n + 1);
   }
 
   function removeCity(slug: string) {
     onChange(value.filter((s) => s !== slug));
   }
 
-  function toggleAllKsa() {
-    const next = !servesAllKsa;
-    if (next && value.length > 0) {
-      // Flipping ON wipes individual city picks — they're superseded.
-      onChange([]);
-    }
+  function setAllKsa(next: boolean) {
+    // Flipping ON wipes individual city picks — they're superseded.
+    if (next && value.length > 0) onChange([]);
     onServesAllKsaChange(next);
   }
 
-  const hasAnything = servesAllKsa || value.length > 0;
+  const atMax = value.length >= SERVICE_AREA_MAX;
 
   return (
     <div className="flex flex-col gap-3">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {hasAnything ? (
-          <motion.ul
-            key="chips"
-            layout
-            className="flex flex-wrap gap-1.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+      {/* Prominent "serve everywhere" checkbox card. Filled blue when active;
+          a plain bordered card when off so the city list reads as the default. */}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={servesAllKsa}
+        onClick={() => setAllKsa(!servesAllKsa)}
+        className={cn(
+          "group flex w-full items-start gap-3 rounded-xl border p-3.5 text-start transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cobalt-500 focus-visible:ring-offset-2",
+          servesAllKsa
+            ? "border-brand-cobalt-500 bg-brand-cobalt-100"
+            : "border-neutral-200 bg-neutral-50 hover:border-brand-cobalt-500/60 hover:bg-brand-cobalt-100/40",
+        )}
+      >
+        <span
+          className={cn(
+            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors",
+            servesAllKsa
+              ? "border-brand-cobalt-500 bg-brand-cobalt-500 text-white"
+              : "border-neutral-300 bg-white text-transparent group-hover:border-brand-cobalt-500/60",
+          )}
+        >
+          <Check className="size-3.5" strokeWidth={3} aria-hidden />
+        </span>
+        <span className="flex flex-col gap-0.5">
+          <span
+            className={cn(
+              "text-sm font-semibold",
+              servesAllKsa ? "text-brand-cobalt-500" : "text-brand-navy-900",
+            )}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {servesAllKsa ? (
-                <motion.li
-                  key="__all_ksa__"
-                  layout
-                  initial={{ opacity: 0, scale: 0.6, y: -6 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.6, y: -4 }}
-                  transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                >
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => onServesAllKsaChange(false)}
-                    className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/60 bg-brand-cobalt-100 px-3 py-1 text-sm font-semibold text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
-                    aria-label={t("servesAllKsa.chip")}
-                  >
-                    <span>{t("servesAllKsa.chip")}</span>
-                    <X className="size-3.5 opacity-70" aria-hidden />
-                  </motion.button>
-                </motion.li>
-              ) : (
-                value.map((slug) => (
-                  <motion.li
-                    key={slug}
-                    layout
-                    initial={{ opacity: 0, scale: 0.6, y: -6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.6, y: -4 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                  >
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => removeCity(slug)}
-                      className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
-                      aria-label={t("serviceAreaRemove", {
-                        city: cityNameFor(slug, locale),
-                      })}
+            {t("servesAllKsa.label")}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {t("servesAllKsa.hint")}
+          </span>
+        </span>
+      </button>
+
+      {/* City picker — only when NOT serving the whole country. */}
+      <AnimatePresence initial={false}>
+        {servesAllKsa ? null : (
+          <motion.div
+            key="city-picker"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="flex flex-col gap-3 overflow-hidden"
+          >
+            <CityMultiSelect
+              value={value}
+              onToggle={toggleCity}
+              excludeSlug={excludeSlug}
+              max={SERVICE_AREA_MAX}
+              placeholder={t("serviceAreaAdd")}
+              ariaLabel={t("serviceAreaAdd")}
+            />
+
+            {value.length > 0 ? (
+              <motion.ul layout className="flex flex-wrap gap-1.5">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {value.map((slug) => (
+                    <motion.li
+                      key={slug}
+                      layout
+                      initial={{ opacity: 0, scale: 0.6, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.6, y: -4 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
                     >
-                      <span>{cityNameFor(slug, locale)}</span>
-                      <X className="size-3.5 opacity-70" aria-hidden />
-                    </motion.button>
-                  </motion.li>
-                ))
-              )}
-            </AnimatePresence>
-          </motion.ul>
-        ) : (
-          <motion.p
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-xs italic text-muted-foreground"
-          >
-            {t("serviceAreaEmpty")}
-          </motion.p>
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => removeCity(slug)}
+                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-cobalt-500/40 bg-brand-cobalt-100 px-3 py-1 text-sm text-brand-navy-900 transition-colors hover:bg-brand-cobalt-100/80"
+                        aria-label={t("serviceAreaRemove", {
+                          city: cityNameFor(slug, locale),
+                        })}
+                      >
+                        <span>{cityNameFor(slug, locale)}</span>
+                        <X className="size-3.5 opacity-70" aria-hidden />
+                      </motion.button>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            ) : (
+              <p className="text-xs italic text-muted-foreground">
+                {t("serviceAreaEmpty")}
+              </p>
+            )}
+
+            {atMax ? (
+              <p className="text-xs text-muted-foreground">
+                {t("serviceAreaMaxReached")}
+              </p>
+            ) : null}
+          </motion.div>
         )}
       </AnimatePresence>
-      {servesAllKsa ? null : value.length < 15 ? (
-        <CityCombobox
-          key={nonce}
-          value={pending}
-          onChange={(slug) => appendCity(slug)}
-          placeholder={t("serviceAreaAdd")}
-          ariaLabel={t("serviceAreaAdd")}
-          prependItem={{
-            label: t("servesAllKsa.label"),
-            description: t("servesAllKsa.hint"),
-            selected: false,
-            onSelect: () => toggleAllKsa(),
-          }}
-        />
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {t("serviceAreaMaxReached")}
-        </p>
-      )}
     </div>
   );
 }
@@ -1424,6 +1437,35 @@ function Field({
         <span className="text-xs text-semantic-danger-500">{error}</span>
       ) : null}
     </Label>
+  );
+}
+
+/**
+ * Like {@link Field}, but renders a `<div role="group">` instead of a
+ * `<label>`. Use for composite controls (several buttons / a checkbox + a
+ * picker) where native label-click proxying would fire on the first nested
+ * control and toggle it by accident.
+ */
+function FieldGroup({
+  label,
+  helperKey,
+  children,
+}: {
+  label: string;
+  helperKey?: string;
+  children: React.ReactNode;
+}) {
+  const t = useTranslations("supplier.onboarding");
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex w-full flex-col items-start gap-1.5 text-sm"
+    >
+      <span className="font-medium text-foreground">{label}</span>
+      {helperKey ? <HelperText>{t(helperKey)}</HelperText> : null}
+      {children}
+    </div>
   );
 }
 

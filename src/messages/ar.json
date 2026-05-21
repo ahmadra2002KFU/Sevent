@@ -65,6 +65,8 @@
     "error": "حدث خطأ ما.",
     "cityCombobox": {
       "placeholder": "اختر مدينة",
+      "multiPlaceholder": "اختر المدن التي تخدمها",
+      "selectedCount": "تم اختيار {count} مدينة",
       "searchPlaceholder": "ابحث عن مدينة…",
       "empty": "لا توجد نتائج",
       "capitalBadge": "عاصمة المنطقة",
