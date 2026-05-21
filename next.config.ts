@@ -63,6 +63,43 @@ if (process.platform === "win32") {
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+/**
+ * Allow `next/image` to optimize images served from our Supabase Storage host.
+ *
+ * Derived from `NEXT_PUBLIC_SUPABASE_URL` so the same config works in local
+ * dev (`http://127.0.0.1:54321`) and production (`https://api.seventsa.com`)
+ * without a hardcoded host list.
+ *
+ * The pathname is `/storage/v1/object/**` — broad enough to match BOTH public
+ * URLs (`/object/public/...`) and short-lived signed URLs (`/object/sign/...`).
+ * Supplier logos and portfolio media live in non-public buckets and are served
+ * via signed URLs, so restricting to `/object/public/**` (the previous value)
+ * silently 400'd every signed image and rendered it as a broken icon.
+ */
+function supabaseImageRemotePatterns(): NonNullable<
+  NonNullable<NextConfig["images"]>["remotePatterns"]
+> {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return [];
+  try {
+    const url = new URL(raw);
+    return [
+      {
+        protocol: url.protocol.replace(":", "") as "http" | "https",
+        hostname: url.hostname,
+        // Empty string when the URL uses the protocol's default port; Next.js
+        // treats that as "no port", which is what prod (443) needs.
+        port: url.port,
+        pathname: "/storage/v1/object/**",
+      },
+    ];
+  } catch {
+    // Malformed env — skip rather than crash the build. Images simply won't be
+    // optimized until the env is fixed.
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -77,20 +114,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "54321",
-        pathname: "/storage/v1/object/public/**",
-      },
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "54321",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
+    remotePatterns: supabaseImageRemotePatterns(),
   },
   webpack(config) {
     if (process.platform === "win32") {
