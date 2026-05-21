@@ -25,6 +25,10 @@ import { cityNameFor } from "@/lib/domain/cities";
 import { formatHalalas } from "@/lib/domain/money";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +39,7 @@ type PageProps = {
 type EventDetail = {
   id: string;
   organizer_id: string;
+  company_id: string | null;
   event_type: string;
   client_name: string | null;
   city: string;
@@ -123,12 +128,13 @@ export default async function EventDetailPage({ params }: PageProps) {
   const bunoodT = await getTranslations("organizer.eventForm.bunood");
   const rfqT = await getTranslations("organizer.rfqs");
 
-  const { user, admin } = await requireAccess("organizer.events");
+  const { user, admin, decision } = await requireAccess("organizer.events");
+  const scope = organizerScopeFor(decision, user.id);
 
   const { data: eventData } = await admin
     .from("events")
     .select(
-      "id, organizer_id, event_type, client_name, city, venue_address, starts_at, ends_at, guest_count, budget_range_min_halalas, budget_range_max_halalas, notes, currency",
+      "id, organizer_id, company_id, event_type, client_name, city, venue_address, starts_at, ends_at, guest_count, budget_range_min_halalas, budget_range_max_halalas, notes, currency",
     )
     .eq("id", id)
     .maybeSingle();
@@ -136,7 +142,11 @@ export default async function EventDetailPage({ params }: PageProps) {
   const event = eventData as EventDetail | null;
   if (!event) notFound();
 
-  const ownsEvent = event.organizer_id === user.id;
+  // Visible to the individual owner OR any member of the owning company.
+  const ownsEvent = canViewOrganizerRow(scope, {
+    company_id: event.company_id,
+    ownerId: event.organizer_id,
+  });
 
   // Parallelize the admin role check (only needed when not owner) with the
   // RFQs fetch — they're independent: profile is keyed by user.id, rfqs is

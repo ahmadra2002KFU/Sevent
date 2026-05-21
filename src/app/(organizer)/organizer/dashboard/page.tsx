@@ -24,6 +24,10 @@ import { MetricCard } from "@/components/ui-ext/MetricCard";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { StatusPill, type StatusPillStatus } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  companyOwnedOrFilter,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 import { CelebrationBanner } from "@/components/supplier/onboarding/CelebrationBanner";
 import { OrganizerOnboardingBanner } from "./OrganizerOnboardingBanner";
 import { CompanyMetaLine } from "./CompanyMetaLine";
@@ -135,21 +139,21 @@ export default async function OrganizerDashboardPage({
       ])
     : Promise.resolve(null);
 
-  // Activity queries. Scope every query to the signed-in organizer's own rows
-  // via `organizer_id` (events/bookings) / the joined event's `organizer_id`
-  // (rfqs) — IDENTICAL to the events / RFQs / bookings list pages, so the
-  // dashboard numbers always match what those lists show.
+  // Activity queries. Company-aware scoping (mirrors the events / RFQs /
+  // bookings list pages, so the dashboard numbers always match those lists):
+  // when acting as a company, count the company's rows (visible to all
+  // members) plus the caller's own individual rows; otherwise the individual
+  // organizer's own rows. `companyOwnedOrFilter` returns the `.or(...)`
+  // predicate for events/bookings (company_id + organizer_id co-located);
+  // rfqs carry the owner via the joined event, so company mode keys strictly
+  // on rfqs.company_id (backfill + write path guarantee company RFQs are
+  // stamped).
   //
-  // Deliberately NOT company-scoped: the write path never sets `company_id`
-  // (createEventAction inserts events with company_id = NULL; the company
-  // backfill was explicitly out of scope — see migration 20260518111000), so
-  // `company_id = activeCompanyId` matches nothing and would hide a company
-  // organizer's events entirely. `activeCompanyId` below is used only for the
-  // company meta-line / invite prompt, not for data scoping.
-  //
-  // The `admin` client is service-role and bypasses RLS, so these owner
-  // filters are load-bearing — without the rfqs event-join filter an organizer
-  // would see every organizer's RFQs.
+  // The `admin` client is service-role and bypasses RLS, so these filters are
+  // load-bearing — without them an organizer would see every organizer's rows.
+  const scope = organizerScopeFor(decision, user.id);
+  const ownedOrFilter = companyOwnedOrFilter(scope);
+
   const upcomingEventsQ = admin
     .from("events")
     .select(
@@ -181,11 +185,19 @@ export default async function OrganizerDashboardPage({
     .order("created_at", { ascending: false })
     .limit(5);
 
-  upcomingEventsQ.eq("organizer_id", user.id);
-  awaitingBookingsQ.eq("organizer_id", user.id);
-  confirmedBookingsQ.eq("organizer_id", user.id);
-  rfqStatusQ.eq("events.organizer_id", user.id);
-  latestRfqsQ.eq("events.organizer_id", user.id);
+  if (ownedOrFilter) {
+    upcomingEventsQ.or(ownedOrFilter);
+    awaitingBookingsQ.or(ownedOrFilter);
+    confirmedBookingsQ.or(ownedOrFilter);
+    rfqStatusQ.eq("company_id", scope.activeCompanyId as string);
+    latestRfqsQ.eq("company_id", scope.activeCompanyId as string);
+  } else {
+    upcomingEventsQ.eq("organizer_id", user.id);
+    awaitingBookingsQ.eq("organizer_id", user.id);
+    confirmedBookingsQ.eq("organizer_id", user.id);
+    rfqStatusQ.eq("events.organizer_id", user.id);
+    latestRfqsQ.eq("events.organizer_id", user.id);
+  }
 
   const [
     profileRes,

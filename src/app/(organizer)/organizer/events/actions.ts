@@ -22,7 +22,10 @@ import { z, ZodError } from "zod";
 import { BandInput, EventFormInput } from "@/lib/domain/events";
 import { sarToHalalas } from "@/lib/domain/money";
 import { requireAccess } from "@/lib/auth/access";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 import { STORAGE_BUCKETS, rfqAttachmentPath } from "@/lib/supabase/storage";
 import {
   type AttachmentKind,
@@ -74,9 +77,19 @@ function parseBunoodField(raw: FormDataEntryValue | null): unknown {
  * Returns the IDs of the inserted RFQs in the same order as `bunood`.
  */
 async function publishBunoodForEvent(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  // Service-role client. RLS-sensitive organizer writes go through service-role
+  // + in-code enforcement (see lib/supabase/server.ts) — the user-JWT client's
+  // auth forwarding for RLS WITH CHECK (e.g. is_company_member) is unreliable
+  // on this stack, so company-stamped inserts must not depend on it.
+  supabase: Awaited<ReturnType<typeof requireAccess>>["admin"],
   eventId: string,
   bunood: BandInput[],
+  // Company stamping: when the organizer is acting as a company, every
+  // auto-published RFQ inherits that company so all members can see it. The
+  // composite FK `rfqs_actor_is_company_member_fk (company_id, actor_profile_id)`
+  // requires the actor to be a current member, so the two travel together —
+  // both NULL for individual organizers (identical to the pre-company shape).
+  company: { companyId: string | null; actorProfileId: string },
 ): Promise<string[]> {
   const subcatIds = bunood.map((b) => b.subcategory_id);
   const { data: catRows, error: catErr } = await supabase
@@ -115,6 +128,11 @@ async function publishBunoodForEvent(
       notes: b.notes ?? "",
       qty: b.qty ?? 1,
     },
+    company_id: company.companyId,
+    // Keep the (company_id, actor_profile_id) tuple consistent: only stamp the
+    // actor when there is a company, so the composite FK stays NULL-exempt for
+    // individual organizers.
+    actor_profile_id: company.companyId ? company.actorProfileId : null,
   }));
 
   const { data: inserted, error: rfqErr } = await supabase
@@ -286,8 +304,8 @@ function isoFromLocal(raw: FormDataEntryValue | null): string {
 }
 
 export async function createEventAction(formData: FormData): Promise<void> {
-  const { user, admin } = await requireAccess("organizer.events");
-  const supabase = await createSupabaseServerClient();
+  const { user, admin, decision } = await requireAccess("organizer.events");
+  const companyId = decision.activeCompanyId;
 
   const raw = {
     event_type: formData.get("event_type"),
@@ -327,6 +345,13 @@ export async function createEventAction(formData: FormData): Promise<void> {
 
   const insertRow = {
     organizer_id: user.id,
+    // Company stamping: when acting as a company, the event belongs to the
+    // company so every member sees it. The composite FK
+    // `events_actor_is_company_member_fk (company_id, organizer_id)` requires
+    // organizer_id to be a current member of company_id — which holds because
+    // organizer_id = user.id and activeCompanyId is one of the caller's
+    // memberships. NULL for individual organizers (FK is NULL-exempt).
+    company_id: companyId,
     client_name: parsed.client_name ?? null,
     event_type: parsed.event_type,
     city: parsed.city,
@@ -340,7 +365,10 @@ export async function createEventAction(formData: FormData): Promise<void> {
     notes: parsed.notes ?? null,
   };
 
-  const { data, error } = await supabase
+  // Service-role insert: the caller is the creator (organizer_id = user.id) and
+  // company_id = the verified active company, so in-code values + the composite
+  // FK are the enforcement boundary (no RLS dependency — see server.ts).
+  const { data, error } = await admin
     .from("events")
     .insert(insertRow)
     .select("id")
@@ -353,11 +381,13 @@ export async function createEventAction(formData: FormData): Promise<void> {
   const newId = (data as { id: string }).id;
 
   // Auto-publish each بند as an RFQ tied to the new event. The schema enforces
-  // .min(1), so `parsed.bunood` is non-empty here. RLS allows organizer inserts
-  // because they own `events.id = newId` (they just inserted it). The returned
-  // ids are in the same order as `parsed.bunood`, which is also the order the
-  // client keyed `band_attachment_${i}` files in the FormData.
-  const rfqIds = await publishBunoodForEvent(supabase, newId, parsed.bunood);
+  // .min(1), so `parsed.bunood` is non-empty here. The returned ids are in the
+  // same order as `parsed.bunood`, which is also the order the client keyed
+  // `band_attachment_${i}` files in the FormData.
+  const rfqIds = await publishBunoodForEvent(admin, newId, parsed.bunood, {
+    companyId,
+    actorProfileId: user.id,
+  });
 
   // Best-effort: attach each بند's uploaded files to its RFQ. Never blocks the
   // redirect — see uploadBandAttachments.
@@ -401,21 +431,31 @@ export async function addBandAction(formData: FormData): Promise<AddBandResult> 
     return { ok: false, error: zodMessage(parsed.error) };
   }
 
-  const { user, admin } = await requireAccess("organizer.events");
-  const supabase = await createSupabaseServerClient();
+  const { user, admin, decision } = await requireAccess("organizer.events");
+  const scope = organizerScopeFor(decision, user.id);
 
-  // Verify ownership before insert. RLS on `events` already scopes select to
-  // owner + admin, so a non-owner gets `null` here regardless of role.
-  const { data: ownership } = await supabase
+  // Verify the caller may act on this event before insert. Mirrors RLS: the
+  // individual owner, OR any member of the company that owns it. Service-role
+  // read + in-code check (the user-JWT client's RLS reads are unreliable here).
+  const { data: ownership } = await admin
     .from("events")
-    .select("id, organizer_id")
+    .select("id, organizer_id, company_id")
     .eq("id", parsed.data.event_id)
     .maybeSingle();
-  const ownerRow = ownership as { id: string; organizer_id: string } | null;
+  const ownerRow = ownership as {
+    id: string;
+    organizer_id: string;
+    company_id: string | null;
+  } | null;
   if (!ownerRow) {
     return { ok: false, error: "Event not found." };
   }
-  if (ownerRow.organizer_id !== user.id) {
+  if (
+    !canViewOrganizerRow(scope, {
+      company_id: ownerRow.company_id,
+      ownerId: ownerRow.organizer_id,
+    })
+  ) {
     // Admins can read events they don't own, but RFQs they create wouldn't
     // belong to them. Block to keep the data model consistent.
     return { ok: false, error: "You do not own this event." };
@@ -423,13 +463,21 @@ export async function addBandAction(formData: FormData): Promise<AddBandResult> 
 
   let rfqIds: string[];
   try {
-    rfqIds = await publishBunoodForEvent(supabase, parsed.data.event_id, [
-      {
-        subcategory_id: parsed.data.subcategory_id,
-        notes: parsed.data.notes,
-        qty: parsed.data.qty,
-      },
-    ]);
+    // The new RFQ inherits the EVENT's company so it stays consistent with the
+    // rest of the event's RFQs. When the event belongs to a company, the caller
+    // is a member of it (enforced just above), so the actor FK holds.
+    rfqIds = await publishBunoodForEvent(
+      admin,
+      parsed.data.event_id,
+      [
+        {
+          subcategory_id: parsed.data.subcategory_id,
+          notes: parsed.data.notes,
+          qty: parsed.data.qty,
+        },
+      ],
+      { companyId: ownerRow.company_id, actorProfileId: user.id },
+    );
   } catch (err) {
     return {
       ok: false,

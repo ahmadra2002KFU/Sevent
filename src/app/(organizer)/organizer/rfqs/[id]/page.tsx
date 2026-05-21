@@ -35,6 +35,10 @@ import {
   createSignedDownloadUrls,
 } from "@/lib/supabase/storage";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 
 export const dynamic = "force-dynamic";
 
@@ -114,12 +118,13 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
   const tDecline = await getTranslations("supplier.rfqInbox.declineReason");
   const tAttachments = await getTranslations("rfqAttachments");
 
-  const { user, admin } = await requireAccess("organizer.rfqs");
+  const { user, admin, decision } = await requireAccess("organizer.rfqs");
+  const scope = organizerScopeFor(decision, user.id);
 
   const { data: rfqData } = await admin
     .from("rfqs")
     .select(
-      `id, status, sent_at, created_at, requirements_jsonb,
+      `id, status, sent_at, created_at, requirements_jsonb, company_id,
        events ( id, event_type, client_name, city, starts_at, ends_at, guest_count, organizer_id ),
        parent:categories!rfqs_category_id_fkey ( id, name_en, name_ar ),
        sub:categories!rfqs_subcategory_id_fkey ( id, name_en, name_ar )`,
@@ -129,6 +134,7 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
 
   const rfq = rfqData as unknown as
     | (RfqDetail & {
+        company_id?: string | null;
         events:
           | (RfqDetail["events"] & { organizer_id?: string })
           | null;
@@ -136,7 +142,12 @@ export default async function OrganizerRfqDetailPage({ params }: PageProps) {
     | null;
   if (!rfq) notFound();
 
-  const ownsEvent = rfq.events?.organizer_id === user.id;
+  // Visible to the individual owner OR any member of the company that owns the
+  // RFQ. Non-matching callers fall through to the admin-role escape hatch.
+  const ownsEvent = canViewOrganizerRow(scope, {
+    company_id: rfq.company_id ?? null,
+    ownerId: rfq.events?.organizer_id ?? null,
+  });
   if (!ownsEvent) {
     const { data: profile } = await admin
       .from("profiles")

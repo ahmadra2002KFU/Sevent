@@ -39,6 +39,10 @@ import { fmtDateTime, type SupportedLocale } from "@/lib/domain/formatDate";
 import { segmentNameFor } from "@/lib/domain/segments";
 import { cityNameFor } from "@/lib/domain/cities";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 import { CompanyProfileDownloadButton } from "./CompanyProfileDownloadButton";
 import { ContractDownloadButton } from "@/components/contracts/ContractDownloadButton";
 import { getContractUrlAction } from "./get-contract-url";
@@ -130,12 +134,13 @@ export default async function OrganizerBookingDetailPage({
   const locale = (await getLocale()) as SupportedLocale;
   const t = await getTranslations("booking");
 
-  const { admin, user } = await requireAccess("organizer.bookings");
+  const { admin, user, decision } = await requireAccess("organizer.bookings");
+  const scope = organizerScopeFor(decision, user.id);
 
   const { data } = await admin
     .from("bookings")
     .select(
-      `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id,
+      `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id, company_id,
        supplier_id, confirmation_status, service_status, confirm_deadline, confirmed_at, completed_at, created_at,
        contract_pdf_path,
        suppliers ( id, business_name, base_city ),
@@ -143,20 +148,39 @@ export default async function OrganizerBookingDetailPage({
        quote_revisions:accepted_quote_revision_id ( id, version, snapshot_jsonb )`,
     )
     .eq("id", id)
-    .eq("organizer_id", user.id)
     .maybeSingle();
 
   if (!data) notFound();
-  const row = data as unknown as BookingDetailRow;
+  const row = data as unknown as BookingDetailRow & {
+    company_id: string | null;
+  };
+  // Visible to the individual owner OR any member of the owning company.
+  if (
+    !canViewOrganizerRow(scope, {
+      company_id: row.company_id,
+      ownerId: row.organizer_id,
+    })
+  ) {
+    notFound();
+  }
   const snapshot = (row.quote_revisions?.snapshot_jsonb ?? null) as
     | QuoteSnapshot
     | null;
   const event = row.rfqs?.events ?? null;
   const supplier = row.suppliers;
 
+  // The dispute/review flows are still keyed to the booking's individual party
+  // (`raised_by` / `reviewer_id` + the resolvers in disputes.server.ts /
+  // reviews.server.ts gate on `organizer_id === viewerProfileId`). Company
+  // co-members can now SEE the booking, but only the booking's organizer can
+  // file a dispute or leave a review — so only show those CTAs to them, to
+  // avoid offering an action the server action would reject. Extending
+  // dispute/review to all members is a separate, deliberate change.
+  const canActOnBooking = row.organizer_id === user.id;
+
   // Has the viewer already submitted a review? Surface the right CTA copy.
   let viewerHasReviewed = false;
-  if (row.service_status === "completed") {
+  if (canActOnBooking && row.service_status === "completed") {
     const { data: existing } = await admin
       .from("reviews")
       .select("id")
@@ -177,8 +201,9 @@ export default async function OrganizerBookingDetailPage({
   let viewerHasOpenDispute = false;
   let anyDisputeOnBooking = false;
   if (
-    row.service_status === "completed" ||
-    row.service_status === "disputed"
+    canActOnBooking &&
+    (row.service_status === "completed" ||
+      row.service_status === "disputed")
   ) {
     const { data: viewerDispute } = await admin
       .from("disputes")
@@ -354,7 +379,7 @@ export default async function OrganizerBookingDetailPage({
         </Card>
       </div>
 
-      {row.service_status === "completed" ? (
+      {canActOnBooking && row.service_status === "completed" ? (
         viewerHasReviewed ? (
           <Alert>
             <AlertDescription>{tReviews("cta.submitted")}</AlertDescription>
@@ -368,7 +393,7 @@ export default async function OrganizerBookingDetailPage({
         )
       ) : null}
 
-      {disputeWindowOpen || anyDisputeOnBooking ? (
+      {canActOnBooking && (disputeWindowOpen || anyDisputeOnBooking) ? (
         <Button asChild variant="outline" className="w-fit">
           <Link href={`/organizer/bookings/${row.id}/dispute`}>
             {viewerHasOpenDispute || anyDisputeOnBooking

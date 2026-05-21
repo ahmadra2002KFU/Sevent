@@ -22,6 +22,7 @@ import {
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
+import { organizerScopeFor } from "@/lib/auth/organizerScope";
 
 export const dynamic = "force-dynamic";
 
@@ -112,12 +113,13 @@ export default async function OrganizerRfqsPage({ searchParams }: PageProps) {
   const t = await getTranslations("organizer.rfqs");
   const tPag = await getTranslations("pagination");
 
-  const { user, admin } = await requireAccess("organizer.rfqs");
+  const { user, admin, decision } = await requireAccess("organizer.rfqs");
+  const scope = organizerScopeFor(decision, user.id);
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const { data, count } = await admin
+  const baseQuery = admin
     .from("rfqs")
     .select(
       `id, status, sent_at, created_at,
@@ -126,8 +128,19 @@ export default async function OrganizerRfqsPage({ searchParams }: PageProps) {
        sub:categories!rfqs_subcategory_id_fkey ( id, slug, name_en, name_ar ),
        rfq_invites ( id, response_due_at, status )`,
       { count: "exact" },
-    )
-    .eq("events.organizer_id", user.id)
+    );
+
+  // Company-aware visibility: when acting as a company, show every RFQ stamped
+  // with that company (so all members — owner, admins, members — see the same
+  // pipeline). Otherwise fall back to the individual organizer's own RFQs.
+  // (RFQs carry the owner via events.organizer_id, which a single `.or()`
+  // cannot reach, so company mode keys strictly on rfqs.company_id — backfill +
+  // the write path guarantee company RFQs are stamped.)
+  const scopedQuery = scope.activeCompanyId
+    ? baseQuery.eq("company_id", scope.activeCompanyId)
+    : baseQuery.eq("events.organizer_id", scope.userId);
+
+  const { data, count } = await scopedQuery
     .order("created_at", { ascending: false })
     .range(from, to);
 

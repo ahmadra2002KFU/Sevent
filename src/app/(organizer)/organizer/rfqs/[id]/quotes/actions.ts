@@ -21,6 +21,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 import { getSegmentBySlug } from "@/lib/domain/segments";
 import { createNotification } from "@/lib/notifications/inApp";
 import { sendEmail } from "@/lib/notifications/email";
@@ -147,13 +151,36 @@ export async function acceptQuoteAction(
   //    would be caught as P0006 rather than silently creating a booking for
   //    someone else. For PR 2 the feature flag is OFF and p_company_id is
   //    NULL; PR 3 wires it to gate.decision.activeCompanyId.
+  // Derive the company from the EVENT (via the RFQ), not the caller's active
+  // company: the RPC requires events.company_id == p_company_id for the company
+  // branch, so a legacy/individual event (company_id NULL) must take the
+  // individual branch — otherwise accepting a quote on an event the caller can
+  // legitimately see would raise P0006. The booking inherits the event's
+  // company so every member sees it under /organizer/bookings.
+  const { data: rfqEventCompany } = await gate.admin
+    .from("rfqs")
+    .select("id, events ( company_id )")
+    .eq("id", rfq_id)
+    .maybeSingle();
+  const eventCompanyNode = (
+    rfqEventCompany as unknown as {
+      events: { company_id: string | null } | { company_id: string | null }[] | null;
+    } | null
+  )?.events;
+  const eventCompanyId =
+    (Array.isArray(eventCompanyNode)
+      ? eventCompanyNode[0]?.company_id
+      : eventCompanyNode?.company_id) ?? null;
+
   const { data: rpcData, error: rpcError } = await gate.admin.rpc(
     "accept_quote_tx_v2",
     {
       p_quote_id: quote_id,
       p_organizer_id: gate.user.id,
       p_soft_hold_minutes: SOFT_HOLD_MINUTES,
-      p_company_id: null,
+      // The RPC re-verifies events.company_id == p_company_id AND the actor's
+      // active membership, and enforces the member spend-cap (P0060).
+      p_company_id: eventCompanyId,
       p_actor_profile_id: gate.user.id,
     },
   );
@@ -560,14 +587,15 @@ export async function requestProposalAction(
   const { quote_id, rfq_id, message } = parse.data;
 
   // Defense-in-depth ownership check. RLS would also gate this, but the
-  // service-role client bypasses RLS — so we re-prove the caller owns the
-  // RFQ before mutating.
+  // service-role client bypasses RLS — so we re-prove the caller may act on
+  // the RFQ before mutating. Mirrors RLS: individual owner OR company member.
+  const scope = organizerScopeFor(gate.decision, gate.user.id);
   const { data: ownership } = await gate.admin
     .from("quotes")
     .select(
       `id, supplier_id, rfq_id,
        suppliers ( profile_id ),
-       rfqs ( id, events ( organizer_id, event_type ) )`,
+       rfqs ( id, company_id, events ( organizer_id, event_type ) )`,
     )
     .eq("id", quote_id)
     .eq("rfq_id", rfq_id)
@@ -582,12 +610,14 @@ export async function requestProposalAction(
       | null;
     rfqs:
       | {
+          company_id: string | null;
           events:
             | { organizer_id: string | null; event_type: string | null }
             | { organizer_id: string | null; event_type: string | null }[]
             | null;
         }
       | {
+          company_id: string | null;
           events:
             | { organizer_id: string | null; event_type: string | null }
             | { organizer_id: string | null; event_type: string | null }[]
@@ -604,16 +634,24 @@ export async function requestProposalAction(
     ? rfqsJoin?.events[0] ?? null
     : rfqsJoin?.events ?? null;
   const organizerId = eventsJoin?.organizer_id ?? null;
+  const rfqCompanyId = rfqsJoin?.company_id ?? null;
   // Pass the SLUG to QuoteProposalRequested — the template resolves it to a
   // recipient-locale display name (with a localized "your event" fallback)
   // so the email never leaks an English literal into Arabic.
   const eventType = eventsJoin?.event_type ?? "";
-  if (organizerId !== gate.user.id) {
+  if (
+    !canViewOrganizerRow(scope, {
+      company_id: rfqCompanyId,
+      ownerId: organizerId,
+    })
+  ) {
     return { status: "error", code: "organizerMismatch" };
   }
 
-  // Insert the row. If a pending request already exists, the unique partial
-  // index trips with code 23505.
+  // Insert the row, inheriting the RFQ's company so it's visible to all
+  // members. The composite FK (company_id, actor_profile_id) requires the
+  // actor to be a current member — true here because the caller passed the
+  // company-member check above. NULL company → individual flow.
   const { error: insertErr } = await gate.admin
     .from("quote_proposal_requests")
     .insert({
@@ -621,6 +659,8 @@ export async function requestProposalAction(
       requested_by: gate.user.id,
       message,
       status: "pending",
+      company_id: rfqCompanyId,
+      actor_profile_id: rfqCompanyId ? gate.user.id : null,
     });
 
   if (insertErr) {
@@ -708,12 +748,14 @@ export async function cancelProposalRequestAction(
   }
   const { request_id, rfq_id } = parse.data;
 
-  // Verify the request belongs to a quote on an RFQ this organizer owns.
+  // Verify the request belongs to a quote on an RFQ the caller may act on
+  // (individual owner OR a member of the company that owns the RFQ).
+  const scope = organizerScopeFor(gate.decision, gate.user.id);
   const { data: reqRow } = await gate.admin
     .from("quote_proposal_requests")
     .select(
       `id, quote_id, status,
-       quotes!inner ( id, rfqs!inner ( id, events!inner ( organizer_id ) ) )`,
+       quotes!inner ( id, rfqs!inner ( id, company_id, events!inner ( organizer_id ) ) )`,
     )
     .eq("id", request_id)
     .maybeSingle();
@@ -725,13 +767,25 @@ export async function cancelProposalRequestAction(
     quotes:
       | {
           rfqs:
-            | { events: { organizer_id: string } | { organizer_id: string }[] }
-            | { events: { organizer_id: string } | { organizer_id: string }[] }[];
+            | {
+                company_id: string | null;
+                events: { organizer_id: string } | { organizer_id: string }[];
+              }
+            | {
+                company_id: string | null;
+                events: { organizer_id: string } | { organizer_id: string }[];
+              }[];
         }
       | {
           rfqs:
-            | { events: { organizer_id: string } | { organizer_id: string }[] }
-            | { events: { organizer_id: string } | { organizer_id: string }[] }[];
+            | {
+                company_id: string | null;
+                events: { organizer_id: string } | { organizer_id: string }[];
+              }
+            | {
+                company_id: string | null;
+                events: { organizer_id: string } | { organizer_id: string }[];
+              }[];
         }[];
   };
   const r = reqRow as unknown as ReqOwnership | null;
@@ -749,7 +803,12 @@ export async function cancelProposalRequestAction(
     ? rfqsNode?.events[0]
     : rfqsNode?.events;
   const organizerId = eventsNode?.organizer_id ?? null;
-  if (organizerId !== gate.user.id) {
+  if (
+    !canViewOrganizerRow(scope, {
+      company_id: rfqsNode?.company_id ?? null,
+      ownerId: organizerId,
+    })
+  ) {
     return { status: "error", code: "organizerMismatch" };
   }
 

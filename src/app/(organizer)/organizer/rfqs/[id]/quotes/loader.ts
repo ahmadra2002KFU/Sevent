@@ -15,6 +15,10 @@
 import { notFound } from "next/navigation";
 import { requireAccess } from "@/lib/auth/access";
 import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
+import {
   STORAGE_BUCKETS,
   createSignedDownloadUrls,
 } from "@/lib/supabase/storage";
@@ -78,6 +82,7 @@ export type QuotesComparisonData = {
 type RfqRow = {
   id: string;
   status: string;
+  company_id: string | null;
   events: {
     id: string;
     starts_at: string;
@@ -143,12 +148,13 @@ function extractRevision(ref: RevisionJoin): {
 export async function loadQuotesComparison(
   rfqId: string,
 ): Promise<QuotesComparisonData> {
-  const { user, admin } = await requireAccess("organizer.rfqs");
+  const { user, admin, decision } = await requireAccess("organizer.rfqs");
+  const scope = organizerScopeFor(decision, user.id);
 
   const { data: rfqRaw } = await admin
     .from("rfqs")
     .select(
-      `id, status,
+      `id, status, company_id,
        events ( id, starts_at, ends_at, organizer_id, city )`,
     )
     .eq("id", rfqId)
@@ -157,7 +163,11 @@ export async function loadQuotesComparison(
   const rfq = rfqRaw as unknown as RfqRow | null;
   if (!rfq || !rfq.events) notFound();
 
-  const ownsEvent = rfq.events.organizer_id === user.id;
+  // Visible to the individual owner OR any member of the owning company.
+  const ownsEvent = canViewOrganizerRow(scope, {
+    company_id: rfq.company_id,
+    ownerId: rfq.events.organizer_id,
+  });
   if (!ownsEvent) {
     const { data: profile } = await admin
       .from("profiles")

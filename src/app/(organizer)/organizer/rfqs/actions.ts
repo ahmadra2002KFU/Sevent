@@ -346,6 +346,22 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
   // migration 20260518150000_send_rfq_tx_v2.sql for the full predicate.
   const admin = createSupabaseServiceRoleClient();
 
+  // Derive the company from the EVENT, not the caller's active company. The RPC
+  // requires events.company_id == p_company_id for the company branch, so a
+  // legacy/individual event (company_id NULL) must take the individual branch
+  // even when the caller is currently acting as a company — otherwise the RPC
+  // raises P0024 for an event the caller can legitimately see. The RPC then
+  // re-verifies the actor's membership for the company branch. The new RFQ
+  // inherits the event's company so it stays consistent with sibling RFQs and
+  // is visible to every member.
+  const { data: eventCompanyRow } = await admin
+    .from("events")
+    .select("company_id")
+    .eq("id", parsed.data.event_id)
+    .maybeSingle();
+  const eventCompanyId =
+    (eventCompanyRow as { company_id: string | null } | null)?.company_id ?? null;
+
   const { data: rpcData, error: rpcErr } = await admin.rpc("send_rfq_tx_v2", {
     p_organizer_id: gate.userId,
     p_event_id: parsed.data.event_id,
@@ -355,7 +371,7 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     p_response_deadline_hours: parsed.data.response_deadline_hours,
     p_invites: parsed.data.shortlist,
     p_is_published_to_marketplace: parsed.data.publish_to_marketplace,
-    p_company_id: null,
+    p_company_id: eventCompanyId,
     p_actor_profile_id: gate.userId,
   });
 

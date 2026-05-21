@@ -17,6 +17,10 @@ import {
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { PageHeader } from "@/components/ui-ext/PageHeader";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  companyOwnedOrFilter,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 
 export const dynamic = "force-dynamic";
 
@@ -73,18 +77,28 @@ export default async function OrganizerEventsPage({
   const t = await getTranslations("organizer.events");
   const tPag = await getTranslations("pagination");
 
-  const { user, admin } = await requireAccess("organizer.events");
+  const { user, admin, decision } = await requireAccess("organizer.events");
+  const scope = organizerScopeFor(decision, user.id);
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const { data, count } = await admin
+  const baseQuery = admin
     .from("events")
     .select(
       "id, event_type, client_name, city, starts_at, ends_at, guest_count, rfqs(id)",
       { count: "exact" },
-    )
-    .eq("organizer_id", user.id)
+    );
+
+  // Company-aware visibility: company events (visible to all members) plus the
+  // caller's own individual (company_id IS NULL) events; individual organizers
+  // keep the plain owner filter.
+  const orFilter = companyOwnedOrFilter(scope);
+  const scopedQuery = orFilter
+    ? baseQuery.or(orFilter)
+    : baseQuery.eq("organizer_id", scope.userId);
+
+  const { data, count } = await scopedQuery
     .order("starts_at", { ascending: false })
     .range(from, to);
 

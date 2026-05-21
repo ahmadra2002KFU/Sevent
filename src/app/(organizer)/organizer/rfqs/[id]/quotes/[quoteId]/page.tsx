@@ -45,6 +45,10 @@ import {
   type StatusPillStatus,
 } from "@/components/ui-ext/StatusPill";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  canViewOrganizerRow,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 import { formatMoney } from "@/lib/domain/money";
 import {
   fmtDateTime,
@@ -73,6 +77,7 @@ type QuoteRow = {
   } | null;
   rfqs: {
     id: string;
+    company_id: string | null;
     events: {
       id: string;
       organizer_id: string;
@@ -124,14 +129,15 @@ export default async function OrganizerQuoteDetailPage({
   const tKind = await getTranslations("lineItemKind");
   const tStatus = await getTranslations("quoteStatus");
 
-  const { user, admin } = await requireAccess("organizer.rfqs");
+  const { user, admin, decision } = await requireAccess("organizer.rfqs");
+  const scope = organizerScopeFor(decision, user.id);
 
   const { data: quoteRaw } = await admin
     .from("quotes")
     .select(
       `id, rfq_id, status, sent_at, accepted_at, expires_at, current_revision_id,
        suppliers ( id, business_name, base_city ),
-       rfqs ( id, events ( id, organizer_id, starts_at, ends_at ) )`,
+       rfqs ( id, company_id, events ( id, organizer_id, starts_at, ends_at ) )`,
     )
     .eq("id", quoteId)
     .eq("rfq_id", id)
@@ -140,7 +146,11 @@ export default async function OrganizerQuoteDetailPage({
   const quote = quoteRaw as unknown as QuoteRow | null;
   if (!quote || !quote.rfqs?.events) notFound();
 
-  const ownsEvent = quote.rfqs.events.organizer_id === user.id;
+  // Visible to the individual owner OR any member of the owning company.
+  const ownsEvent = canViewOrganizerRow(scope, {
+    company_id: quote.rfqs.company_id,
+    ownerId: quote.rfqs.events.organizer_id,
+  });
   if (!ownsEvent) {
     const { data: profile } = await admin
       .from("profiles")

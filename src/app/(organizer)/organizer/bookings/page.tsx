@@ -31,6 +31,10 @@ import {
 import { formatHalalas } from "@/lib/domain/money";
 import type { QuoteSnapshot } from "@/lib/domain/quote";
 import { requireAccess } from "@/lib/auth/access";
+import {
+  companyOwnedOrFilter,
+  organizerScopeFor,
+} from "@/lib/auth/organizerScope";
 
 export const dynamic = "force-dynamic";
 
@@ -150,7 +154,8 @@ export default async function OrganizerBookingsListPage({
 
   const t = await getTranslations("booking");
 
-  const { admin, user } = await requireAccess("organizer.bookings");
+  const { admin, user, decision } = await requireAccess("organizer.bookings");
+  const scope = organizerScopeFor(decision, user.id);
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -163,10 +168,14 @@ export default async function OrganizerBookingsListPage({
        rfqs ( id, events ( id, city, starts_at ) ),
        quote_revisions:accepted_quote_revision_id ( id, snapshot_jsonb )`,
       { count: "exact" },
-    )
-    .eq("organizer_id", user.id)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    );
+
+  // Company-aware visibility: company bookings (all members) + the caller's own
+  // individual bookings; individual organizers keep the plain owner filter.
+  const orFilter = companyOwnedOrFilter(scope);
+  query = orFilter ? query.or(orFilter) : query.eq("organizer_id", scope.userId);
+
+  query = query.order("created_at", { ascending: false }).range(from, to);
 
   if (filter !== "all") {
     query = query.eq("confirmation_status", filter);
