@@ -129,6 +129,25 @@ export async function upsertPackageAction(
     };
   }
 
+  const { data: categoryRow, error: categoryErr } = await supabase
+    .from("categories")
+    .select("id, parent_id, is_active")
+    .eq("id", row.subcategory_id)
+    .maybeSingle();
+  if (categoryErr) {
+    return { ok: false, error: `Category lookup failed: ${categoryErr.message}` };
+  }
+  if (
+    !categoryRow ||
+    !categoryRow.parent_id ||
+    !(categoryRow as { is_active?: boolean }).is_active
+  ) {
+    return {
+      ok: false,
+      error: "Choose an active item category before saving this package.",
+    };
+  }
+
   if (row.id) {
     const { error } = await supabase
       .from("packages")

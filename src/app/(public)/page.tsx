@@ -1,5 +1,4 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Building2, Utensils } from "lucide-react";
 import { listTopLevelCategories } from "@/lib/domain/publicBrowse";
 import { getCategoryIcon } from "@/components/public/categoryIcons";
 import { LandingHero } from "@/components/public/landing/LandingHero";
@@ -90,8 +89,16 @@ export default async function LandingPage() {
   // Safety net — the hero proof card looks empty without chips.
   if (heroChips.length === 0) {
     heroChips.push(
-      { key: "venues", label: "Venues", icon: Building2 },
-      { key: "catering", label: "Catering", icon: Utensils },
+      {
+        key: "event_management",
+        label: isAr ? "إدارة الفعاليات" : "Event Management",
+        icon: getCategoryIcon("event_management"),
+      },
+      {
+        key: "hospitality",
+        label: isAr ? "الضيافة" : "Hospitality",
+        icon: getCategoryIcon("hospitality"),
+      },
     );
   }
 

@@ -206,7 +206,7 @@
     "showcase": {
       "eyebrow": "Compare quotes like a pro",
       "heading": "Every quote, normalized into the same structure.",
-      "lede": "No more parsing PDFs from five different caterers. Sevent pulls every quote into the same shape so you can compare the things that actually matter.",
+      "lede": "No more parsing PDFs from five different suppliers. Sevent pulls every quote into the same shape so you can compare the things that actually matter.",
       "cta": "See a sample comparison",
       "bullets": [
         {
@@ -251,50 +251,50 @@
     "categories": {
       "eyebrow": "Categories",
       "heading": "Every supplier you need, all verified.",
-      "subtitle": "From venues and catering to photography and staffing — every supplier is approved before they go live on Sevent.",
+      "subtitle": "From event management and media production to hospitality and workforce — every supplier is approved before they go live on Sevent.",
       "browseAll": "Browse all categories",
       "supplierCount": "{count, plural, =0 {No suppliers yet} one {# verified supplier} other {# verified suppliers}}",
       "viewLabel": "Explore",
       "suffix": "verified suppliers",
       "fallback": [
         {
-          "slug": "venues",
-          "name": "Venues",
+          "slug": "event_management",
+          "name": "Event Management",
           "count": 32
         },
         {
-          "slug": "catering",
-          "name": "Catering",
+          "slug": "media_production",
+          "name": "Media Production",
           "count": 47
         },
         {
-          "slug": "photography",
-          "name": "Photography",
+          "slug": "marketing_pr",
+          "name": "Marketing & PR",
           "count": 28
         },
         {
-          "slug": "decor",
-          "name": "Decor & florals",
+          "slug": "avl",
+          "name": "AVL",
           "count": 19
         },
         {
-          "slug": "entertainment",
-          "name": "Entertainment",
+          "slug": "furniture",
+          "name": "Furniture",
           "count": 22
         },
         {
-          "slug": "av",
-          "name": "A/V & lighting",
+          "slug": "logistics",
+          "name": "Logistics",
           "count": 14
         },
         {
-          "slug": "transportation",
-          "name": "Transportation",
+          "slug": "site_services",
+          "name": "Site Services",
           "count": 11
         },
         {
-          "slug": "staffing",
-          "name": "Staffing",
+          "slug": "hospitality",
+          "name": "Hospitality",
           "count": 16
         }
       ]
@@ -539,8 +539,8 @@
       "capacityHint": "Optional peak capacity you can service in a single event.",
       "concurrentLimitLabel": "Concurrent events",
       "concurrentLimitHint": "How many bookings can overlap on the same date.",
-      "subcategoriesLabel": "Services offered",
-      "subcategoriesHint": "Select every sub-service you can fulfil. Organizers filter on these.",
+      "subcategoriesLabel": "Item categories offered",
+      "subcategoriesHint": "Select every item category you can fulfil. Organizers filter on these.",
       "personCompany": {
         "label": "Who are you signing up as?",
         "person": {
@@ -561,15 +561,15 @@
         "baseCity": "Your primary city of operation.",
         "serviceArea": "Other cities you serve. Pick up to 15.",
         "languages": "Languages you can communicate with customers in.",
-        "categories": "Pick every service you offer. Search by name, add one at a time.",
+        "categories": "Pick every item category you offer. Search by name, add one at a time.",
         "segments": "Pick the event types you serve. You can pick more than one.",
         "logo": "Your company logo. Image file, max 1 MB.",
         "iban": "IBAN certificate from your bank. PDF, max 10 MB.",
         "companyProfile": "Company profile brochure (optional). PDF, max 10 MB."
       },
       "placeholder": {
-        "businessName": "e.g. Rayat Catering",
-        "bio": "We are a family-run catering company based in Riyadh, serving weddings and corporate events since 2018."
+        "businessName": "e.g. Rayat Hospitality",
+        "bio": "We are a family-run hospitality company based in Riyadh, serving weddings and corporate events since 2018."
       },
       "baseCityPlaceholder": "Pick your base city",
       "serviceAreaAdd": "Add a city you work in",
@@ -577,8 +577,8 @@
       "serviceAreaMaxReached": "Maximum of 15 cities reached.",
       "serviceAreaTooMany": "Select at most 15 cities.",
       "serviceAreaRemove": "Remove {city}",
-      "categoriesLabel": "Services you offer",
-      "categoryPickerPlaceholder": "Search a service to add",
+      "categoriesLabel": "Item categories you offer",
+      "categoryPickerPlaceholder": "Search an item category to add",
       "categoryRemove": "Remove {name}",
       "segmentsLabel": "Event types you work with",
       "step2RequireCategory": "Add at least one service.",
@@ -797,14 +797,14 @@
         "duration_multiplier": "Duration multiplier"
       },
       "subcategoryPicker": {
-        "placeholder": "Pick a subcategory",
+        "placeholder": "Pick an item category",
         "searchPlaceholder": "Search categories…",
         "empty": "No matches",
         "uncategorized": "Other"
       },
       "packageForm": {
         "nameLabel": "Package name",
-        "subcategoryLabel": "Subcategory",
+        "subcategoryLabel": "Item category",
         "descriptionLabel": "Description",
         "basePriceLabel": "Base price (SAR)",
         "basePriceHint": "Stored as integer halalas; rounding happens server-side.",
@@ -1191,7 +1191,7 @@
       "revisionNumber": "v{version}",
       "revisionSentAt": "Sent {sentAt}",
       "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
-      "noPackagesTitle": "No active packages in this subcategory",
+      "noPackagesTitle": "No active packages in this item category",
       "noPackagesBody": "You can still submit a free-form quote below — the rule engine needs at least one package to compose a draft.",
       "technicalProposal": {
         "label": "Technical proposal (optional)",
@@ -2575,8 +2575,8 @@
       "bunood": {
         "tableTitle": "Line items",
         "tableDescription": "Each line item is auto-published to the marketplace and reaches suppliers in that category.",
-        "subcategoryLabel": "Category",
-        "subcategoryPlaceholder": "Choose a category",
+        "subcategoryLabel": "Item category",
+        "subcategoryPlaceholder": "Choose an item category",
         "qtyLabel": "Qty",
         "notesLabel": "Notes (optional)",
         "notesPlaceholder": "Any extra detail that helps suppliers prepare their quote",
@@ -2627,7 +2627,7 @@
       "table": {
         "event": "Event",
         "category": "Category",
-        "subcategory": "Subcategory",
+        "subcategory": "Item category",
         "status": "Status",
         "invites": "Invites",
         "sentAt": "Sent",
@@ -2686,8 +2686,8 @@
       "pickEventNone": "Select an event",
       "pickCategory": "Category",
       "pickCategoryNone": "Select a category",
-      "pickSubcategory": "Subcategory",
-      "pickSubcategoryNone": "Select a subcategory",
+      "pickSubcategory": "Item category",
+      "pickSubcategoryNone": "Select an item category",
       "noEventsYet": "You have no events yet.",
       "createEventFirst": "Create one",
       "createEventFirstTail": "first.",
@@ -2716,7 +2716,7 @@
       "next": "Next",
       "matching": "Matching…",
       "shortlistSizeLabel": "Next ({size}/{max})",
-      "noMatches": "No matching suppliers yet. Try widening the date range or picking a different subcategory.",
+      "noMatches": "No matching suppliers yet. Try widening the date range or picking a different item category.",
       "matchingOffline": "Auto-match is unavailable right now. You can still build the shortlist manually below.",
       "shortlistEmpty": "Add at least one supplier to your shortlist before sending.",
       "removeSupplier": "Remove",
@@ -2812,6 +2812,7 @@
         "shortlistTooLarge": "Too many suppliers on the shortlist (max 20).",
         "eventNotFound": "Event not found or not accessible.",
         "invalidInviteSource": "Invalid invite source in the shortlist.",
+        "invalidCategory": "Choose an active item category and try again.",
         "rfqCreateNoId": "RFQ creation returned no id. Please try again.",
         "unknown": "We couldn't send the RFQ. Please try again."
       }
@@ -2838,8 +2839,8 @@
       "score": "Score {score}",
       "remove": "Remove",
       "removeLabel": "Remove {name}",
-      "outOfSubcategoryShort": "Outside this subcategory",
-      "outOfSubcategoryLong": "Outside this subcategory — supplier may decline",
+      "outOfSubcategoryShort": "Outside this item category",
+      "outOfSubcategoryLong": "Outside this item category — supplier may decline",
       "reasons": {
         "verified": "Verified supplier",
         "sameCity": "Based in {city}",
@@ -3072,10 +3073,10 @@
   "public": {
     "categories": {
       "title": "Browse categories",
-      "subtitle": "Every supplier category on Sevent. Pick a category to explore subcategories and verified suppliers.",
+      "subtitle": "Every supplier category on Sevent. Pick a category to explore item categories and verified suppliers.",
       "empty": "No categories available yet.",
       "emptyDescription": "Check back soon — we are onboarding new suppliers every week.",
-      "viewSubcategory": "View subcategory"
+      "viewSubcategory": "View item categories"
     },
     "search": {
       "cityFilterLabel": "City",

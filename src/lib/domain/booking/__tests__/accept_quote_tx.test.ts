@@ -47,7 +47,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         fullName: `Org ${suf}`,
       });
 
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
       const event = await createEvent(admin, { organizer_id: organizer.id });
       const rfq = await createRfq(admin, {
         event_id: event.id,
@@ -186,7 +186,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         role: "organizer",
         fullName: `Org ${suf}`,
       });
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
       const event = await createEvent(admin, { organizer_id: organizer.id });
       const rfq = await createRfq(admin, {
         event_id: event.id,
@@ -260,7 +260,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         role: "organizer",
         fullName: `Org ${suf}`,
       });
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
       const event = await createEvent(admin, { organizer_id: organizer.id });
       const rfq = await createRfq(admin, {
         event_id: event.id,
@@ -326,7 +326,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         role: "organizer",
         fullName: `Other ${suf}`,
       });
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
       const event = await createEvent(admin, { organizer_id: ownerOrg.id });
       const rfq = await createRfq(admin, {
         event_id: event.id,
@@ -373,7 +373,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
           role: "organizer",
           fullName: `Org ${suf}`,
         });
-        const cat = await ensureCategory(admin, "catering-plated");
+        const cat = await ensureCategory(admin, "food_and_beverages");
         const event = await createEvent(admin, { organizer_id: organizer.id });
         const rfq = await createRfq(admin, {
           event_id: event.id,

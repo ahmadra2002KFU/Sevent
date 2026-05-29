@@ -251,50 +251,50 @@
     "categories": {
       "eyebrow": "الفئات",
       "heading": "كل مورد تحتاجه، كلهم موثّقون.",
-      "subtitle": "من القاعات والضيافة إلى التصوير والطاقم — كل مورد معتمد قبل النشر على سِيفِنت.",
+      "subtitle": "من إدارة الفعاليات والإنتاج الإعلامي إلى الضيافة والقوى العاملة — كل مورد معتمد قبل النشر على سِيفِنت.",
       "browseAll": "تصفّح جميع الفئات",
       "supplierCount": "{count, plural, zero {لا موردين بعد} one {# مورد موثّق} two {# موردان موثّقان} few {# موردين موثّقين} many {# موردًا موثّقًا} other {# مورد موثّق}}",
       "viewLabel": "استكشف",
       "suffix": "مورد موثّق",
       "fallback": [
         {
-          "slug": "venues",
-          "name": "قاعات وفنادق",
+          "slug": "event_management",
+          "name": "إدارة الفعاليات",
           "count": 32
         },
         {
-          "slug": "catering",
-          "name": "ضيافة",
+          "slug": "media_production",
+          "name": "الإنتاج الإعلامي",
           "count": 47
         },
         {
-          "slug": "photography",
-          "name": "تصوير",
+          "slug": "marketing_pr",
+          "name": "التسويق والعلاقات العامة",
           "count": 28
         },
         {
-          "slug": "decor",
-          "name": "ديكور وتنسيق زهور",
+          "slug": "avl",
+          "name": "الصوتيات والمرئيات والإضاءة",
           "count": 19
         },
         {
-          "slug": "entertainment",
-          "name": "ترفيه",
+          "slug": "furniture",
+          "name": "الأثاث",
           "count": 22
         },
         {
-          "slug": "av",
-          "name": "صوتيات وإضاءة",
+          "slug": "logistics",
+          "name": "الخدمات اللوجستية",
           "count": 14
         },
         {
-          "slug": "transportation",
-          "name": "نقل",
+          "slug": "site_services",
+          "name": "خدمات الموقع",
           "count": 11
         },
         {
-          "slug": "staffing",
-          "name": "طاقم عمل",
+          "slug": "hospitality",
+          "name": "الضيافة",
           "count": 16
         }
       ]
@@ -539,8 +539,8 @@
       "capacityHint": "أقصى عدد ضيوف يمكنك خدمته في فعالية واحدة.",
       "concurrentLimitLabel": "فعاليات متزامنة",
       "concurrentLimitHint": "كم فعالية يمكن أن تتداخل في نفس اليوم.",
-      "subcategoriesLabel": "الخدمات المقدمة",
-      "subcategoriesHint": "اختر كل الخدمات التي تستطيع تقديمها. يستخدمها المنظمون للفلترة.",
+      "subcategoriesLabel": "فئات البنود المقدمة",
+      "subcategoriesHint": "اختر كل فئات البنود التي تستطيع تقديمها. يستخدمها المنظمون للفلترة.",
       "personCompany": {
         "label": "من أنت؟",
         "person": {
@@ -561,15 +561,15 @@
         "baseCity": "المدينة الأساسية التي تنطلق منها أعمالك.",
         "serviceArea": "المدن الأخرى التي يمكنك تقديم خدماتك فيها. اختر حتى 15 مدينة.",
         "languages": "اللغات التي تستطيع التحدث بها مع العملاء.",
-        "categories": "اختر كل الخدمات التي تقدمها. ابحث بالاسم وأضف واحدة تلو الأخرى.",
+        "categories": "اختر كل فئات البنود التي تقدمها. ابحث بالاسم وأضف واحدة تلو الأخرى.",
         "segments": "اختر نوع الفعاليات التي تخدمها. يمكنك اختيار أكثر من واحدة.",
         "logo": "صورة شعار شركتك. بصيغة صورة، الحد الأقصى 1 ميجابايت.",
         "iban": "شهادة الآيبان من البنك. ملف PDF، الحد الأقصى 10 ميجابايت.",
         "companyProfile": "ملف تعريفي عن شركتك (اختياري). ملف PDF، الحد الأقصى 10 ميجابايت."
       },
       "placeholder": {
-        "businessName": "مثال: رايات للكاترينج",
-        "bio": "نحن شركة كاترينج عائلية مقرها الرياض، نخدم حفلات الزفاف وفعاليات الشركات منذ 2018."
+        "businessName": "مثال: رايات للضيافة",
+        "bio": "نحن شركة ضيافة عائلية مقرها الرياض، نخدم حفلات الزفاف وفعاليات الشركات منذ 2018."
       },
       "baseCityPlaceholder": "اختر مدينتك الأساسية",
       "serviceAreaAdd": "أضف مدينة تعمل فيها",
@@ -577,8 +577,8 @@
       "serviceAreaMaxReached": "تم الوصول إلى الحد الأقصى 15 مدينة.",
       "serviceAreaTooMany": "اختر 15 مدينة كحد أقصى.",
       "serviceAreaRemove": "إزالة {city}",
-      "categoriesLabel": "الخدمات التي تقدمها",
-      "categoryPickerPlaceholder": "ابحث عن خدمة لإضافتها",
+      "categoriesLabel": "فئات البنود التي تقدمها",
+      "categoryPickerPlaceholder": "ابحث عن فئة بند لإضافتها",
       "categoryRemove": "إزالة {name}",
       "segmentsLabel": "أنواع الفعاليات التي تخدمها",
       "step2RequireCategory": "أضف خدمة واحدة على الأقل.",
@@ -797,14 +797,14 @@
         "duration_multiplier": "معامل المدة"
       },
       "subcategoryPicker": {
-        "placeholder": "اختر تصنيفًا فرعيًا",
+        "placeholder": "اختر فئة بند",
         "searchPlaceholder": "ابحث عن تصنيف…",
         "empty": "لا توجد نتائج",
         "uncategorized": "أخرى"
       },
       "packageForm": {
         "nameLabel": "اسم الباقة",
-        "subcategoryLabel": "التصنيف الفرعي",
+        "subcategoryLabel": "فئة البند",
         "descriptionLabel": "الوصف",
         "basePriceLabel": "السعر الأساسي (ريال)",
         "basePriceHint": "يُحفظ بوحدة الهللة كعدد صحيح.",
@@ -1191,7 +1191,7 @@
       "revisionNumber": "نسخة {version}",
       "revisionSentAt": "أُرسلت {sentAt}",
       "sendBlockedTerminal": "هذا العرض صار {status}؛ ما يمكن تعديله بعد.",
-      "noPackagesTitle": "لا توجد باقات نشطة في هذه الفئة الفرعية",
+      "noPackagesTitle": "لا توجد باقات نشطة في فئة البند هذه",
       "noPackagesBody": "لا يزال بإمكانك تقديم عرض حر أدناه — يحتاج محرك القواعد إلى باقة واحدة على الأقل لإنشاء مسودة.",
       "technicalProposal": {
         "label": "الملف الفني (اختياري)",
@@ -2574,9 +2574,9 @@
       },
       "bunood": {
         "tableTitle": "بنود الطلب",
-        "tableDescription": "لكل بند ستُرسل دعوة عرض سعر للموردين في هذا التخصص. تظهر مباشرة في السوق.",
-        "subcategoryLabel": "التخصص",
-        "subcategoryPlaceholder": "اختر التخصص",
+        "tableDescription": "لكل بند ستُرسل دعوة عرض سعر للموردين في فئة البند. تظهر مباشرة في السوق.",
+        "subcategoryLabel": "فئة البند",
+        "subcategoryPlaceholder": "اختر فئة البند",
         "qtyLabel": "الكمية",
         "notesLabel": "ملاحظات (اختياري)",
         "notesPlaceholder": "أي تفاصيل إضافية تساعد المورد على تجهيز عرضه",
@@ -2627,7 +2627,7 @@
       "table": {
         "event": "الفعالية",
         "category": "الفئة",
-        "subcategory": "الفئة الفرعية",
+        "subcategory": "فئة البند",
         "status": "الحالة",
         "invites": "الدعوات",
         "sentAt": "أُرسل في",
@@ -2686,8 +2686,8 @@
       "pickEventNone": "اختر فعالية",
       "pickCategory": "الفئة",
       "pickCategoryNone": "اختر فئة",
-      "pickSubcategory": "الفئة الفرعية",
-      "pickSubcategoryNone": "اختر فئة فرعية",
+      "pickSubcategory": "فئة البند",
+      "pickSubcategoryNone": "اختر فئة بند",
       "noEventsYet": "لا توجد فعاليات بعد.",
       "createEventFirst": "أنشئ فعالية",
       "createEventFirstTail": "أولاً.",
@@ -2719,7 +2719,7 @@
       "next": "التالي",
       "matching": "جارٍ المطابقة...",
       "shortlistSizeLabel": "التالي ({size}/{max})",
-      "noMatches": "لا يوجد موردون مطابقون حالياً. جرّب توسيع نطاق التاريخ أو اختيار فئة فرعية مختلفة.",
+      "noMatches": "لا يوجد موردون مطابقون حالياً. جرّب توسيع نطاق التاريخ أو اختيار فئة بند مختلفة.",
       "matchingOffline": "المطابقة التلقائية غير متاحة حالياً. يمكنك بناء القائمة المختصرة يدوياً أدناه.",
       "shortlistEmpty": "أضف مورداً واحداً على الأقل إلى قائمتك قبل الإرسال.",
       "removeSupplier": "إزالة",
@@ -2812,6 +2812,7 @@
         "shortlistTooLarge": "عدد المورّدين في القائمة المختصرة كبير جداً (الحد الأقصى 20).",
         "eventNotFound": "لم يُعثر على الفعالية أو لا يمكن الوصول إليها.",
         "invalidInviteSource": "مصدر دعوة غير صالح في القائمة المختصرة.",
+        "invalidCategory": "اختر فئة بند نشطة ثم حاول مرة أخرى.",
         "rfqCreateNoId": "لم يُرجِع إنشاء طلب السعر معرّفاً. حاول مرة أخرى.",
         "unknown": "تعذّر إرسال طلب السعر. حاول مرة أخرى."
       }
@@ -2838,8 +2839,8 @@
       "score": "النتيجة {score}",
       "remove": "إزالة",
       "removeLabel": "إزالة {name}",
-      "outOfSubcategoryShort": "خارج هذه الفئة الفرعية",
-      "outOfSubcategoryLong": "خارج هذه الفئة الفرعية — قد يرفض المورد",
+      "outOfSubcategoryShort": "خارج فئة البند هذه",
+      "outOfSubcategoryLong": "خارج فئة البند هذه — قد يرفض المورد",
       "reasons": {
         "verified": "مورد موثّق",
         "sameCity": "مقرّه في {city}",
@@ -3072,10 +3073,10 @@
   "public": {
     "categories": {
       "title": "تصفّح الفئات",
-      "subtitle": "كل فئات الموردين على سِيفِنت. اختر فئة لاستكشاف التصنيفات الفرعية والموردين الموثّقين.",
+      "subtitle": "كل فئات الموردين على سِيفِنت. اختر فئة لاستكشاف فئات البنود والموردين الموثّقين.",
       "empty": "لا توجد فئات متاحة بعد.",
       "emptyDescription": "عُد قريبًا — نضيف موردين جددًا كل أسبوع.",
-      "viewSubcategory": "عرض التصنيف الفرعي"
+      "viewSubcategory": "عرض فئات البنود"
     },
     "search": {
       "cityFilterLabel": "المدينة",

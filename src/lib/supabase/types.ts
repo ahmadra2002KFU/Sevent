@@ -87,6 +87,13 @@ export type CategoryRow = {
   name_en: string;
   name_ar: string | null;
   sort_order: number;
+  description_en: string | null;
+  description_ar: string | null;
+  source_name_en: string | null;
+  source_name_ar: string | null;
+  taxonomy_version: string;
+  is_active: boolean;
+  replaced_by_id: string | null;
 };
 
 export type SupplierDocRow = {

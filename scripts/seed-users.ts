@@ -2,7 +2,7 @@
  * Sevent demo seed — idempotent-by-email service-role user fixture.
  *
  * Creates: 1 admin, 2 organizers, and 25 suppliers (12 Riyadh + 13 Jeddah)
- * spread across the 2026-04-21 taxonomy. Every supplier gets:
+ * spread across the boss-CSV taxonomy. Every supplier gets:
  *   - profile + suppliers row (with accent_color from ACCENT_PALETTE
  *     and 1-2 works_with_segments),
  *   - 2 packages (halalas via money.ts),
@@ -14,34 +14,29 @@
  * First 8 suppliers: approved + is_published=true. Remainder stays pending.
  *
  * ---------------------------------------------------------------------------
- * 2026-04-21 slug migration — legacy fixture slug → new-taxonomy slug.
+ * Boss-CSV slug migration — legacy fixture slug → active item-category slug.
  * ---------------------------------------------------------------------------
- * The old Sprint-2 taxonomy (venue-*, photo-*, decor-*, av-*, dj, performer)
- * was wiped in migration 20260421000000_taxonomy_profile_polish.sql. We
- * re-map each of the 25 supplier fixtures to the closest sub-item in the new
- * 12-parent taxonomy (src/lib/domain/taxonomy.ts). The mapping preserves the
- * "feel" of each supplier so demo flows still read naturally:
+ * Re-map each of the 25 supplier fixtures to the closest active item category
+ * in `src/lib/domain/taxonomy.ts`. The mapping preserves the feel of each
+ * supplier so demo flows still read naturally:
  *
- *   venue-ballroom       → cm_certified_event_managers (re-purpose as a full
- *                          coordination/venue manager; new taxonomy has no
- *                          direct venue slug).
- *   venue-outdoor        → ts_tents / ts_domes (outdoor = tented structure).
- *   venue-conference     → cm_certified_event_managers (conference
- *                          coordinator).
- *   catering-buffet      → cat_buffet
- *   catering-plated      → cat_vip_services
- *   catering-coffee      → cat_buffet  (no coffee-specific slug in new tax)
- *   photo-wedding        → pv_photographers
- *   photo-corporate      → pv_photographers
- *   video-cinematic      → pv_film
- *   photo-drone          → pv_photographers
- *   decor-kosha          → fd_decoration
- *   decor-florals        → fd_flower_arrangement
- *   decor-lighting       → sl_led_screens
- *   dj                   → sl_dj
- *   performer            → ea_folkloric_groups / ea_theatrical_performances
- *   av-sound             → sl_speakers
- *   av-staging           → ts_temporary_hangars
+ *   venue-ballroom       → project_setup_requirements
+ *   venue-outdoor        → tents
+ *   venue-conference     → project_setup_requirements
+ *   catering-buffet      → food_and_beverages
+ *   catering-plated      → food_and_beverages
+ *   catering-coffee      → food_and_beverages  (no coffee-specific slug in new tax)
+ *   photo-wedding        → media_documentation_and_reporting
+ *   photo-corporate      → media_documentation_and_reporting
+ *   video-cinematic      → tv_programs_and_promotional_videos_production
+ *   photo-drone          → media_documentation_and_reporting
+ *   decor-kosha          → event_furniture_and_accessories
+ *   decor-florals        → floral_arrangements
+ *   decor-lighting       → video_services
+ *   dj                   → live_performances
+ *   performer            → live_performances
+ *   av-sound             → sound_services
+ *   av-staging           → scaffolding_and_steel_structures
  *
  * Cities: "Riyadh"/"Jeddah" replaced with slugs "riyadh"/"jeddah".
  * ---------------------------------------------------------------------------
@@ -157,21 +152,17 @@ async function uploadBytes(
 // New-taxonomy child slugs used by the seed. Narrowed to a union so a typo
 // here is a compile-time error rather than a runtime "category missing".
 type CategorySlug =
-  | "cat_buffet"
-  | "cat_vip_services"
-  | "pv_photographers"
-  | "pv_film"
-  | "fd_flower_arrangement"
-  | "fd_decoration"
-  | "sl_dj"
-  | "sl_speakers"
-  | "sl_led_screens"
-  | "ts_tents"
-  | "ts_domes"
-  | "ts_temporary_hangars"
-  | "ea_folkloric_groups"
-  | "ea_theatrical_performances"
-  | "cm_certified_event_managers";
+  | "food_and_beverages"
+  | "media_documentation_and_reporting"
+  | "tv_programs_and_promotional_videos_production"
+  | "floral_arrangements"
+  | "event_furniture_and_accessories"
+  | "live_performances"
+  | "sound_services"
+  | "video_services"
+  | "tents"
+  | "scaffolding_and_steel_structures"
+  | "project_setup_requirements";
 
 type CitySlug = "riyadh" | "jeddah";
 
@@ -212,58 +203,58 @@ const SEG_COORDINATION: MarketSegmentSlug[] = [
 
 const SUPPLIERS: SupplierSpec[] = [
   // Riyadh (12)
-  // was venue-ballroom → cm_certified_event_managers (full-service coordinator)
-  { business_name: "Riyadh Royal Ballroom", legal_type: "company", base_city: "riyadh", subcategory_slug: "cm_certified_event_managers", languages: ["ar","en"], capacity: 600, concurrent_event_limit: 1, cr_number: "1010111111", bio: "North Riyadh full-service event coordinator with in-house catering partnerships.", package_prices_sar: [35000, 55000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
-  // was venue-outdoor → ts_tents
-  { business_name: "Najd Outdoor Gardens", legal_type: "company", base_city: "riyadh", subcategory_slug: "ts_tents", languages: ["ar","en"], capacity: 400, concurrent_event_limit: 1, cr_number: "1010222222", bio: "Outdoor tented structures for corporate and private events.", package_prices_sar: [28000, 42000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
-  // was venue-conference → cm_certified_event_managers
-  { business_name: "KAFD Conference Suites", legal_type: "company", base_city: "riyadh", subcategory_slug: "cm_certified_event_managers", languages: ["ar","en"], capacity: 250, concurrent_event_limit: 1, cr_number: "1010333333", bio: "Premium conference coordination in KAFD with full AV partners.", package_prices_sar: [18000, 26000], package_units: ["day","day"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
-  // was catering-buffet → cat_buffet
-  { business_name: "Sufra Catering Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "cat_buffet", languages: ["ar","en"], capacity: 1000, concurrent_event_limit: 1, cr_number: "1010444444", bio: "Arabic and international buffet catering.", package_prices_sar: [250, 380], package_units: ["person","person"], min_qty: [50,100], works_with_segments: SEG_CATERING },
-  // was catering-plated → cat_vip_services
-  { business_name: "Plated Nights Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "cat_vip_services", languages: ["en","ar"], capacity: 300, concurrent_event_limit: 1, cr_number: "1010555555", bio: "Fine-dining plated VIP service for weddings and gala dinners.", package_prices_sar: [420, 620], package_units: ["person","person"], min_qty: [30,60], works_with_segments: SEG_CATERING },
-  // was catering-coffee → cat_buffet (no coffee-specific slug)
-  { business_name: "Qahwat Al Najd", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "cat_buffet", languages: ["ar"], capacity: 500, concurrent_event_limit: 1, national_id: "1098765431", bio: "Traditional Saudi coffee + dessert buffet service.", package_prices_sar: [3200, 5500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_CATERING },
-  // was photo-wedding → pv_photographers
-  { business_name: "Lens Riyadh Studios", legal_type: "company", base_city: "riyadh", subcategory_slug: "pv_photographers", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010666666", bio: "Boutique wedding photography.", package_prices_sar: [8500, 14000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
-  // was photo-corporate → pv_photographers
-  { business_name: "Capital Corporate Photo", legal_type: "company", base_city: "riyadh", subcategory_slug: "pv_photographers", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010777777", bio: "Corporate event photography.", package_prices_sar: [6500, 11500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
-  // was decor-kosha → fd_decoration
-  { business_name: "Kosha Kreators Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "fd_decoration", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010888888", bio: "Kosha design and stage-build decoration for weddings.", package_prices_sar: [22000, 34000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
-  // was decor-florals → fd_flower_arrangement
-  { business_name: "Florals of Najd", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "fd_flower_arrangement", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, national_id: "1234567890", bio: "Floral designers specializing in modern Arabian arrangements.", package_prices_sar: [4500, 9500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
-  // was dj → sl_dj
-  { business_name: "Beat Lab DJ Riyadh", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "sl_dj", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, national_id: "1122334455", bio: "Premium DJ service with lighting rig included.", package_prices_sar: [4200, 7800], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
-  // was av-sound → sl_speakers
-  { business_name: "StageWorks Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "sl_speakers", languages: ["en","ar"], capacity: 2000, concurrent_event_limit: 1, cr_number: "1010999999", bio: "Sound reinforcement, mics, and mixing.", package_prices_sar: [9500, 18000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
+  // was venue-ballroom → project_setup_requirements (full-service coordinator)
+  { business_name: "Riyadh Royal Ballroom", legal_type: "company", base_city: "riyadh", subcategory_slug: "project_setup_requirements", languages: ["ar","en"], capacity: 600, concurrent_event_limit: 1, cr_number: "1010111111", bio: "North Riyadh full-service event coordinator with in-house catering partnerships.", package_prices_sar: [35000, 55000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
+  // was venue-outdoor → tents
+  { business_name: "Najd Outdoor Gardens", legal_type: "company", base_city: "riyadh", subcategory_slug: "tents", languages: ["ar","en"], capacity: 400, concurrent_event_limit: 1, cr_number: "1010222222", bio: "Outdoor tented structures for corporate and private events.", package_prices_sar: [28000, 42000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
+  // was venue-conference → project_setup_requirements
+  { business_name: "KAFD Conference Suites", legal_type: "company", base_city: "riyadh", subcategory_slug: "project_setup_requirements", languages: ["ar","en"], capacity: 250, concurrent_event_limit: 1, cr_number: "1010333333", bio: "Premium conference coordination in KAFD with full AV partners.", package_prices_sar: [18000, 26000], package_units: ["day","day"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
+  // was catering-buffet → food_and_beverages
+  { business_name: "Sufra Catering Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "food_and_beverages", languages: ["ar","en"], capacity: 1000, concurrent_event_limit: 1, cr_number: "1010444444", bio: "Arabic and international buffet catering.", package_prices_sar: [250, 380], package_units: ["person","person"], min_qty: [50,100], works_with_segments: SEG_CATERING },
+  // was catering-plated → food_and_beverages
+  { business_name: "Plated Nights Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "food_and_beverages", languages: ["en","ar"], capacity: 300, concurrent_event_limit: 1, cr_number: "1010555555", bio: "Fine-dining plated VIP service for weddings and gala dinners.", package_prices_sar: [420, 620], package_units: ["person","person"], min_qty: [30,60], works_with_segments: SEG_CATERING },
+  // was catering-coffee → food_and_beverages (no coffee-specific slug)
+  { business_name: "Qahwat Al Najd", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "food_and_beverages", languages: ["ar"], capacity: 500, concurrent_event_limit: 1, national_id: "1098765431", bio: "Traditional Saudi coffee + dessert buffet service.", package_prices_sar: [3200, 5500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_CATERING },
+  // was photo-wedding → media_documentation_and_reporting
+  { business_name: "Lens Riyadh Studios", legal_type: "company", base_city: "riyadh", subcategory_slug: "media_documentation_and_reporting", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010666666", bio: "Boutique wedding photography.", package_prices_sar: [8500, 14000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
+  // was photo-corporate → media_documentation_and_reporting
+  { business_name: "Capital Corporate Photo", legal_type: "company", base_city: "riyadh", subcategory_slug: "media_documentation_and_reporting", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010777777", bio: "Corporate event photography.", package_prices_sar: [6500, 11500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
+  // was decor-kosha → event_furniture_and_accessories
+  { business_name: "Kosha Kreators Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "event_furniture_and_accessories", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "1010888888", bio: "Kosha design and stage-build decoration for weddings.", package_prices_sar: [22000, 34000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
+  // was decor-florals → floral_arrangements
+  { business_name: "Florals of Najd", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "floral_arrangements", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, national_id: "1234567890", bio: "Floral designers specializing in modern Arabian arrangements.", package_prices_sar: [4500, 9500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
+  // was dj → live_performances
+  { business_name: "Beat Lab DJ Riyadh", legal_type: "freelancer", base_city: "riyadh", subcategory_slug: "live_performances", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, national_id: "1122334455", bio: "Premium DJ service with lighting rig included.", package_prices_sar: [4200, 7800], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
+  // was av-sound → sound_services
+  { business_name: "StageWorks Riyadh", legal_type: "company", base_city: "riyadh", subcategory_slug: "sound_services", languages: ["en","ar"], capacity: 2000, concurrent_event_limit: 1, cr_number: "1010999999", bio: "Sound reinforcement, mics, and mixing.", package_prices_sar: [9500, 18000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
 
   // Jeddah (13)
-  // was venue-outdoor → ts_domes
-  { business_name: "Jeddah Corniche Pavilion", legal_type: "company", base_city: "jeddah", subcategory_slug: "ts_domes", languages: ["ar","en"], capacity: 500, concurrent_event_limit: 1, cr_number: "4030111111", bio: "Seaside geodesic dome pavilions on the Jeddah Corniche.", package_prices_sar: [32000, 48000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
-  // was venue-ballroom → cm_certified_event_managers
-  { business_name: "Al Hamra Ballroom", legal_type: "company", base_city: "jeddah", subcategory_slug: "cm_certified_event_managers", languages: ["ar","en"], capacity: 800, concurrent_event_limit: 1, cr_number: "4030222222", bio: "Al Hamra full-service event coordination with parking for 300.", package_prices_sar: [38000, 62000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
-  // was venue-conference → cm_certified_event_managers
-  { business_name: "Red Sea Conference Centre", legal_type: "company", base_city: "jeddah", subcategory_slug: "cm_certified_event_managers", languages: ["ar","en"], capacity: 300, concurrent_event_limit: 1, cr_number: "4030333333", bio: "Waterfront conference management with breakout coordination.", package_prices_sar: [16000, 24000], package_units: ["day","day"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
-  // was catering-buffet → cat_buffet
-  { business_name: "Hijazi Feast Catering", legal_type: "company", base_city: "jeddah", subcategory_slug: "cat_buffet", languages: ["ar","en"], capacity: 1200, concurrent_event_limit: 1, cr_number: "4030444444", bio: "Authentic Hijazi buffet with live stations.", package_prices_sar: [240, 360], package_units: ["person","person"], min_qty: [60,120], works_with_segments: SEG_CATERING },
-  // was catering-plated → cat_vip_services
-  { business_name: "Tihama Plated Dining", legal_type: "company", base_city: "jeddah", subcategory_slug: "cat_vip_services", languages: ["en","ar"], capacity: 240, concurrent_event_limit: 1, cr_number: "4030555555", bio: "Modern Saudi plated VIP dining experiences.", package_prices_sar: [410, 580], package_units: ["person","person"], min_qty: [20,50], works_with_segments: SEG_CATERING },
-  // was catering-coffee → cat_buffet
-  { business_name: "Dessert Trolley Jeddah", legal_type: "freelancer", base_city: "jeddah", subcategory_slug: "cat_buffet", languages: ["ar"], capacity: 400, concurrent_event_limit: 1, national_id: "1098765432", bio: "Coffee, dates, and dessert buffet service.", package_prices_sar: [2800, 4800], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_CATERING },
-  // was photo-wedding → pv_photographers
-  { business_name: "Red Sea Lens", legal_type: "company", base_city: "jeddah", subcategory_slug: "pv_photographers", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030666666", bio: "Award-winning wedding photography.", package_prices_sar: [9500, 16000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
-  // was video-cinematic → pv_film
-  { business_name: "Coast Corporate Video", legal_type: "company", base_city: "jeddah", subcategory_slug: "pv_film", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030777777", bio: "Cinematic event films and highlight reels.", package_prices_sar: [12000, 22000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
-  // was photo-drone → pv_photographers
-  { business_name: "SkyLens Drone", legal_type: "freelancer", base_city: "jeddah", subcategory_slug: "pv_photographers", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, national_id: "1234567899", bio: "Licensed drone pilot for aerial event photography.", package_prices_sar: [3800, 6500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
-  // was decor-florals → fd_flower_arrangement
-  { business_name: "Petal Studio Jeddah", legal_type: "company", base_city: "jeddah", subcategory_slug: "fd_flower_arrangement", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030888888", bio: "Floral design studio with same-day delivery.", package_prices_sar: [5200, 10500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
-  // was decor-lighting → sl_led_screens
-  { business_name: "Glow Event Lighting", legal_type: "company", base_city: "jeddah", subcategory_slug: "sl_led_screens", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030999999", bio: "Architectural, stage lighting, and LED wall rental.", package_prices_sar: [8500, 15000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
-  // was performer → ea_folkloric_groups
-  { business_name: "Hijaz Live Performers", legal_type: "company", base_city: "jeddah", subcategory_slug: "ea_folkloric_groups", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4031111111", bio: "Live oud, percussion, and folkloric vocal performers.", package_prices_sar: [7200, 13500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_ENTERTAINMENT },
-  // was av-staging → ts_temporary_hangars
-  { business_name: "Coastline Staging", legal_type: "company", base_city: "jeddah", subcategory_slug: "ts_temporary_hangars", languages: ["en","ar"], capacity: 1500, concurrent_event_limit: 1, cr_number: "4032222222", bio: "Modular staging hangars, trussing, and LED walls.", package_prices_sar: [14000, 26000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
+  // was venue-outdoor → tents
+  { business_name: "Jeddah Corniche Pavilion", legal_type: "company", base_city: "jeddah", subcategory_slug: "tents", languages: ["ar","en"], capacity: 500, concurrent_event_limit: 1, cr_number: "4030111111", bio: "Seaside geodesic dome pavilions on the Jeddah Corniche.", package_prices_sar: [32000, 48000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
+  // was venue-ballroom → project_setup_requirements
+  { business_name: "Al Hamra Ballroom", legal_type: "company", base_city: "jeddah", subcategory_slug: "project_setup_requirements", languages: ["ar","en"], capacity: 800, concurrent_event_limit: 1, cr_number: "4030222222", bio: "Al Hamra full-service event coordination with parking for 300.", package_prices_sar: [38000, 62000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
+  // was venue-conference → project_setup_requirements
+  { business_name: "Red Sea Conference Centre", legal_type: "company", base_city: "jeddah", subcategory_slug: "project_setup_requirements", languages: ["ar","en"], capacity: 300, concurrent_event_limit: 1, cr_number: "4030333333", bio: "Waterfront conference management with breakout coordination.", package_prices_sar: [16000, 24000], package_units: ["day","day"], min_qty: [1,1], works_with_segments: SEG_COORDINATION },
+  // was catering-buffet → food_and_beverages
+  { business_name: "Hijazi Feast Catering", legal_type: "company", base_city: "jeddah", subcategory_slug: "food_and_beverages", languages: ["ar","en"], capacity: 1200, concurrent_event_limit: 1, cr_number: "4030444444", bio: "Authentic Hijazi buffet with live stations.", package_prices_sar: [240, 360], package_units: ["person","person"], min_qty: [60,120], works_with_segments: SEG_CATERING },
+  // was catering-plated → food_and_beverages
+  { business_name: "Tihama Plated Dining", legal_type: "company", base_city: "jeddah", subcategory_slug: "food_and_beverages", languages: ["en","ar"], capacity: 240, concurrent_event_limit: 1, cr_number: "4030555555", bio: "Modern Saudi plated VIP dining experiences.", package_prices_sar: [410, 580], package_units: ["person","person"], min_qty: [20,50], works_with_segments: SEG_CATERING },
+  // was catering-coffee → food_and_beverages
+  { business_name: "Dessert Trolley Jeddah", legal_type: "freelancer", base_city: "jeddah", subcategory_slug: "food_and_beverages", languages: ["ar"], capacity: 400, concurrent_event_limit: 1, national_id: "1098765432", bio: "Coffee, dates, and dessert buffet service.", package_prices_sar: [2800, 4800], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_CATERING },
+  // was photo-wedding → media_documentation_and_reporting
+  { business_name: "Red Sea Lens", legal_type: "company", base_city: "jeddah", subcategory_slug: "media_documentation_and_reporting", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030666666", bio: "Award-winning wedding photography.", package_prices_sar: [9500, 16000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
+  // was video-cinematic → tv_programs_and_promotional_videos_production
+  { business_name: "Coast Corporate Video", legal_type: "company", base_city: "jeddah", subcategory_slug: "tv_programs_and_promotional_videos_production", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030777777", bio: "Cinematic event films and highlight reels.", package_prices_sar: [12000, 22000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
+  // was photo-drone → media_documentation_and_reporting
+  { business_name: "SkyLens Drone", legal_type: "freelancer", base_city: "jeddah", subcategory_slug: "media_documentation_and_reporting", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, national_id: "1234567899", bio: "Licensed drone pilot for aerial event photography.", package_prices_sar: [3800, 6500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_PHOTO_VIDEO },
+  // was decor-florals → floral_arrangements
+  { business_name: "Petal Studio Jeddah", legal_type: "company", base_city: "jeddah", subcategory_slug: "floral_arrangements", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030888888", bio: "Floral design studio with same-day delivery.", package_prices_sar: [5200, 10500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_DECOR_FLOWERS },
+  // was decor-lighting → video_services
+  { business_name: "Glow Event Lighting", legal_type: "company", base_city: "jeddah", subcategory_slug: "video_services", languages: ["en","ar"], capacity: 1, concurrent_event_limit: 1, cr_number: "4030999999", bio: "Architectural, stage lighting, and LED wall rental.", package_prices_sar: [8500, 15000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_SOUND_LIGHT_DJ },
+  // was performer → live_performances
+  { business_name: "Hijaz Live Performers", legal_type: "company", base_city: "jeddah", subcategory_slug: "live_performances", languages: ["ar","en"], capacity: 1, concurrent_event_limit: 1, cr_number: "4031111111", bio: "Live oud, percussion, and folkloric vocal performers.", package_prices_sar: [7200, 13500], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_ENTERTAINMENT },
+  // was av-staging → scaffolding_and_steel_structures
+  { business_name: "Coastline Staging", legal_type: "company", base_city: "jeddah", subcategory_slug: "scaffolding_and_steel_structures", languages: ["en","ar"], capacity: 1500, concurrent_event_limit: 1, cr_number: "4032222222", bio: "Modular staging hangars, trussing, and LED walls.", package_prices_sar: [14000, 26000], package_units: ["event","event"], min_qty: [1,1], works_with_segments: SEG_TENTS },
 ];
 
 const PRICING_RULE_ORDER: PricingRuleType[] = [
@@ -328,11 +319,12 @@ async function findCategoryBySlug(slug: string): Promise<string> {
     .from("categories")
     .select("id")
     .eq("slug", slug)
+    .eq("is_active", true)
     .maybeSingle();
   if (error) throw new Error(`category ${slug}: ${error.message}`);
   if (!data) {
     throw new Error(
-      `[seed] category "${slug}" missing from DB — run \`pnpm db:reset\` so migration 20260421000000_taxonomy_profile_polish.sql seeds the 12-parent taxonomy.`,
+      `[seed] category "${slug}" missing from DB — run \`pnpm db:reset\` so the boss CSV taxonomy migration seeds the active 12-parent taxonomy.`,
     );
   }
   return data.id as string;

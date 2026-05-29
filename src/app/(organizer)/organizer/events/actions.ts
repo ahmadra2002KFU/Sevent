@@ -94,8 +94,9 @@ async function publishBunoodForEvent(
   const subcatIds = bunood.map((b) => b.subcategory_id);
   const { data: catRows, error: catErr } = await supabase
     .from("categories")
-    .select("id, parent_id")
-    .in("id", subcatIds);
+    .select("id, parent_id, is_active")
+    .in("id", subcatIds)
+    .eq("is_active", true);
   if (catErr) {
     throw new Error(`Failed to resolve بنود categories: ${catErr.message}`);
   }

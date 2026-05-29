@@ -63,6 +63,7 @@ export const getCategoriesCached = cache(
     const { data } = await admin
       .from("categories")
       .select("id, slug, name_en, name_ar, parent_id")
+      .eq("is_active", true)
       .order("sort_order", { ascending: true });
     return (data ?? []) as OnboardingBootstrap["categories"];
   },

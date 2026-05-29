@@ -4,10 +4,10 @@
  * Lane 3 · Sprint 3 — RFQ creation wizard.
  *
  * Four-step client state machine:
- *   1. Pick event + category (parent → subcategory cascading selects).
+ *   1. Pick event + category (parent → item category cascading selects).
  *      If `?event_id=<id>` is present on mount, preselect.
- *   2. Requirements extension — derives `kind` from the subcategory's parent
- *      slug using the Lane 1 contract (venues/catering/photography/generic).
+ *   2. Requirements extension — derives `kind` from the item category's
+ *      parent slug using the small set of currently supported forms.
  *   3. Auto-match preview + shortlist editor.
  *   4. Review + send (deadline 24/48/72h, default 24h).
  *

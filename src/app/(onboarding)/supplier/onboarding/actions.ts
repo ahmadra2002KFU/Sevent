@@ -239,6 +239,15 @@ export async function submitOnboardingStep2(
       p_subcategory_ids: payload.subcategory_ids,
     });
     if (rpcErr) {
+      if (
+        rpcErr.code === "P0030" ||
+        rpcErr.message.includes("invalid_active_leaf_categories")
+      ) {
+        return {
+          ok: false,
+          message: "Choose active item categories only, then try again.",
+        };
+      }
       return { ok: false, message: `Saving subcategories failed: ${rpcErr.message}` };
     }
 
@@ -278,7 +287,7 @@ export async function submitOnboardingStep3(
   const uploaded: Array<{ bucket: string; path: string }> = [];
 
   try {
-    const { supabase, admin, supplier } = await loadSupplierContext();
+    const { admin, supplier } = await loadSupplierContext();
     if (!supplier) {
       return { ok: false, message: "Please complete business information first" };
     }
@@ -676,4 +685,3 @@ async function rollback(
     await client.storage.from(bucket).remove(paths);
   }
 }
-

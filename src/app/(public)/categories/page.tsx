@@ -15,7 +15,7 @@ export async function generateMetadata() {
   return {
     title: "Browse categories · Sevent",
     description:
-      "Every verified Sevent supplier category. Pick a category to discover venues, catering, photography and more across Saudi Arabia.",
+      "Every verified Sevent supplier category. Pick a category to discover event management, media production, hospitality and more across Saudi Arabia.",
   };
 }
 

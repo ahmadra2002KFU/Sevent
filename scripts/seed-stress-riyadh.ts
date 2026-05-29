@@ -43,14 +43,14 @@ export const STRESS_EMAIL_DOMAIN = "@sevent.dev";
 const PASSWORD = "StressPass123!";
 
 type Sub =
-  | "venue-ballroom"
-  | "venue-outdoor"
-  | "venue-conference"
-  | "catering-buffet"
-  | "catering-plated"
-  | "catering-coffee"
-  | "photo-wedding"
-  | "photo-corporate";
+  | "project_setup_requirements"
+  | "tents"
+  | "project_management"
+  | "food_and_beverages"
+  | "hospitality_consumables"
+  | "food_and_beverage_service_equipment"
+  | "media_documentation_and_reporting"
+  | "tv_programs_and_promotional_videos_production";
 
 type CatSpec = {
   slug: Sub;
@@ -64,14 +64,14 @@ type CatSpec = {
 // Distribution totals 100. Median prices mirror real Riyadh market bands so the
 // ranker's travel-fit / quality signals stay in a believable order of magnitude.
 const CATEGORIES: CatSpec[] = [
-  { slug: "venue-ballroom", count: 12, suffixes: ["Ballroom", "Palace", "Grand Hall"], unit: "event", priceMedianSar: 45000, minQtyRange: [1, 1] },
-  { slug: "venue-outdoor", count: 12, suffixes: ["Gardens", "Pavilion", "Outdoor"], unit: "event", priceMedianSar: 32000, minQtyRange: [1, 1] },
-  { slug: "venue-conference", count: 12, suffixes: ["Conference", "Convention", "Centre"], unit: "day", priceMedianSar: 20000, minQtyRange: [1, 1] },
-  { slug: "catering-buffet", count: 13, suffixes: ["Buffet", "Catering Co", "Kitchen"], unit: "person", priceMedianSar: 300, minQtyRange: [40, 80] },
-  { slug: "catering-plated", count: 13, suffixes: ["Plated", "Dining", "Gastronomy"], unit: "person", priceMedianSar: 500, minQtyRange: [20, 50] },
-  { slug: "catering-coffee", count: 13, suffixes: ["Qahwa", "Coffee House", "Sweets"], unit: "event", priceMedianSar: 4000, minQtyRange: [1, 1] },
-  { slug: "photo-wedding", count: 13, suffixes: ["Lens", "Studio", "Wedding Photo"], unit: "event", priceMedianSar: 11000, minQtyRange: [1, 1] },
-  { slug: "photo-corporate", count: 12, suffixes: ["Capture", "Corporate Photo", "Media House"], unit: "event", priceMedianSar: 8000, minQtyRange: [1, 1] },
+  { slug: "project_setup_requirements", count: 12, suffixes: ["Setup", "Launch Ops", "Event Prep"], unit: "event", priceMedianSar: 45000, minQtyRange: [1, 1] },
+  { slug: "tents", count: 12, suffixes: ["Gardens", "Pavilion", "Outdoor"], unit: "event", priceMedianSar: 32000, minQtyRange: [1, 1] },
+  { slug: "project_management", count: 12, suffixes: ["Conference", "Convention", "Centre"], unit: "day", priceMedianSar: 20000, minQtyRange: [1, 1] },
+  { slug: "food_and_beverages", count: 13, suffixes: ["Buffet", "Catering Co", "Kitchen"], unit: "person", priceMedianSar: 300, minQtyRange: [40, 80] },
+  { slug: "hospitality_consumables", count: 13, suffixes: ["Serveware", "Hospitality Supply", "Guest Kit"], unit: "unit", priceMedianSar: 45, minQtyRange: [100, 250] },
+  { slug: "food_and_beverage_service_equipment", count: 13, suffixes: ["Service Gear", "Coffee Equipment", "Warmers"], unit: "event", priceMedianSar: 4000, minQtyRange: [1, 1] },
+  { slug: "media_documentation_and_reporting", count: 13, suffixes: ["Lens", "Studio", "Event Media"], unit: "event", priceMedianSar: 11000, minQtyRange: [1, 1] },
+  { slug: "tv_programs_and_promotional_videos_production", count: 12, suffixes: ["Capture", "Corporate Video", "Media House"], unit: "event", priceMedianSar: 8000, minQtyRange: [1, 1] },
 ];
 
 const PREFIXES = [
@@ -149,7 +149,8 @@ async function loadCategoryIds() {
   const { data, error } = await supa
     .from("categories")
     .select("id, slug")
-    .in("slug", CATEGORIES.map((c) => c.slug));
+    .in("slug", CATEGORIES.map((c) => c.slug))
+    .eq("is_active", true);
   if (error) throw new Error(`categories lookup: ${error.message}`);
   for (const row of data ?? []) {
     categoryIdBySlug.set(row.slug as string, row.id as string);

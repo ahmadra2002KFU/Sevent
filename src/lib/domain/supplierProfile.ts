@@ -244,7 +244,8 @@ export async function getPublicSupplierBySlugUncached(
     const { data: parents } = await supabase
       .from("categories")
       .select("id, name_en, name_ar")
-      .in("id", parentIds);
+      .in("id", parentIds)
+      .eq("is_active", true);
     parentNameById = new Map(
       (parents ?? []).map((p) => [
         p.id as string,

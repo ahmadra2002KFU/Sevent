@@ -107,6 +107,7 @@ export async function listCategoriesAction(): Promise<CategoriesBundle> {
   const { data } = await supabase
     .from("categories")
     .select("id, parent_id, slug, name_en, name_ar, sort_order")
+    .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
   const rows = (data ?? []) as CategoryOption[];
@@ -386,6 +387,9 @@ export async function sendRfqAction(input: unknown): Promise<SendRfqResult> {
     else if (pgCode === "P0023") code = "shortlistTooLarge";
     else if (pgCode === "P0024") code = "eventNotFound";
     else if (pgCode === "P0025") code = "invalidInviteSource";
+    else if (pgCode === "P0026" || rpcErr.message.includes("category")) {
+      code = "invalidCategory";
+    }
     else {
       console.error("[sendRfqAction] send_rfq_tx failed", {
         code: pgCode ?? null,

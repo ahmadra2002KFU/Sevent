@@ -11,7 +11,10 @@
  */
 
 import { cache } from "react";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 import {
   STORAGE_BUCKETS,
   createSignedDownloadUrl,
@@ -58,6 +61,7 @@ export async function listTopLevelCategoriesUncached(): Promise<PublicBrowseCate
     .from("categories")
     .select("id, slug, name_en, name_ar, sort_order")
     .is("parent_id", null)
+    .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
   if (parentErr || !parentRows) return [];
@@ -69,7 +73,8 @@ export async function listTopLevelCategoriesUncached(): Promise<PublicBrowseCate
   const { data: childRows } = await supabase
     .from("categories")
     .select("id, parent_id")
-    .in("parent_id", parentIds);
+    .in("parent_id", parentIds)
+    .eq("is_active", true);
 
   const childToParent = new Map<string, string>();
   const childIds: string[] = [];
@@ -134,9 +139,9 @@ export async function listTopLevelCategoriesUncached(): Promise<PublicBrowseCate
 }
 
 /**
- * Looks up a top-level parent category by slug. Returns `null` when no parent
- * with that slug exists (the caller should render 404). We explicitly filter
- * on `parent_id IS NULL` so a child slug does not leak through.
+ * Looks up an active top-level parent by slug. Legacy parent slugs are resolved
+ * through the retained inactive row's `replaced_by_id`; inactive rows are never
+ * returned to the caller.
  */
 export async function getParentCategoryBySlugUncached(
   slug: string,
@@ -154,14 +159,45 @@ export async function getParentCategoryBySlugUncached(
     .select("id, slug, name_en, name_ar")
     .eq("slug", slug)
     .is("parent_id", null)
+    .eq("is_active", true)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (!error && data) {
+    return {
+      id: data.id as string,
+      slug: data.slug as string,
+      name_en: data.name_en as string,
+      name_ar: (data as { name_ar?: string | null }).name_ar ?? null,
+    };
+  }
+
+  const admin = createSupabaseServiceRoleClient();
+  const { data: legacy } = await admin
+    .from("categories")
+    .select("replaced_by_id")
+    .eq("slug", slug)
+    .eq("is_active", false)
+    .not("replaced_by_id", "is", null)
+    .maybeSingle();
+  const replacementId =
+    (legacy as { replaced_by_id?: string | null } | null)?.replaced_by_id ??
+    null;
+  if (!replacementId) return null;
+
+  const { data: replacement, error: replacementErr } = await supabase
+    .from("categories")
+    .select("id, slug, name_en, name_ar")
+    .eq("id", replacementId)
+    .is("parent_id", null)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (replacementErr || !replacement) return null;
   return {
-    id: data.id as string,
-    slug: data.slug as string,
-    name_en: data.name_en as string,
-    name_ar: (data as { name_ar?: string | null }).name_ar ?? null,
+    id: replacement.id as string,
+    slug: replacement.slug as string,
+    name_en: replacement.name_en as string,
+    name_ar: (replacement as { name_ar?: string | null }).name_ar ?? null,
   };
 }
 
@@ -183,6 +219,7 @@ export async function listSubcategoriesWithSuppliersUncached(
     .from("categories")
     .select("id, slug, name_en, name_ar, sort_order")
     .eq("parent_id", parentId)
+    .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
   if (subErr || !subRows || subRows.length === 0) return [];

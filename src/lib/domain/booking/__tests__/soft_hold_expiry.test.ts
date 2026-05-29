@@ -53,7 +53,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         profile_id: supUser.id,
         business_name: `Test Supplier ${suf}`,
       });
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
 
       // --- Event A — organizer accepts quote-A with a 1-minute soft hold. ---
       const eventA = await createEvent(admin, {
@@ -161,7 +161,7 @@ describe.skipIf(!INTEGRATION_ENABLED)(
         profile_id: supUser.id,
         business_name: `Test Supplier ${suf}`,
       });
-      const cat = await ensureCategory(admin, "catering-plated");
+      const cat = await ensureCategory(admin, "food_and_beverages");
 
       const event = await createEvent(admin, { organizer_id: organizer.id });
       const rfq = await createRfq(admin, {
