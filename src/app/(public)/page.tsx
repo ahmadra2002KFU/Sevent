@@ -53,16 +53,17 @@ export default async function LandingPage() {
 
   const categoriesSuffix = t("categories.suffix");
 
-  // Pull the 8 category tiles: prefer live counts, but fall back to the
+  // Pull the category tiles: prefer live counts, but fall back to the
   // design's static list when the DB hasn't been seeded yet (pre-launch /
-  // preview envs). Either path renders identical shape to the grid.
+  // preview envs). Either path renders identical shape to the grid. The
+  // taxonomy has 12 top-level parents, so we surface all of them.
   const fallbackCategories = t.raw(
     "categories.fallback",
   ) as FallbackCategory[];
 
   const categoryItems: CategoryGridItem[] =
     categories.length > 0
-      ? categories.slice(0, 8).map((c) => ({
+      ? categories.slice(0, 12).map((c) => ({
           slug: c.slug,
           name: isAr && c.name_ar ? c.name_ar : c.name_en,
           countLabel: t("categories.supplierCount", {

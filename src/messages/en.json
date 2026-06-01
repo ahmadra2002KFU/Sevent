@@ -136,32 +136,32 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Saudi event marketplace",
+      "eyebrow": "Saudi event supplier marketplace",
       "title": "Plan any event end-to-end in one platform.",
-      "subtitle": "Discover verified suppliers, send one request to many, compare quotes, and book with a digital contract — all in Sevent.",
+      "subtitle": "Discover verified suppliers across every category, send one request to many, compare quotes side by side, and book with a digital contract. All in one platform.",
       "ctaOrganizer": "I'm planning an event",
       "ctaSupplier": "I'm a supplier",
       "statLabel": "Pilot · Riyadh + Jeddah",
-      "statValue": "Verified suppliers across every category you need.",
+      "statValue": "Verified suppliers across the categories you need.",
       "sampleCategoriesFallback": "Launching soon",
-      "meta1Value": "120+",
-      "meta1Label": "Verified suppliers",
-      "meta2Value": "8",
-      "meta2Label": "Event categories",
+      "meta1Value": "100%",
+      "meta1Label": "Suppliers vetted",
+      "meta2Value": "12",
+      "meta2Label": "Service categories",
       "meta3Value": "<24h",
-      "meta3Label": "Average quote turnaround"
+      "meta3Label": "Target quote turnaround"
     },
     "trust": {
       "label": "Built for Saudi Arabia",
       "gea": "GEA permit verified",
       "mada": "Mada & Apple Pay",
       "zatca": "ZATCA e-invoicing",
-      "sama": "SAMA escrow-ready"
+      "sama": "Secure milestone payments"
     },
     "valueProp": {
       "eyebrow": "Why Sevent",
       "heading": "Built for Saudi events",
-      "lede": "A marketplace that treats suppliers and organizers as equals — with the trust, tools, and transparency event planning deserves.",
+      "lede": "A marketplace that treats suppliers and organizers as equals, with the trust, tools, and transparency that serious event planning needs.",
       "items": [
         {
           "title": "One request, many quotes",
@@ -170,20 +170,20 @@
         },
         {
           "title": "Compare on more than price",
-          "body": "See line items, inclusions, travel fees, and verified reviews side-by-side so the right choice is obvious.",
-          "link": "See how we compare"
+          "body": "Compare line items, inclusions, travel fees, and verified reviews side by side, so the best choice is obvious.",
+          "link": "See the comparison view"
         },
         {
           "title": "A platform you can rely on",
           "body": "Verified suppliers, click-to-agree digital contracts, and every booking tracked end-to-end.",
-          "link": "Read about trust"
+          "link": "How verification works"
         }
       ]
     },
     "how": {
       "eyebrow": "How it works",
       "heading": "From first request to signed contract in days, not weeks.",
-      "lede": "Four stages, zero spreadsheets. Whether you are planning a 30-person corporate dinner or a 1,200-guest wedding, the workflow is the same.",
+      "lede": "Four stages, zero spreadsheets. Whether you are sourcing a single AVL crew or a full conference build across staging, lighting, and workforce, the workflow is the same.",
       "steps": [
         {
           "title": "Post your brief",
@@ -191,11 +191,11 @@
         },
         {
           "title": "We invite the right suppliers",
-          "body": "Only GEA-verified vendors matching your category, capacity, and availability are contacted."
+          "body": "Only verified vendors matching your category, capacity, and availability are contacted."
         },
         {
           "title": "Compare real quotes",
-          "body": "Line items, inclusions, deposits, and cancellation terms — all in one view."
+          "body": "Line items, inclusions, deposits, and cancellation terms, side by side in one view."
         },
         {
           "title": "Book with confidence",
@@ -206,16 +206,16 @@
     "showcase": {
       "eyebrow": "Compare quotes like a pro",
       "heading": "Every quote, normalized into the same structure.",
-      "lede": "No more parsing PDFs from five different suppliers. Sevent pulls every quote into the same shape so you can compare the things that actually matter.",
+      "lede": "No more parsing five different supplier PDFs. Sevent pulls every quote into the same structure, so you compare what actually matters.",
       "cta": "See a sample comparison",
       "bullets": [
         {
           "title": "Line-item transparency",
-          "body": "Setup, teardown, travel, and service fees are always itemized — no hidden surprises."
+          "body": "Setup, teardown, travel, and service fees are always itemized, with no hidden surprises."
         },
         {
           "title": "Verified reviews only",
-          "body": "Reviews come from confirmed bookings on Sevent, not anonymous review sites."
+          "body": "Reviews come only from confirmed Sevent bookings, never from anonymous review sites."
         },
         {
           "title": "Budget guardrails",
@@ -227,31 +227,31 @@
         }
       ],
       "mock": {
-        "rfqTitle": "Wedding · Riyadh · 450 guests",
-        "rfqSub": "Catering · RFQ sent to 6 suppliers",
+        "rfqTitle": "Corporate conference · Riyadh · 600 attendees",
+        "rfqSub": "Stage, AVL & seating · RFQ sent to 8 suppliers",
         "rfqStatus": "3 quotes in",
         "verified": "Verified",
         "bestTag": "Best match",
-        "q1Name": "Rayat Catering",
-        "q1Meta": "Riyadh · 4.9 ★ · 82 reviews",
-        "q1Price": "SAR 28,400",
-        "q1Unit": "for 450 guests",
-        "q2Name": "Najd Kitchens",
-        "q2Meta": "Riyadh · 4.7 ★ · 51 reviews",
-        "q2Price": "SAR 31,200",
-        "q2Unit": "for 450 guests",
-        "q3Name": "Bayt Mansaf",
-        "q3Meta": "Jeddah · 4.8 ★ · 34 reviews",
-        "q3Price": "SAR 34,750",
-        "q3Unit": "for 450 guests",
-        "quotesLeft": "3 more suppliers responding · due in 18h",
+        "q1Name": "Manassah Stage & Rigging",
+        "q1Meta": "Riyadh · 4.9 ★ · 64 reviews · AVL",
+        "q1Price": "SAR 99,500",
+        "q1Unit": "stage, LED wall, sound & lighting, 2 days",
+        "q2Name": "Hadath Fit-Out Co.",
+        "q2Meta": "Riyadh · 4.8 ★ · 47 reviews · Fit-Out",
+        "q2Price": "SAR 108,500",
+        "q2Unit": "custom stage build, branded set & carpet",
+        "q3Name": "Diwan Event Furniture",
+        "q3Meta": "Jeddah · 4.7 ★ · 38 reviews · Furniture",
+        "q3Price": "SAR 121,000",
+        "q3Unit": "600 seats, stage furniture & green room",
+        "quotesLeft": "5 more suppliers responding · due in 18h",
         "compareAll": "Compare all"
       }
     },
     "categories": {
       "eyebrow": "Categories",
       "heading": "Every supplier you need, all verified.",
-      "subtitle": "From event management and media production to hospitality and workforce — every supplier is approved before they go live on Sevent.",
+      "subtitle": "Twelve categories, from event management and AVL to fit-out, logistics, hospitality, and workforce. Every supplier is approved before going live on Sevent.",
       "browseAll": "Browse all categories",
       "supplierCount": "{count, plural, =0 {No suppliers yet} one {# verified supplier} other {# verified suppliers}}",
       "viewLabel": "Explore",
@@ -296,19 +296,39 @@
           "slug": "hospitality",
           "name": "Hospitality",
           "count": 16
+        },
+        {
+          "slug": "advertising_prints_identity_applications",
+          "name": "Advertising & Print",
+          "count": 23
+        },
+        {
+          "slug": "fit_out_works",
+          "name": "Fit-Out Works",
+          "count": 18
+        },
+        {
+          "slug": "construction",
+          "name": "Construction",
+          "count": 9
+        },
+        {
+          "slug": "workforce",
+          "name": "Workforce",
+          "count": 26
         }
       ]
     },
     "supplierShowcase": {
       "eyebrow": "For suppliers",
       "heading": "Fill your calendar with the right events.",
-      "lede": "Stop chasing WhatsApp threads. Sevent matches you with organizers who meet your minimums — and handles the paperwork.",
+      "lede": "Stop chasing WhatsApp threads. Sevent matches you with organizers who meet your minimums, then handles the paperwork.",
       "cta1": "Become a pilot supplier",
       "cta2": "See supplier pricing",
       "bullets": [
         {
           "title": "Qualified leads only",
-          "body": "Every RFQ is filtered to your category, capacity, and service area — no irrelevant spam."
+          "body": "Every RFQ is filtered to your category, capacity, and service area, so you never sift through irrelevant leads."
         },
         {
           "title": "Get paid on time",
@@ -316,7 +336,7 @@
         },
         {
           "title": "A profile that sells for you",
-          "body": "Portfolio, packages, reviews, and bilingual copy — all in one public page."
+          "body": "Portfolio, packages, reviews, and bilingual copy, all on one public page."
         },
         {
           "title": "Lightweight operations",
@@ -325,7 +345,7 @@
       ],
       "dashboard": {
         "path": "sevent.sa/supplier/dashboard",
-        "greet": "Salam, Rayat Catering",
+        "greet": "Salam, Manassah Stage & Rigging",
         "sub": "3 new RFQs this week",
         "approved": "Approved",
         "k1Label": "Open invites",
@@ -335,46 +355,46 @@
         "k2Value": "68%",
         "k2Trend": "+8%",
         "k3Label": "Booked this quarter",
-        "k3Value": "SAR 184k",
+        "k3Value": "SAR 540k",
         "invites": "Latest RFQ invites",
-        "i1Event": "Wedding · Riyadh",
-        "i1Sub": "450 guests · June 14",
+        "i1Event": "Corporate conference · Riyadh",
+        "i1Sub": "Main stage + LED wall · June 14",
         "i1Due": "Due in 18h",
-        "i2Event": "Corporate · Riyadh",
-        "i2Sub": "120 guests · May 03",
+        "i2Event": "Exhibition booth · Riyadh",
+        "i2Sub": "Sound & lighting, 3 halls · May 03",
         "i2Due": "Due in 2d",
-        "i3Event": "Engagement · Diriyah",
-        "i3Sub": "220 guests · April 22",
+        "i3Event": "Government ceremony · Diriyah",
+        "i3Sub": "Stage, screens & rigging · April 22",
         "i3Due": "Quoted",
         "quoteCta": "Quote",
         "viewCta": "View"
       }
     },
     "testimonials": {
-      "eyebrow": "What pilot users say",
-      "heading": "Saudi planners and suppliers, about Sevent.",
+      "eyebrow": "How teams use Sevent",
+      "heading": "Built for planners and suppliers alike.",
       "items": [
         {
-          "quote": "I sent one RFQ for my daughter's wedding and had six full quotes back within a day. It would have taken two weeks of phone calls before.",
-          "name": "Reem Al-Otaibi",
-          "role": "Organizer, Riyadh"
+          "quote": "I scoped a 600-person conference, stage, AVL, seating, and signage, in one RFQ and had eight quotes back the next morning. That used to be two weeks of phone calls across five vendors.",
+          "name": "Event producer",
+          "role": "Corporate conference, Riyadh"
         },
         {
-          "quote": "The calendar and quote builder replaced three spreadsheets and two WhatsApp groups. My team finally has time to actually cook.",
-          "name": "Khalid Al-Najjar",
-          "role": "Head Chef, Najd Kitchens"
+          "quote": "Sevent sends me RFQs that already match my gear and crew, stage, rigging, and LED, so I quote in minutes instead of guessing scope over WhatsApp.",
+          "name": "AVL operations lead",
+          "role": "Stage & rigging supplier"
         },
         {
-          "quote": "What sold me was the digital contract. No more PDFs bouncing around email — deposits land in escrow and we just cook.",
-          "name": "Hessa Al-Dosari",
-          "role": "Events Director, Rayat Catering"
+          "quote": "What sold me was the digital contract. No more PDFs bouncing around email, deposits land in escrow and we lock the build schedule the same day.",
+          "name": "Fit-out founder",
+          "role": "Experiential builds, Jeddah"
         }
       ]
     },
     "faq": {
       "eyebrow": "FAQ",
       "heading": "Everything you need to know.",
-      "lede": "Still have questions about how the pilot works? Our team responds to every message within a business day.",
+      "lede": "Still have questions about the pilot? Our team replies to every message within one business day.",
       "contact": "Talk to a human",
       "items": [
         {
@@ -455,8 +475,8 @@
       "step1Heading": "Business information",
       "step2Heading": "Upload verification documents",
       "step3Heading": "Where you work",
-      "step1Subtitle": "These details will appear on your public profile — you can edit them later.",
-      "step2Subtitle": "Pick the specific categories you work in — tighter categories attract better-matched RFQs.",
+      "step1Subtitle": "These details will appear on your public profile. You can edit them later.",
+      "step2Subtitle": "Pick the specific categories you work in. Tighter categories attract better-matched RFQs.",
       "step3Subtitle": "We need these documents to issue your verified-supplier badge and send your payouts.",
       "stepOfTotal": "Step {current} of {total}",
       "progressLabel": "Application progress",
@@ -634,10 +654,10 @@
       "pathPicker": {
         "badge": "Before we start",
         "title": "Tell us about your business",
-        "subtitle": "We'll tailor the journey to your business type — about 8 minutes on average.",
+        "subtitle": "We'll tailor the journey to your business type, about 8 minutes on average.",
         "freelancer": {
           "title": "Freelancer or sole proprietor",
-          "description": "Working under your name or a simple trade name — we only need a national ID and IBAN certificate.",
+          "description": "Working under your name or a simple trade name, we only need a national ID and IBAN certificate.",
           "step1": "National ID",
           "step2": "IBAN certificate",
           "step3": "Short bio",
@@ -645,7 +665,7 @@
         },
         "company": {
           "title": "Registered company",
-          "description": "You have an active commercial registration — we'll verify it automatically and show the verified badge on your profile.",
+          "description": "You have an active commercial registration. We'll verify it automatically and show the verified badge on your profile.",
           "step1": "Commercial registration",
           "step2": "IBAN certificate",
           "step3": "Company profile (optional)",
@@ -657,7 +677,7 @@
       },
       "importWebsite": {
         "title": "Add a link to your profile",
-        "subtitle": "Optional — your website, portfolio, or social handle. We'll show it on your public profile so clients can visit it.",
+        "subtitle": "Optional: your website, portfolio, or social handle. We'll show it on your public profile so clients can visit it.",
         "placeholder": "https://"
       },
       "autosave": {
@@ -665,7 +685,7 @@
       },
       "previewRail": {
         "heading": "Live preview · what organizers see",
-        "hintStep1": "A complete bio boosts organizer trust — complete profiles get 40% more RFP invitations.",
+        "hintStep1": "A complete bio boosts organizer trust. Complete profiles get 40% more RFP invitations.",
         "hintStep2": "Specific categories attract higher-quality RFPs. 3–4 focused categories beats 10 generic ones.",
         "hintStep3": "The IBAN certificate lets us pay out within 24 hours after each event.",
         "placeholderName": "Your business name",
@@ -675,9 +695,9 @@
         "responseLabel": "Response",
         "responseValue": "4h",
         "bookingsLabel": "Bookings",
-        "bookingsValue": "—",
+        "bookingsValue": "–",
         "ratingLabel": "Rating",
-        "ratingValue": "—"
+        "ratingValue": "–"
       },
       "uploadChip": {
         "optional": "(optional)",
@@ -701,7 +721,7 @@
       },
       "categoryCloud": {
         "heading": "Main categories",
-        "hint": "Pick up to {max} categories — fewer is sharper",
+        "hint": "Pick up to {max} categories, fewer is sharper",
         "searchPlaceholder": "Search for a category…",
         "counter": "{picked} of {max}",
         "addAria": "Add {name}",
@@ -711,10 +731,10 @@
       "path": {
         "eyebrow": "Before we begin",
         "title": "Tell us about your business",
-        "sub": "We tailor onboarding to your business type — takes 8 minutes on average.",
+        "sub": "We tailor onboarding to your business type. Takes 8 minutes on average.",
         "freelancer": {
           "title": "Freelancer or sole proprietor",
-          "desc": "You work under your personal name or a simple trade name — we only need your national ID and IBAN certificate.",
+          "desc": "You work under your personal name or a simple trade name, so we only need your national ID and IBAN certificate.",
           "stepNationalId": "National ID",
           "stepIban": "IBAN certificate",
           "stepBio": "Short bio",
@@ -722,7 +742,7 @@
         },
         "company": {
           "title": "Registered company",
-          "desc": "You have an active commercial registration — we verify it automatically and show the verified badge on your profile.",
+          "desc": "You have an active commercial registration. We verify it automatically and show the verified badge on your profile.",
           "stepCr": "Commercial registration",
           "stepIban": "IBAN certificate",
           "stepProfile": "Company profile (optional)",
@@ -741,7 +761,7 @@
         "representativeNamePlaceholder": "Your full name as shown on your ID",
         "representativeNameHelp": "The person who communicates with organizers",
         "maxCategoriesLabel": "{selected} of {max}",
-        "companyProfileHint": "PDF up to 8 MB — shown to organizers only after they accept your quote",
+        "companyProfileHint": "PDF up to 8 MB, shown to organizers only after they accept your quote",
         "bioCharCounter": "{count}/{max}",
         "draftSavedSecondsAgo": "Auto-saved moments ago"
       }
@@ -767,7 +787,7 @@
       "priority": "Priority",
       "noPackages": "No packages yet. Add your first package to go live.",
       "noRules": "No pricing rules yet. Defaults apply until you add one.",
-      "noSubcategories": "Finish the onboarding wizard first — you need at least one service category.",
+      "noSubcategories": "Finish the onboarding wizard first. You need at least one service category.",
       "goToOnboarding": "Go to onboarding",
       "errorHeading": "Unable to load your catalog",
       "statusLabel": "Status",
@@ -924,7 +944,7 @@
         "responseRate": "Response rate",
         "winRate": "Win rate",
         "activePackages": "Active packages",
-        "emptyValue": "—"
+        "emptyValue": "–"
       },
       "quickLinks": {
         "heading": "Shortcuts",
@@ -948,7 +968,7 @@
       },
       "upcomingBookings": {
         "heading": "Upcoming bookings",
-        "empty": "No bookings yet — available from Sprint 4."
+        "empty": "No bookings yet, available from Sprint 4."
       },
       "completeOnboardingCta": "Complete onboarding",
       "welcome": {
@@ -979,7 +999,7 @@
       },
       "underReview": {
         "title": "We're reviewing your application",
-        "body": "Every supplier profile is hand-checked before it goes live. We'll email you the moment it's approved — usually within 24–48 hours.",
+        "body": "Every supplier profile is hand-checked before it goes live. We'll email you the moment it's approved, usually within 24–48 hours.",
         "editCta": "Edit submission"
       },
       "rejected": {
@@ -1003,7 +1023,7 @@
           "identityTitle": "Identity match",
           "identityDone": "Matched via Nafath",
           "ibanTitle": "IBAN verification",
-          "ibanRunning": "Checking with your bank — usually 30 minutes",
+          "ibanRunning": "Checking with your bank, usually 30 minutes",
           "portfolioTitle": "Portfolio & services review",
           "portfolioWaiting": "A specialist will review this",
           "badgeTitle": "Issue verified-provider badge",
@@ -1019,7 +1039,7 @@
           "firstBookingDesc": "Depends on your quote quality"
         },
         "sideCardTitle": "Flesh out your public profile to win more work",
-        "sideCardBody": "Add past work photos, project gallery, and ready packages — profiles with these usually double the RFP volume.",
+        "sideCardBody": "Add past work photos, project gallery, and ready packages. Profiles with these usually double the RFP volume.",
         "sideCardCta": "Start while you wait",
         "sideCardHref": "/supplier/profile"
       },
@@ -1048,14 +1068,14 @@
     },
     "rfqInbox": {
       "title": "RFQ inbox",
-      "subtitle": "Respond quickly — organizers pick faster than they expect.",
+      "subtitle": "Respond quickly. Organizers pick faster than they expect.",
       "empty": "No RFQs yet. Keep your calendar and packages up to date so we can match you.",
       "openCount": "{count, plural, =0 {No open invites} one {1 open invite} other {# open invites}}",
       "guests": "{count, plural, one {# guest} other {# guests}}",
       "sentRelative": "Received {time}",
       "pastHeading": "Past activity ({count})",
       "detailTitle": "RFQ details",
-      "detailSubtitle": "Full brief from the organizer — review before sending a quote.",
+      "detailSubtitle": "Full brief from the organizer. Review before sending a quote.",
       "quoteSentBanner": "Your quote was sent to the organizer. They'll see it in their pricing dashboard.",
       "eventCardHeading": "Event snapshot",
       "requirementsHeading": "Requirements",
@@ -1119,7 +1139,7 @@
       },
       "expired": "Expired",
       "fallbackCategoryLabel": "RFQ",
-      "quoteCorrupt": "This quote's data is corrupt — please re-send your quote."
+      "quoteCorrupt": "This quote's data is corrupt. Please re-send your quote."
     },
     "rfp": {
       "bannerTitle": "Organizer requested a technical proposal",
@@ -1137,7 +1157,7 @@
       "fileHint": "PDF only, up to 10 MB.",
       "pending": "Awaiting your proposal",
       "inboxBadge": "{count, plural, one {1 proposal request} other {{count} proposal requests}}",
-      "inboxSectionHeading": "Action required — proposal requests",
+      "inboxSectionHeading": "Action required: proposal requests",
       "requestedRelative": "Requested {time}"
     },
     "quote": {
@@ -1175,7 +1195,7 @@
       "notes": "Notes",
       "expiresAt": "Quote valid until",
       "validityDaysLabel": "Quote valid for (days)",
-      "validityDaysHint": "This offer is valid for {days, plural, one {# day} other {# days}} — ends on {endDate}",
+      "validityDaysHint": "This offer is valid for {days, plural, one {# day} other {# days}}, ending on {endDate}",
       "totalHintFreeForm": "Free-form total is the sum of your line items plus add-ons.",
       "totalHintEngine": "The server recomputes totals from your rules on send.",
       "pricesIncludeVat": "Prices already include {rate}% VAT",
@@ -1192,10 +1212,10 @@
       "revisionSentAt": "Sent {sentAt}",
       "sendBlockedTerminal": "This quote is already {status}; it can no longer be edited.",
       "noPackagesTitle": "No active packages in this item category",
-      "noPackagesBody": "You can still submit a free-form quote below — the rule engine needs at least one package to compose a draft.",
+      "noPackagesBody": "You can still submit a free-form quote below. The rule engine needs at least one package to compose a draft.",
       "technicalProposal": {
         "label": "Technical proposal (optional)",
-        "hint": "Attach a PDF describing your technical approach, past projects, or equipment — the organizer will see it alongside your pricing.",
+        "hint": "Attach a PDF describing your technical approach, past projects, or equipment. The organizer will see it alongside your pricing.",
         "cta": "Upload a technical proposal PDF (≤10 MB)",
         "replace": "Replace",
         "errorType": "Technical proposal must be a PDF.",
@@ -1227,7 +1247,7 @@
     },
     "opportunities": {
       "title": "Marketplace opportunities",
-      "subtitle": "Browse published RFQs and apply to the ones that fit you. Applying submits a full quote — the organizer sees it alongside invited suppliers' quotes.",
+      "subtitle": "Browse published RFQs and apply to the ones that fit you. Applying submits a full quote, and the organizer sees it alongside invited suppliers' quotes.",
       "applyCta": "View details",
       "backToList": "Back to opportunities",
       "guestsLabel": "Guests",
@@ -1250,7 +1270,7 @@
       },
       "empty": {
         "title": "No open opportunities match your filters",
-        "subtitle": "Try widening the date or budget window, or check back later — organizers publish new RFQs every day."
+        "subtitle": "Try widening the date or budget window, or check back later. Organizers publish new RFQs every day."
       },
       "detail": {
         "fallbackTitle": "Opportunity",
@@ -1261,11 +1281,11 @@
         "qtyLabel": "Quantity",
         "notDisclosed": "Not disclosed",
         "requirements": "Organizer's requirements",
-        "noRequirements": "No extra requirements — the organizer didn't add specifics.",
+        "noRequirements": "No extra requirements. The organizer didn't add specifics.",
         "dueAt": "Responses due by {date}",
         "applyCta": "Apply and submit a quote",
         "applyingCta": "Submitting application…",
-        "testingNotice": "This is a testing opportunity, published for platform testing. You're welcome to apply and submit a quote — just note it may not lead to a real booking."
+        "testingNotice": "This is a testing opportunity, published for platform testing. You're welcome to apply and submit a quote. Just note it may not lead to a real booking."
       }
     },
     "profile": {
@@ -1454,7 +1474,7 @@
         "fileTooLarge": "File must be 10 MB or smaller.",
         "fileNotPdf": "File must be a PDF.",
         "inviteNotFound": "Invite not found.",
-        "quoteRequired": "You haven't submitted a quote yet for this RFQ — submit one first.",
+        "quoteRequired": "You haven't submitted a quote yet for this RFQ. Submit one first.",
         "noActiveRequest": "There is no active proposal request for this quote.",
         "uploadFailed": "Upload failed. Please try again.",
         "saveFailed": "We couldn't save your proposal. Please try again.",
@@ -1517,13 +1537,13 @@
         },
         "kindLine": {
           "supplier_approved": "Supplier approved",
-          "supplier_approved_named": "Supplier approved — {name}",
+          "supplier_approved_named": "Supplier approved, {name}",
           "supplier_rejected": "Supplier rejected",
-          "supplier_rejected_named": "Supplier rejected — {name}",
+          "supplier_rejected_named": "Supplier rejected, {name}",
           "supplier_doc_approved": "Document approved",
           "supplier_doc_rejected": "Document rejected",
           "supplier_email_delivery_failed": "Email delivery failed",
-          "supplier_email_delivery_failed_named": "Email delivery failed — {name}",
+          "supplier_email_delivery_failed_named": "Email delivery failed, {name}",
           "quote_sent": "Quote sent",
           "quote_sent_versioned": "Quote sent · v{version}",
           "quote_revised": "Quote revised",
@@ -1679,7 +1699,7 @@
         "screenshotHeading": "Screenshot",
         "consoleHeading": "Console errors",
         "notesLabel": "Admin notes",
-        "notesPlaceholder": "Internal notes — not visible to the submitter.",
+        "notesPlaceholder": "Internal notes, not visible to the submitter.",
         "saveStatus": "Save",
         "saving": "Saving…",
         "saved": "Saved",
@@ -1695,7 +1715,7 @@
     },
     "messages": {
       "pageTitle": "Messages",
-      "pageDescription": "Threaded conversations with users — feedback, support, and announcements.",
+      "pageDescription": "Threaded conversations with users, including feedback, support, and announcements.",
       "compose": "Compose message",
       "usersButton": "Users",
       "empty": "No conversations yet.",
@@ -1820,7 +1840,7 @@
         "documentsCount": "{count, plural, =0 {No documents} one {1 document} other {# documents}}"
       },
       "organizer": {
-        "noCompany": "Individual organizer — no company on file.",
+        "noCompany": "Individual organizer, no company on file.",
         "company": "Company",
         "companyAr": "Company (Arabic)",
         "slug": "Slug",
@@ -1861,7 +1881,7 @@
       "row": {
         "noName": "(no name)",
         "noEmail": "(no email)",
-        "noActivity": "—",
+        "noActivity": "–",
         "unread": "{count} unread",
         "threadCount": "{count, plural, =0 {No threads} one {# thread} other {# threads}}"
       },
@@ -1955,7 +1975,7 @@
       "globalHide": {
         "heading": "Hide testing opportunities from suppliers",
         "descriptionOn": "Testing opportunities are currently hidden from the supplier marketplace.",
-        "descriptionOff": "Testing opportunities are currently visible to suppliers — labelled and sorted last.",
+        "descriptionOff": "Testing opportunities are currently visible to suppliers, labelled and sorted last.",
         "enableCta": "Hide testing",
         "disableCta": "Show testing",
         "working": "Saving…"
@@ -2003,7 +2023,7 @@
         },
         "requirements": {
           "heading": "Requirements",
-          "unknownKind": "Unrecognized requirements payload — showing raw JSON.",
+          "unknownKind": "Unrecognized requirements payload, showing raw JSON.",
           "field": {
             "kind": "Kind",
             "seating_style": "Seating",
@@ -2070,7 +2090,7 @@
             "file": "File"
           },
           "openFile": "Open PDF",
-          "noFile": "—"
+          "noFile": "–"
         },
         "booking": {
           "heading": "Booking",
@@ -2138,7 +2158,7 @@
         },
         "empty": "No applications match this filter.",
         "viewQuote": "View quote",
-        "noQuote": "—",
+        "noQuote": "–",
         "viewRfq": "View RFQ"
       }
     },
@@ -2165,7 +2185,7 @@
         },
         "empty": "No proposal requests match this filter.",
         "openFile": "Open PDF",
-        "noFile": "—",
+        "noFile": "–",
         "viewRfq": "View RFQ"
       },
       "status": {
@@ -2178,13 +2198,13 @@
   "organizer": {
     "dashboard": {
       "title": "Organizer dashboard",
-      "subtitle": "Your events, RFQs, and incoming quotes — all in one place.",
+      "subtitle": "Your events, RFQs, and incoming quotes, all in one place.",
       "statUpcomingEvents": "Upcoming events",
       "statUpcomingEventsHint": "Starting in the next 30 days",
       "statAwaitingResponses": "RFQs out to suppliers",
       "statAwaitingResponsesHint": "Waiting on supplier quotes",
       "statQuotesToReview": "Quotes to review",
-      "statQuotesToReviewHint": "Suppliers responded — compare now",
+      "statQuotesToReviewHint": "Suppliers responded. Compare now",
       "statConfirmedBookings": "Confirmed bookings",
       "statConfirmedBookingsHint": "Locked in with suppliers",
       "noEvents": "No events yet. Create one to send your first RFQ.",
@@ -2238,9 +2258,9 @@
     "onboarding": {
       "companyChoice": {
         "title": "How will you use Sevent?",
-        "subtitle": "Pick one — you can change this later from settings.",
+        "subtitle": "Pick one. You can change this later from settings.",
         "individualLabel": "I'm planning events as an individual",
-        "individualDescription": "Keep things simple — you create events under your own profile and own the bookings personally.",
+        "individualDescription": "Keep things simple. You create events under your own profile and own the bookings personally.",
         "individualCta": "Continue as an individual",
         "companyLabel": "I'm setting up a company organizer",
         "companyDescription": "Multiple people from your company can collaborate on the same events and bookings. You'll be the first owner.",
@@ -2279,16 +2299,16 @@
         "namePlaceholder": "Acme Events Co.",
         "nameArLabel": "Company name (Arabic)",
         "nameArPlaceholder": "شركة أكمي للفعاليات",
-        "nameArHint": "Optional — used on Arabic-language RFQs and emails.",
+        "nameArHint": "Optional, used on Arabic-language RFQs and emails.",
         "slugLabel": "URL slug",
         "slugPlaceholder": "acme-events",
         "slugHint": "Lowercase letters, numbers, and hyphens. Used in shareable links.",
         "crLabel": "CR number",
         "crPlaceholder": "1010123456",
-        "crHint": "Optional — 10-digit Saudi commercial registration.",
+        "crHint": "Optional, 10-digit Saudi commercial registration.",
         "vatLabel": "VAT number",
         "vatPlaceholder": "300000000000003",
-        "vatHint": "Optional — 15-digit Saudi VAT, starts with 3.",
+        "vatHint": "Optional, 15-digit Saudi VAT, starts with 3.",
         "billingEmailLabel": "Billing email",
         "billingEmailPlaceholder": "billing@acme-events.com",
         "billingEmailHint": "Invoices and account notices go here.",
@@ -2317,7 +2337,7 @@
       "success": {
         "smallLabel": "{name} is ready",
         "title": "Your company is all set",
-        "body": "Invite your teammates and post your first event — quotes from verified suppliers land right in your dashboard.",
+        "body": "Invite your teammates and post your first event. Quotes from verified suppliers land right in your dashboard.",
         "ctaPrimary": "Create your first event",
         "ctaSecondary": "Go to dashboard"
       }
@@ -2367,7 +2387,7 @@
         "loadError": "Couldn't load company details. Please try again.",
         "nameLabel": "Company name",
         "nameArLabel": "Company name (Arabic)",
-        "nameArHint": "Optional — used on Arabic-language RFQs and emails.",
+        "nameArHint": "Optional, used on Arabic-language RFQs and emails.",
         "slugLabel": "URL slug",
         "slugHint": "Locked after creation. Contact support to change.",
         "crLabel": "CR number",
@@ -2679,7 +2699,7 @@
       "stepSubtitles": {
         "1": "Pick which event this is for and what you are sourcing.",
         "2": "Tell suppliers exactly what you need.",
-        "3": "We suggested a few — tweak the shortlist before sending.",
+        "3": "We suggested a few. Tweak the shortlist before sending.",
         "4": "Final check. You can edit anything before sending."
       },
       "pickEvent": "Event",
@@ -2701,14 +2721,14 @@
       "deadline48h": "Within 48 hours",
       "deadline72h": "Within 72 hours",
       "publishToMarketplaceLabel": "Publish to the supplier marketplace",
-      "publishToMarketplaceHint": "Approved suppliers browsing the marketplace can self-apply to this RFQ. The event's budget range will be visible to applicants. Uncheck to keep this RFQ invite-only — in that case you'll need to add at least one supplier to the shortlist below.",
+      "publishToMarketplaceHint": "Approved suppliers browsing the marketplace can self-apply to this RFQ. The event's budget range will be visible to applicants. Uncheck to keep this RFQ invite-only. In that case you'll need to add at least one supplier to the shortlist below.",
       "nextMarketplaceOnly": "Continue with marketplace-only",
       "reviewMarketplace": "Marketplace",
       "marketplacePublished": "Published",
       "marketplacePrivate": "Invite-only",
       "marketplacePublishedHint": "Approved suppliers can discover this RFQ and self-apply.",
       "marketplacePrivateHint": "Only the shortlisted suppliers above will see this RFQ.",
-      "reviewShortlistEmptyMarketplace": "No hand-picked suppliers — relying on marketplace self-apply for discovery.",
+      "reviewShortlistEmptyMarketplace": "No hand-picked suppliers, relying on marketplace self-apply for discovery.",
       "sending": "Sending…",
       "sendRfq": "Send RFQ",
       "cancelStep": "Cancel",
@@ -2788,7 +2808,7 @@
         "generic": {
           "heading": "Requirements",
           "notesLabel": "Notes",
-          "notesPlaceholder": "Describe what you need from this supplier — scope, must-haves, preferences."
+          "notesPlaceholder": "Describe what you need from this supplier, including scope, must-haves, and preferences."
         }
       },
       "loading": "Loading...",
@@ -2806,9 +2826,9 @@
         "invalidSubmission": "Invalid RFQ submission.",
         "invalidRequirements": "Invalid requirements payload.",
         "forbidden": "You don't have permission to send this RFQ.",
-        "invalidDeadline": "Invalid response deadline — choose 24h, 48h, or 72h.",
+        "invalidDeadline": "Invalid response deadline. Choose 24h, 48h, or 72h.",
         "inviteListMalformed": "The invite list is malformed.",
-        "shortlistEmpty": "Shortlist is empty — pick at least one supplier.",
+        "shortlistEmpty": "Shortlist is empty. Pick at least one supplier.",
         "shortlistTooLarge": "Too many suppliers on the shortlist (max 20).",
         "eventNotFound": "Event not found or not accessible.",
         "invalidInviteSource": "Invalid invite source in the shortlist.",
@@ -2840,7 +2860,7 @@
       "remove": "Remove",
       "removeLabel": "Remove {name}",
       "outOfSubcategoryShort": "Outside this item category",
-      "outOfSubcategoryLong": "Outside this item category — supplier may decline",
+      "outOfSubcategoryLong": "Outside this item category, supplier may decline",
       "reasons": {
         "verified": "Verified supplier",
         "sameCity": "Based in {city}",
@@ -2866,15 +2886,15 @@
       "acceptCta": "Accept",
       "accepting": "Accepting…",
       "acceptedAt": "Accepted {acceptedAt}",
-      "rejectedAutomatically": "Rejected — another quote was accepted",
+      "rejectedAutomatically": "Rejected. Another quote was accepted",
       "conflictBadge": "Date conflict",
       "conflictHelp": "This supplier already has a block overlapping your event window. Accepting will fail.",
       "acceptErrorNotFound": "Quote not found.",
       "acceptErrorAlreadyAccepted": "This quote has already been accepted.",
       "acceptErrorNotSendable": "Quote is no longer in sendable state.",
-      "acceptErrorMissingRevision": "Quote is missing a revision — ask the supplier to re-send.",
+      "acceptErrorMissingRevision": "Quote is missing a revision. Ask the supplier to re-send.",
       "acceptErrorOrganizerMismatch": "You are not the organizer of this RFQ.",
-      "acceptErrorSupplierUnavailable": "Supplier no longer available — date conflict.",
+      "acceptErrorSupplierUnavailable": "Supplier no longer available, date conflict.",
       "acceptErrorRfqTerminal": "This RFQ is no longer bookable ({status}).",
       "acceptErrorAboveMemberThreshold": "This quote exceeds your spending limit. Ask an owner or admin to accept it.",
       "acceptErrorUnknown": "We couldn't accept this quote. Please try again.",
@@ -2904,7 +2924,7 @@
       "paymentSchedule": "Payment schedule",
       "backToCompare": "Back to compare",
       "revisionLabel": "Revision v{version} · Submitted {submittedAt}",
-      "missingRevision": "This quote is missing a revision — ask the supplier to re-send.",
+      "missingRevision": "This quote is missing a revision. Ask the supplier to re-send.",
       "technicalProposal": {
         "title": "Technical proposal",
         "subtitle": "PDF attached by the supplier alongside this quote",
@@ -3005,7 +3025,7 @@
         "detailCancelledSubtitle": "Cancelled {date}",
         "manageOnGrid": "Manage on comparison"
       },
-      "quoteCorrupt": "This quote's data is corrupt — ask the supplier to re-send.",
+      "quoteCorrupt": "This quote's data is corrupt. Ask the supplier to re-send.",
       "totalsHeading": "Totals",
       "vatWithRate": "VAT ({pct}%)",
       "csv": {
@@ -3067,7 +3087,7 @@
       "save": "Save",
       "view": "View",
       "loading": "Loading…",
-      "emDash": "—"
+      "emDash": "–"
     }
   },
   "public": {
@@ -3075,7 +3095,7 @@
       "title": "Browse categories",
       "subtitle": "Every supplier category on Sevent. Pick a category to explore item categories and verified suppliers.",
       "empty": "No categories available yet.",
-      "emptyDescription": "Check back soon — we are onboarding new suppliers every week.",
+      "emptyDescription": "Check back soon. We are onboarding new suppliers every week.",
       "viewSubcategory": "View item categories"
     },
     "search": {
@@ -3091,12 +3111,12 @@
       "profileEyebrow": "Supplier profile",
       "verifiedBadge": "Verified",
       "portfolioHeading": "Portfolio",
-      "portfolioDialogTitle": "Portfolio — {name}",
+      "portfolioDialogTitle": "Portfolio: {name}",
       "noPortfolio": "No portfolio photos yet",
       "noPortfolioDescription": "This supplier is still assembling their portfolio. Check back soon.",
       "packagesHeading": "Packages",
       "noPackages": "No published packages",
-      "noPackagesDescription": "This supplier receives custom quotes directly — send an RFQ to get a tailored offer.",
+      "noPackagesDescription": "This supplier receives custom quotes directly. Send an RFQ to get a tailored offer.",
       "reviewsHeading": "Reviews",
       "noReviewsTitle": "No reviews yet",
       "noReviews": "Reviews are double-blind and only publish after both parties submit or the 14-day window closes.",
@@ -3196,10 +3216,10 @@
       "signIn": "Sign in",
       "errorFullName": "Enter your full name (at least 2 characters).",
       "errorEmail": "Enter a valid email address.",
-      "errorPhone": "Invalid Saudi phone — must start with 5 and be 9 digits",
+      "errorPhone": "Invalid Saudi phone, must start with 5 and be 9 digits",
       "errorPassword": "Password must be at least 8 characters.",
       "valueHero": {
-        "headline": "Join Saudi Arabia's biggest event marketplace.",
+        "headline": "Join Saudi Arabia's event marketplace.",
         "subtitle": "The platform connecting event organizers to trusted suppliers across the Kingdom. A few steps and you start receiving RFPs.",
         "whyTitle": "Why Sevent?",
         "whyTrendingTitle": "Real RFPs",
@@ -3208,17 +3228,17 @@
         "whyShieldDesc": "Funds held in escrow until after the event",
         "whyBadgeTitle": "Official verification",
         "whyBadgeDesc": "Commercial registration auto-verified via Wathq",
-        "footnote": "Headquartered in Riyadh · live in 12 Saudi cities"
+        "footnote": "Headquartered in Riyadh · piloting in Riyadh and Jeddah"
       },
       "google": {
         "cta": "Continue with Google",
         "orDivider": "or",
-        "unavailable": "Google sign-in isn't enabled yet — use email instead"
+        "unavailable": "Google sign-in isn't enabled yet. Use email instead"
       },
       "supplier": {
         "eyebrow": "Supplier account",
         "title": "Create supplier account",
-        "sub": "Join the largest events marketplace in the Kingdom. A few steps and you start receiving RFQs.",
+        "sub": "Join the events marketplace built for Saudi Arabia. A few steps and you start receiving RFQs.",
         "emailLabel": "Work email",
         "emailPlaceholder": "you@company.sa",
         "phoneLabel": "Phone number",
@@ -3234,11 +3254,11 @@
         "signIn": "Sign in",
         "submitting": "Creating…",
         "errorEmail": "Enter a valid email address.",
-        "errorPhone": "Invalid Saudi phone — must start with 5 and be 9 digits",
+        "errorPhone": "Invalid Saudi phone, must start with 5 and be 9 digits",
         "errorPassword": "Password must be at least 8 characters.",
         "errorTerms": "You must accept the Terms and Privacy Policy to continue",
         "valueHero": {
-          "headline": "Join the largest events marketplace in the Kingdom.",
+          "headline": "Join the events marketplace built for Saudi Arabia.",
           "whyTitle": "Why Sevent?",
           "why": [
             {
@@ -3254,14 +3274,14 @@
               "desc": "Automatic CR verification via Wathq"
             }
           ],
-          "footnote": "Approved by the General Entertainment Authority · Operating in 12 Saudi cities"
+          "footnote": "Suppliers verified for GEA permits where applicable · piloting in Riyadh and Jeddah"
         }
       }
     }
   },
   "terms": {
     "title": "Terms and Conditions",
-    "draftBanner": "Draft version — under legal review",
+    "draftBanner": "Draft version, under legal review",
     "body": {
       "p1": "Sevent is a marketplace connecting event organizers with verified suppliers across Saudi Arabia. By using our platform, you agree to act in good faith and follow the rules that protect both sides of every booking.",
       "p2": "Suppliers must keep their business information accurate, respond to requests within the stated deadlines, and deliver services exactly as described in the accepted quote. Misrepresentation of capabilities or credentials is a material breach of these terms.",
@@ -3272,11 +3292,11 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "draftBanner": "Draft version — under legal review",
+    "draftBanner": "Draft version, under legal review",
     "body": {
       "p1": "We collect the information you provide when you register, submit documents, post content, or communicate with other users on Sevent. This includes your name, contact details, commercial registration, and any files you upload for verification.",
       "p2": "Your data is used to verify your identity, match suppliers to organizer requests, process payments, and improve the service. We do not sell personal information to third parties.",
-      "p3": "We share booking-related information only with the parties directly involved in that booking — the organizer, the supplier, our verification team, and the payment processor. Limited aggregated analytics may be shared with partners to help us grow.",
+      "p3": "We share booking-related information only with the parties directly involved in that booking, the organizer, the supplier, our verification team, and the payment processor. Limited aggregated analytics may be shared with partners to help us grow.",
       "p4": "Verification documents and financial records are retained for the period required by Saudi commercial law. Account data is kept for the lifetime of your account plus six months after closure, unless a longer retention is legally required.",
       "p5": "You can access, correct, or delete your personal data at any time from your account settings or by emailing our privacy team. We respond to all requests within 30 days."
     }
@@ -3308,7 +3328,7 @@
     "downloadContract": "Download contract PDF",
     "downloadContractError": "Could not generate contract link",
     "downloadContractNotReady": "Contract is generated once the supplier confirms the booking",
-    "downloadContractMissing": "Contract is still being prepared — refresh in a moment or contact support",
+    "downloadContractMissing": "Contract is still being prepared. Refresh in a moment or contact support",
     "table": {
       "supplier": "Supplier",
       "organizer": "Organizer",
@@ -3324,7 +3344,7 @@
       "pageOf": "Page {page} of {totalPages}"
     },
     "banner": {
-      "awaitingOrganizer": "Waiting on supplier confirmation — the supplier has until the deadline to confirm or decline.",
+      "awaitingOrganizer": "Waiting on supplier confirmation. The supplier has until the deadline to confirm or decline.",
       "awaitingSupplier": "Please confirm or decline this booking before the deadline."
     },
     "detail": {
@@ -3347,7 +3367,7 @@
       "inclusions": "Inclusions",
       "exclusions": "Exclusions",
       "notes": "Notes",
-      "sprint5Placeholder": "Awaiting confirmation actions — Sprint 5"
+      "sprint5Placeholder": "Awaiting confirmation actions, Sprint 5"
     },
     "actions": {
       "confirm": "Confirm booking",
@@ -3410,7 +3430,7 @@
     "newThreadForm": {
       "title": "New message",
       "category": "Category",
-      "categoryHint": "Optional — helps the team triage faster.",
+      "categoryHint": "Optional, helps the team triage faster.",
       "categoryAll": "Choose…",
       "subject": "Subject (optional)",
       "subjectPlaceholder": "What is this about?",
@@ -3425,7 +3445,7 @@
   "reviews": {
     "backToBooking": "Back to booking",
     "leaveReviewTitle": "Leave a review",
-    "leaveReviewDescription": "Both parties review each other after the event. Your rating is held until the other side submits or 14 days pass — neither side sees the other's review until then.",
+    "leaveReviewDescription": "Both parties review each other after the event. Your rating is held until the other side submits or 14 days pass. Neither side sees the other's review until then.",
     "formHeading": "Your review",
     "optionalText": "Your comment (optional)",
     "textPlaceholder": "Anything else worth saying? Strengths, surprises, what you wish you'd known.",
@@ -3437,15 +3457,15 @@
       "professionalism": "Professionalism"
     },
     "blocked": {
-      "notCompleted": "The booking hasn't been marked completed yet — you'll be able to review once the event has wrapped up.",
+      "notCompleted": "The booking hasn't been marked completed yet. You'll be able to review once the event has wrapped up.",
       "windowClosed": "The 14-day review window has closed for this booking.",
-      "alreadySubmitted": "You've already submitted your review — thanks!",
+      "alreadySubmitted": "You've already submitted your review, thanks!",
       "disputeOpen": "Reviews are paused while a dispute is open on this booking.",
       "generic": "Reviews aren't available for this booking right now."
     },
     "cta": {
       "leaveReview": "Leave a review",
-      "submitted": "Review submitted — waiting for the other side or window to close."
+      "submitted": "Review submitted, waiting for the other side or window to close."
     }
   },
   "disputes": {
@@ -3457,7 +3477,7 @@
       "reasonLabel": "Reason",
       "reasonPlaceholder": "Pick the closest match",
       "descriptionLabel": "What happened",
-      "descriptionPlaceholder": "Walk us through what went wrong. Stick to facts — admins read this first.",
+      "descriptionPlaceholder": "Walk us through what went wrong. Stick to facts. Admins read this first.",
       "submit": "Open dispute"
     },
     "reason": {
@@ -3486,7 +3506,7 @@
     "cta": {
       "openDispute": "Open a dispute",
       "viewDispute": "View dispute",
-      "alreadyOpen": "Dispute already open — view it for updates."
+      "alreadyOpen": "Dispute already open. View it for updates."
     },
     "detail": {
       "title": "Dispute",

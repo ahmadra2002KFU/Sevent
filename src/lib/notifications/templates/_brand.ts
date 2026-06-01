@@ -23,8 +23,8 @@ export const BRAND = {
   supportEmail: "support@seventsa.com",
   // TODO: replace with the CR-registered Riyadh address before going live.
   postalAddress: {
-    en: "Sevent — Riyadh, Kingdom of Saudi Arabia",
-    ar: "سيڤنت — الرياض، المملكة العربية السعودية",
+    en: "Sevent · Riyadh, Kingdom of Saudi Arabia",
+    ar: "سيڤنت · الرياض، المملكة العربية السعودية",
   },
 
   // Visual identity — mirrors globals.css :theme block.

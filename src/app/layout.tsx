@@ -53,7 +53,7 @@ const almarai = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Sevent — Saudi Event Marketplace",
+  title: "Sevent · Saudi Event Marketplace",
   description:
     "Sevent is the managed marketplace for event organizers and suppliers in Saudi Arabia. Discover, request, compare, and book event services end-to-end.",
   icons: {

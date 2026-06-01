@@ -12,7 +12,7 @@ export const strings = {
       "Block any dates you are unavailable in your calendar.",
     ],
     cta: "Open your Sevent dashboard",
-    note: "You're receiving this because your supplier account was approved on Sevent — the Saudi event marketplace.",
+    note: "You're receiving this because your supplier account was approved on Sevent, the Saudi event marketplace.",
   },
   ar: {
     preview: (n: string) => `تم التحقق من ${n} على سيڤنت`,
@@ -26,6 +26,6 @@ export const strings = {
       "احجب في تقويمك أي تواريخ تكون فيها غير متاح.",
     ],
     cta: "افتح لوحة تحكم سيڤنت",
-    note: "تستلم هذه الرسالة لأنه تمت الموافقة على حساب المورّد الخاص بك على سيڤنت — منصّة المناسبات السعودية.",
+    note: "تستلم هذه الرسالة لأنه تمت الموافقة على حساب المورّد الخاص بك على سيڤنت، منصّة المناسبات السعودية.",
   },
 } as const;
