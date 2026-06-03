@@ -44,7 +44,7 @@ export function ProfilePreview({
   const shown = categories.slice(0, 4);
 
   const heroGradient = accentColor
-    ? `linear-gradient(135deg, var(--color-brand-navy-900, #0f2e5c) 0%, ${accentColor} 110%)`
+    ? `linear-gradient(135deg, var(--color-brand-navy-900, #1a2755) 0%, ${accentColor} 110%)`
     : undefined;
 
   return (

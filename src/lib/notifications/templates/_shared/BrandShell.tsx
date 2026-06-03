@@ -67,7 +67,7 @@ export function BrandShell({ locale, preview, eyebrow, children }: BrandShellPro
             backgroundColor: BRAND.colors.card,
             borderRadius: BRAND.layout.cardRadius,
             border: `1px solid ${BRAND.colors.border}`,
-            boxShadow: "0 1px 3px rgba(15,46,92,0.06), 0 1px 2px rgba(15,46,92,0.04)",
+            boxShadow: "0 1px 3px rgba(26,39,85,0.06), 0 1px 2px rgba(26,39,85,0.04)",
             margin: "0 auto",
             maxWidth: BRAND.layout.cardMaxWidth,
             padding: `${BRAND.layout.cardPadding}px`,
@@ -81,7 +81,7 @@ export function BrandShell({ locale, preview, eyebrow, children }: BrandShellPro
               src={BRAND.logoUrl}
               alt={brandName(locale)}
               width={140}
-              height={33}
+              height={40}
               style={{
                 display: "block",
                 height: "auto",

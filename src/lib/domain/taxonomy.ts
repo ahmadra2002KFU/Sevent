@@ -772,8 +772,8 @@ export function categoryName(
 // body. Keep the list in sync with the DB `check` constraint at the app
 // layer (DB only enforces hex shape, not membership).
 export const ACCENT_PALETTE: ReadonlyArray<{ slug: string; hex: string; name_en: string; name_ar: string }> = Object.freeze([
-  { slug: "cobalt",   hex: "#1E7BD8", name_en: "Cobalt",   name_ar: "أزرق كوبالت" },
-  { slug: "navy",     hex: "#0F2E5C", name_en: "Navy",     name_ar: "كحلي" },
+  { slug: "cobalt",   hex: "#4975DD", name_en: "Cobalt",   name_ar: "أزرق كوبالت" },
+  { slug: "navy",     hex: "#1A2755", name_en: "Navy",     name_ar: "كحلي" },
   { slug: "teal",     hex: "#0E7C86", name_en: "Teal",     name_ar: "أخضر مزرق" },
   { slug: "indigo",   hex: "#4F46E5", name_en: "Indigo",   name_ar: "نيلي" },
   { slug: "emerald",  hex: "#047857", name_en: "Emerald",  name_ar: "زمردي" },
@@ -787,4 +787,4 @@ export const ACCENT_PALETTE: ReadonlyArray<{ slug: string; hex: string; name_en:
 ]);
 
 export const ACCENT_HEX_VALUES = ACCENT_PALETTE.map((a) => a.hex);
-export const DEFAULT_ACCENT_HEX = "#1E7BD8";
+export const DEFAULT_ACCENT_HEX = "#4975DD";

@@ -56,9 +56,8 @@ export const metadata: Metadata = {
   title: "Sevent · Saudi Event Marketplace",
   description:
     "Sevent is the managed marketplace for event organizers and suppliers in Saudi Arabia. Discover, request, compare, and book event services end-to-end.",
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-  },
+  // Favicon + app icons are auto-detected by the App Router from the
+  // src/app/{favicon.ico,icon.png,apple-icon.png} file conventions.
 };
 
 export default async function RootLayout({

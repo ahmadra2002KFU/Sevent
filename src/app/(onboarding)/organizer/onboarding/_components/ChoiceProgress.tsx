@@ -44,7 +44,7 @@ export function ChoiceProgress({ current, labels }: ChoiceProgressProps) {
                   backgroundColor: done
                     ? "rgb(30 154 91)"
                     : active
-                      ? "rgb(30 123 216)"
+                      ? "rgb(73 117 221)"
                       : "rgb(231 230 223)",
                   color:
                     done || active ? "rgb(255 255 255)" : "rgb(107 107 100)",

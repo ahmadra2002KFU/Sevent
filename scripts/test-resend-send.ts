@@ -53,7 +53,7 @@ async function main() {
     subject: "Sevent · Resend deliverability test",
     html: `
       <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a18;">
-        <h2 style="color: #0f2e5c; margin: 0 0 12px;">Resend wiring confirmed</h2>
+        <h2 style="color: #1a2755; margin: 0 0 12px;">Resend wiring confirmed</h2>
         <p style="line-height: 1.5; margin: 0 0 12px;">
           If you can read this, Sevent's transactional pipeline is working end-to-end:
           API key valid, apex <code>seventsa.com</code> DKIM signed, DNS reaching inbox.

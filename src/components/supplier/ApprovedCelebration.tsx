@@ -51,7 +51,7 @@ function seededConfetti(
   rot: number;
   color: string;
 }> {
-  const colors = ["#c8993a", "#ffffff", "#dcebfb"];
+  const colors = ["#c8993a", "#ffffff", "#e4eafa"];
   let s = seed || 1;
   const rand = () => {
     // Numerical Recipes LCG. Deterministic, no crypto needed for decoration.
@@ -96,7 +96,7 @@ export function ApprovedCelebration({
         className="relative overflow-hidden rounded-2xl p-7 text-white sm:p-8"
         style={{
           background:
-            "linear-gradient(105deg, #1e9a5b 0%, #1e7bd8 100%)",
+            "linear-gradient(105deg, #1e9a5b 0%, #4975dd 100%)",
         }}
       >
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -164,7 +164,7 @@ export function ApprovedCelebration({
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <Kpi
           icon={Inbox}
-          accentColor="#1e7bd8"
+          accentColor="#4975dd"
           label={t("kpi.rfqs")}
           value={pendingRfqCount}
           sub={t("kpi.rfqsSub")}
