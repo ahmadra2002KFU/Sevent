@@ -1,113 +1,62 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
   variant?: "wordmark" | "mark";
   tone?: "color" | "white";
   className?: string;
+  /** Set on above-the-fold placements (site headers) to avoid a load flash. */
+  priority?: boolean;
   "aria-label"?: string;
 };
 
 /**
- * Sevent logo. Inline SVG so it renders without a network request and can be
- * recolored via currentColor where needed. The SVG font stack references Inter
- * Black Italic; if the senior provides path-traced glyphs, replace the <text>
- * nodes without changing props or viewBox.
+ * Sevent brand logo.
  *
- * `direction="ltr"` is pinned on the root + text nodes so the Latin glyph
- * layout does not mirror when the enclosing HTML is `dir="rtl"` (Arabic).
- * Without it, SVG `text-anchor` and `x` resolve against the inherited RTL
- * direction and the wordmark renders backwards/clipped.
+ * Renders the exact brand artwork (raster PNG) via next/image. The PNGs are the
+ * canonical files in /public, derived from the master `Logo New.png`:
+ *   - wordmark  → /logo.png            (full "SEVENT" lockup, also used by emails)
+ *   - mark      → /logo-mark.png       (the standalone "S")
+ *   - tone="white" swaps to the reversed (white knockout) art for dark
+ *     backgrounds → /logo-white.png and /logo-mark-white.png
+ *
+ * Intrinsic width/height drive the aspect ratio; callers size with a Tailwind
+ * height class (e.g. `h-7 w-auto`). As a raster it never mirrors under
+ * `dir="rtl"`, so no direction pinning is required.
  */
+const ASSETS = {
+  wordmark: {
+    color: "/logo.png",
+    white: "/logo-white.png",
+    width: 895,
+    height: 259,
+  },
+  mark: {
+    color: "/logo-mark.png",
+    white: "/logo-mark-white.png",
+    width: 242,
+    height: 259,
+  },
+} as const;
+
 export function Logo({
   variant = "wordmark",
   tone = "color",
   className,
+  priority = false,
   "aria-label": ariaLabel = "Sevent",
 }: LogoProps) {
-  if (variant === "mark") {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 210 160"
-        role="img"
-        aria-label={ariaLabel}
-        direction="ltr"
-        className={cn("shrink-0", className)}
-      >
-        <path
-          d="M26 8 L204 8 L180 150 L2 150 Z"
-          fill={tone === "white" ? "#ffffff" : "#1e7bd8"}
-        />
-        <text
-          x="103"
-          y="122"
-          fontFamily="Inter, Arial, sans-serif"
-          fontWeight="900"
-          fontStyle="italic"
-          fontSize="140"
-          textAnchor="middle"
-          direction="ltr"
-          fill={tone === "white" ? "#1e7bd8" : "#ffffff"}
-          letterSpacing="-4"
-        >
-          S
-        </text>
-      </svg>
-    );
-  }
-
-  const cobalt = "#1e7bd8";
-  const navy = "#0f2e5c";
-  const white = "#ffffff";
+  const asset = ASSETS[variant];
+  const src = tone === "white" ? asset.white : asset.color;
 
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 760 180"
-      role="img"
-      aria-label={ariaLabel}
-      direction="ltr"
+    <Image
+      src={src}
+      alt={ariaLabel}
+      width={asset.width}
+      height={asset.height}
+      priority={priority}
       className={cn("shrink-0", className)}
-    >
-      <path
-        d="M24 8 L204 8 L180 148 L0 148 Z"
-        fill={tone === "white" ? white : cobalt}
-      />
-      <text
-        x="102"
-        y="120"
-        fontFamily="Inter, Arial, sans-serif"
-        fontWeight="900"
-        fontStyle="italic"
-        fontSize="140"
-        textAnchor="middle"
-        direction="ltr"
-        fill={tone === "white" ? cobalt : white}
-        letterSpacing="-4"
-      >
-        S
-      </text>
-      <text
-        x="218"
-        y="120"
-        fontFamily="Inter, Arial, sans-serif"
-        fontWeight="900"
-        fontStyle="italic"
-        fontSize="140"
-        textAnchor="start"
-        direction="ltr"
-        fill={tone === "white" ? white : navy}
-        letterSpacing="-2"
-      >
-        EVENT
-      </text>
-      <rect
-        x="18"
-        y="158"
-        width="724"
-        height="10"
-        fill={tone === "white" ? white : cobalt}
-      />
-    </svg>
+    />
   );
 }

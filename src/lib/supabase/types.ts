@@ -72,7 +72,7 @@ export type SupplierRow = {
   bio: string | null;
   is_published: boolean;
   logo_path: string | null;
-  accent_color: string; // DB default '#1E7BD8' — always populated
+  accent_color: string; // DB default '#4975DD' — always populated
   profile_sections_order: string[]; // DB default ['bio','packages','portfolio','reviews']
   works_with_segments: EventType[]; // DB default []
   first_seen_approved_at: string | null;

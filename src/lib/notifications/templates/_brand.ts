@@ -30,10 +30,10 @@ export const BRAND = {
   // Visual identity — mirrors globals.css :theme block.
   colors: {
     // Primary brand (cobalt + navy)
-    cobalt: "#1e7bd8",
-    cobaltSoft: "#dcebfb",
-    navy: "#0f2e5c",
-    navyMid: "#1c3f73",
+    cobalt: "#4975dd",
+    cobaltSoft: "#e4eafa",
+    navy: "#1a2755",
+    navyMid: "#273d7b",
 
     // Accent — use sparingly (eyebrow label, gold deadline highlights).
     gold: "#c8993a",

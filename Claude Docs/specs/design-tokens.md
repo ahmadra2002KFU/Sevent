@@ -1,10 +1,10 @@
-> **Implementation status (2026-05-17):** Partially implemented. Core color tokens and status pills align with code, but typography documentation is stale versus the current local Inter and Almarai setup.
+> **Implementation status (2026-06-03):** Rebranded to the new logo + blue/navy palette. Core color tokens and status pills align with code. Typography documentation is stale versus the current local Inter and Almarai setup.
 
 # Sevent Design Tokens
 
 Source of truth for the Sevent visual system. Every new UI surface should consume these tokens rather than hardcoding values. Tokens are exposed both as CSS custom properties in `src/app/globals.css` and as Tailwind v4 `@theme` variables usable as utility classes (e.g. `bg-brand-navy-900`, `text-brand-cobalt-500`).
 
-**Logo source:** `public/logo.svg` (full lockup), `public/logo-mark.svg` (parallelogram S only), `public/favicon.svg`. Hand-authored SVGs render with `Inter Black Italic`; if the senior provides a path-traced vector with the original glyphs, replace these files (the viewBox + colors stay the same).
+**Logo source:** raster PNGs in `public/`, all derived from the master `Logo New.png` — `logo.png` (full "SEVENT" lockup, also used by emails), `logo-mark.png` (the standalone "S"), plus white-knockout variants `logo-white.png` / `logo-mark-white.png` for dark surfaces. App icons follow the Next App Router file convention: `src/app/favicon.ico`, `src/app/icon.png`, `src/app/apple-icon.png`. The `<Logo>` component (`src/components/brand/Logo.tsx`) renders these via `next/image` (`variant` = `wordmark`|`mark`, `tone` = `color`|`white`).
 
 ---
 
@@ -14,12 +14,12 @@ Source of truth for the Sevent visual system. Every new UI surface should consum
 
 | Token | Hex | Role |
 |---|---|---|
-| `brand-navy-900` | `#0F2E5C` | Anchor surfaces, "EVENT" wordmark, primary text on light |
-| `brand-navy-700` | `#1C3F73` | Hover state for navy elements |
-| `brand-navy-500` | `#355B95` | Navy borders, secondary nav states |
-| `brand-cobalt-500` | `#1E7BD8` | Primary CTA, the "S" parallelogram, links, focus ring |
-| `brand-cobalt-400` | `#3D91E5` | Hover state for cobalt CTAs |
-| `brand-cobalt-100` | `#DCEBFB` | Info backgrounds, soft badges |
+| `brand-navy-900` | `#1A2755` | Anchor surfaces, "SEVENT" wordmark, primary text on light |
+| `brand-navy-700` | `#273D7B` | Hover state for navy elements |
+| `brand-navy-500` | `#314E99` | Navy borders, secondary nav states |
+| `brand-cobalt-500` | `#4975DD` | Primary CTA, the "S" mark, links, focus ring |
+| `brand-cobalt-400` | `#6E92E6` | Hover state for cobalt CTAs |
+| `brand-cobalt-100` | `#E4EAFA` | Info backgrounds, soft badges |
 | `accent-gold-500` | `#C8993A` | Verified supplier badge, premium trust markers |
 | `accent-gold-100` | `#F6EBCE` | Gold badge background fill |
 
@@ -44,8 +44,8 @@ Source of truth for the Sevent visual system. Every new UI surface should consum
 | `semantic-warning-100` | `#FAEBD3` | Warning badge background |
 | `semantic-danger-500` | `#C4353C` | Rejected, cancelled, destructive actions |
 | `semantic-danger-100` | `#F6D7D9` | Danger badge background |
-| `semantic-info-500` | `#1E7BD8` | Aliases `brand-cobalt-500` — info states reuse primary cobalt |
-| `semantic-info-100` | `#DCEBFB` | Aliases `brand-cobalt-100` |
+| `semantic-info-500` | `#4975DD` | Aliases `brand-cobalt-500` — info states reuse primary cobalt |
+| `semantic-info-100` | `#E4EAFA` | Aliases `brand-cobalt-100` |
 
 ### Status-pill color map
 
@@ -66,8 +66,8 @@ Used by `components/ui-ext/StatusPill.tsx`:
 | `neutral-900` on `neutral-50` | 15.3:1 | Body text |
 | `neutral-600` on `neutral-50` | 5.6:1 | Helper text |
 | `brand-navy-900` on `neutral-50` | 13.2:1 | Headings |
-| `white` on `brand-cobalt-500` | 3.4:1 | Large-text only — use on buttons sized ≥14px bold or ≥18px regular |
-| `white` on `brand-navy-900` | 13.9:1 | Primary CTA foreground |
+| `white` on `brand-cobalt-500` | 4.3:1 | Large-text / bold UI text; passes AA for ≥14px bold or ≥18px regular |
+| `white` on `brand-navy-900` | 14.6:1 | Primary CTA foreground |
 
 ---
 
@@ -133,10 +133,10 @@ Default for shadcn primitives: `rounded-md`.
 
 | Token | Value | Usage |
 |---|---|---|
-| `shadow-sm` | `0 1px 2px rgba(15, 46, 92, 0.04)` | Button, input default |
-| `shadow` | `0 1px 3px rgba(15, 46, 92, 0.08), 0 1px 2px rgba(15, 46, 92, 0.04)` | Cards |
-| `shadow-md` | `0 4px 6px rgba(15, 46, 92, 0.08), 0 2px 4px rgba(15, 46, 92, 0.04)` | Popover, dropdown |
-| `shadow-lg` | `0 10px 15px rgba(15, 46, 92, 0.08), 0 4px 6px rgba(15, 46, 92, 0.04)` | Dialog, sheet |
+| `shadow-sm` | `0 1px 2px rgba(26, 39, 85, 0.04)` | Button, input default |
+| `shadow` | `0 1px 3px rgba(26, 39, 85, 0.08), 0 1px 2px rgba(26, 39, 85, 0.04)` | Cards |
+| `shadow-md` | `0 4px 6px rgba(26, 39, 85, 0.08), 0 2px 4px rgba(26, 39, 85, 0.04)` | Popover, dropdown |
+| `shadow-lg` | `0 10px 15px rgba(26, 39, 85, 0.08), 0 4px 6px rgba(26, 39, 85, 0.04)` | Dialog, sheet |
 
 Shadows use the navy brand hue (not neutral black) so elevation feels product-native.
 
@@ -176,8 +176,8 @@ Avoid durations > 400ms — feels sluggish in productivity UIs.
 3. **Trust/verified markers = gold.** Gold is scarce — reserve for verified-supplier badges, "pilot partner" markers, NOT for generic emphasis.
 4. **Status lives in semantic tokens.** Don't use success-green for "brand accent"; don't use brand-cobalt for "info success".
 5. **Logo tone by surface.**
-   - On `neutral-50` or white: full-color SVG (cobalt + navy).
-   - On `brand-navy-900`: white-reverse variant (`<Logo tone="white"/>`).
+   - On `neutral-50` or white: full-color logo (`<Logo tone="color"/>`, blue "S" + navy "SEVENT").
+   - On `brand-navy-900`: white-knockout variant (`<Logo tone="white"/>`).
 6. **RTL safety:** always use logical utilities (`ms-*`, `me-*`, `ps-*`, `pe-*`, `start-*`, `end-*`, `text-start`, `text-end`, `border-s-*`, `border-e-*`). Directional utilities (`ml-*`, `mr-*`, `left-*`, `right-*`, `text-left`, `text-right`) are a lint error.
 7. **Dark mode is deferred.** Tokens are designed to accommodate a future dark theme via `prefers-color-scheme` + a `--color-*` override block, but no dark variant ships in v1.
 

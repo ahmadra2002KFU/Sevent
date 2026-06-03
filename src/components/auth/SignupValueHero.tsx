@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "motion/react";
 import { BadgeCheck, ShieldCheck, TrendingUp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -50,7 +51,7 @@ export function SignupValueHero({ labels, className }: SignupValueHeroProps) {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 20% 0%, rgb(30 123 216 / 0.33), transparent 50%)",
+            "radial-gradient(circle at 20% 0%, rgb(73 117 221 / 0.33), transparent 50%)",
         }}
       />
 
@@ -60,47 +61,20 @@ export function SignupValueHero({ labels, className }: SignupValueHeroProps) {
         transition={{ type: "spring", stiffness: 260, damping: 28 }}
         className="relative z-[1] flex min-h-full flex-col"
       >
-        {/* Sevent logo-mark (inline SVG, white tone) */}
+        {/* Sevent logo (white knockout, on the navy hero) */}
         <span
           className="inline-flex items-center"
           style={{ direction: "ltr" }}
           aria-label="Sevent"
         >
-          <svg
-            width={110}
-            height={26}
-            viewBox="0 0 760 180"
-            aria-hidden
-          >
-            <path d="M24 8 L204 8 L180 148 L0 148 Z" fill="#ffffff" />
-            <text
-              x="102"
-              y="120"
-              fontFamily="Inter"
-              fontWeight="900"
-              fontStyle="italic"
-              fontSize="140"
-              textAnchor="middle"
-              fill="#0f2e5c"
-              letterSpacing="-4"
-            >
-              S
-            </text>
-            <text
-              x="218"
-              y="120"
-              fontFamily="Inter"
-              fontWeight="900"
-              fontStyle="italic"
-              fontSize="140"
-              textAnchor="start"
-              fill="#ffffff"
-              letterSpacing="-2"
-            >
-              EVENT
-            </text>
-            <rect x="18" y="158" width="724" height="10" fill="#ffffff" />
-          </svg>
+          <Image
+            src="/logo-white.png"
+            alt="Sevent"
+            width={895}
+            height={259}
+            priority
+            className="h-7 w-auto"
+          />
         </span>
 
         <motion.h1
@@ -143,7 +117,7 @@ export function SignupValueHero({ labels, className }: SignupValueHeroProps) {
                 >
                   <div
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10"
-                    style={{ color: "#7ab8ff" }}
+                    style={{ color: "#8aa9f2" }}
                   >
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>

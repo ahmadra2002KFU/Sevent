@@ -72,8 +72,8 @@ export function SegmentsPicker({ value, onChange, disabled, ariaLabel }: Props) 
               </span>
               <motion.span
                 animate={{
-                  backgroundColor: isActive ? "rgb(30 123 216)" : "transparent",
-                  borderColor: isActive ? "rgb(30 123 216)" : "rgb(231 230 223)",
+                  backgroundColor: isActive ? "rgb(73 117 221)" : "transparent",
+                  borderColor: isActive ? "rgb(73 117 221)" : "rgb(231 230 223)",
                   scale: isActive ? 1 : 0.85,
                 }}
                 transition={{ type: "spring", stiffness: 420, damping: 24 }}

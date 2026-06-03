@@ -72,7 +72,7 @@ function PendingHero({
         className="flex flex-col items-start gap-6 rounded-2xl border border-neutral-200 p-8 sm:flex-row sm:items-start sm:gap-6"
         style={{
           background:
-            "linear-gradient(135deg, #ffffff 0%, rgb(220 235 251 / 0.55) 100%)",
+            "linear-gradient(135deg, #ffffff 0%, rgb(228 234 250 / 0.55) 100%)",
         }}
       >
         {/* Animated spinner ring with shield */}

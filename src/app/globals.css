@@ -9,13 +9,13 @@
 /* Exposed as utilities like `bg-brand-cobalt-500`, `text-neutral-600` */
 /* ------------------------------------------------------------------ */
 @theme {
-  --color-brand-navy-900: #0f2e5c;
-  --color-brand-navy-700: #1c3f73;
-  --color-brand-navy-500: #355b95;
+  --color-brand-navy-900: #1a2755;
+  --color-brand-navy-700: #273d7b;
+  --color-brand-navy-500: #314e99;
 
-  --color-brand-cobalt-500: #1e7bd8;
-  --color-brand-cobalt-400: #3d91e5;
-  --color-brand-cobalt-100: #dcebfb;
+  --color-brand-cobalt-500: #4975dd;
+  --color-brand-cobalt-400: #6e92e6;
+  --color-brand-cobalt-100: #e4eafa;
 
   --color-accent-gold-500: #c8993a;
   --color-accent-gold-100: #f6ebce;
@@ -33,8 +33,8 @@
   --color-semantic-warning-100: #faebd3;
   --color-semantic-danger-500: #c4353c;
   --color-semantic-danger-100: #f6d7d9;
-  --color-semantic-info-500: #1e7bd8;
-  --color-semantic-info-100: #dcebfb;
+  --color-semantic-info-500: #4975dd;
+  --color-semantic-info-100: #e4eafa;
 
   /* Typography — Inter loaded from local font assets as --font-inter */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
@@ -62,57 +62,57 @@
   --card-foreground: #1a1a18;
   --popover: #ffffff;
   --popover-foreground: #1a1a18;
-  --primary: #1e7bd8;
+  --primary: #4975dd;
   --primary-foreground: #ffffff;
   --secondary: #f4f4ef;
-  --secondary-foreground: #0f2e5c;
+  --secondary-foreground: #1a2755;
   --muted: #f4f4ef;
   --muted-foreground: #6b6b64;
   --accent: #f4f4ef;
-  --accent-foreground: #0f2e5c;
+  --accent-foreground: #1a2755;
   --destructive: #c4353c;
   --destructive-foreground: #ffffff;
   --border: #e7e6df;
   --input: #e7e6df;
-  --ring: #1e7bd8;
-  --chart-1: #1e7bd8;
-  --chart-2: #0f2e5c;
+  --ring: #4975dd;
+  --chart-1: #4975dd;
+  --chart-2: #1a2755;
   --chart-3: #c8993a;
   --chart-4: #1e9a5b;
   --chart-5: #d89423;
   --radius: 0.5rem;
   --sidebar: #fafaf7;
   --sidebar-foreground: #1a1a18;
-  --sidebar-primary: #1e7bd8;
+  --sidebar-primary: #4975dd;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f4f4ef;
-  --sidebar-accent-foreground: #0f2e5c;
+  --sidebar-accent-foreground: #1a2755;
   --sidebar-border: #e7e6df;
-  --sidebar-ring: #1e7bd8;
+  --sidebar-ring: #4975dd;
 }
 
 /* Dark-mode values are placeholder (not wired in v1 — dark mode deferred).
    Kept here so shadcn components compile; no UI ships a .dark class today. */
 .dark {
-  --background: #0f2e5c;
+  --background: #1a2755;
   --foreground: #fafaf7;
-  --card: #1c3f73;
+  --card: #273d7b;
   --card-foreground: #fafaf7;
-  --popover: #1c3f73;
+  --popover: #273d7b;
   --popover-foreground: #fafaf7;
-  --primary: #3d91e5;
-  --primary-foreground: #0f2e5c;
-  --secondary: #1c3f73;
+  --primary: #6e92e6;
+  --primary-foreground: #1a2755;
+  --secondary: #273d7b;
   --secondary-foreground: #fafaf7;
-  --muted: #1c3f73;
+  --muted: #273d7b;
   --muted-foreground: #a9a9a1;
-  --accent: #1c3f73;
+  --accent: #273d7b;
   --accent-foreground: #fafaf7;
   --destructive: #c4353c;
   --destructive-foreground: #fafaf7;
   --border: rgb(255 255 255 / 0.1);
   --input: rgb(255 255 255 / 0.15);
-  --ring: #3d91e5;
+  --ring: #6e92e6;
 }
 
 /* Wires Tailwind utility names (bg-background, text-primary, etc.) to
@@ -185,22 +185,22 @@ body {
 
 /* Elevation — navy-tinted shadows for product feel */
 .shadow-brand-sm {
-  box-shadow: 0 1px 2px rgb(15 46 92 / 0.04);
+  box-shadow: 0 1px 2px rgb(26 39 85 / 0.04);
 }
 .shadow-brand {
   box-shadow:
-    0 1px 3px rgb(15 46 92 / 0.08),
-    0 1px 2px rgb(15 46 92 / 0.04);
+    0 1px 3px rgb(26 39 85 / 0.08),
+    0 1px 2px rgb(26 39 85 / 0.04);
 }
 .shadow-brand-md {
   box-shadow:
-    0 4px 6px rgb(15 46 92 / 0.08),
-    0 2px 4px rgb(15 46 92 / 0.04);
+    0 4px 6px rgb(26 39 85 / 0.08),
+    0 2px 4px rgb(26 39 85 / 0.04);
 }
 .shadow-brand-lg {
   box-shadow:
-    0 10px 15px rgb(15 46 92 / 0.08),
-    0 4px 6px rgb(15 46 92 / 0.04);
+    0 10px 15px rgb(26 39 85 / 0.08),
+    0 4px 6px rgb(26 39 85 / 0.04);
 }
 
 @layer base {

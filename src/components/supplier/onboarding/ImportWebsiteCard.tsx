@@ -30,8 +30,8 @@ export function ImportWebsiteCard({
     <div
       className="relative rounded-xl border border-dashed p-3.5"
       style={{
-        borderColor: "rgb(30 123 216 / 0.55)",
-        background: "rgb(220 235 251 / 0.55)",
+        borderColor: "rgb(73 117 221 / 0.55)",
+        background: "rgb(228 234 250 / 0.55)",
       }}
     >
       <div className="flex flex-wrap items-center gap-3">

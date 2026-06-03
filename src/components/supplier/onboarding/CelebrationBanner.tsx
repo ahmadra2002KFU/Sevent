@@ -21,7 +21,7 @@ export type CelebrationBannerProps = {
   className?: string;
 };
 
-const CONFETTI_COLORS = ["#c8993a", "#ffffff", "#dcebfb"] as const;
+const CONFETTI_COLORS = ["#c8993a", "#ffffff", "#e4eafa"] as const;
 
 type Particle = {
   top: number;
