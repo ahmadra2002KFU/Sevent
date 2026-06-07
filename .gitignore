@@ -82,3 +82,11 @@ Agents/
 /approve.ts
 /set-supplier-state.ts
 /update-supplier.ts
+# Resets passwords for local test accounts; contains hardcoded dev creds.
+/scripts/reset-test-passwords.ts
+
+# Sensitive / PII docs that must never reach GitHub:
+# - exported send logs contain real recipient email addresses
+# - legal/payments packages are pre-legal-signoff drafts
+/Claude Docs/emails-sent-*.csv
+/Claude Docs/deliverables/legal-payments-package-*/
