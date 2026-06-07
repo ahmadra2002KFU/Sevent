@@ -27,9 +27,8 @@ node_modules/
 # Office lock files
 ~$*
 
-# Generated docs workflow diagrams
-/Claude Docs/workflow-diagrams/**/*.svg
-/Claude Docs/workflow-diagrams/**/*.mmd
+# Generated docs workflow diagrams (whole tree — rendered output, not source)
+/Claude Docs/workflow-diagrams/
 
 # Logo-rebrand scratch: asset-gen scripts, build/server logs (contain local
 # Supabase keys), and old-logo backups. Outputs already live in /public + the
@@ -90,3 +89,16 @@ Agents/
 # - legal/payments packages are pre-legal-signoff drafts
 /Claude Docs/emails-sent-*.csv
 /Claude Docs/deliverables/legal-payments-package-*/
+
+# Claude Docs scratch / generated / personal (working artifacts, not deliverables)
+/Claude Docs/My-Professional-Role-Summary.docx
+/Claude Docs/context-ingest-2026-06-04/
+/Claude Docs/audit-2026-05-31/
+/Claude Docs/audit-routes-2026-06-01/
+/Claude Docs/core-workflows-and-data-flows.md
+/Claude Docs/organizer-onboarding-revamp.md
+/Claude Docs/deploy/dns-dmarc-and-apex-routing.md
+/Claude Docs/scripts/legal-docx/
+# One-off Arabic doc/report generators dropped in root scripts/. The maintained
+# generators live under "Claude Docs/scripts/" and stay committed.
+/scripts/build_*_ar*.js
