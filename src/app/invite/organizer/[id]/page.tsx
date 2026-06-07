@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, Building2, ShieldCheck, UserCog } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   createSupabaseServiceRoleClient,
@@ -65,7 +67,15 @@ export default async function OrganizerInviteAcceptPage({
 
   if (!row) {
     return (
-      <Shell title={t("notFoundTitle")} description={t("notFoundDescription")}>
+      <Shell
+        title={t("notFoundTitle")}
+        description={t("notFoundDescription")}
+        action={
+          <Button asChild>
+            <Link href="/">{t("backHome")}</Link>
+          </Button>
+        }
+      >
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
           <AlertDescription>{t("notFoundDescription")}</AlertDescription>
@@ -104,6 +114,11 @@ export default async function OrganizerInviteAcceptPage({
       <Shell
         title={t("title", { company: ctx.companyName })}
         description={t(`status.${ctx.status}` as never)}
+        action={
+          <Button asChild>
+            <Link href="/">{t("backHome")}</Link>
+          </Button>
+        }
       >
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
@@ -120,6 +135,11 @@ export default async function OrganizerInviteAcceptPage({
       <Shell
         title={t("title", { company: ctx.companyName })}
         description={t("status.expired")}
+        action={
+          <Button asChild>
+            <Link href="/">{t("backHome")}</Link>
+          </Button>
+        }
       >
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
@@ -154,6 +174,11 @@ export default async function OrganizerInviteAcceptPage({
       <Shell
         title={t("title", { company: ctx.companyName })}
         description={t("description", { role: t(`role.${ctx.role}` as never) })}
+        action={
+          <Button asChild>
+            <Link href="/">{t("backHome")}</Link>
+          </Button>
+        }
       >
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
@@ -218,10 +243,12 @@ function Shell({
   title,
   description,
   children,
+  action,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <section className="mx-auto flex w-full max-w-xl flex-col gap-6 py-12">
@@ -232,6 +259,7 @@ function Shell({
         <p className="text-sm text-muted-foreground">{description}</p>
       </header>
       {children}
+      {action ? <div className="flex justify-center">{action}</div> : null}
     </section>
   );
 }

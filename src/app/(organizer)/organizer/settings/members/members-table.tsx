@@ -12,6 +12,17 @@ import {
   UserMinus,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,63 +141,113 @@ export function MembersTable({
               ) : null}
 
               {/* Transfer ownership — only the active owner sees this on
-                  other-member rows. */}
+                  other-member rows. Irreversible, so it is gated behind a
+                  confirmation dialog. */}
               {viewerRole === "owner" && !m.isSelf ? (
-                <form
-                  action={(fd) => submit(transferOwnershipAction, fd)}
-                  className="inline-flex"
-                >
-                  <input
-                    type="hidden"
-                    name="profile_id"
-                    value={m.profileId}
-                  />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    size="sm"
-                    disabled={pending}
-                  >
-                    {pending ? (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    ) : (
-                      <Crown className="size-4" aria-hidden />
-                    )}
-                    {t("transferOwnership")}
-                  </Button>
-                </form>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={pending}
+                    >
+                      {pending ? (
+                        <Loader2 className="animate-spin" aria-hidden />
+                      ) : (
+                        <Crown className="size-4" aria-hidden />
+                      )}
+                      {t("transferOwnership")}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {t("confirm.transfer.title")}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t("confirm.transfer.description", {
+                          name: m.fullName ?? m.email ?? t("unnamedMember"),
+                        })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>
+                        {t("confirm.cancel")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          const fd = new FormData();
+                          fd.set("profile_id", m.profileId);
+                          submit(transferOwnershipAction, fd);
+                        }}
+                      >
+                        {t("confirm.transfer.confirm")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : null}
 
               {/* Remove — admins/owner for non-owner rows, plus self-remove
-                  for non-owner self (owners must transfer first). */}
+                  for non-owner self (owners must transfer first). Both paths
+                  are confirmed; self-remove uses the "leave" copy, others use
+                  the "remove" copy. */}
               {((isAdminLike && m.role !== "owner") ||
                 (m.isSelf && m.role !== "owner")) ? (
-                <form
-                  action={(fd) => submit(removeMemberAction, fd)}
-                  className="inline-flex"
-                >
-                  <input
-                    type="hidden"
-                    name="profile_id"
-                    value={m.profileId}
-                  />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    size="sm"
-                    disabled={pending}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    {pending ? (
-                      <Loader2 className="animate-spin" aria-hidden />
-                    ) : m.isSelf ? (
-                      <UserMinus className="size-4" aria-hidden />
-                    ) : (
-                      <Trash2 className="size-4" aria-hidden />
-                    )}
-                    {m.isSelf ? t("leaveCompany") : t("removeMember")}
-                  </Button>
-                </form>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={pending}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {pending ? (
+                        <Loader2 className="animate-spin" aria-hidden />
+                      ) : m.isSelf ? (
+                        <UserMinus className="size-4" aria-hidden />
+                      ) : (
+                        <Trash2 className="size-4" aria-hidden />
+                      )}
+                      {m.isSelf ? t("leaveCompany") : t("removeMember")}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {m.isSelf
+                          ? t("confirm.leave.title")
+                          : t("confirm.remove.title")}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {m.isSelf
+                          ? t("confirm.leave.description")
+                          : t("confirm.remove.description", {
+                              name:
+                                m.fullName ?? m.email ?? t("unnamedMember"),
+                            })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>
+                        {t("confirm.cancel")}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          const fd = new FormData();
+                          fd.set("profile_id", m.profileId);
+                          submit(removeMemberAction, fd);
+                        }}
+                      >
+                        {m.isSelf
+                          ? t("confirm.leave.confirm")
+                          : t("confirm.remove.confirm")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : null}
             </div>
           </li>

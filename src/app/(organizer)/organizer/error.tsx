@@ -25,7 +25,7 @@ export default function OrganizerError({
           Try again
         </Button>
       }
-      secondary={{ label: "Back to dashboard", href: "/organizer" }}
+      secondary={{ label: "Back to dashboard", href: "/organizer/dashboard" }}
     />
   );
 }

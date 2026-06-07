@@ -512,6 +512,11 @@ export async function acceptQuoteAction(
             payload: {
               quote_id: sib.id,
               rfq_id,
+              // Supplier RFQ route is keyed by the invite id, not the rfq id —
+              // embed it so the in-app notification deep-links correctly
+              // (mirrors quote.proposal_requested). The absolute `rfq_url`
+              // below is the email link; the in-app inbox uses this id.
+              invite_id: inviteId,
               reason: "another_quote_accepted",
               // Pass the event_type SLUG (not the resolved name) so the
               // QuoteRejected template can render the supplier-locale label.

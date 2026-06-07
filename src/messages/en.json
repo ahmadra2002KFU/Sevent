@@ -2373,7 +2373,8 @@
         "revoked": "This invite was revoked.",
         "alreadyMember": "You're already a member of this company.",
         "acceptFailed": "Couldn't accept the invite. Please try again."
-      }
+      },
+      "backHome": "Go to homepage"
     },
     "settings": {
       "title": "Settings",
@@ -2467,6 +2468,24 @@
             "inviteRevoked": "{actor} revoked the invite for {target}.",
             "inviteAccepted": "{actor} accepted their invite."
           }
+        },
+        "confirm": {
+          "transfer": {
+            "title": "Transfer ownership?",
+            "description": "{name} will become the owner and you will be demoted to admin. This cannot be undone.",
+            "confirm": "Transfer ownership"
+          },
+          "remove": {
+            "title": "Remove member?",
+            "description": "{name} will lose access to this company. You can invite them again later.",
+            "confirm": "Remove member"
+          },
+          "leave": {
+            "title": "Leave this company?",
+            "description": "You will lose access to this company's events, RFQs, and bookings.",
+            "confirm": "Leave company"
+          },
+          "cancel": "Cancel"
         }
       },
       "invites": {
@@ -3003,7 +3022,13 @@
         },
         "printTitle": "Quote comparison",
         "printMeta": "{city} · {starts} – {ends}",
-        "conflictMark": "⚠ Conflict"
+        "conflictMark": "⚠ Conflict",
+        "confirmAccept": {
+          "title": "Accept this quote?",
+          "description": "You are booking {supplier} for {total}. Accepting rejects every other quote for this RFQ and places a 48-hour hold. This cannot be undone.",
+          "confirm": "Accept and book",
+          "cancel": "Cancel"
+        }
       },
       "rfp": {
         "requestCta": "Request for proposal",

@@ -33,6 +33,17 @@ import {
   X,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,9 +143,13 @@ function applyFilters(cols: QuoteColumn[], f: Filters): QuoteColumn[] {
 function AcceptForm({
   rfqId,
   quoteId,
+  supplierName,
+  totalLabel,
 }: {
   rfqId: string;
   quoteId: string;
+  supplierName: string;
+  totalLabel: string;
 }) {
   const t = useTranslations("organizer.quote.compare");
   const tQuote = useTranslations("organizer.quote");
@@ -144,11 +159,36 @@ function AcceptForm({
   );
   return (
     <div className="flex flex-col gap-2">
-      <form action={action}>
-        <input type="hidden" name="quote_id" value={quoteId} />
-        <input type="hidden" name="rfq_id" value={rfqId} />
-        <AcceptButton label={t("acceptCta")} pendingLabel={t("accepting")} />
-      </form>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button type="button" size="sm" className="w-full">
+            <Check aria-hidden />
+            {t("acceptCta")}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmAccept.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("confirmAccept.description", {
+                supplier: supplierName,
+                total: totalLabel,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("confirmAccept.cancel")}</AlertDialogCancel>
+            <form action={action}>
+              <input type="hidden" name="quote_id" value={quoteId} />
+              <input type="hidden" name="rfq_id" value={rfqId} />
+              <AcceptButton
+                label={t("confirmAccept.confirm")}
+                pendingLabel={t("accepting")}
+              />
+            </form>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {state.status === "error" ? (
         <Alert variant="destructive" className="px-2 py-1.5">
           <AlertTriangle className="size-3.5" aria-hidden />
@@ -170,19 +210,21 @@ function AcceptButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" size="sm" disabled={pending} className="w-full">
-      {pending ? (
-        <>
-          <Loader2 className="animate-spin" aria-hidden />
-          {pendingLabel}
-        </>
-      ) : (
-        <>
-          <Check aria-hidden />
-          {label}
-        </>
-      )}
-    </Button>
+    <AlertDialogAction asChild>
+      <Button type="submit" size="sm" disabled={pending}>
+        {pending ? (
+          <>
+            <Loader2 className="animate-spin" aria-hidden />
+            {pendingLabel}
+          </>
+        ) : (
+          <>
+            <Check aria-hidden />
+            {label}
+          </>
+        )}
+      </Button>
+    </AlertDialogAction>
   );
 }
 
@@ -787,7 +829,15 @@ export function QuoteComparisonGrid({ data }: Props) {
                           {t("viewSnapshot")}
                         </Link>
                       </Button>
-                      <AcceptForm rfqId={data.rfq_id} quoteId={col.quote_id} />
+                      <AcceptForm
+                        rfqId={data.rfq_id}
+                        quoteId={col.quote_id}
+                        supplierName={col.supplier.business_name}
+                        totalLabel={formatMoney(
+                          col.snapshot.total_halalas,
+                          locale,
+                        )}
+                      />
                       <RfpCell rfqId={data.rfq_id} col={col} />
                     </div>
                   </td>

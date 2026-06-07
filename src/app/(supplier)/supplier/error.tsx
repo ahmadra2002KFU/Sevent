@@ -25,7 +25,7 @@ export default function SupplierError({
           Try again
         </Button>
       }
-      secondary={{ label: "Back to dashboard", href: "/supplier" }}
+      secondary={{ label: "Back to dashboard", href: "/supplier/dashboard" }}
     />
   );
 }

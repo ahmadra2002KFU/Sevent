@@ -90,15 +90,26 @@ export function linkForNotification(
       if (role === "supplier") {
         if (bookingId)
           return { href: `/supplier/bookings/${bookingId}`, label: "view" };
-        if (rfqId) return { href: `/supplier/rfqs/${rfqId}`, label: "view" };
+        // Same invite-vs-rfq keying caveat as quote.rejected: the supplier
+        // route takes an invite id. Never build an rfq-keyed
+        // `/supplier/rfqs/<rfqId>` — it always 404s. Degrade to the inbox.
+        if (inviteId)
+          return { href: `/supplier/rfqs/${inviteId}`, label: "view" };
+        return { href: "/supplier/rfqs", label: "view" };
       }
       if (role === "organizer" && bookingId) {
         return { href: `/organizer/bookings/${bookingId}`, label: "view" };
       }
       return null;
     case "quote.rejected":
-      if (role === "supplier" && rfqId) {
-        return { href: `/supplier/rfqs/${rfqId}`, label: "view" };
+      // `/supplier/rfqs/[id]` is keyed by invite id, not rfq id, so the writer
+      // (`acceptQuoteAction`) embeds `invite_id`. Older rows that predate that
+      // change lack it and degrade to the RFQ inbox rather than 404ing on an
+      // rfq-keyed URL.
+      if (role === "supplier") {
+        if (inviteId)
+          return { href: `/supplier/rfqs/${inviteId}`, label: "view" };
+        return { href: "/supplier/rfqs", label: "view" };
       }
       return null;
     case "quote.proposal_requested":

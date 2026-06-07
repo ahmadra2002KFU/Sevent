@@ -153,7 +153,18 @@ export default async function OrganizerRfqsPage({ searchParams }: PageProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <Button asChild>
+            <Link href="/organizer/rfqs/new">
+              <FileText aria-hidden />
+              {t("newRfq")}
+            </Link>
+          </Button>
+        }
+      />
 
       {rows.length === 0 ? (
         <EmptyState

@@ -25,7 +25,7 @@ export default function AdminError({
           Try again
         </Button>
       }
-      secondary={{ label: "Back to dashboard", href: "/admin" }}
+      secondary={{ label: "Back to dashboard", href: "/admin/dashboard" }}
     />
   );
 }
