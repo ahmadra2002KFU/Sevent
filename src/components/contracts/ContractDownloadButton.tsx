@@ -11,8 +11,13 @@ type GetUrlResult =
 
 export type ContractDownloadButtonProps = {
   bookingId: string;
+  /**
+   * Which language's contract to download. English and Arabic are separate
+   * files; the action selects the matching stored path. Defaults to English.
+   */
+  locale?: "en" | "ar";
   /** Role-scoped server action that returns a signed URL for the caller. */
-  getUrl: (bookingId: string) => Promise<GetUrlResult>;
+  getUrl: (bookingId: string, locale?: "en" | "ar") => Promise<GetUrlResult>;
   labels: {
     download: string;
     errorGeneric: string;
@@ -29,6 +34,7 @@ export type ContractDownloadButtonProps = {
  */
 export function ContractDownloadButton({
   bookingId,
+  locale = "en",
   getUrl,
   labels,
   className,
@@ -39,7 +45,7 @@ export function ContractDownloadButton({
   function handleClick() {
     setMessage(null);
     startTransition(async () => {
-      const result = await getUrl(bookingId);
+      const result = await getUrl(bookingId, locale);
       if ("url" in result) {
         window.open(result.url, "_blank", "noopener,noreferrer");
         return;

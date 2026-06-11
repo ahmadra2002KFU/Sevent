@@ -17,6 +17,10 @@ type CompanyRow = {
   billing_email: string | null;
   default_language: "en" | "ar";
   logo_path: string | null;
+  address_line1: string | null;
+  address_city: string | null;
+  address_region: string | null;
+  address_postal_code: string | null;
 };
 
 /**
@@ -39,7 +43,7 @@ export default async function OrganizerCompanySettingsPage() {
   const { data: row, error } = await admin
     .from("organizer_companies")
     .select(
-      "id, name, name_ar, slug, cr_number, vat_number, billing_email, default_language, logo_path",
+      "id, name, name_ar, slug, cr_number, vat_number, billing_email, default_language, logo_path, address_line1, address_city, address_region, address_postal_code",
     )
     .eq("id", companyId)
     .maybeSingle();
@@ -81,6 +85,10 @@ export default async function OrganizerCompanySettingsPage() {
         billing_email: canEdit ? company.billing_email ?? "" : "",
         default_language: company.default_language,
         logo_path: company.logo_path ?? "",
+        address_line1: company.address_line1 ?? "",
+        address_city: company.address_city ?? "",
+        address_region: company.address_region ?? "",
+        address_postal_code: company.address_postal_code ?? "",
       }}
       canEdit={canEdit}
     />

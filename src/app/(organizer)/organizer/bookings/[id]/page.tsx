@@ -64,6 +64,7 @@ type BookingDetailRow = {
   completed_at: string | null;
   created_at: string;
   contract_pdf_path: string | null;
+  contract_pdf_path_ar: string | null;
   suppliers: {
     id: string;
     business_name: string;
@@ -142,7 +143,7 @@ export default async function OrganizerBookingDetailPage({
     .select(
       `id, rfq_id, quote_id, accepted_quote_revision_id, organizer_id, company_id,
        supplier_id, confirmation_status, service_status, confirm_deadline, confirmed_at, completed_at, created_at,
-       contract_pdf_path,
+       contract_pdf_path, contract_pdf_path_ar,
        suppliers ( id, business_name, base_city ),
        rfqs ( id, events ( id, city, starts_at, ends_at, event_type, client_name, guest_count ) ),
        quote_revisions:accepted_quote_revision_id ( id, version, snapshot_jsonb )`,
@@ -332,9 +333,25 @@ export default async function OrganizerBookingDetailPage({
             {row.confirmation_status === "confirmed" && row.contract_pdf_path ? (
               <ContractDownloadButton
                 bookingId={row.id}
+                locale="en"
                 getUrl={getContractUrlAction}
                 labels={{
-                  download: t("downloadContract"),
+                  download: t("downloadContractEn"),
+                  errorGeneric: t("downloadContractError"),
+                  notReady: t("downloadContractNotReady"),
+                  missing: t("downloadContractMissing"),
+                }}
+                className="mt-1"
+              />
+            ) : null}
+            {row.confirmation_status === "confirmed" &&
+            row.contract_pdf_path_ar ? (
+              <ContractDownloadButton
+                bookingId={row.id}
+                locale="ar"
+                getUrl={getContractUrlAction}
+                labels={{
+                  download: t("downloadContractAr"),
                   errorGeneric: t("downloadContractError"),
                   notReady: t("downloadContractNotReady"),
                   missing: t("downloadContractMissing"),

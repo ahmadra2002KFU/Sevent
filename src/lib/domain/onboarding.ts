@@ -83,6 +83,23 @@ export const OnboardingStep1 = z
     legal_type: z.enum(LEGAL_TYPES),
     cr_number: z.string().trim().optional(),
     national_id: z.string().trim().optional(),
+    /**
+     * Saudi VAT registration number (15 digits, starts with 3). Optional — a
+     * freelancer below the VAT threshold may not have one. Surfaced on the
+     * contract as the Second Party's tax identity. Empty string normalises to
+     * "no VAT number" (same pattern as `website_url`).
+     */
+    vat_number: z
+      .string()
+      .trim()
+      .regex(/^3\d{14}$/, "VAT number must be 15 digits starting with 3")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    // Postal address shown on the contract. All optional; empty normalises away.
+    address_line1: z.string().trim().max(200).optional(),
+    address_city: z.string().trim().max(120).optional(),
+    address_region: z.string().trim().max(120).optional(),
+    address_postal_code: z.string().trim().max(20).optional(),
     bio: z.string().trim().max(SUPPLIER_BIO_MAX_LENGTH).optional(),
     base_city: z.enum(CITY_TUPLE),
     serves_all_ksa: z.boolean().default(false),

@@ -102,6 +102,17 @@ function supabaseImageRemotePatterns(): NonNullable<
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The contract PDF is rendered server-side (on supplier booking confirmation)
+  // and reads the Almarai TTFs from `src/app/fonts` + the Sevent logo from
+  // `public/logo.png` at runtime to embed them (see `src/lib/contracts/fonts.ts`
+  // and `assets.ts`). Pin those files into the traced output so they survive a
+  // standalone build.
+  outputFileTracingIncludes: {
+    "/supplier/bookings/[id]": [
+      "./src/app/fonts/Almarai-*.ttf",
+      "./public/logo.png",
+    ],
+  },
   experimental: {
     // Server Actions default to a 1 MB FormData cap. Supplier onboarding
     // submits a logo + multiple verification PDFs in one action, and quote

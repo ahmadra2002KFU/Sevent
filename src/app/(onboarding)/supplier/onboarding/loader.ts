@@ -10,7 +10,7 @@ type AdminClient = ReturnType<typeof createSupabaseServiceRoleClient>;
 // the onboarding wizard bootstrap. Selecting once and threading the row
 // through callers eliminates duplicate `suppliers` round-trips per page load.
 export const SUPPLIER_ROW_COLUMNS =
-  "id, business_name, slug, legal_type, cr_number, national_id, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments, website_url, accent_color, profile_sections_order" as const;
+  "id, business_name, slug, legal_type, cr_number, national_id, vat_number, representative_name, address_line1, address_city, address_region, address_postal_code, bio, base_city, service_area_cities, serves_all_ksa, languages, capacity, concurrent_event_limit, verification_status, is_published, logo_path, works_with_segments, website_url, accent_color, profile_sections_order" as const;
 
 export type SupplierWideRow = {
   id: string;
@@ -19,6 +19,12 @@ export type SupplierWideRow = {
   legal_type: string | null;
   cr_number: string | null;
   national_id: string | null;
+  vat_number: string | null;
+  representative_name: string | null;
+  address_line1: string | null;
+  address_city: string | null;
+  address_region: string | null;
+  address_postal_code: string | null;
   bio: string | null;
   base_city: string;
   service_area_cities: string[];
@@ -79,6 +85,12 @@ export type OnboardingBootstrap = {
     legal_type: string | null;
     cr_number: string | null;
     national_id: string | null;
+    vat_number: string | null;
+    representative_name: string | null;
+    address_line1: string | null;
+    address_city: string | null;
+    address_region: string | null;
+    address_postal_code: string | null;
     bio: string | null;
     base_city: string;
     service_area_cities: string[];
@@ -133,6 +145,12 @@ function shapeSupplier(
     legal_type: row.legal_type,
     cr_number: row.cr_number,
     national_id: row.national_id,
+    vat_number: row.vat_number,
+    representative_name: row.representative_name,
+    address_line1: row.address_line1,
+    address_city: row.address_city,
+    address_region: row.address_region,
+    address_postal_code: row.address_postal_code,
     bio: row.bio,
     base_city: row.base_city,
     service_area_cities: row.service_area_cities,

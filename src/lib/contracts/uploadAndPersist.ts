@@ -2,8 +2,10 @@
  * Uploads a contract PDF blob to the `contracts` Storage bucket and
  * persists the path on the matching `bookings` row.
  *
- * Path layout (deterministic + idempotent):
- *   {booking_id}/{accepted_quote_revision_id}.pdf
+ * The English and Arabic contracts are SEPARATE files, so the path and the
+ * persisted column are per-locale:
+ *   en → {booking_id}/{accepted_quote_revision_id}-en.pdf → bookings.contract_pdf_path
+ *   ar → {booking_id}/{accepted_quote_revision_id}-ar.pdf → bookings.contract_pdf_path_ar
  *
  * The deterministic path means a retry after a partial failure produces
  * the same object key — we never accumulate orphan PDFs. If the object
@@ -13,6 +15,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ContractLocale } from "./ContractDocument";
 
 export type UploadContractInput = {
   /** Service-role Supabase client (RLS bypass for `contracts` bucket writes). */
@@ -20,15 +23,21 @@ export type UploadContractInput = {
   bookingId: string;
   acceptedQuoteRevisionId: string;
   bytes: Uint8Array;
+  locale: ContractLocale;
 };
 
 export type UploadContractResult = { path: string };
 
+const COLUMN_FOR_LOCALE: Record<ContractLocale, string> = {
+  en: "contract_pdf_path",
+  ar: "contract_pdf_path_ar",
+};
+
 export async function uploadContractAndPersist(
   input: UploadContractInput,
 ): Promise<UploadContractResult> {
-  const { admin, bookingId, acceptedQuoteRevisionId, bytes } = input;
-  const path = `${bookingId}/${acceptedQuoteRevisionId}.pdf`;
+  const { admin, bookingId, acceptedQuoteRevisionId, bytes, locale } = input;
+  const path = `${bookingId}/${acceptedQuoteRevisionId}-${locale}.pdf`;
 
   const { error: uploadError } = await admin.storage
     .from("contracts")
@@ -52,15 +61,14 @@ export async function uploadContractAndPersist(
     }
   }
 
+  const column = COLUMN_FOR_LOCALE[locale];
   const { error: updateError } = await admin
     .from("bookings")
-    .update({ contract_pdf_path: path })
+    .update({ [column]: path })
     .eq("id", bookingId);
 
   if (updateError) {
-    throw new Error(
-      `bookings.contract_pdf_path persist failed: ${updateError.message}`,
-    );
+    throw new Error(`bookings.${column} persist failed: ${updateError.message}`);
   }
 
   return { path };

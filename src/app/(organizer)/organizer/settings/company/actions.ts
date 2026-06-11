@@ -52,6 +52,11 @@ const InputSchema = z.object({
     .email("billingEmailInvalid")
     .max(255, "billingEmailInvalid"),
   default_language: z.enum(["en", "ar"]),
+  // Postal address shown on the contract First Party block. All optional.
+  address_line1: z.preprocess(trimToNull, z.string().max(200).nullable()),
+  address_city: z.preprocess(trimToNull, z.string().max(120).nullable()),
+  address_region: z.preprocess(trimToNull, z.string().max(120).nullable()),
+  address_postal_code: z.preprocess(trimToNull, z.string().max(20).nullable()),
 });
 
 function firstErrorCode(err: z.ZodError): UpdateCompanyErrorCode {
@@ -85,6 +90,10 @@ export async function updateCompanyAction(
     vat_number: formData.get("vat_number"),
     billing_email: formData.get("billing_email") ?? "",
     default_language: formData.get("default_language") ?? "en",
+    address_line1: formData.get("address_line1"),
+    address_city: formData.get("address_city"),
+    address_region: formData.get("address_region"),
+    address_postal_code: formData.get("address_postal_code"),
   });
   if (!parsed.success) {
     return { status: "error", code: firstErrorCode(parsed.error) };
@@ -97,6 +106,10 @@ export async function updateCompanyAction(
     vat_number,
     billing_email,
     default_language,
+    address_line1,
+    address_city,
+    address_region,
+    address_postal_code,
   } = parsed.data;
 
   // Read the existing logo_path so the RPC's `set logo_path = p_logo_path`
@@ -119,6 +132,10 @@ export async function updateCompanyAction(
     p_billing_email: billing_email,
     p_default_language: default_language,
     p_logo_path: logo_path,
+    p_address_line1: address_line1,
+    p_address_city: address_city,
+    p_address_region: address_region,
+    p_address_postal_code: address_postal_code,
   });
 
   if (error) {

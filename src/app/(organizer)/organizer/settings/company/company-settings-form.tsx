@@ -28,6 +28,10 @@ type CompanySettingsFormProps = {
     billing_email: string;
     default_language: "en" | "ar";
     logo_path: string;
+    address_line1: string;
+    address_city: string;
+    address_region: string;
+    address_postal_code: string;
   };
   canEdit: boolean;
 };
@@ -81,6 +85,50 @@ export function CompanySettingsForm({
           readOnly
         />
       </Field>
+
+      {/* Postal address — shown on the contract First Party block. Visible to
+          all members (read-only for non-admins), not finance-sensitive. */}
+      <Field label={t("addressLine1Label")} hint={t("addressHint")}>
+        <Input
+          id="company-address-line1"
+          name="address_line1"
+          maxLength={200}
+          defaultValue={defaultValues.address_line1}
+          disabled={!canEdit}
+        />
+      </Field>
+
+      <div className="grid gap-6 sm:grid-cols-3">
+        <Field label={t("addressCityLabel")}>
+          <Input
+            id="company-address-city"
+            name="address_city"
+            maxLength={120}
+            defaultValue={defaultValues.address_city}
+            disabled={!canEdit}
+          />
+        </Field>
+
+        <Field label={t("addressRegionLabel")}>
+          <Input
+            id="company-address-region"
+            name="address_region"
+            maxLength={120}
+            defaultValue={defaultValues.address_region}
+            disabled={!canEdit}
+          />
+        </Field>
+
+        <Field label={t("addressPostalCodeLabel")}>
+          <Input
+            id="company-address-postal"
+            name="address_postal_code"
+            maxLength={20}
+            defaultValue={defaultValues.address_postal_code}
+            disabled={!canEdit}
+          />
+        </Field>
+      </div>
 
       {/*
         Finance fields (CR / VAT / billing email) are admin-only. Members

@@ -287,6 +287,16 @@ export function OnboardingWizard({ bootstrap }: WizardProps) {
                       if (values.cr_number) fd.append("cr_number", values.cr_number);
                       if (values.national_id)
                         fd.append("national_id", values.national_id);
+                      if (values.vat_number)
+                        fd.append("vat_number", values.vat_number);
+                      if (values.address_line1)
+                        fd.append("address_line1", values.address_line1);
+                      if (values.address_city)
+                        fd.append("address_city", values.address_city);
+                      if (values.address_region)
+                        fd.append("address_region", values.address_region);
+                      if (values.address_postal_code)
+                        fd.append("address_postal_code", values.address_postal_code);
                       if (values.bio) fd.append("bio", values.bio);
                       fd.append("base_city", values.base_city);
                       fd.append(
@@ -424,6 +434,11 @@ type Step1Values = {
   legal_type: "company" | "freelancer" | "foreign";
   cr_number?: string;
   national_id?: string;
+  vat_number?: string;
+  address_line1?: string;
+  address_city?: string;
+  address_region?: string;
+  address_postal_code?: string;
   bio?: string;
   base_city: string;
   serves_all_ksa: boolean;
@@ -470,6 +485,11 @@ function Step1Form({
         (initial?.legal_type as Step1Values["legal_type"]) ?? initialLegalType,
       cr_number: initial?.cr_number ?? "",
       national_id: initial?.national_id ?? "",
+      vat_number: initial?.vat_number ?? "",
+      address_line1: initial?.address_line1 ?? "",
+      address_city: initial?.address_city ?? "",
+      address_region: initial?.address_region ?? "",
+      address_postal_code: initial?.address_postal_code ?? "",
       bio: initial?.bio ?? "",
       base_city: initial?.base_city ?? "",
       serves_all_ksa: Boolean(initial?.serves_all_ksa ?? false),
@@ -556,6 +576,39 @@ function Step1Form({
 
       <LegalTypeFields control={control} register={register} errors={errors} />
 
+      <Field
+        label={t("vatNumberLabel")}
+        helperKey="helper.vatNumber"
+        error={errors.vat_number?.message}
+      >
+        <Input {...register("vat_number")} inputMode="numeric" />
+      </Field>
+
+      <Field
+        label={t("addressLine1Label")}
+        helperKey="helper.address"
+        error={errors.address_line1?.message}
+      >
+        <Input {...register("address_line1")} />
+      </Field>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Field label={t("addressCityLabel")} error={errors.address_city?.message}>
+          <Input {...register("address_city")} />
+        </Field>
+        <Field
+          label={t("addressRegionLabel")}
+          error={errors.address_region?.message}
+        >
+          <Input {...register("address_region")} />
+        </Field>
+        <Field
+          label={t("addressPostalCodeLabel")}
+          error={errors.address_postal_code?.message}
+        >
+          <Input {...register("address_postal_code")} />
+        </Field>
+      </div>
 
       <Field
         label={t("baseCityLabel")}
