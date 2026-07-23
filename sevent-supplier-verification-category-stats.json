@@ -1,0 +1,958 @@
+{
+    "overall": {
+        "foreign": 0,
+        "approved": 55,
+        "rejected": 15,
+        "companies": 62,
+        "freelancers": 8,
+        "supplier_count": 70,
+        "unspecified_legal_type": 0
+    },
+    "metadata": {
+        "scope": "All supplier profiles with verification_status approved or rejected",
+        "privacy": "Aggregate statistics only; no supplier identities or personal data",
+        "environment": "production",
+        "counting_note": "Category assignments are many-to-many, so category counts can exceed supplier counts",
+        "generated_at_asia_riyadh": "2026-07-23 17:10:51"
+    },
+    "by_verification_status": {
+        "approved": {
+            "categories": [
+                {
+                    "slug": "event_management",
+                    "name_ar": "إدارة الفعاليات",
+                    "name_en": "Event Management",
+                    "subcategories": [
+                        {
+                            "slug": "initial_design_and_manufacturing_services",
+                            "name_ar": "خدمات التصميم الأولي والتصنيع",
+                            "name_en": "Initial Design & Manufacturing Services",
+                            "supplier_count": 21
+                        },
+                        {
+                            "slug": "project_management",
+                            "name_ar": "إدارة المشاريع",
+                            "name_en": "Project Management",
+                            "supplier_count": 19
+                        },
+                        {
+                            "slug": "live_performances",
+                            "name_ar": "العروض الحية",
+                            "name_en": "Live Performances",
+                            "supplier_count": 17
+                        },
+                        {
+                            "slug": "project_setup_requirements",
+                            "name_ar": "متطلبات تجهيز المشاريع",
+                            "name_en": "Project Setup Requirements",
+                            "supplier_count": 6
+                        },
+                        {
+                            "slug": "creative_content",
+                            "name_ar": "محتويات إبداعية",
+                            "name_en": "Creative Content",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "photo_booths",
+                            "name_ar": "الفوتوبوث",
+                            "name_en": "Photo Booths",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "operettas",
+                            "name_ar": "الأوبريتات",
+                            "name_en": "Operettas",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "data_analytics",
+                            "name_ar": "تحليل البيانات",
+                            "name_en": "Data Analytics",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 33,
+                    "represented_subcategory_count": 8
+                },
+                {
+                    "slug": "furniture",
+                    "name_ar": "الأثاث",
+                    "name_en": "Furniture",
+                    "subcategories": [
+                        {
+                            "slug": "event_furniture_and_accessories",
+                            "name_ar": "الأثاث وإكسسوارات الفعاليات",
+                            "name_en": "Event Furniture & Accessories",
+                            "supplier_count": 19
+                        },
+                        {
+                            "slug": "floral_arrangements",
+                            "name_ar": "الورود",
+                            "name_en": "Floral Arrangements",
+                            "supplier_count": 14
+                        },
+                        {
+                            "slug": "indoor_plants",
+                            "name_ar": "النباتات الداخلية",
+                            "name_en": "Indoor Plants",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "stands_and_couches",
+                            "name_ar": "المدرجات والكنب",
+                            "name_en": "Stands & Couches",
+                            "supplier_count": 4
+                        }
+                    ],
+                    "supplier_count": 22,
+                    "represented_subcategory_count": 4
+                },
+                {
+                    "slug": "avl",
+                    "name_ar": "الصوتيات والمرئيات والإضاءة",
+                    "name_en": "AVL",
+                    "subcategories": [
+                        {
+                            "slug": "lighting_services",
+                            "name_ar": "خدمات الإضاءة",
+                            "name_en": "Lighting Services",
+                            "supplier_count": 16
+                        },
+                        {
+                            "slug": "sound_services",
+                            "name_ar": "خدمات الصوت",
+                            "name_en": "Sound Services",
+                            "supplier_count": 16
+                        },
+                        {
+                            "slug": "video_services",
+                            "name_ar": "خدمات الفيديو",
+                            "name_en": "Video Services",
+                            "supplier_count": 16
+                        },
+                        {
+                            "slug": "audio_visual_equipment_rental",
+                            "name_ar": "تأجير معدات الصوتيات والمرئيات",
+                            "name_en": "Audio-Visual Equipment Rental",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "decorative_lighting_and_trusses",
+                            "name_ar": "تجهيزات الإضاءة الزخرفية والتراسات",
+                            "name_en": "Decorative Lighting & Trusses",
+                            "supplier_count": 4
+                        }
+                    ],
+                    "supplier_count": 19,
+                    "represented_subcategory_count": 5
+                },
+                {
+                    "slug": "site_services",
+                    "name_ar": "خدمات الموقع",
+                    "name_en": "Site Services",
+                    "subcategories": [
+                        {
+                            "slug": "generators",
+                            "name_ar": "مولدات الكهرباء",
+                            "name_en": "Generators",
+                            "supplier_count": 13
+                        },
+                        {
+                            "slug": "tents",
+                            "name_ar": "الخيام",
+                            "name_en": "Tents",
+                            "supplier_count": 9
+                        },
+                        {
+                            "slug": "air_conditioning_works",
+                            "name_ar": "أعمال التكييف",
+                            "name_en": "Air-Conditioning Works",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "bumpers",
+                            "name_ar": "الفواصل",
+                            "name_en": "Bumpers",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "barriers",
+                            "name_ar": "الحواجز",
+                            "name_en": "Barriers",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "mobile_offices",
+                            "name_ar": "المكاتب المتنقلة",
+                            "name_en": "Mobile Offices",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "portable_toilets",
+                            "name_ar": "دورات المياه المتنقلة",
+                            "name_en": "Portable Toilets",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 18,
+                    "represented_subcategory_count": 7
+                },
+                {
+                    "slug": "hospitality",
+                    "name_ar": "الضيافة",
+                    "name_en": "Hospitality",
+                    "subcategories": [
+                        {
+                            "slug": "food_and_beverages",
+                            "name_ar": "الأطعمة والمشروبات",
+                            "name_en": "Food & Beverages",
+                            "supplier_count": 14
+                        },
+                        {
+                            "slug": "food_and_beverage_service_equipment",
+                            "name_ar": "تجهيزات تقديم الطعام والشراب",
+                            "name_en": "Food & Beverage Service Equipment",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "hospitality_consumables",
+                            "name_ar": "مستلزمات الضيافة",
+                            "name_en": "Hospitality Consumables",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 16,
+                    "represented_subcategory_count": 3
+                },
+                {
+                    "slug": "fit_out_works",
+                    "name_ar": "أعمال التجهيز والتشطيب",
+                    "name_en": "Fit-Out Works",
+                    "subcategories": [
+                        {
+                            "slug": "light_electrical_works",
+                            "name_ar": "التمديدات الكهربائية البسيطة",
+                            "name_en": "Light Electrical Works",
+                            "supplier_count": 15
+                        },
+                        {
+                            "slug": "gypsum_works",
+                            "name_ar": "أعمال الجبس",
+                            "name_en": "Gypsum Works",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "painting_works",
+                            "name_ar": "أعمال الدهانات",
+                            "name_en": "Painting Works",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "carpentry_and_woodworks",
+                            "name_ar": "أعمال النجارة والأخشاب",
+                            "name_en": "Carpentry & Woodworks",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "light_plumbing_works",
+                            "name_ar": "التمديدات الصحية البسيطة",
+                            "name_en": "Light Plumbing Works",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "melamine_installations",
+                            "name_ar": "تركيبات الميلامين",
+                            "name_en": "Melamine Installations",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "carpets",
+                            "name_ar": "السجاد",
+                            "name_en": "Carpets",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 15,
+                    "represented_subcategory_count": 7
+                },
+                {
+                    "slug": "logistics",
+                    "name_ar": "الخدمات اللوجستية",
+                    "name_en": "Logistics",
+                    "subcategories": [
+                        {
+                            "slug": "transportation_services",
+                            "name_ar": "خدمات النقل",
+                            "name_en": "Transportation Services",
+                            "supplier_count": 8
+                        },
+                        {
+                            "slug": "vehicles",
+                            "name_ar": "السيارات",
+                            "name_en": "Vehicles",
+                            "supplier_count": 6
+                        },
+                        {
+                            "slug": "parking_management",
+                            "name_ar": "تنظيم المواقف",
+                            "name_en": "Parking Management",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "control_rooms",
+                            "name_ar": "غرف التحكم",
+                            "name_en": "Control Rooms",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "hotel_bookings",
+                            "name_ar": "الحجوزات الفندقية",
+                            "name_en": "Hotel Bookings",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "industrial_security_services",
+                            "name_ar": "خدمات الأمن الصناعي",
+                            "name_en": "Industrial Security Services",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "mass_transportation",
+                            "name_ar": "المواصلات الجماعية",
+                            "name_en": "Mass Transportation",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "travel_and_transit_bookings",
+                            "name_ar": "حجوزات السفر والتنقل",
+                            "name_en": "Travel & Transit Bookings",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 13,
+                    "represented_subcategory_count": 8
+                },
+                {
+                    "slug": "media_production",
+                    "name_ar": "الإنتاج الإعلامي",
+                    "name_en": "Media Production",
+                    "subcategories": [
+                        {
+                            "slug": "media_documentation_and_reporting",
+                            "name_ar": "التوثيق وإعداد التقارير الإعلامية",
+                            "name_en": "Media Documentation & Reporting",
+                            "supplier_count": 10
+                        },
+                        {
+                            "slug": "tv_programs_and_promotional_videos_production",
+                            "name_ar": "إنتاج البرامج التلفزيونية والفيديوهات الدعائية",
+                            "name_en": "TV Programs & Promotional Videos Production",
+                            "supplier_count": 9
+                        },
+                        {
+                            "slug": "live_broadcasting_and_coverage",
+                            "name_ar": "خدمات البث والتغطية المباشرة",
+                            "name_en": "Live Broadcasting & Coverage",
+                            "supplier_count": 6
+                        },
+                        {
+                            "slug": "production_and_media_services",
+                            "name_ar": "خدمات الإنتاج والميديا",
+                            "name_en": "Production & Media Services",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "technical_equipment_and_studios",
+                            "name_ar": "المعدات التقنية والاستوديوهات",
+                            "name_en": "Technical Equipment & Studios",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "audio_production",
+                            "name_ar": "الإنتاج الصوتي",
+                            "name_en": "Audio Production",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "motion_graphics_services",
+                            "name_ar": "خدمات الموشن جرافيك",
+                            "name_en": "Motion Graphics Services",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "media_campaigns_and_broadcast_technology",
+                            "name_ar": "الحملات الإعلامية وتقنيات البث",
+                            "name_en": "Media Campaigns & Broadcast Technology",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "motion_graphics_editing_and_color_grading",
+                            "name_ar": "الموشن جرافيك والمونتاج وتصحيح الألوان",
+                            "name_en": "Motion Graphics, Editing & Color Grading",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "ob_vans_and_live_broadcasting_rental",
+                            "name_ar": "تأجير عربات البث الخارجي والبث المباشر",
+                            "name_en": "OB Vans & Live Broadcasting Rental",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 13,
+                    "represented_subcategory_count": 10
+                },
+                {
+                    "slug": "workforce",
+                    "name_ar": "القوى العاملة",
+                    "name_en": "Workforce",
+                    "subcategories": [
+                        {
+                            "slug": "crowd_management_and_safety_personnel",
+                            "name_ar": "كوادر إدارة الحشود والسلامة",
+                            "name_en": "Crowd Management & Safety Personnel",
+                            "supplier_count": 7
+                        },
+                        {
+                            "slug": "event_management_and_operations_personnel",
+                            "name_ar": "كوادر إدارة وتشغيل الفعاليات",
+                            "name_en": "Event Management & Operations Personnel",
+                            "supplier_count": 6
+                        },
+                        {
+                            "slug": "technicians_and_engineers",
+                            "name_ar": "الفنيون والمهندسون",
+                            "name_en": "Technicians & Engineers",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "company_staff",
+                            "name_ar": "موظفو الشركة",
+                            "name_en": "Company Staff",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "creative_artists",
+                            "name_ar": "الفنانون الإبداعيون",
+                            "name_en": "Creative Artists",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "skilled_and_manual_labor",
+                            "name_ar": "العمالة الحرفية والتنفيذية",
+                            "name_en": "Skilled & Manual Labor",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 13,
+                    "represented_subcategory_count": 6
+                },
+                {
+                    "slug": "construction",
+                    "name_ar": "الإنشاءات",
+                    "name_en": "Construction",
+                    "subcategories": [
+                        {
+                            "slug": "scaffolding_and_steel_structures",
+                            "name_ar": "السقالات والهياكل الحديدية",
+                            "name_en": "Scaffolding & Steel Structures",
+                            "supplier_count": 7
+                        },
+                        {
+                            "slug": "civil_construction",
+                            "name_ar": "الإنشاءات المدنية (الميكانيكا والكهرباء والسباكة)",
+                            "name_en": "Civil Construction (MEP)",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "facilities_maintenance",
+                            "name_ar": "صيانة المرافق",
+                            "name_en": "Facilities Maintenance",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "landscaping",
+                            "name_ar": "تنسيق المواقع والحدائق",
+                            "name_en": "Landscaping",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "tiling_works",
+                            "name_ar": "أعمال التبليط",
+                            "name_en": "Tiling Works",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 9,
+                    "represented_subcategory_count": 5
+                },
+                {
+                    "slug": "advertising_prints_identity_applications",
+                    "name_ar": "المطبوعات وتطبيقات الهوية",
+                    "name_en": "Advertising (Prints & Identity Applications)",
+                    "subcategories": [
+                        {
+                            "slug": "banners",
+                            "name_ar": "البنرات",
+                            "name_en": "Banners",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "product_and_gift_customization_services",
+                            "name_ar": "خدمات تخصيص المنتجات والهدايا",
+                            "name_en": "Product & Gift Customization Services",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "stickers",
+                            "name_ar": "الستيكرات",
+                            "name_en": "Stickers",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "flags",
+                            "name_ar": "الأعلام",
+                            "name_en": "Flags",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "printing_services",
+                            "name_ar": "خدمات الطباعة",
+                            "name_en": "Printing Services",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "brand_identity_applications",
+                            "name_ar": "تطبيقات الهوية",
+                            "name_en": "Brand Identity Applications",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 6,
+                    "represented_subcategory_count": 6
+                },
+                {
+                    "slug": "marketing_pr",
+                    "name_ar": "التسويق والعلاقات العامة",
+                    "name_en": "Marketing & PR",
+                    "subcategories": [
+                        {
+                            "slug": "delegation_receptions_and_press_conferences",
+                            "name_ar": "استقبال الوفود والمؤتمرات الصحفية",
+                            "name_en": "Delegation Receptions & Press Conferences",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "hosting_services",
+                            "name_ar": "الاستضافات",
+                            "name_en": "Hosting Services",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "advertising_campaigns",
+                            "name_ar": "الحملات الإعلانية",
+                            "name_en": "Advertising Campaigns",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "marketing_plans",
+                            "name_ar": "الخطط التسويقية",
+                            "name_en": "Marketing Plans",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "influencers",
+                            "name_ar": "المؤثرون",
+                            "name_en": "Influencers",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "media_buying",
+                            "name_ar": "شراء المساحات الإعلانية والإعلامية",
+                            "name_en": "Media Buying",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 4,
+                    "represented_subcategory_count": 6
+                }
+            ],
+            "legal_type": {
+                "company": 49,
+                "freelancer": 6
+            },
+            "supplier_count": 55,
+            "category_coverage": {
+                "category_assignments": 403,
+                "subcategories_represented": 75,
+                "suppliers_with_categories": 49,
+                "suppliers_without_categories": 6,
+                "parent_categories_represented": 12
+            }
+        },
+        "rejected": {
+            "categories": [
+                {
+                    "slug": "event_management",
+                    "name_ar": "إدارة الفعاليات",
+                    "name_en": "Event Management",
+                    "subcategories": [
+                        {
+                            "slug": "project_management",
+                            "name_ar": "إدارة المشاريع",
+                            "name_en": "Project Management",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "live_performances",
+                            "name_ar": "العروض الحية",
+                            "name_en": "Live Performances",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "initial_design_and_manufacturing_services",
+                            "name_ar": "خدمات التصميم الأولي والتصنيع",
+                            "name_en": "Initial Design & Manufacturing Services",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "project_setup_requirements",
+                            "name_ar": "متطلبات تجهيز المشاريع",
+                            "name_en": "Project Setup Requirements",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 6,
+                    "represented_subcategory_count": 4
+                },
+                {
+                    "slug": "furniture",
+                    "name_ar": "الأثاث",
+                    "name_en": "Furniture",
+                    "subcategories": [
+                        {
+                            "slug": "event_furniture_and_accessories",
+                            "name_ar": "الأثاث وإكسسوارات الفعاليات",
+                            "name_en": "Event Furniture & Accessories",
+                            "supplier_count": 5
+                        },
+                        {
+                            "slug": "floral_arrangements",
+                            "name_ar": "الورود",
+                            "name_en": "Floral Arrangements",
+                            "supplier_count": 2
+                        }
+                    ],
+                    "supplier_count": 6,
+                    "represented_subcategory_count": 2
+                },
+                {
+                    "slug": "avl",
+                    "name_ar": "الصوتيات والمرئيات والإضاءة",
+                    "name_en": "AVL",
+                    "subcategories": [
+                        {
+                            "slug": "video_services",
+                            "name_ar": "خدمات الفيديو",
+                            "name_en": "Video Services",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "lighting_services",
+                            "name_ar": "خدمات الإضاءة",
+                            "name_en": "Lighting Services",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "sound_services",
+                            "name_ar": "خدمات الصوت",
+                            "name_en": "Sound Services",
+                            "supplier_count": 3
+                        }
+                    ],
+                    "supplier_count": 5,
+                    "represented_subcategory_count": 3
+                },
+                {
+                    "slug": "fit_out_works",
+                    "name_ar": "أعمال التجهيز والتشطيب",
+                    "name_en": "Fit-Out Works",
+                    "subcategories": [
+                        {
+                            "slug": "light_electrical_works",
+                            "name_ar": "التمديدات الكهربائية البسيطة",
+                            "name_en": "Light Electrical Works",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "carpentry_and_woodworks",
+                            "name_ar": "أعمال النجارة والأخشاب",
+                            "name_en": "Carpentry & Woodworks",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "carpets",
+                            "name_ar": "السجاد",
+                            "name_en": "Carpets",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "gypsum_works",
+                            "name_ar": "أعمال الجبس",
+                            "name_en": "Gypsum Works",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "light_plumbing_works",
+                            "name_ar": "التمديدات الصحية البسيطة",
+                            "name_en": "Light Plumbing Works",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "melamine_installations",
+                            "name_ar": "تركيبات الميلامين",
+                            "name_en": "Melamine Installations",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "painting_works",
+                            "name_ar": "أعمال الدهانات",
+                            "name_en": "Painting Works",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 4,
+                    "represented_subcategory_count": 7
+                },
+                {
+                    "slug": "hospitality",
+                    "name_ar": "الضيافة",
+                    "name_en": "Hospitality",
+                    "subcategories": [
+                        {
+                            "slug": "food_and_beverages",
+                            "name_ar": "الأطعمة والمشروبات",
+                            "name_en": "Food & Beverages",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "hospitality_consumables",
+                            "name_ar": "مستلزمات الضيافة",
+                            "name_en": "Hospitality Consumables",
+                            "supplier_count": 3
+                        }
+                    ],
+                    "supplier_count": 4,
+                    "represented_subcategory_count": 2
+                },
+                {
+                    "slug": "logistics",
+                    "name_ar": "الخدمات اللوجستية",
+                    "name_en": "Logistics",
+                    "subcategories": [
+                        {
+                            "slug": "vehicles",
+                            "name_ar": "السيارات",
+                            "name_en": "Vehicles",
+                            "supplier_count": 4
+                        },
+                        {
+                            "slug": "transportation_services",
+                            "name_ar": "خدمات النقل",
+                            "name_en": "Transportation Services",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "control_rooms",
+                            "name_ar": "غرف التحكم",
+                            "name_en": "Control Rooms",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "hotel_bookings",
+                            "name_ar": "الحجوزات الفندقية",
+                            "name_en": "Hotel Bookings",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "industrial_security_services",
+                            "name_ar": "خدمات الأمن الصناعي",
+                            "name_en": "Industrial Security Services",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "mass_transportation",
+                            "name_ar": "المواصلات الجماعية",
+                            "name_en": "Mass Transportation",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "parking_management",
+                            "name_ar": "تنظيم المواقف",
+                            "name_en": "Parking Management",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "travel_and_transit_bookings",
+                            "name_ar": "حجوزات السفر والتنقل",
+                            "name_en": "Travel & Transit Bookings",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 4,
+                    "represented_subcategory_count": 8
+                },
+                {
+                    "slug": "workforce",
+                    "name_ar": "القوى العاملة",
+                    "name_en": "Workforce",
+                    "subcategories": [
+                        {
+                            "slug": "event_management_and_operations_personnel",
+                            "name_ar": "كوادر إدارة وتشغيل الفعاليات",
+                            "name_en": "Event Management & Operations Personnel",
+                            "supplier_count": 3
+                        },
+                        {
+                            "slug": "creative_artists",
+                            "name_ar": "الفنانون الإبداعيون",
+                            "name_en": "Creative Artists",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "skilled_and_manual_labor",
+                            "name_ar": "العمالة الحرفية والتنفيذية",
+                            "name_en": "Skilled & Manual Labor",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 4,
+                    "represented_subcategory_count": 3
+                },
+                {
+                    "slug": "advertising_prints_identity_applications",
+                    "name_ar": "المطبوعات وتطبيقات الهوية",
+                    "name_en": "Advertising (Prints & Identity Applications)",
+                    "subcategories": [
+                        {
+                            "slug": "banners",
+                            "name_ar": "البنرات",
+                            "name_en": "Banners",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "flags",
+                            "name_ar": "الأعلام",
+                            "name_en": "Flags",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "stickers",
+                            "name_ar": "الستيكرات",
+                            "name_en": "Stickers",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "printing_services",
+                            "name_ar": "خدمات الطباعة",
+                            "name_en": "Printing Services",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "product_and_gift_customization_services",
+                            "name_ar": "خدمات تخصيص المنتجات والهدايا",
+                            "name_en": "Product & Gift Customization Services",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 2,
+                    "represented_subcategory_count": 5
+                },
+                {
+                    "slug": "media_production",
+                    "name_ar": "الإنتاج الإعلامي",
+                    "name_en": "Media Production",
+                    "subcategories": [
+                        {
+                            "slug": "media_documentation_and_reporting",
+                            "name_ar": "التوثيق وإعداد التقارير الإعلامية",
+                            "name_en": "Media Documentation & Reporting",
+                            "supplier_count": 1
+                        },
+                        {
+                            "slug": "production_and_media_services",
+                            "name_ar": "خدمات الإنتاج والميديا",
+                            "name_en": "Production & Media Services",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 2,
+                    "represented_subcategory_count": 2
+                },
+                {
+                    "slug": "site_services",
+                    "name_ar": "خدمات الموقع",
+                    "name_en": "Site Services",
+                    "subcategories": [
+                        {
+                            "slug": "generators",
+                            "name_ar": "مولدات الكهرباء",
+                            "name_en": "Generators",
+                            "supplier_count": 2
+                        },
+                        {
+                            "slug": "tents",
+                            "name_ar": "الخيام",
+                            "name_en": "Tents",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 2,
+                    "represented_subcategory_count": 2
+                },
+                {
+                    "slug": "construction",
+                    "name_ar": "الإنشاءات",
+                    "name_en": "Construction",
+                    "subcategories": [
+                        {
+                            "slug": "scaffolding_and_steel_structures",
+                            "name_ar": "السقالات والهياكل الحديدية",
+                            "name_en": "Scaffolding & Steel Structures",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 1,
+                    "represented_subcategory_count": 1
+                },
+                {
+                    "slug": "marketing_pr",
+                    "name_ar": "التسويق والعلاقات العامة",
+                    "name_en": "Marketing & PR",
+                    "subcategories": [
+                        {
+                            "slug": "media_buying",
+                            "name_ar": "شراء المساحات الإعلانية والإعلامية",
+                            "name_en": "Media Buying",
+                            "supplier_count": 1
+                        }
+                    ],
+                    "supplier_count": 1,
+                    "represented_subcategory_count": 1
+                }
+            ],
+            "legal_type": {
+                "company": 13,
+                "freelancer": 2
+            },
+            "supplier_count": 15,
+            "category_coverage": {
+                "category_assignments": 76,
+                "subcategories_represented": 40,
+                "suppliers_with_categories": 10,
+                "suppliers_without_categories": 5,
+                "parent_categories_represented": 12
+            }
+        }
+    }
+}
