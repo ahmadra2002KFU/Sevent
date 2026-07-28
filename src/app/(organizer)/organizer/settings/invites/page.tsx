@@ -33,6 +33,7 @@ export default async function OrganizerInvitesSettingsPage() {
 
   const t = await getTranslations("organizer.settings.invites");
 
+  // eslint-disable-next-line react-hooks/purity -- force-dynamic server route; the 30-day window is deliberately request-time.
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: rows, error } = await admin
     .from("organizer_invites")
@@ -67,5 +68,11 @@ export default async function OrganizerInvitesSettingsPage() {
   const canManage =
     decision.companyRole === "owner" || decision.companyRole === "admin";
 
-  return <InvitesPanel invites={invites} canManage={canManage} />;
+  return (
+    <InvitesPanel
+      invites={invites}
+      canManage={canManage}
+      viewerRole={decision.companyRole}
+    />
+  );
 }

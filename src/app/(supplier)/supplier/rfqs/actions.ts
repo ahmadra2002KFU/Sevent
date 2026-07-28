@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
+import { notifyOrganizerParty } from "@/lib/notifications/organizerFanout";
 
 const DeclineInput = z.object({
   invite_id: z.string().uuid(),
@@ -66,11 +67,15 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
     try {
       const { data: rfqRow } = await admin
         .from("rfqs")
-        .select("id, events(id, organizer_id, event_type, city)")
+        .select("id, events(id, organizer_id, company_id, event_type, city)")
         .eq("id", (updated as { rfq_id: string }).rfq_id)
         .maybeSingle();
-      const organizerId = (rfqRow as { events?: { organizer_id?: string } } | null)
-        ?.events?.organizer_id;
+      const eventNode = (
+        rfqRow as {
+          events?: { organizer_id?: string; company_id?: string | null };
+        } | null
+      )?.events;
+      const organizerId = eventNode?.organizer_id;
       if (organizerId) {
         const { data: supplierProfile } = await admin
           .from("suppliers")
@@ -79,10 +84,15 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
           .maybeSingle();
         const businessName = (supplierProfile as { business_name?: string } | null)
           ?.business_name ?? "A supplier";
-        await admin.from("notifications").insert({
-          user_id: organizerId,
+        // F3: a decline shrinks the company's supplier pool for this RFQ —
+        // every member should see it, not just whoever raised the RFQ.
+        await notifyOrganizerParty(admin, {
+          ref: {
+            companyId: eventNode?.company_id ?? null,
+            organizerId,
+          },
           kind: "rfq_invite_declined",
-          payload_jsonb: {
+          payload: {
             rfq_id: (updated as { rfq_id: string }).rfq_id,
             invite_id: parsed.data.invite_id,
             supplier_id: supplierId,
@@ -93,6 +103,10 @@ export async function declineInviteAction(formData: FormData): Promise<void> {
             // capped at 500 chars upstream by the Zod schema.
             supplier_note: parsed.data.note ?? null,
             title: `${businessName} declined your RFQ`,
+          },
+          context: {
+            stage: "declineInvite/rfq_invite_declined",
+            id: parsed.data.invite_id,
           },
         });
       }

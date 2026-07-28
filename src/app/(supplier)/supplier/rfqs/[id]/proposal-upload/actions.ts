@@ -26,7 +26,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAccess } from "@/lib/auth/access";
-import { createNotification } from "@/lib/notifications/inApp";
+import { notifyOrganizerParty } from "@/lib/notifications/organizerFanout";
 import {
   STORAGE_BUCKETS,
   assertPathBelongsToSupplier,
@@ -171,14 +171,15 @@ export async function respondToProposalRequestAction(
   const { data: ownership } = await admin
     .from("quotes")
     .select(
-      `id, rfqs ( id, events ( organizer_id ) )`,
+      `id, rfqs ( id, events ( organizer_id, company_id ) )`,
     )
     .eq("id", quote.id)
     .maybeSingle();
+  type EventNode = { organizer_id: string; company_id: string | null };
   type OwnRow = {
     rfqs:
-      | { events: { organizer_id: string } | { organizer_id: string }[] }
-      | { events: { organizer_id: string } | { organizer_id: string }[] }[]
+      | { events: EventNode | EventNode[] }
+      | { events: EventNode | EventNode[] }[]
       | null;
   };
   const o = ownership as unknown as OwnRow | null;
@@ -187,16 +188,22 @@ export async function respondToProposalRequestAction(
     ? rfqsNode?.events[0]
     : rfqsNode?.events;
   const organizerId = eventsNode?.organizer_id ?? null;
+  const eventCompanyId = eventsNode?.company_id ?? null;
   if (organizerId) {
     try {
-      await createNotification({
-        supabase: admin,
-        user_id: organizerId,
+      // F3: in-app only (no email for this kind), fanned out so the whole
+      // company sees that the supplier delivered the requested proposal.
+      await notifyOrganizerParty(admin, {
+        ref: { companyId: eventCompanyId, organizerId },
         kind: "quote.proposal_fulfilled",
         payload: {
           quote_id: quote.id,
           rfq_id: invite.rfq_id,
           request_id: request.id,
+        },
+        context: {
+          stage: "respondToProposalRequest/quote.proposal_fulfilled",
+          id: quote.id,
         },
       });
     } catch (e) {

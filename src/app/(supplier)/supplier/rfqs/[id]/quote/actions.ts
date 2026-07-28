@@ -43,48 +43,15 @@ import {
 } from "@/lib/domain/pricing/engine";
 import { getDistanceKm } from "@/lib/domain/pricing/distance";
 import type { PricingRuleType } from "@/lib/domain/pricing/rules";
-import { createNotification } from "@/lib/notifications/inApp";
-import { sendEmail } from "@/lib/notifications/email";
-import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
+import { resolveOrganizerCompanyName } from "@/lib/notifications/companyIdentity";
+import { notifyOrganizerParty } from "@/lib/notifications/organizerFanout";
 import QuoteReceived from "@/lib/notifications/templates/organizer/QuoteReceived";
 import { strings as quoteReceivedStrings } from "@/lib/notifications/templates/organizer/QuoteReceived.strings";
 import { env } from "@/lib/env";
 import type { ActionState } from "./action-state";
 
-type EmailDelivery = "sent" | "console" | "failed" | "skipped";
-
 function appUrl(): string {
   return env?.APP_URL ?? process.env.APP_URL ?? "http://localhost:3000";
-}
-
-async function sendLifecycleEmail(args: {
-  to: string;
-  subject: string;
-  react: Parameters<typeof sendEmail>[0]["react"];
-  context: { stage: string; id: string };
-}): Promise<EmailDelivery> {
-  try {
-    const result = await sendEmail({
-      to: args.to,
-      subject: args.subject,
-      react: args.react,
-    });
-    if (!result.ok) {
-      console.warn("[" + args.context.stage + "] email send failed", {
-        id: args.context.id,
-        error: result.error,
-      });
-      return "failed";
-    }
-    return result.mode === "resend" ? "sent" : "console";
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[" + args.context.stage + "] email send threw", {
-      id: args.context.id,
-      message,
-    });
-    return "failed";
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -300,7 +267,7 @@ export async function sendQuoteAction(
   const { data: rfqRow, error: rfqErr } = await admin
     .from("rfqs")
     .select(
-      "id, event_id, events(id, organizer_id, event_type, starts_at, ends_at, guest_count, venue_location)",
+      "id, event_id, events(id, organizer_id, company_id, event_type, starts_at, ends_at, guest_count, venue_location)",
     )
     .eq("id", data.rfq_id)
     .maybeSingle();
@@ -318,6 +285,7 @@ export async function sendQuoteAction(
         events: {
           id: string;
           organizer_id: string;
+          company_id: string | null;
           event_type: string | null;
           starts_at: string;
           ends_at: string;
@@ -591,7 +559,7 @@ export async function sendQuoteAction(
       // Pull supplier business_name and organizer full_name for the email
       // template props. The recipient (organizer) email + locale comes from
       // the sanctioned helper.
-      const [supplierRowResp, organizerProfileResp, recipient] =
+      const [supplierRowResp, organizerProfileResp, organizerCompanyName] =
         await Promise.all([
           admin
             .from("suppliers")
@@ -603,7 +571,9 @@ export async function sendQuoteAction(
             .select("full_name")
             .eq("id", event.organizer_id)
             .maybeSingle(),
-          resolveRecipientEmailAndLocale(admin, event.organizer_id),
+          // F2: company display name when the RFQ belongs to a company
+          // workspace; null keeps the historical individual-only copy.
+          resolveOrganizerCompanyName(admin, event.company_id),
         ]);
 
       const supplierBusinessName =
@@ -622,66 +592,43 @@ export async function sendQuoteAction(
       const rfqTitleBilingual = eventSegment
         ? { en: eventSegment.name_en, ar: eventSegment.name_ar }
         : { en: "your event", ar: "فعاليتك" };
-      const rfqTitleForRecipient = rfqTitleBilingual[recipient.locale];
       const quoteAmountSar = snapshot.total_halalas / 100;
       const quoteUrl = `${appUrl()}/organizer/rfqs/${data.rfq_id}/quotes/${row.quote_id}`;
 
-      const inApp = await createNotification({
-        supabase: admin,
-        user_id: event.organizer_id,
+      // F3: fan out to every current member of the owning company, each in
+      // their own locale. Individual organizers still get exactly one row.
+      await notifyOrganizerParty(admin, {
+        ref: { companyId: event.company_id, organizerId: event.organizer_id },
         kind,
-        payload: { ...baseNotificationPayload, email_delivery: "pending" },
-      });
-
-      let emailDelivery: EmailDelivery = "skipped";
-      if (recipient.email) {
-        emailDelivery = await sendLifecycleEmail({
-          to: recipient.email,
+        payload: baseNotificationPayload,
+        context: { stage: "sendQuote/quote.sent", id: row.quote_id },
+        email: (recipient) => ({
           subject: quoteReceivedStrings[recipient.locale].preview(
             supplierBusinessName,
-            rfqTitleForRecipient,
+            rfqTitleBilingual[recipient.locale],
           ),
           react: QuoteReceived({
             locale: recipient.locale,
             organizerName,
-            // PR 2: passive null. PR 3+ resolves from rfqs.company_id joined
-            // to organizer_companies.name when present.
-            organizerCompanyName: null,
+            organizerCompanyName,
             supplierBusinessName,
             rfqTitle: rfqTitleBilingual,
             quoteAmountSar,
             quoteUrl,
           }),
-          context: { stage: "sendQuote/quote.sent", id: row.quote_id },
-        });
-      } else {
-        console.warn(
-          "[sendQuoteAction] organizer has no email; skipping QuoteReceived send",
-          { organizerId: event.organizer_id },
-        );
-      }
-
-      if (inApp.ok) {
-        await admin
-          .from("notifications")
-          .update({
-            payload_jsonb: {
-              ...baseNotificationPayload,
-              email_delivery: emailDelivery,
-            },
-          })
-          .eq("id", inApp.id);
-      }
+        }),
+      });
     } catch (e) {
       console.error("[sendQuoteAction] notify+email failed", e);
     }
   } else {
-    // Revised quote: in-app only (no email per Phase 2.5 scope).
-    await createNotification({
-      supabase: admin,
-      user_id: event.organizer_id,
+    // Revised quote: in-app only (no email per Phase 2.5 scope), still fanned
+    // out across the company so teammates see the revision.
+    await notifyOrganizerParty(admin, {
+      ref: { companyId: event.company_id, organizerId: event.organizer_id },
       kind,
       payload: baseNotificationPayload,
+      context: { stage: "sendQuote/quote.revised", id: row.quote_id },
     });
   }
 

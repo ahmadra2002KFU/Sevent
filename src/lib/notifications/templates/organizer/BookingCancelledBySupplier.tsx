@@ -3,6 +3,7 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
+import { CompanyContextLine } from "../_shared/CompanyContextLine";
 import { dirFor, fontFor, textAlignStart, type Locale } from "../_shared/i18n";
 import { strings } from "./BookingCancelledBySupplier.strings";
 
@@ -25,6 +26,7 @@ export type BookingCancelledBySupplierProps = {
 export default function BookingCancelledBySupplier({
   locale,
   organizerName,
+  organizerCompanyName,
   supplierBusinessName,
   eventName,
   rfqUrl,
@@ -57,6 +59,8 @@ export default function BookingCancelledBySupplier({
       >
         {s.heading(supplierBusinessName)}
       </Heading>
+
+      <CompanyContextLine locale={locale} companyName={organizerCompanyName} />
 
       {organizerName ? (
         <Text

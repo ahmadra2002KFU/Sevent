@@ -17,6 +17,7 @@ type CompanyRow = {
   billing_email: string | null;
   default_language: "en" | "ar";
   logo_path: string | null;
+  quote_acceptance_threshold_halalas: number | null;
 };
 
 /**
@@ -39,7 +40,7 @@ export default async function OrganizerCompanySettingsPage() {
   const { data: row, error } = await admin
     .from("organizer_companies")
     .select(
-      "id, name, name_ar, slug, cr_number, vat_number, billing_email, default_language, logo_path",
+      "id, name, name_ar, slug, cr_number, vat_number, billing_email, default_language, logo_path, quote_acceptance_threshold_halalas",
     )
     .eq("id", companyId)
     .maybeSingle();
@@ -62,6 +63,14 @@ export default async function OrganizerCompanySettingsPage() {
   const company = row as CompanyRow;
   const canEdit =
     decision.companyRole === "owner" || decision.companyRole === "admin";
+  // The member spend cap is owner-only (P0062). Halalas → whole SAR for the
+  // input; the action multiplies back on save.
+  const isOwner = decision.companyRole === "owner";
+  const thresholdSar =
+    company.quote_acceptance_threshold_halalas === null ||
+    company.quote_acceptance_threshold_halalas === undefined
+      ? ""
+      : String(Math.round(company.quote_acceptance_threshold_halalas / 100));
 
   // PR 7 finding #7: finance fields (cr_number, vat_number, billing_email)
   // are admin-only. Mask them to empty strings for member viewers so they
@@ -81,8 +90,10 @@ export default async function OrganizerCompanySettingsPage() {
         billing_email: canEdit ? company.billing_email ?? "" : "",
         default_language: company.default_language,
         logo_path: company.logo_path ?? "",
+        quote_acceptance_threshold_sar: isOwner ? thresholdSar : "",
       }}
       canEdit={canEdit}
+      isOwner={isOwner}
     />
   );
 }

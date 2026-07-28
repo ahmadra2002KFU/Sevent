@@ -28,8 +28,12 @@ type CompanySettingsFormProps = {
     billing_email: string;
     default_language: "en" | "ar";
     logo_path: string;
+    /** Whole SAR, or "" for no cap. Owner-only; empty for other roles. */
+    quote_acceptance_threshold_sar: string;
   };
   canEdit: boolean;
+  /** Owners alone may set the member spend cap (RPC enforces via P0062). */
+  isOwner: boolean;
 };
 
 const initial: UpdateCompanyState = { status: "idle" };
@@ -38,6 +42,7 @@ export function CompanySettingsForm({
   companyId,
   defaultValues,
   canEdit,
+  isOwner,
 }: CompanySettingsFormProps) {
   const t = useTranslations("organizer.settings.company");
   const [state, action] = useActionState<UpdateCompanyState, FormData>(
@@ -127,6 +132,29 @@ export function CompanySettingsForm({
             />
           </Field>
         </>
+      ) : null}
+
+      {/*
+        Member spend cap — owner-only. Enforced in accept_quote_tx_v2 (P0060):
+        a `member`-role actor cannot accept a quote whose total exceeds it.
+        Owners and admins are never gated by it. Empty = unlimited, which is
+        why the input is left blank rather than defaulting to a number.
+      */}
+      {isOwner ? (
+        <Field
+          label={t("spendCapLabel")}
+          hint={t("spendCapHint")}
+        >
+          <Input
+            id="company-spend-cap"
+            name="quote_acceptance_threshold_sar"
+            inputMode="numeric"
+            pattern="^[0-9]*$"
+            maxLength={9}
+            placeholder={t("spendCapPlaceholder")}
+            defaultValue={defaultValues.quote_acceptance_threshold_sar}
+          />
+        </Field>
       ) : null}
 
       <Field label={t("defaultLanguageLabel")}>

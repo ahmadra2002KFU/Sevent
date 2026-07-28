@@ -29,6 +29,8 @@ import { getSegmentBySlug } from "@/lib/domain/segments";
 import { createNotification } from "@/lib/notifications/inApp";
 import { sendEmail } from "@/lib/notifications/email";
 import { resolveRecipientEmailAndLocale } from "@/lib/notifications/recipients";
+import { resolveOrganizerCompanyName } from "@/lib/notifications/companyIdentity";
+import { notifyOrganizerParty } from "@/lib/notifications/organizerFanout";
 import QuoteAccepted from "@/lib/notifications/templates/supplier/QuoteAccepted";
 import { strings as quoteAcceptedStrings } from "@/lib/notifications/templates/supplier/QuoteAccepted.strings";
 import BookingCreated from "@/lib/notifications/templates/organizer/BookingCreated";
@@ -226,6 +228,14 @@ export async function acceptQuoteAction(
       (s as { business_name?: string } | null)?.business_name ?? null;
   }
 
+  // F2: the company display name for the lifecycle emails. Derived from the
+  // EVENT's company (same value the RPC validated above), not the caller's
+  // active company, so a legacy individual event stays individual in the copy.
+  const organizerCompanyName = await resolveOrganizerCompanyName(
+    gate.admin,
+    eventCompanyId,
+  );
+
   // Event type — fallback for the event "name" referenced in email templates,
   // since rfqs has no title column and events.name is not always populated.
   // Also pull the organizer's full_name for greeting copy in the BookingCreated
@@ -342,10 +352,10 @@ export async function acceptQuoteAction(
                 supplierBusinessName: supplierBusinessName ?? "your business",
                 eventName: localEventName,
                 organizerName: organizerName ?? "the organizer",
-                // PR 2: feature flag is OFF so the actor IS the organizer.
-                // PR 3+ will resolve organizers[company_id].name when the
-                // booking has a non-null company_id.
-                organizerCompanyName: null,
+                // F2: the supplier sees the company as the primary identity
+                // with the acting teammate as a "via" subline. Null for
+                // individual organizers, which restores the actor-only copy.
+                organizerCompanyName,
                 bookingUrl: `${appUrl()}/supplier/bookings/${booking_id}`,
                 expiresAtIso: confirmDeadline,
               }),
@@ -403,68 +413,53 @@ export async function acceptQuoteAction(
     );
   }
 
-  // Self-notify the organizer (in-app + email).
+  // Notify the organizer party — F3: the acting teammate AND every other
+  // current member of the owning company, each in their own locale. For an
+  // individual organizer this is still exactly one row + one email.
   notifyTasks.push(
     (async () => {
       try {
-        const recipient = await resolveRecipientEmailAndLocale(
-          gate.admin,
-          gate.user.id,
-        );
         const basePayload = {
           booking_id,
           rfq_id,
           quote_id,
         };
-        const inApp = await createNotification({
-          supabase: gate.admin,
-          user_id: gate.user.id,
-          kind: "booking.created",
-          payload: { ...basePayload, email_delivery: "pending" },
-        });
-
-        let emailDelivery: EmailDelivery = "skipped";
-        if (recipient.email && confirmDeadline) {
-          const localEventName = localizedEventName(recipient.locale);
-          emailDelivery = await sendLifecycleEmail({
-            to: recipient.email,
-            subject: bookingCreatedStrings[recipient.locale].preview(
-              supplierBusinessName ?? "the supplier",
-              localEventName,
-            ),
-            react: BookingCreated({
-              locale: recipient.locale,
-              organizerName,
-              // PR 2: passive null. PR 3+ wires the company display when the
-              // organizer was acting on behalf of a company.
-              organizerCompanyName: null,
-              supplierBusinessName: supplierBusinessName ?? "the supplier",
-              eventName: localEventName,
-              supplierConfirmDeadlineIso: confirmDeadline,
-              bookingUrl: `${appUrl()}/organizer/bookings/${booking_id}`,
-            }),
-            context: { stage: "acceptQuote/booking.created", id: booking_id },
-          });
-        } else if (!recipient.email) {
-          console.warn(
-            "[acceptQuoteAction] organizer has no email; skipping BookingCreated send",
-            { organizerId: gate.user.id },
-          );
-        } else {
+        if (!confirmDeadline) {
           console.warn(
             "[acceptQuoteAction] confirm_deadline missing; skipping BookingCreated send",
             { booking_id },
           );
         }
+        const bookingUrl = `${appUrl()}/organizer/bookings/${booking_id}`;
 
-        if (inApp.ok) {
-          await gate.admin
-            .from("notifications")
-            .update({
-              payload_jsonb: { ...basePayload, email_delivery: emailDelivery },
-            })
-            .eq("id", inApp.id);
-        }
+        await notifyOrganizerParty(gate.admin, {
+          ref: { companyId: eventCompanyId, organizerId: gate.user.id },
+          kind: "booking.created",
+          payload: basePayload,
+          context: { stage: "acceptQuote/booking.created", id: booking_id },
+          email: confirmDeadline
+            ? (recipient) => {
+                const localEventName = localizedEventName(recipient.locale);
+                return {
+                  subject: bookingCreatedStrings[recipient.locale].preview(
+                    supplierBusinessName ?? "the supplier",
+                    localEventName,
+                  ),
+                  react: BookingCreated({
+                    locale: recipient.locale,
+                    organizerName,
+                    // F2: see above — company-first identity when the booking
+                    // was made on behalf of a company.
+                    organizerCompanyName,
+                    supplierBusinessName: supplierBusinessName ?? "the supplier",
+                    eventName: localEventName,
+                    supplierConfirmDeadlineIso: confirmDeadline,
+                    bookingUrl,
+                  }),
+                };
+              }
+            : undefined,
+        });
       } catch (e) {
         console.error("[acceptQuoteAction] notify booking.created failed", e);
       }

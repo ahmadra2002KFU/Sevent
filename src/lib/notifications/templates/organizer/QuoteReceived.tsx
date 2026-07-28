@@ -3,6 +3,7 @@
 import { Heading, Link, Section, Text } from "@react-email/components";
 import { BRAND } from "../_brand";
 import { BrandShell } from "../_shared/BrandShell";
+import { CompanyContextLine } from "../_shared/CompanyContextLine";
 import {
   dirFor,
   fontFor,
@@ -27,9 +28,8 @@ export type QuoteReceivedProps = {
   locale: Locale;
   organizerName?: string | null;
   /**
-   * Company name when the organizer acted on behalf of a company organizer.
-   * Currently passive — accepted so senders can pass it through PR 2 without
-   * a template-side change later. Visible rendering lands in PR 3+.
+   * Company name when the RFQ belongs to a company workspace. Rendered as a
+   * context line under the heading; omitted for individual organizers.
    */
   organizerCompanyName?: string | null;
   supplierBusinessName: string;
@@ -42,6 +42,7 @@ export type QuoteReceivedProps = {
 export default function QuoteReceived({
   locale,
   organizerName,
+  organizerCompanyName,
   supplierBusinessName,
   rfqTitle,
   quoteAmountSar,
@@ -81,6 +82,8 @@ export default function QuoteReceived({
       >
         {s.heading(supplierBusinessName)}
       </Heading>
+
+      <CompanyContextLine locale={locale} companyName={organizerCompanyName} />
 
       {organizerName ? (
         <Text

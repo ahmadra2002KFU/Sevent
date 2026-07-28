@@ -38,6 +38,10 @@ import {
   transferOwnershipAction,
   type MemberMutationState,
 } from "./actions";
+import {
+  canChangeMemberRole,
+  canRemoveMember,
+} from "@/lib/auth/companyPermissions";
 
 export type MemberRow = {
   profileId: string;
@@ -70,8 +74,6 @@ export function MembersTable({
   const t = useTranslations("organizer.settings.members");
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<MemberMutationState>({ status: "idle" });
-
-  const isAdminLike = viewerRole === "owner" || viewerRole === "admin";
 
   const submit = (
     fn: (
@@ -126,8 +128,9 @@ export function MembersTable({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Role change — only for admins/owner viewing non-owner rows. */}
-              {isAdminLike && m.role !== "owner" ? (
+              {/* Role change — owners on any non-owner row; admins only on
+                  members and on their own row (self-demote). */}
+              {canChangeMemberRole(viewerRole, m) ? (
                 <RoleSelector
                   member={m}
                   pending={pending}
@@ -189,12 +192,11 @@ export function MembersTable({
                 </AlertDialog>
               ) : null}
 
-              {/* Remove — admins/owner for non-owner rows, plus self-remove
-                  for non-owner self (owners must transfer first). Both paths
-                  are confirmed; self-remove uses the "leave" copy, others use
-                  the "remove" copy. */}
-              {((isAdminLike && m.role !== "owner") ||
-                (m.isSelf && m.role !== "owner")) ? (
+              {/* Remove — owners on any non-owner row, admins on members only,
+                  plus self-leave for anyone non-owner (owners must transfer
+                  first). Both paths are confirmed; self-remove uses the
+                  "leave" copy, others use the "remove" copy. */}
+              {canRemoveMember(viewerRole, m) ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button

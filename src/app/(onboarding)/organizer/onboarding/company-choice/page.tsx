@@ -30,6 +30,23 @@ export default async function OrganizerOnboardingCompanyChoicePage({
   const t = await getTranslations("organizer.onboarding.companyChoice");
   const params = await searchParams;
 
+  // Self-heal before deciding (F1). `legal_type='company'` with zero active
+  // memberships is the orphaned state that used to trap removed members on
+  // /organizer/onboarding/company with no way back here. The RPC resets such a
+  // row to NULL atomically (no-op when a membership exists), so the bounce
+  // below only fires for users who really are mid-company-setup.
+  const { error: healError } = await admin.rpc(
+    "reset_orphaned_company_legal_type",
+    { p_profile_id: user.id },
+  );
+  if (healError) {
+    // Non-fatal: worst case the user sees the pre-fix bounce. Log for ops.
+    console.error("[company-choice] self-heal RPC failed", {
+      code: (healError as { code?: string }).code ?? null,
+      message: healError.message,
+    });
+  }
+
   // Short-circuit if the user has already declared a legal_type. Brand-new
   // organizers (legal_type=NULL) are the only audience for this page.
   const { data: profileRow } = await admin

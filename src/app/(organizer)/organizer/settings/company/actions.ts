@@ -11,6 +11,7 @@ import { requireAccess } from "@/lib/auth/access";
  */
 export type UpdateCompanyErrorCode =
   | "notAdmin"
+  | "notOwner"
   | "companyMissing"
   | "nameRequired"
   | "nameTooLong"
@@ -18,6 +19,7 @@ export type UpdateCompanyErrorCode =
   | "vatInvalid"
   | "billingEmailRequired"
   | "billingEmailInvalid"
+  | "thresholdInvalid"
   | "updateFailed";
 
 export type UpdateCompanyState =
@@ -52,6 +54,24 @@ const InputSchema = z.object({
     .email("billingEmailInvalid")
     .max(255, "billingEmailInvalid"),
   default_language: z.enum(["en", "ar"]),
+  /**
+   * Member spend cap, entered in whole SAR. Empty string → null → unlimited.
+   * Stored as halalas. Capped at 100,000,000 SAR so a typo can't overflow the
+   * bigint column or produce a nonsense limit.
+   */
+  quote_acceptance_threshold_sar: z.preprocess(
+    (v) => {
+      if (typeof v !== "string" || v.trim().length === 0) return null;
+      const n = Number(v.trim().replace(/,/g, ""));
+      return Number.isFinite(n) ? n : Number.NaN;
+    },
+    z
+      .number({ error: "thresholdInvalid" })
+      .int("thresholdInvalid")
+      .min(0, "thresholdInvalid")
+      .max(100_000_000, "thresholdInvalid")
+      .nullable(),
+  ),
 });
 
 function firstErrorCode(err: z.ZodError): UpdateCompanyErrorCode {
@@ -78,6 +98,11 @@ export async function updateCompanyAction(
     return { status: "error", code: "notAdmin" };
   }
 
+  // Only the owner may move the member spend cap (RPC enforces this too via
+  // P0062). Admins submit the form without the field, so we must not send
+  // p_update_threshold=true for them — that would clear the owner's cap.
+  const isOwner = decision.companyRole === "owner";
+
   const parsed = InputSchema.safeParse({
     name: formData.get("name") ?? "",
     name_ar: formData.get("name_ar"),
@@ -85,6 +110,9 @@ export async function updateCompanyAction(
     vat_number: formData.get("vat_number"),
     billing_email: formData.get("billing_email") ?? "",
     default_language: formData.get("default_language") ?? "en",
+    quote_acceptance_threshold_sar: isOwner
+      ? formData.get("quote_acceptance_threshold_sar")
+      : null,
   });
   if (!parsed.success) {
     return { status: "error", code: firstErrorCode(parsed.error) };
@@ -97,6 +125,7 @@ export async function updateCompanyAction(
     vat_number,
     billing_email,
     default_language,
+    quote_acceptance_threshold_sar,
   } = parsed.data;
 
   // Read the existing logo_path so the RPC's `set logo_path = p_logo_path`
@@ -119,11 +148,21 @@ export async function updateCompanyAction(
     p_billing_email: billing_email,
     p_default_language: default_language,
     p_logo_path: logo_path,
+    // SAR → halalas. null means "no cap"; the flag below is what tells the
+    // RPC to write it at all, since null is a meaningful value.
+    p_quote_acceptance_threshold_halalas:
+      quote_acceptance_threshold_sar === null
+        ? null
+        : quote_acceptance_threshold_sar * 100,
+    p_update_threshold: isOwner,
   });
 
   if (error) {
     if ((error as { code?: string }).code === "P0051") {
       return { status: "error", code: "notAdmin" };
+    }
+    if ((error as { code?: string }).code === "P0062") {
+      return { status: "error", code: "notOwner" };
     }
     console.error("[updateCompanyAction] RPC failed", {
       code: (error as { code?: string }).code ?? null,

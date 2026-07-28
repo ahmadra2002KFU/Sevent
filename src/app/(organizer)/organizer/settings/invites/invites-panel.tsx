@@ -28,6 +28,7 @@ import {
   revokeInviteAction,
   type InviteMutationState,
 } from "./actions";
+import { canInviteAtRole } from "@/lib/auth/companyPermissions";
 
 export type InviteRow = {
   inviteId: string;
@@ -43,6 +44,13 @@ export type InviteRow = {
 type InvitesPanelProps = {
   invites: InviteRow[];
   canManage: boolean;
+  /**
+   * The viewer's company role. Needed on top of `canManage` because
+   * `create_organizer_invite_tx` refuses an admin-role invite issued by an
+   * admin (P0061) — only owners may mint admins. Without the exact role the
+   * panel would offer a choice the server rejects (review finding F4).
+   */
+  viewerRole: "owner" | "admin" | "member" | null;
 };
 
 function ts(iso: string): string {
@@ -55,12 +63,20 @@ function ts(iso: string): string {
 
 const initial: InviteMutationState = { status: "idle" };
 
-export function InvitesPanel({ invites, canManage }: InvitesPanelProps) {
+export function InvitesPanel({
+  invites,
+  canManage,
+  viewerRole,
+}: InvitesPanelProps) {
   const t = useTranslations("organizer.settings.invites");
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<InviteMutationState>(initial);
   const [emailValue, setEmailValue] = useState("");
   const [roleValue, setRoleValue] = useState<"admin" | "member">("member");
+
+  // Only owners may issue admin invites (P0061). Admins get a member-only
+  // form; hiding the option beats surfacing an error after submit.
+  const canInviteAdmin = canInviteAtRole(viewerRole, "admin");
 
   const submit = (
     fn: (
@@ -119,7 +135,9 @@ export function InvitesPanel({ invites, canManage }: InvitesPanelProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">{t("role.admin")}</SelectItem>
+                {canInviteAdmin ? (
+                  <SelectItem value="admin">{t("role.admin")}</SelectItem>
+                ) : null}
                 <SelectItem value="member">{t("role.member")}</SelectItem>
               </SelectContent>
             </Select>

@@ -2400,12 +2400,16 @@
         "defaultLanguageLabel": "Default language",
         "defaultLanguageEn": "English",
         "defaultLanguageAr": "Arabic",
+        "spendCapLabel": "Member approval limit (SAR)",
+        "spendCapHint": "Members can't accept a quote above this amount. Leave empty for no limit. Owners and admins are never limited.",
+        "spendCapPlaceholder": "No limit",
         "submit": "Save changes",
         "submitting": "Saving...",
         "savedToast": "Company details saved.",
         "memberReadonlyHint": "Only company owners and admins can edit these details.",
         "errors": {
           "notAdmin": "Only owners and admins can update the company profile.",
+          "notOwner": "Only the company owner can change the member approval limit.",
           "companyMissing": "No active company is selected.",
           "nameRequired": "Company name is required.",
           "nameTooLong": "Name is too long (max 120 characters).",
@@ -2413,6 +2417,7 @@
           "vatInvalid": "VAT must be 15 digits and start with 3.",
           "billingEmailRequired": "Billing email is required.",
           "billingEmailInvalid": "That email doesn't look right.",
+          "thresholdInvalid": "Enter the limit as a whole number of riyals, or leave it empty.",
           "updateFailed": "Couldn't save changes. Please try again."
         }
       },

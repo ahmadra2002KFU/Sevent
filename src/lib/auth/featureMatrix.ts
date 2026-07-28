@@ -154,10 +154,19 @@ export const STATE_CONFIG: Record<AccessState, StateConfig> = {
   // granted until the user creates a company or accepts an invite. /auth and
   // /sign-out are allowed so the user can switch accounts without being
   // trapped on the onboarding page.
+  //
+  // `/organizer/onboarding/company-choice` is allowed as defence-in-depth for
+  // the F1 lockout: the primary fix resets organizer_legal_type to NULL when a
+  // member's last membership is removed (migration 20260728120000), so this
+  // state should now only be reached mid-setup. But the company-creation page
+  // renders a "back to choice" link, and any other route into this state (a
+  // manually-edited profile row, a future company-delete flow) must not leave
+  // the user with a dead back button and no way to re-declare as an individual.
   "organizer.no_company": {
     bestDestination: "/organizer/onboarding/company",
     allowedRoutePrefixes: [
       "/organizer/onboarding/company",
+      "/organizer/onboarding/company-choice",
       "/invite/organizer",
       "/auth",
       "/sign-out",
